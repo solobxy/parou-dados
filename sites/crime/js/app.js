@@ -10,6 +10,7 @@ import * as GL from './globo.js';
 import * as TK from './tarefas.js';
 import * as PR from './prisao.js';
 import * as HB from './honras.js';   // v100: as barras das honras
+import * as ES from './estufa.js';   // v120: a estufa (os desenhos e os movimentos)
 
 const $app = document.getElementById('app');
 const S = {
@@ -154,6 +155,7 @@ function react(type, out, before, opts) {
   else if (type === 'mktSell') { toast(t('tMkSold', { q: qty(r.d, r.n), x: list('drugs')[r.d].toLowerCase(), m: money(r.got) })); fx.sfx('cash'); }
   else if (type === 'mvSend') { toast(t('tSent', { q: qty(r.d, r.n), x: list('drugs')[r.d].toLowerCase(), h: hhmm(r.at), ...rgF(r.b) })); fx.sfx('claim'); }
   else if (type === 'whBuy') { toast(t('tWh', rgF(r.r))); fx.sfx('claim'); }
+  else if (type === 'seedBuy') { toast(t('tGrBuy', { n: r.n })); fx.sfx('buy'); }   // v120: a estufa (o resto dos efeitos está em grTap)
   else if (type === 'whUp') { toast(t('tWhUp', { x: t('whUp_' + r.k), n: r.lvl })); fx.sfx('claim'); }
   else if (type === 'venueSet') { toast(t('vnSaved')); fx.sfx('claim'); }
   else if (type === 'venueBuy') { toast(r.lvl === 1 ? t('vnOpened_' + r.kind) : t('vnUpped', { n: r.lvl })); fx.sfx('claim'); }
@@ -2389,6 +2391,8 @@ function regionRow(me, r) {
   const lockT = me.level < S.cfg.regions.famLevel.leve ? t('rgTradeLock', { n: S.cfg.regions.famLevel.leve }) : null;
   const tips = lockT ? [h('div', { class: 'small muted' }, lockT)] : [tip.cheap != null ? h('div', { class: 'small' }, t('rgCheap', { x: list('drugs')[tip.cheap].toLowerCase() })) : null,
     tip.dear != null ? h('div', { class: 'small' }, t('rgDear', { x: list('drugs')[tip.dear].toLowerCase() })) : null].filter(Boolean);
+  const ready = w && me.level >= S.cfg.grow.level ? (w.g || []).filter((x) => x && now() >= x.t0 + S.cfg.grow.ms).length : 0;   // v120: plantas prontas na estufa
+  if (ready) tips.push(h('div', { class: 'small c-cash' }, t('grRowReady', { n: ready })));
   return h('button', { class: 'rgrow', on: { click: () => { S.reg = r; render(true); window.scrollTo({ top: 0 }); } } },
     art('cenas', 'regiao-' + r, 'rgth'),
     h('div', { class: 'grow' }, h('b', { class: 'rgnm' }, rgName(r)), h('div', { class: 'small muted' }, whLine), ...tips),
@@ -2474,6 +2478,7 @@ function regionDetail(me, r) {
       h('div', { class: 'grow' }, h('b', null, list('drugs')[d]), h('div', { class: 'small muted num' }, qty(d, n) + (tradableD(d) ? ' · ' + t('rgWorth', { m: money(Math.floor((n * unitC(me, r, d, -1)) / 100)) }) : ''))),
       h('span', { class: 'muted', 'aria-hidden': 'true' }, '›'))))
       : h('p', { class: 'small muted' }, t('whEmpty')));
+    out.push(...estufa(me, r));
   }
   // o mercado, por família (a de bar não se trafica)
   out.push(h('h2', { class: 'sec' }, t('mkT', rgF(r))), h('p', { class: 'small muted', style: 'margin:-4px 2px 10px' }, t('mkSub')));
@@ -2492,6 +2497,102 @@ function regionDetail(me, r) {
           h('div', { class: 'mkp' }, h('span', null, t('mkSellAt')), h('b', { class: 'num' }, perU(sell, d))));
       })));
   }
+  return out;
+}
+// ---------- v120: a estufa ----------
+// Erva feita à mão no armazém. Arrastar a semente do saquinho para um vaso (ou tocar no vaso), podar as folhas amarelas,
+// colher quando está pronta: os botões voam para o saco. O tempo anda sozinho (grTick); a cada passo o servidor confere.
+const grErva = () => S.cfg.drugs.findIndex((d) => d.id === S.cfg.grow.drug);
+const grBp = (x, n) => Math.min(10000, Math.max(0, Math.floor(((n - x.t0) * 10000) / S.cfg.grow.ms)));
+const grState = (x, n) => { if (!x) return 'empty'; const G = S.cfg.grow, bp = grBp(x, n); return bp >= 10000 ? 'ready' : !x.pr && bp >= G.pruneFrom && bp <= G.pruneTo ? 'prune' : 'grow'; };
+// o tempo que falta, num só formato: «2h 48m», «46m», «3h»
+const grLeft = (ms) => { const m = Math.max(1, Math.ceil(ms / 60000)), hh = Math.floor(m / 60), mm = m % 60; return hh ? hh + 'h' + (mm ? ' ' + String(mm).padStart(2, '0') + 'm' : '') : mm + 'm'; };
+// colunas pelo número de vasos, para as filas ficarem cheias (4, 6 em 2×3, 8 em 2×4, 10 em 2×5, 12 em 3×4)
+const grCols = (n) => ({ 6: 3, 10: 5 })[n] || 4;
+// pinta um vaso: a planta, a etiqueta por baixo e o que o leitor de ecrã diz
+function grPaint(btn, x, n) {
+  const G = S.cfg.grow, st = grState(x, n), i = +btn.dataset.i + 1, can = (S.st.me.seeds || 0) > 0;
+  ES.setPlant(btn, x, n, G, can);
+  btn.dataset.s = st;
+  const lab = btn.querySelector('.gl');
+  const txt = st === 'empty' ? t(can ? 'grPlant' : 'grEmpty') : st === 'ready' ? t('grReady') : st === 'prune' ? t('grPrune') : grLeft(x.t0 + G.ms - n);
+  if (lab.textContent !== txt) lab.textContent = txt;
+  const al = st === 'empty' ? t(can ? 'grPotEmpty' : 'grPotEmpty0', { i }) : st === 'ready' ? t('grPotReady', { i }) : st === 'prune' ? t('grPotPrune', { i }) : t('grPotGrow', { i, h: hhmm(x.t0 + G.ms) });
+  if (btn.getAttribute('aria-label') !== al) btn.setAttribute('aria-label', al);
+}
+function grTick() {
+  const els = document.querySelectorAll('.gp[data-r]'); if (!els.length || !S.st?.me) return;
+  const n = now();
+  els.forEach((b) => { const w = S.st.me.wh?.[b.dataset.r]; if (w) grPaint(b, (w.g || [])[+b.dataset.i], n); });
+}
+setInterval(grTick, 1000);
+const grPot = (r, i) => document.querySelector(`.gp[data-r="${r}"][data-i="${i}"]`);
+// o valor da erva guardada, ao preço de venda de agora
+const grWorth = (me, r, d, q) => money(Math.floor((q * unitC(me, r, d, -1)) / 100));
+// comprar sementes: quantidade com − e +, «Encher os vasos» e o total no botão
+function grBuySheet(r) {
+  const G = S.cfg.grow, me = S.st.me, seeds = me.seeds || 0, room = G.seedsMax - seeds, cash = me.cash + me.bank;
+  const free = r && me.wh[r] ? (me.wh[r].g || []).filter((x) => !x).length : 0, max = Math.max(1, Math.min(room, Math.floor(cash / G.seed)));
+  let n = Math.max(1, Math.min(max, free - seeds > 0 ? free - seeds : Math.min(4, max)));
+  const btn = h('button', { class: 'btn buy block big' });
+  const sync = () => { setBtn(btn, t('grBuyGo', { n, m: money(n * G.seed) })); btn.disabled = room < 1 || cash < n * G.seed; };
+  btn.addEventListener('click', (e) => act('seedBuy', { n }, { el: e.currentTarget }).then((o) => { if (o) close(); }));
+  const close = sheet(h('div', { class: 'stack' }, h('div', { class: 'row fsh' }, h('span', { class: 'grpk static' }, ES.packSvg()), h('div', { class: 'grow' }, h('h2', null, t('grBuyT')),
+    h('p', { class: 'small muted' }, t('grBuySub', { m: money(G.seed), a: num(seeds), b: num(G.seedsMax) })))),
+    room < 1 ? h('p', { class: 'small' }, t('grBuyFull')) : qtyPick(n, max, (v) => { n = v; sync(); }, 'grFill'),
+    btn));
+  sync();
+}
+function estufa(me, r) {
+  const G = S.cfg.grow, w = me.wh[r], out = [h('h2', { class: 'sec' }, t('grT'))];
+  if (me.level < G.level) {   // fechada: os vasos em silhueta e o nível
+    out.push(h('div', { class: 'card gr grlock' }, h('div', { class: 'grroom' }, h('div', { class: 'grlamp', 'aria-hidden': 'true' }),
+      h('div', { class: 'grpots', style: '--gc:4', 'aria-hidden': 'true' }, [0, 1, 2, 3].map(() => h('div', { class: 'gp off' }, ES.plant(), h('span', { class: 'gl' }, ' '))))),
+      h('p', { class: 'small', style: 'margin:12px 0 0' }, icon('lock'), ' ', t('grLock', { n: G.level })), h('p', { class: 'small muted', style: 'margin:4px 0 0' }, t('grLockSub'))));
+    return out;
+  }
+  const seeds = me.seeds || 0, d = grErva(), have = (whStockC(me, r) || [])[d] || 0, n = now(), g = w.g || [];
+  const pots = h('div', { class: 'grpots', style: `--gc:${grCols(g.length)}` });
+  const pack = h('button', { class: 'grpk' + (seeds ? '' : ' none'), type: 'button', 'aria-label': seeds ? t('grPackA', { n: seeds }) : t('grBuy') },
+    h('span', { class: 'grpk-ic' }, ES.packSvg(), h('i', { class: 'grplus', 'aria-hidden': 'true' }, '+')),
+    h('span', { class: 'grpk-t' }, h('b', { class: 'num' }, seeds ? (seeds === 1 ? t('grSeed1') : t('grSeedN', { n: num(seeds) })) : t('grSeed0')),
+      h('span', { class: 'small muted' }, seeds ? t('grDrag') : t('grTapBuy'))));
+  const bag = h('div', { class: 'grbag', 'aria-live': 'polite' }, ES.bagSvg(),
+    h('span', { class: 'grpk-t' }, h('b', { class: 'num' }, qty(d, have)), h('span', { class: 'small muted num' }, have ? t('grWorth', { m: grWorth(me, r, d, have) }) : t('grBagE'))));
+  const empty = () => [...pots.querySelectorAll('.gp[data-s="empty"]')];
+  const plantAt = (i, from) => {
+    if (!(S.st.me.seeds > 0)) { grBuySheet(r); return; }
+    ES.sow(from || pack.getBoundingClientRect(), grPot(r, i)); fx.vibrate(8);
+    act('growPlant', { r, i }).then((o) => { if (o) { grPot(r, i)?.classList.add('new'); fx.sfx('tap'); } });
+  };
+  const tap = (i) => {
+    const x = (S.st.me.wh[r].g || [])[i], st = grState(x, now()), btn = grPot(r, i);
+    if (st === 'empty') return plantAt(i, null);
+    if (st === 'prune') {
+      act('growPrune', { r, i }, { el: btn }).then((o) => { if (!o) return; const nb = grPot(r, i); ES.prune(nb); fx.sfx('tap'); fx.vibrate(10); if (nb) fx.fly('+' + pctOf(G.pruneBp) + '%', 'var(--cash)', nb.getBoundingClientRect(), null); });
+    } else if (st === 'ready') {
+      const before = (whStockC(S.st.me, r) || [])[d] || 0;
+      act('growHarvest', { r, i }, { el: btn }).then((o) => {
+        if (!o) return;
+        const nb = grPot(r, i), bg = document.querySelector('.grbag'), q = o.result.grams, after = before + q, numEl = bg?.querySelector('b'), wEl = bg?.querySelector('.small'), wNew = wEl?.textContent;
+        if (numEl) numEl.textContent = qty(d, before);
+        if (wEl && before) wEl.textContent = t('grWorth', { m: grWorth(S.st.me, r, d, before) });   // o valor acompanha o número: muda quando a erva entra no saco
+        fx.sfx('cash'); fx.vibrate([10, 30, 10]);
+        ES.harvest(nb, bg, 6).then(() => { if (!bg) return; fx.pop(bg); fx.roll(numEl, before, after, (v) => qty(d, v)); if (wEl) wEl.textContent = wNew; fx.fly('+' + qty(d, q), 'var(--cash)', bg.getBoundingClientRect(), null); });
+      });
+    } else toast(t('grWait', { h: hhmm(x.t0 + G.ms) }));
+  };
+  g.forEach((x, i) => {
+    const b = h('button', { class: 'gp', type: 'button', dataset: { r, i: String(i) }, on: { click: () => tap(i) } }, ES.plant(), h('span', { class: 'gl num' }));
+    grPaint(b, x, n); pots.append(b);
+  });
+  ES.dragSeed(pack, { empty, onDrop: (pot, rect) => plantAt(+pot.dataset.i, rect), onPick: () => grBuySheet(r) });
+  const free = g.some((x) => !x);
+  out.push(h('div', { class: 'card gr' },
+    h('div', { class: 'grtop' }, pack, bag),
+    h('div', { class: 'grroom' }, h('div', { class: 'grlamp', 'aria-hidden': 'true' }), pots),
+    h('p', { class: 'small muted grhint' }, t('grHint', { h: grLeft(G.ms), p: pctOf(G.pruneBp) + '%' })),
+    !seeds && free ? h('button', { class: 'btn buy block', type: 'button', on: { click: () => grBuySheet(r) } }, t('grBuy') + ' · ' + t('grEach', { m: money(G.seed) })) : null));
   return out;
 }
 // Comprar, vender, mudar (e em Lisboa, tomar): uma droga numa região. Em cima, os preços nas três regiões lado a lado.

@@ -562,7 +562,7 @@ body.light .report { animation: none; }
    bloco, em etiqueta com o fundo do topo (o dinheiro em cima, o respeito por baixo) */
 .money .delta { position: absolute; right: calc(100% + 8px); top: 1px; font-weight: 800; font-size: 14px; white-space: nowrap; pointer-events: none; animation: dl 1.35s var(--ease-out) forwards; }
 .money .delta.r2 { top: 24px; font-size: 12.5px; }
-.money .delta.below { right: 0; top: calc(100% + 6px); display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 6px; background: #262626;
+.money .delta.below { right: 58px; top: calc(100% + 6px); display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 6px; background: #262626;
   box-shadow: 0 2px 8px #0008; z-index: 3; font-size: 14px; animation: dlo 1.35s var(--ease-out) forwards; }
 .money .delta.below .dr { display: inline-flex; align-items: center; gap: 1px; }
 .money .delta.below .dr svg.i { width: 13px; height: 13px; }
@@ -4276,3 +4276,98 @@ body.light .evegg-o { animation: none; }
 .vipcr { color: var(--tx2); font-weight: 700; white-space: nowrap; }
 .vipnote { margin: 10px 4px 0; color: var(--tx); font-weight: 600; }
 .vipnote.muted { color: var(--tx2); font-weight: 400; }
+
+/* ---------- v120: a estufa ----------
+   Um cartão com o saquinho das sementes e o saco da erva em cima, uma barra de luz de cultivo e os vasos.
+   A planta muda com data-st (fase), data-pw (folhas amarelas) e data-rd (pronta); --gs e --bud fazem o resto. */
+.gr { padding: 14px; }
+.grtop { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.grpk, .grbag { display: flex; align-items: center; gap: 8px; min-height: 48px; min-width: 0; color: var(--tx); text-align: left; }
+.grpk { appearance: none; border: 0; background: transparent; padding: 2px 8px 2px 2px; margin: -2px; border-radius: var(--r); touch-action: none; cursor: grab; -webkit-user-select: none; user-select: none; }
+.grpk:focus-visible { outline: 2px solid var(--tx); outline-offset: 2px; }
+.grpk.static { padding: 0; margin: 0; cursor: default; }
+.grpk-ic { position: relative; flex: none; display: block; }
+.grpk-i { width: 30px; height: 37px; display: block; filter: drop-shadow(0 2px 3px rgba(0, 0, 0, .35)); }
+.grplus { position: absolute; right: -6px; bottom: -3px; width: 17px; height: 17px; border-radius: 50%; background: var(--tx); color: var(--ink); font: 800 14px/17px var(--ui); text-align: center; font-style: normal; }
+.grbag { flex-direction: row-reverse; text-align: right; }
+.grbag-i { width: 28px; height: 32px; flex: none; }
+.grbag .grpk-t { white-space: nowrap; }
+.grpk-t > b { font-size: 16px; white-space: nowrap; }
+.grpk-t { display: flex; flex-direction: column; line-height: 1.25; min-width: 0; }
+.grpk-t .small { font-size: 14px; }
+.grpk.none .grpk-i { opacity: .55; }
+/* a sala ocupa a largura do cartão: a calha de luz de cultivo em cima, o cone de luz e as prateleiras dos vasos */
+.grroom { position: relative; margin: 12px -14px 0; padding: 22px 10px 2px; }
+.grroom::before { content: ''; position: absolute; left: 14%; right: 14%; top: 9px; height: 70%; pointer-events: none; background: linear-gradient(rgba(214, 120, 255, .13), rgba(214, 120, 255, 0)); clip-path: polygon(8% 0, 92% 0, 100% 100%, 0 100%); -webkit-mask-image: linear-gradient(90deg, transparent, #000 22%, #000 78%, transparent); mask-image: linear-gradient(90deg, transparent, #000 22%, #000 78%, transparent); }
+.grlamp { position: absolute; left: 12%; right: 12%; top: 2px; height: 8px; border-radius: 3px; background: #1a1d24; box-shadow: inset 0 0 0 1px #2e333d, 0 2px 6px rgba(0, 0, 0, .5); }
+.grlamp::after { content: ''; position: absolute; left: 6px; right: 6px; bottom: 1px; height: 3px; border-radius: 2px; background: repeating-linear-gradient(90deg, #ff6fd0 0 5px, #8f7bff 5px 10px, transparent 10px 14px); box-shadow: 0 2px 10px rgba(214, 120, 255, .55); }
+.grpots { display: grid; grid-template-columns: repeat(var(--gc, 3), minmax(0, 1fr)); gap: 6px 6px; }
+.gp { appearance: none; border: 0; background: transparent; border-radius: var(--r); padding: 6px 2px 6px; margin: 0; display: flex; flex-direction: column; align-items: center; gap: 0; color: var(--tx2); cursor: pointer; position: relative; min-height: 44px; transition: transform .12s var(--ease-out), box-shadow .2s; }
+.gp:active { transform: scale(.96); }
+.gp:focus-visible { outline: 2px solid var(--tx); outline-offset: 2px; }
+.gp .gl { font-size: 14px; line-height: 1.2; font-weight: 600; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.gp[data-s="ready"] .gl { color: var(--cash); }
+.gp[data-s="prune"] .gl { color: var(--tx); }
+.gp[data-s="empty"] .gl { color: var(--tx3); }
+/* a prateleira: cada vaso assenta numa tábua que se junta à do lado */
+.gp::after { content: ''; position: absolute; left: -4px; right: -4px; bottom: 25px; height: 5px; background: linear-gradient(#4a4036, #2e2721); box-shadow: 0 3px 6px rgba(0, 0, 0, .45); z-index: -1; }
+.gp { z-index: 0; isolation: isolate; }
+.gp .gpl { margin-bottom: 4px; }
+.gp.over { transform: translateY(-3px); box-shadow: 0 0 0 2px rgba(70, 224, 138, .55); border-radius: 10px; }
+.gp.off { pointer-events: none; opacity: .32; filter: grayscale(.6); }
+.gp.go { opacity: .75; }
+.grhint { margin: 12px 2px 0; font-size: 14px; }
+.gr .btn.block { margin-top: 12px; }
+.grlock { padding: 14px; }
+
+/* a planta */
+.gpl { width: 100%; max-width: 112px; height: auto; display: block; overflow: visible; }
+.gpl .pot { fill: url(#grPot); }
+.gpl .rim { fill: url(#grRim); }
+.gpl .soil { fill: url(#grSoil); }
+.gpl .glow { fill: url(#grGlow); opacity: 0; transition: opacity .6s; }
+.gpl[data-rd="1"] .glow { opacity: 1; }
+.gpl .pl { transform-origin: 40px 70px; transform: scale(var(--gs, 0)); transition: transform .9s var(--ease-out); }
+.gpl .sw { transform-origin: 40px 70px; animation: grsway 5.5s ease-in-out infinite; }
+.gpl[data-st="0"] .pl, .gpl[data-st="1"] .pl { opacity: 0; }
+.gpl .spr { opacity: 0; transition: opacity .4s; }
+.gpl[data-st="1"] .spr { opacity: 1; }
+.gpl .spr ellipse { fill: #6cc77b; }
+.gpl .plus { fill: none; stroke: var(--tx3); stroke-width: 1.6; stroke-linecap: round; opacity: 0; }
+.gpl[data-can="1"][data-st="0"] .plus { opacity: 1; }
+.gpl .stem { fill: none; stroke: #3a8a4b; stroke-width: 2.2; stroke-linecap: round; }
+.gpl .lf path, .gpl .tip path { fill: #3a9c51; }
+.gpl .n2 .lf path:not(.vn) { fill: #42a75a; }
+.gpl .n3 .lf path:not(.vn), .gpl .tip path:not(.vn) { fill: #4cb464; }
+.gpl .vn { fill: none !important; stroke: rgba(210, 255, 200, .28); stroke-width: .7; }
+.gpl .ylf path:not(.vn) { fill: #d8b83a; stroke: #8d6a1c; stroke-width: .45; }
+.gpl .ylf .vn { stroke: rgba(120, 80, 10, .45); }
+.gpl .cola { transform-origin: 40px 40px; transform: scale(calc(.4 + var(--bud, 0) * .6)); opacity: calc(var(--bud, 0) * 4); transition: transform .9s var(--ease-out); }
+.gpl .bdb, .grbud .bdb { fill: #5e9a44; }
+.gpl .bdk, .grbud .bdk { fill: #9acd6c; stroke: #6aa04a; stroke-width: .35; }
+.gpl .bdp, .grbud .bdp { fill: none; stroke: #e98a3a; stroke-width: .7; stroke-linecap: round; }
+.gpl .bds, .grbud .bds { fill: #3f9a52; }
+.gpl .tri, .grbud .tri { fill: #f3fbe8; opacity: 0; }
+.gpl[data-rd="1"] .bdk, .grbud .bdk { fill: #addb80; }
+.gpl[data-rd="1"] .tri, .grbud .tri { opacity: .85; }
+.gpl .n, .gpl .yl, .gpl .tip { transition: opacity .5s, transform .5s var(--ease-out); }
+.gpl .n { transform-origin: 40px 50px; }
+.gpl .yl { transform-origin: 40px 64px; }
+.gpl .n1, .gpl .n2, .gpl .n3, .gpl .yl { opacity: 0; transform: scale(.6); }
+.gpl[data-st="2"] .n1, .gpl[data-st="3"] .n1, .gpl[data-st="4"] .n1,
+.gpl[data-st="3"] .n2, .gpl[data-st="4"] .n2, .gpl[data-st="4"] .n3 { opacity: 1; transform: none; }
+.gpl[data-pw="1"] .yl { opacity: 1; transform: none; }
+@keyframes grsway { 0%, 100% { transform: rotate(-1.6deg); } 50% { transform: rotate(1.6deg); } }
+/* acabada de plantar: o rebento sai da terra depois de a semente cair */
+.gp.new .pl { animation: grsprout .55s var(--spring) .38s both; }
+@keyframes grsprout { from { transform: scale(0); } to { transform: scale(var(--gs, .42)); } }
+/* os movimentos por cima do ecrã (semente, folhas, botões) */
+.grfx { position: fixed; z-index: 90; pointer-events: none; will-change: transform, opacity; }
+.grfx.drag { z-index: 95; filter: drop-shadow(0 4px 6px rgba(0, 0, 0, .5)); }
+.grfx.drag svg { transform: scale(1.5); }
+body.grdrag, body.grdrag * { cursor: grabbing !important; }
+body.light .gpl .sw, body.light .gp.new .pl { animation: none; }
+@media (prefers-reduced-motion: reduce) {
+  .gpl .sw, .gp.new .pl { animation: none; }
+  .gpl .pl, .gpl .cola, .gpl .n, .gpl .spr, .gpl .yl, .gpl .tip, .gp { transition: none; }
+}

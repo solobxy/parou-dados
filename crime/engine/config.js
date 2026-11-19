@@ -172,6 +172,13 @@ export const CFG = {
     // leva metade do que está à vista da droga de festa e das pesadas (as leves só dão multa); com pesadas apreendidas, 60 min de prisão.
     raidBp: 2000, raidMin: 50, fineBp: 1000, takeBp: 5000, jailMin: 60, lawyer: 5000, log: 6,
   },
+  // v120 (pedido do Dinis: «droga feita à mão, com animação»): a estufa do armazém. Erva plantada à mão, vaso a vaso: a semente vai
+  // para a terra, cresce em ms; a meio (entre pruneFrom e pruneTo do crescimento) pode podar-se uma vez, o que rende +pruneBp; madura,
+  // colhe-se e ensaca-se para o armazém da região (aquece-o como uma compra). Vasos pelo nível do espaço do armazém. Uma planta dá
+  // yield gramas (±yieldVarBp ao calhas); a semente custa seed. O grama de erva vale perto de 4,80 £ no mercado: uma planta podada dá
+  // cerca de 600 £ por 3 h, sem stamina.
+  grow: { level: 10, drug: 'erva', pots: [4, 6, 8, 10, 12], seed: 40, seedsMax: 100, ms: 3 * HOUR, pruneFrom: 3000, pruneTo: 8000, pruneBp: 2500,
+    yield: 40, yieldVarBp: 1000 },   // 40 g por vaso a 6 £/g: uns 240 £ por planta em 3 h, menos a semente
   // Transporte entre regiões: 1 hora por salto; risco de apreensão em cada salto = média da pressão das duas regiões a dividir por 10, em %.
   // Se a polícia apanha: as leves pagam multa de 10% e seguem; as de festa ficam apreendidas; as pesadas ficam apreendidas e dão prisão.
   mv: { hopMs: HOUR, max: 5, log: 6 },

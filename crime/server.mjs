@@ -31,7 +31,7 @@ const RONDA_TESTE = process.env.PRIMEIRA_RONDA ? dataDe(process.env.PRIMEIRA_RON
 // Épocas de 28 dias a contar da sexta 13/11/2026 às 21:00 de Lisboa (PRIMEIRA_EPOCA=AAAA-MM-DD muda-a, para testes)
 const ANCORA = dataDe(process.env.PRIMEIRA_EPOCA || process.env.PRIMEIRA_RONDA || '2026-11-13');
 const rng = process.env.TESTE_SEMENTE ? seededRng(+process.env.TESTE_SEMENTE) : cryptoRng();   // nos testes, a sorte pode ser sempre a mesma
-const VERSAO = 119;   // sobe quando o servidor muda, para se confirmar de fora que a versão nova já está a correr
+const VERSAO = 120;   // sobe quando o servidor muda, para se confirmar de fora que a versão nova já está a correr
 const ATOS_3S = +(process.env.ATOS_3S || 15), ATOS_MIN = +(process.env.ATOS_MIN || 400); // ações por conta: 15 em 3 s, 400 por minuto
 
 // ---------- relógio que nunca anda para trás ----------
@@ -515,7 +515,7 @@ function vista(p, now) {
     cd: { est: E.consumWait(p, 'est', now), med: E.consumWait(p, 'med', now) },   // v78: quanto falta na espera de cada família
     mt: p.mt, cf: p.cf, maq: p.maq,   // v83: depósito, bancada e máquinas
     pk: mesaPk(p.id) ? mesaPk(p.id).id : null, pkn: p.pkn, pkd: p.pkd, ...(() => { const s = E.sentence(p, now); return { jsr: s, appeal: s ? s.appeal : null }; })(),   // v116: a sentença e o recurso
-    ...(() => { const c = carteira(p.id); return { cr: c.cr, vip: p.vip, vipOn: p.vip > now, crRefills: E.crRefillsToday(p, now), crExits: E.crExitsToday(p, now), eRegen: E.energyRegenMs(p) }; })(),   // v119: os créditos e o VIP
+    ...(() => { const c = carteira(p.id); return { cr: c.cr, vip: p.vip, vipOn: p.vip > now, crRefills: E.crRefillsToday(p, now), crExits: E.crExitsToday(p, now), eRegen: E.energyRegenMs(p), seeds: p.seeds }; })(),   // v119: os créditos e o VIP
     ev: E.evView(p, now), evNext: (() => { const x = EV.nextEvent(now); return x ? { id: x.id, start: x.start, end: x.end, fx: x.fx } : null; })(),   // v117: os eventos   // v114: a mesa de póquer onde está sentado
     cars: p.cars, car: p.car, rcn: p.rcn, rsk: E.skillBp(p, 'conducao'), race: salaDe(p.id) ? salaDe(p.id).id : null,   // v112: a garagem, as corridas e a perícia
     dg: E.digView(p, now), dgc: p.dgc, arq: E.stLevel(p, 'arqueologia'),   // v85: a escavação aberta (sem a grelha), os sítios vigiados, o nível de Arqueologia
@@ -574,7 +574,7 @@ function cfgPublica() {
     round: { playDays: CFG.round.playDays, noPvpMs: CFG.round.noPvpMs, newbieShieldMs: CFG.round.newbieShieldMs }, season: CFG.season, raid: CFG.raid,   // v91: a wiki
     consum: CFG.consum, col: CFG.col, gyms: CFG.gyms, books: CFG.books,   // v94, v95
     social: CFG.social,   // v109: o chat e a vitrine
-    turf: CFG.turf, comp: CFG.comp, race: CFG.race, poker: CFG.poker, bust: CFG.bust, appeal: CFG.appeal, events: CFG.events, vip: CFG.vip,   // v110: o território
+    turf: CFG.turf, comp: CFG.comp, race: CFG.race, poker: CFG.poker, bust: CFG.bust, appeal: CFG.appeal, events: CFG.events, vip: CFG.vip, grow: CFG.grow,   // v110: o território
     mat: CFG.mat, craft: CFG.craft, feira: { ...CFG.feira, refs: FEIRA_REFS }, dig: CFG.dig, hunt: CFG.hunt, honors: E.HONORS, travel: CFG.travel,   // v83, v84, v98, v100, v101
     exam: (({ ans: _a, ...x }) => x)(CFG.exam), studies: CFG.studies,   // v81: a Universidade   // v80: as regras do exame, sem as respostas certas
     gov: { vote: CFG.gov.vote, laws: CFG.gov.laws, cof: CFG.gov.cof, parties: Object.fromEntries(Object.entries(CFG.gov.parties).map(([k, x]) => [k, { pos: x.pos, wOp: x.wOp, wLob: x.wLob }])) },   // v76: o parlamento
@@ -2653,6 +2653,10 @@ function agir(conta, corpo, now) {
     // regiões, armazéns e transporte (passo 6, parte 2): o mercado de cada região está no mundo, com a bolsa
     case 'whBuy': r = E.whBuy(p, now, world, String(a.r || '')); break;
     case 'whUp': r = E.whUp(p, now, world, String(a.r || ''), String(a.k || '')); break;
+    case 'seedBuy': r = E.seedBuy(p, now, world, int(a.n)); break;   // v120: a estufa
+    case 'growPlant': r = E.growPlant(p, now, world, String(a.r || ''), int(a.i)); break;
+    case 'growPrune': r = E.growPrune(p, now, world, String(a.r || ''), int(a.i)); break;
+    case 'growHarvest': r = E.growHarvest(p, now, world, String(a.r || ''), int(a.i), rng); break;
     case 'mktBuy': r = E.mktBuy(p, now, world, bolsaDe(w, now), String(a.r || ''), int(a.d), int(a.n), Number.isSafeInteger(a.c) ? a.c : undefined); break;
     case 'mktSell': r = E.mktSell(p, now, world, bolsaDe(w, now), String(a.r || ''), int(a.d), int(a.n), Number.isSafeInteger(a.c) ? a.c : undefined); break;
     case 'mvSend': r = E.mvSend(p, now, world, bolsaDe(w, now), rng, String(a.a || ''), String(a.b || ''), int(a.d), int(a.n)); break;

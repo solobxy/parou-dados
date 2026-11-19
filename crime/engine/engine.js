@@ -49,7 +49,7 @@ export function newPlayer(id, now, world, opts = {}) {
     luxuries: 0,
     gang: null, gb: null, gangLeft: 0, gbotLeft: 0, gh: [], gbz: gbzNew(),
     emp: null,   // v111: a empresa onde trabalha ({ id, t: o tipo, s: as estrelas }); o servidor escreve-a
-    cars: [], car: -1, rcn: { n: 0, w: 0, pod: 0 }, pkn: { h: 0, w: 0, big: 0 }, pkd: null, jsr: null, evs: {}, vip: 0, vipOn: false, crd: null,   // v114: mãos de póquer (jogadas, ganhas, maior pote) e as fichas compradas hoje   // v112: os carros (cada um com as peças), o que está escolhido e as corridas feitas (rc já é o resto do respeito)
+    cars: [], car: -1, rcn: { n: 0, w: 0, pod: 0 }, pkn: { h: 0, w: 0, big: 0 }, pkd: null, jsr: null, evs: {}, vip: 0, vipOn: false, crd: null, seeds: 0,   // v114: mãos de póquer (jogadas, ganhas, maior pote) e as fichas compradas hoje   // v112: os carros (cada um com as peças), o que está escolhido e as corridas feitas (rc já é o resto do respeito)
     detoxT: [],
     xp: { F: 0, I: 0, C: 0 },
     wk: CFG.crimes.map(() => 0),   // sucessos por golpe (para os objetivos)
@@ -136,6 +136,7 @@ function migrate(p) {
   if (p.pkd === undefined) p.pkd = null;
   if (!p.evs || typeof p.evs !== 'object' || Array.isArray(p.evs)) p.evs = {};   // v117: os eventos
   if (!Number.isSafeInteger(p.vip) || p.vip < 0) p.vip = 0;   // v119: o VIP (até quando)
+  if (!Number.isSafeInteger(p.seeds) || p.seeds < 0) p.seeds = 0;   // v120: as sementes
   if (typeof p.vipOn !== 'boolean') p.vipOn = false;
   if (p.crd !== null && (!p.crd || typeof p.crd.d !== 'string' || !Number.isSafeInteger(p.crd.n))) p.crd = null;
   if (p.jsr === undefined || (p.jsr !== null && (typeof p.jsr !== 'object' || !Number.isSafeInteger(p.jsr.t0)))) p.jsr = null;   // v116: a sentença
@@ -2889,6 +2890,64 @@ export function whUp(p, now, world, r, k) {
   return { ok: true, r, k, lvl: p.wh[r][k], cost };
 }
 
+// ---------- v120: a estufa (erva feita à mão) ----------
+const growDrug = () => CFG.drugs.findIndex((g) => g.id === CFG.grow.drug);
+export const growN = (p, r) => (p.wh[r] ? CFG.grow.pots[p.wh[r].sp - 1] || CFG.grow.pots[0] : 0);
+// os vasos de um armazém (cresce com o espaço; um vaso vazio é null). growPots devolve uma cópia; o estado só muda (growFix) depois
+// de todas as verificações, para uma ação recusada não deixar nada mexido.
+export function growPots(p, r) {
+  const w = p.wh[r], g = w && Array.isArray(w.g) ? w.g : [];
+  return Array.from({ length: growN(p, r) }, (_, i) => g[i] || null);
+}
+function growFix(p, r) { const w = p.wh[r]; w.g = growPots(p, r); return w.g; }
+// em que ponto está uma planta, em pontos-base do crescimento (10 000 = madura)
+export const growBp = (x, now) => Math.min(10000, Math.floor(((now - x.t0) * 10000) / CFG.grow.ms));
+function growArgs(p, now, world, r, i) {
+  if (!REG().includes(r)) fail('NO_REGION');
+  begin(p, now, world, { allowBusy: true });
+  if (!p.wh[r]) fail('NO_WH', { r });
+  if (level(p) < CFG.grow.level) fail('LOW_LEVEL', { need: CFG.grow.level });
+  if (!Number.isInteger(i) || i < 0 || i >= growN(p, r)) fail('NO_POT');
+  return growPots(p, r)[i];
+}
+export function seedBuy(p, now, world, n) {
+  if (!Number.isSafeInteger(n) || n < 1 || n > CFG.grow.seedsMax) fail('BAD_AMOUNT');
+  begin(p, now, world, { allowBusy: true });
+  if (level(p) < CFG.grow.level) fail('LOW_LEVEL', { need: CFG.grow.level });
+  if (p.seeds + n > CFG.grow.seedsMax) fail('SEEDS_FULL', { n: CFG.grow.seedsMax - p.seeds });
+  const cost = n * CFG.grow.seed;
+  pay(p, cost);
+  p.seeds += n;
+  return { ok: true, n, cost, seeds: p.seeds };
+}
+export function growPlant(p, now, world, r, i) {
+  if (growArgs(p, now, world, r, i)) fail('POT_BUSY');
+  if (p.seeds < 1) fail('NO_SEEDS');
+  p.seeds -= 1; growFix(p, r)[i] = { t0: now, pr: false };
+  return { ok: true, r, i, seeds: p.seeds };
+}
+export function growPrune(p, now, world, r, i) {
+  const x = growArgs(p, now, world, r, i);
+  if (!x) fail('POT_EMPTY');
+  if (x.pr) fail('PRUNED');
+  const bp = growBp(x, now);
+  if (bp < CFG.grow.pruneFrom || bp > CFG.grow.pruneTo) fail('NOT_PRUNE_TIME');
+  growFix(p, r)[i].pr = true;
+  return { ok: true, r, i };
+}
+export function growHarvest(p, now, world, r, i, rng) {
+  const x = growArgs(p, now, world, r, i), G = CFG.grow;
+  if (!x) fail('POT_EMPTY');
+  if (growBp(x, now) < 10000) fail('NOT_READY', { at: x.t0 + G.ms });
+  const v = rng.int(-G.yieldVarBp, G.yieldVarBp), grams = Math.max(1, Math.floor((G.yield * (10000 + (x.pr ? G.pruneBp : 0)) * (10000 + v)) / 1e8));
+  if (grams > whFree(p, r)) fail('WH_FULL', { free: whFree(p, r) });
+  const d = growDrug();
+  whStock(p, r)[d] += grams; growFix(p, r)[i] = null;
+  const eur = Math.floor((grams * refC(d)) / 100); heatAdd(p, r, eur);
+  p.c.harv = (p.c.harv || 0) + 1;
+  return { ok: true, r, i, d, grams, pruned: !!x.pr, v: eur };
+}
+
 // Mercado: compra-se e vende-se ao preço da região, que anda com cada ordem. Comprar pede o nível da família; vender o que já se
 // tem, não. As vendas ao mercado não pagam lavagem, como o porto e o aeroporto. seen: o que o ecrã mostrou, em cêntimos (com
 // 1% de folga, ou 1 €): se o preço mudou mais do que isso entretanto, não se faz.
@@ -3024,7 +3083,8 @@ export function whView(p) {
   return Object.fromEntries(REG().map((r) => {
     const w = p.wh[r]; if (!w) return [r, null];
     return [r, { sp: w.sp, hd: w.hd, fr: w.fr, heat: Math.round(w.h / 100), cap: whCap(p, r), used: whUsed(p, r), s: r === 'lx' ? null : w.s.slice(), vis: whVisEur(p, r),
-      hide: hideBp(w), front: frontBp(w), up: Object.fromEntries(WH_UPS.map((k) => [k, whUpCost(p, r, k)])) }];
+      hide: hideBp(w), front: frontBp(w), up: Object.fromEntries(WH_UPS.map((k) => [k, whUpCost(p, r, k)])),
+      g: growPots(p, r).map((x) => (x ? { t0: x.t0, pr: !!x.pr } : null)) }];   // v120: os vasos da estufa
   }));
 }
 export const mvView = (p) => p.mv.map(({ d, n, a, b, t0, at, risk }) => ({ d, n, a, b, t0, at, risk }));
@@ -4754,6 +4814,7 @@ export function checkInvariants(p) {
   if (!p.wh || REG().some((r) => { const w = p.wh[r]; if (w === null) return r === 'lx';
     return !(w && WH_UPS.every((k) => Number.isInteger(w[k]) && w[k] >= 1 && w[k] <= 5) && Number.isSafeInteger(w.h) && w.h >= 0 && w.h <= 10000 && Number.isSafeInteger(w.f) && w.f >= 0
       && (r === 'lx' ? w.s === undefined : Array.isArray(w.s) && w.s.length === CFG.drugs.length && w.s.every((x) => Number.isSafeInteger(x) && x >= 0))); })) bad.push('warehouses');
+  if (!(p.seeds >= 0 && p.seeds <= CFG.grow.seedsMax) || REG().some((r) => { const w = p.wh[r]; return w && w.g !== undefined && !(Array.isArray(w.g) && w.g.length <= 12 && w.g.every((x) => x === null || (Number.isSafeInteger(x.t0) && typeof x.pr === 'boolean'))); })) bad.push('estufa');   // v120
   if (!Array.isArray(p.mv) || p.mv.length > CFG.mv.max || p.mv.some((v) => !v || !tradable(v.d) || !REG().includes(v.a) || !REG().includes(v.b) || v.a === v.b || !p.wh[v.b] || !Number.isSafeInteger(v.n) || v.n < 1
     || !Number.isSafeInteger(v.at) || v.at !== v.t0 + mvHops(v.a, v.b) * CFG.mv.hopMs || ![0, 1, 2].includes(v.x))) bad.push('moves');
   if (!Array.isArray(p.mvLog) || p.mvLog.length > CFG.mv.log || !Array.isArray(p.rz) || p.rz.length > CFG.wh.log) bad.push('move/raid logs');
