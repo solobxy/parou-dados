@@ -179,6 +179,15 @@ export const CFG = {
   // cerca de 600 £ por 3 h, sem stamina.
   grow: { level: 10, drug: 'erva', pots: [4, 6, 8, 10, 12], seed: 40, seedsMax: 100, ms: 3 * HOUR, pruneFrom: 3000, pruneTo: 8000, pruneBp: 2500,
     yield: 40, yieldVarBp: 1000 },   // 40 g por vaso a 6 £/g: uns 240 £ por planta em 3 h, menos a semente
+  // v121: mortes (CK). Só a partir do nível 60, de quem mata e de quem morre. Matar pede um plano: estudar o alvo (cada estudo mostra
+  // uma parte da fortuna dele), juntar contactos e escolher a parte que se ataca; quem mata fica só com essa parte (droga e carros
+  // vendidos a metade). Quem morre fica com a personagem (nível, stats, skills, honras) e perde o dinheiro, o inventário e as posses;
+  // o testamento passa 10% da fortuna. A polícia investiga: matar quem está muito abaixo de nós quase sempre acaba em prisão longa
+  // (3 h por cada dia de jogo da vítima, de 12 h a 7 dias); preso por uma morte, pode-se acabar com tudo (morrer) e sair.
+  ck: { level: 60, cost: 25000, planMs: 48 * HOUR, parts: ['cash', 'wh', 'biz', 'cars'], studyE: 25, studyGapMs: 20 * MIN, studyN: 2,
+    contacts: 3, contactsMax: 6, contactCost: 10000, execE: 40, baseBp: 3500, perStudyBp: 500, perContactBp: 300, minBp: 1000, maxBp: 8000,
+    fenceBp: 5000, failDieBp: 2500, failJailBp: 3500, failHospMs: 3 * HOUR, probeBp: 2500, weakBp: 400, dnaMs: [2 * HOUR, 12 * HOUR], wantedMs: 24 * HOUR,
+    jailPerDayMs: 3 * HOUR, jailMinMs: 12 * HOUR, jailMaxMs: 7 * DAY, willBp: 1000, graceMs: 7 * DAY },
   // Transporte entre regiões: 1 hora por salto; risco de apreensão em cada salto = média da pressão das duas regiões a dividir por 10, em %.
   // Se a polícia apanha: as leves pagam multa de 10% e seguem; as de festa ficam apreendidas; as pesadas ficam apreendidas e dão prisão.
   mv: { hopMs: HOUR, max: 5, log: 6 },

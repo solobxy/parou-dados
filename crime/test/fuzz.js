@@ -71,6 +71,14 @@ function contas(kind, a0, a, d0, d, t, res, arg) {
   if (av < 0 || av > CFG.retainer.day) { console.error('CONTAS ERRADAS avença paga mais de uma vez', kind, av); process.exit(1); }
   if ((a.ilegal || 0) < (a0.ilegal || 0)) { console.error('CONTAS ERRADAS total de crime desceu', kind); process.exit(1); }
   const bad = (m) => { console.error('CONTAS ERRADAS', kind, m, JSON.stringify(res), { dm, dr }); if (process.env.DBG && res && res.r) { const s0 = res.r === 'lx' ? E.venueView(a0, t).stock : a0.wh[res.r].s; console.error('s0', s0[res.d], 's1', E.whStock(a, res.r)[res.d], 'chegou', chegou(res.r, res.d), 'mvNovas', JSON.stringify(mvNovas), 'cost min', Math.floor((res.n * MW.refC(res.d) * 0.2) / 100)); } process.exit(1); };
+  // v121: quem morre (acabar com tudo na prisão, ou falhar uma morte e morrer) recomeça: confere-se o recomeço e o resto não se aplica
+  if (kind === 'ckEnd' || (kind === 'ckGo' && res && res.fate === 'dead')) {
+    const b0 = touched(a0, t), acc = E.bizStored(b0, t).reduce((x, y, i) => x + y.money - (b0.biz[i].stored || 0), 0), fMax = E.ckFortune(b0) + Math.max(0, acc);
+    if (a.ckN !== (a0.ckN || 0) + 1 || a.cash !== CFG.start.cash || a.bank !== res.will || res.will > Math.floor((fMax * CFG.ck.willBp) / 10000) + 1
+      || a.house !== 0 || a.inv.length || a.peakRespect !== a0.peakRespect || a.jailUntil !== 0 || a.ck !== null || (kind === 'ckEnd' && !(touched(a0, t).jailUntil > t))) bad('morte: o recomeço');
+    if (kind === 'ckGo' && wealth(d) !== wealth(d0)) bad('morte: falhou e mexeu no alvo');
+    return;
+  }
   // v79: a vitrine só cresce com golpes que correm bem e aviões que chegam inteiros, e só desce no museu e no penhorista
   // (v85: comparado com o estado depois do touch: uma escavação esquecida fecha sozinha e guarda o saco na vitrine)
   // (uma ação que não passa pelo touch, ex. sair da gangue, deixa a escavação esquecida aberta: aí a base é o estado de antes)
@@ -236,12 +244,12 @@ function contas(kind, a0, a, d0, d, t, res, arg) {
       break;
     }
     case 'retainer': if (dm !== 0 || a.avenca !== res.on || (res.on && a.avD === null)) bad('avença'); break;
-    case 'jailSmuggle': if (dm !== res.money || res.money > Math.floor((E.streetPerBar(a0) * CFG.jail.smuggleE) / 200) || dr !== 0 || !(a0.jailUntil > t)) bad('contrabando'); break;
+    case 'jailSmuggle': if (dm !== res.money || res.money > Math.floor((E.streetPerBar(a0) * CFG.jail.smuggleE) / 200) || dr !== 0 || !(touched(a0, t).jailUntil > t)) bad('contrabando'); break;
     case 'jailWork': if (dm !== CFG.jail.work || dr !== 0) bad('oficina'); break;
     case 'jailYard': if (Math.abs(dm) !== E.yardBet(a0) || a.stats.F !== a0.stats.F + 1 || dr !== 0) bad('pátio'); break;
     case 'jailCards': if (Math.abs(dm) !== arg || arg > CFG.jail.cardsMax || dr !== 0) bad('cartas'); break;
-    case 'jailFavor': if (dm !== 0 || a.jf !== touched(a0, t).jf + 1 || (arg === 'time' ? a.jailUntil > a0.jailUntil : a.contacts !== a0.contacts + 1)) bad('favor'); break;
-    case 'jailEscape': if (dm !== 0 || (res.free ? a.jailUntil !== 0 : a.jailUntil < a0.jailUntil)) bad('fuga'); break;
+    case 'jailFavor': if (dm !== 0 || a.jf !== touched(a0, t).jf + 1 || (arg === 'time' ? a.jailUntil > touched(a0, t).jailUntil : a.contacts !== a0.contacts + 1)) bad('favor'); break;
+    case 'jailEscape': if (dm !== 0 || (res.free ? a.jailUntil !== 0 : a.jailUntil < touched(a0, t).jailUntil)) bad('fuga'); break;
     case 'evGift': { const A = CFG.events.advent, top = Math.max(...CFG.events.hongbao.map((x) => x[1]), (A.base + A.perLevel * E.level(a0)) * A.day25);   // v117
       if (dm !== res.cash || !(res.cash > 0) || res.cash > top || dr !== 0 || res.ev) bad('presente do evento'); break; }
     case 'evEgg': if (dm !== 0 || dr !== 0 || res.ev.got !== CFG.events.eggTokens) bad('ovo da Páscoa'); break;
@@ -249,7 +257,7 @@ function contas(kind, a0, a, d0, d, t, res, arg) {
     case 'crRefill': if (dm !== 0 || dr !== 0 || a.energy !== E.energyMax(a)) bad('stamina com créditos'); break;
     case 'crJail': if (dm !== 0 || dr !== 0 || a.jailUntil !== 0) bad('prisão com créditos'); break;
     case 'crHosp': if (dm !== 0 || dr !== 0 || a.hospUntil !== 0) bad('hospital com créditos'); break;
-    case 'jailAppeal': if (dm !== -res.fee || res.fee < CFG.appeal.feeMin || dr !== 0 || a.jailUntil > a0.jailUntil || (!res.won && a.jailUntil !== a0.jailUntil) || a.jsr.ap !== (res.won ? 1 : 2)) bad('recurso'); break;   // v116
+    case 'jailAppeal': if (dm !== -res.fee || res.fee < CFG.appeal.feeMin || dr !== 0 || a.jailUntil > touched(a0, t).jailUntil || (!res.won && a.jailUntil !== touched(a0, t).jailUntil) || a.jsr.ap !== (res.won ? 1 : 2)) bad('recurso'); break;   // v116
     case 'deal': {
       const x = CFG.deal.list[arg], d = CFG.drugs.findIndex((g) => g.id === x.drug), g = Math.floor((x.perBar * CFG.deal.step) / 100);
       if (res.grams !== g || dm + res.lav !== Math.floor((g * CFG.drugs[d].price * (10000 + E.skillBp(a0, 'trafico'))) / 10000) || res.money !== dm || res.lav < 0 || res.lav > Math.ceil((dm + res.lav) * LAV_MAX_BP / 10000) || dr !== res.respect || res.respect < 1 || a.dst[arg] !== a0.dst[arg] - g || E.level(a0) < x.level) bad('venda de droga');
@@ -383,6 +391,24 @@ function contas(kind, a0, a, d0, d, t, res, arg) {
     // regiões e armazéns: cada um mexe no dinheiro e no stock exatamente o que diz
     case 'whBuy': if (dm !== -res.cost || dr !== 0 || a0.wh[res.r] || !a.wh[res.r] || res.cost !== CFG.wh[res.r].price) bad('comprar armazém'); break;
     case 'whUp': if (dm !== -res.cost || dr !== 0 || a.wh[res.r][res.k] !== a0.wh[res.r][res.k] + 1 || res.cost <= 0) bad('melhorar armazém'); break;
+    // v121: mortes. O plano custa o que diz; estudar e escolher não mexem no dinheiro; quem mata leva só a parte escolhida e quem morre
+    // recomeça com o testamento (sem herdeiro, no fuzz); falhar não mexe no alvo
+    case 'ckStart': if (dm !== -CFG.ck.cost || dr !== 0 || !a.ck || a.ck.d !== d.id || a.ck.s.length || a.ck.c) bad('morte: plano'); break;
+    case 'ckStudy': if (dm !== 0 || dr !== 0 || a.ck.s.length !== a0.ck.s.length + 1 || res.part !== CFG.ck.parts[a0.ck.s.length] || wealth(d) !== wealth(d0)) bad('morte: estudo'); break;
+    case 'ckContact': if (dm !== -res.cost || (res.cost !== 0 && res.cost !== CFG.ck.contactCost) || dr !== 0 || a.ck.c !== a0.ck.c + 1 || (res.cost === 0 && a.contacts !== touched(a0, t).contacts - 1)) bad('morte: contacto'); break;
+    case 'ckPick': case 'ckDrop': if (dm !== 0 || dr !== 0) bad('morte: escolher ou desistir'); break;
+    case 'ckGo': {
+      if (a.ck !== null) bad('morte: o plano ficou');
+      if (res.win) {
+        const acc = E.bizStored(d0, t).reduce((x, y, i) => x + y.money - (d0.biz[i].stored || 0), 0), fMax = E.ckFortune(d0) + Math.max(0, acc);
+        if (dm !== res.net || res.net > res.loot || res.net < 0 || dr !== 0 || res.loot < 0 || (res.part !== 'biz' && res.loot !== E.ckPart(d0, res.part)) || (res.part === 'biz' && res.loot < E.ckPart(d0, 'biz'))) bad('morte: o que quem mata leva');
+        if (d.ckN !== (d0.ckN || 0) + 1 || d.cash !== CFG.start.cash || d.bank !== res.will || res.will > Math.floor((fMax * CFG.ck.willBp) / 10000) || d.house !== 0 || d.inv.length || d.peakRespect !== d0.peakRespect || JSON.stringify(d.hon) !== JSON.stringify(d0.hon)) bad('morte: o recomeço de quem morreu');
+        if (!a.ckw || !(a.ckw.until > t)) bad('morte: sem investigação');
+      } else if (res.fate !== 'dead') {
+        if (dm !== 0 || dr !== 0 || wealth(d) !== wealth(d0) || d.respect !== d0.respect) bad('morte: falhou mas mexeu no dinheiro');
+        if ((res.fate === 'jail' && !(a.jailUntil > t && a.jsr.k === 'ck')) || (res.fate === 'hosp' && !(a.hospUntil > t))) bad('morte: o destino de quem falhou');
+      }
+      break; }
     // v120: a estufa. As sementes custam o que a config diz; plantar gasta uma; a colheita entra no armazém, entre a colheita mínima e a máxima
     case 'seedBuy': if (dm !== -res.cost || res.cost !== res.n * CFG.grow.seed || dr !== 0 || a.seeds !== a0.seeds + res.n || a.seeds > CFG.grow.seedsMax) bad('sementes'); break;
     case 'growPlant': if (dm !== 0 || dr !== 0 || a.seeds !== a0.seeds - 1 || !a.wh[res.r].g[res.i] || (a0.wh[res.r].g && a0.wh[res.r].g[res.i])) bad('plantar'); break;
@@ -464,10 +490,13 @@ for (let n = 0; n < ACTIONS; n++) {
   let t = now;
   if (r.chance(50)) t = pick([world.playEnd, world.start - 1, world.playEnd + T.DAY, now - 1000]); // horas inválidas
 
-  const p = (r.chance(6000) && players.find((q) => q.dg)) || (r.chance(1500) && pick(players.filter((q) => q.tr).concat([pick(players)]))) || pick(players);   // v85: quem tem uma escavação aberta volta a ela muitas vezes (v101: e quem está fora)
-  const d = (p.tr && r.chance(5000) && players.find((q) => q !== p && q.tr && q.tr.to === p.tr.to)) || pick(players);   // v101: lá fora, às vezes alguém no mesmo país
+  const p = (r.chance(2500) && players.find((q) => q.ck && q.ck.end >= now)) || (r.chance(6000) && players.find((q) => q.dg)) || (r.chance(1500) && pick(players.filter((q) => q.tr).concat([pick(players)]))) || pick(players);   // v85: quem tem uma escavação aberta volta a ela muitas vezes (v101: e quem está fora)
+  const d = (p.ck && r.chance(8000) && players.find((q) => q.id === p.ck.d)) || (p.tr && r.chance(5000) && players.find((q) => q !== p && q.tr && q.tr.to === p.tr.to)) || pick(players);   // v101: lá fora, às vezes alguém no mesmo país; v121: quase sempre o alvo do plano de morte
   if (r.chance(200)) { p.cash += r.int(0, 5e6); } // dá dinheiro para chegar a tudo
   if (r.chance(60) && E.level(p) < 30) { p.respect = p.peakRespect = CFG.levels[29]; } // e nível para o mercado das regiões (comprar coca pede o 25)
+  if (p.ck && r.chance(3000)) p.energy = Math.max(p.energy, E.energyMax(p));   // v121: stamina para o plano
+  if (p.ck && r.chance(5000)) { if (!p.eq.mao) p.eq.mao = { id: 'pistola', u: 20 }; if (!p.inv.some((x) => x.id === 'balas') && p.inv.length < 6) p.inv.push({ id: 'balas', n: 30 }); }   // v121: a arma para a morte
+  if (r.chance(250) && E.level(p) < CFG.ck.level) { p.respect = p.peakRespect = CFG.levels[CFG.ck.level + r.int(-2, 20)]; } // v121: e o nível das mortes (60), dos dois lados
   if (r.chance(3000) && p.wh) { const rr = pick(REG); if (p.wh[rr]) E.whStock(p, rr)[pick([1, 3, 6, 11, 13])] += r.int(1, 400); } // droga num armazém de uma região, como a que vem de lá
   if (r.chance(1500)) { // a bolsa mexe (às vezes com falências) e, a seguir a cada passo, os limites de venda de toda a gente
     E.marketTick(market, game);
@@ -526,7 +555,7 @@ for (let n = 0; n < ACTIONS; n++) {
   const before = touched(p, t), beforeD = touched(d, t), origD = structuredClone(d), origP = structuredClone(p);
   const hPre = { j: p.jailUntil > t, h: p.hospUntil > t };   // v100: honras
   const pAqui = before.tr && before.tr.st === 'there';   // v101: lá fora, quase sempre o que se faz lá
-  const kind = pAqui && r.chance(7000) ? pick(['trBuy', 'trBuy', 'trBuy', 'trBuy', 'trBack', 'trBack', 'trGun', 'attack', 'digStart', 'digStart', 'attack', 'attack', 'medic', 'consume', 'equip', 'crime', 'travel', 'trSell']) : before.trL && r.chance(6000) ? pick(['trSell', 'trSell', 'travel']) : p.hunt && p.hunt.on && r.chance(8000) ? pick(['huntShoot', 'huntShoot', 'huntShoot', 'huntNear', 'huntLook', 'huntStop']) : p.dg && r.chance(8500) ? pick(['digTap', 'digTap', 'digTap', 'digTap', 'digTap', 'digStop']) : (p.seeds > 0 || REG.some((x) => p.wh[x] && p.wh[x].g && p.wh[x].g.some(Boolean))) && r.chance(2000) ? pick(['growPlant', 'growPrune', 'growHarvest', 'growHarvest']) : pick(['honorPick', 'honorPick', 'huntStart', 'huntStart', 'huntStart', 'stockBuy', 'stockBuy', 'stockBuy', 'govVote', 'govLobby', 'govLobby', 'consume', 'consume', 'consume', 'museum', 'museum', 'colSell', 'colSell', 'examStart', 'examStart', 'examAnswer', 'examAnswer', 'examAnswer', 'gymStart', 'gymStart', 'gymDone', 'gymDone', 'gymDone', 'craftStart', 'craftStart', 'craftStart', 'craftTake', 'craftTake', 'maqService', 'maqService', 'feiraTake', 'feiraTake', 'feiraGive', 'feiraBuy', 'feiraBuy', 'feiraLock', 'digStart', 'digStart', 'digTap', 'digTap', 'digTap', 'digTap', 'digTap', 'digStop', 'stockSell', 'stockSell', 'missionSwap', 'venueBuy', 'venueBuy', 'venueSet', 'venueCollect', 'stockUse', 'stockUse', 'stockDump', 'broHire', 'broHire', 'broFire', 'clubBuyAt', 'clubBuyAt', 'clubBuyAt', 'broVisitAt', 'broVisitAt', 'broVisitAt', 'casino', 'casino', 'table', 'heist', 'hit', 'gangCreate', 'gangDonate', 'gangLeave', 'gangBiz', 'gangBiz', 'gangBiz', 'gangBizCollect', 'hitman', 'hitman', 'hitman', 'crime', 'crime', 'crimeAll', 'deal', 'deal', 'dealBuy', 'drug', 'refill', 'detox', 'claim', 'class', 'classChange', 'classChange', 'air', 'air', 'airCollect', 'airCollect', 'bailFor', 'bailFor', 'medicFor', 'medicFor', 'avatar', 'hooker', 'cure', 'house', 'houseUp', 'buyBiz', 'buyBiz', 'collect', 'bizGoods', 'bizGoods', 'stockHold', 'stockHold', 'acct', 'stockLimit', 'stockLimit', 'stockLimit', 'port', 'collectPort', 'portOpen', 'portOpen', 'deposit', 'withdraw', 'gear', 'attack', 'bail', 'medic', 'luxury', 'shift', 'shift', 'shift', 'job', 'course', 'buy', 'buy', 'buy', 'buy', 'equip', 'unequip', 'unequip', 'gymBuy', 'gymBuy', 'gymUse', 'modBuy', 'modBuy', 'modFit', 'modFit', 'modFit', 'modTake', 'bookBuy', 'bookBuy', 'bookRead', 'bookRead', 'sell', 'sellGoods', 'sellGoods', 'repair', 'repair', 'opStart', 'opStart', 'opStep', 'opStep', 'opGo', 'opGo', 'opGo', 'opDrop', 'retainer', 'jailSmuggle', 'jailWork', 'jailYard', 'jailCards', 'jailFavor', 'jailEscape', 'jailAppeal', 'jailAppeal', 'evGift', 'evGift', 'evEgg', 'evEgg', 'vipAdd', 'crRefill', 'crRefill', 'crJail', 'crHosp', 'whBuy', 'whBuy', 'whUp', 'whUp', 'seedBuy', 'seedBuy', 'growPlant', 'growPlant', 'growPlant', 'growPrune', 'growPrune', 'growHarvest', 'growHarvest', 'growHarvest', 'mktBuy', 'mktBuy', 'mktBuy', 'mktSell', 'mktSell', 'mvSend', 'mvSend', 'mvSend', 'whEdition', 'workStart', 'workStart', 'workDone', 'workDone', 'workDone', 'travel', 'travel', 'trBuy', 'trBack', 'trSell', 'trBag', 'trGun', 'carBuy', 'carBuy', 'carUp', 'carUp', 'carUp', 'carSel', 'carSell', 'raceStreet', 'raceStreet', 'raceStreet', 'bust', 'bust', 'bust']);
+  const kind = pAqui && r.chance(7000) ? pick(['trBuy', 'trBuy', 'trBuy', 'trBuy', 'trBack', 'trBack', 'trGun', 'attack', 'digStart', 'digStart', 'attack', 'attack', 'medic', 'consume', 'equip', 'crime', 'travel', 'trSell']) : before.trL && r.chance(6000) ? pick(['trSell', 'trSell', 'travel']) : p.hunt && p.hunt.on && r.chance(8000) ? pick(['huntShoot', 'huntShoot', 'huntShoot', 'huntNear', 'huntLook', 'huntStop']) : p.dg && r.chance(8500) ? pick(['digTap', 'digTap', 'digTap', 'digTap', 'digTap', 'digStop']) : p.ck && r.chance(6000) ? (r.chance(7000) ? (p.ck.s.length < CFG.ck.studyN ? 'ckStudy' : p.ck.c < CFG.ck.contacts ? 'ckContact' : !p.ck.k ? 'ckPick' : 'ckGo') : pick(['ckStudy', 'ckStudy', 'ckContact', 'ckPick', 'ckGo', 'ckGo'])) : !p.ck && E.level(p) >= CFG.ck.level && r.chance(400) ? 'ckStart' : p.jsr && p.jsr.k === 'ck' && p.jailUntil > t && r.chance(1500) ? 'ckEnd' : (p.seeds > 0 || REG.some((x) => p.wh[x] && p.wh[x].g && p.wh[x].g.some(Boolean))) && r.chance(2000) ? pick(['growPlant', 'growPrune', 'growHarvest', 'growHarvest']) : pick(['honorPick', 'honorPick', 'huntStart', 'huntStart', 'huntStart', 'stockBuy', 'stockBuy', 'stockBuy', 'govVote', 'govLobby', 'govLobby', 'consume', 'consume', 'consume', 'museum', 'museum', 'colSell', 'colSell', 'examStart', 'examStart', 'examAnswer', 'examAnswer', 'examAnswer', 'gymStart', 'gymStart', 'gymDone', 'gymDone', 'gymDone', 'craftStart', 'craftStart', 'craftStart', 'craftTake', 'craftTake', 'maqService', 'maqService', 'feiraTake', 'feiraTake', 'feiraGive', 'feiraBuy', 'feiraBuy', 'feiraLock', 'digStart', 'digStart', 'digTap', 'digTap', 'digTap', 'digTap', 'digTap', 'digStop', 'stockSell', 'stockSell', 'missionSwap', 'venueBuy', 'venueBuy', 'venueSet', 'venueCollect', 'stockUse', 'stockUse', 'stockDump', 'broHire', 'broHire', 'broFire', 'clubBuyAt', 'clubBuyAt', 'clubBuyAt', 'broVisitAt', 'broVisitAt', 'broVisitAt', 'casino', 'casino', 'table', 'heist', 'hit', 'gangCreate', 'gangDonate', 'gangLeave', 'gangBiz', 'gangBiz', 'gangBiz', 'gangBizCollect', 'hitman', 'hitman', 'hitman', 'crime', 'crime', 'crimeAll', 'deal', 'deal', 'dealBuy', 'drug', 'refill', 'detox', 'claim', 'class', 'classChange', 'classChange', 'air', 'air', 'airCollect', 'airCollect', 'bailFor', 'bailFor', 'medicFor', 'medicFor', 'avatar', 'hooker', 'cure', 'house', 'houseUp', 'buyBiz', 'buyBiz', 'collect', 'bizGoods', 'bizGoods', 'stockHold', 'stockHold', 'acct', 'stockLimit', 'stockLimit', 'stockLimit', 'port', 'collectPort', 'portOpen', 'portOpen', 'deposit', 'withdraw', 'gear', 'attack', 'bail', 'medic', 'luxury', 'shift', 'shift', 'shift', 'job', 'course', 'buy', 'buy', 'buy', 'buy', 'equip', 'unequip', 'unequip', 'gymBuy', 'gymBuy', 'gymUse', 'modBuy', 'modBuy', 'modFit', 'modFit', 'modFit', 'modTake', 'bookBuy', 'bookBuy', 'bookRead', 'bookRead', 'sell', 'sellGoods', 'sellGoods', 'repair', 'repair', 'opStart', 'opStart', 'opStep', 'opStep', 'opGo', 'opGo', 'opGo', 'opDrop', 'retainer', 'jailSmuggle', 'jailWork', 'jailYard', 'jailCards', 'jailFavor', 'jailEscape', 'jailAppeal', 'jailAppeal', 'evGift', 'evGift', 'evEgg', 'evEgg', 'vipAdd', 'crRefill', 'crRefill', 'crJail', 'crHosp', 'whBuy', 'whBuy', 'whUp', 'whUp', 'ckStart', 'ckStart', 'ckStudy', 'ckStudy', 'ckStudy', 'ckContact', 'ckContact', 'ckPick', 'ckPick', 'ckGo', 'ckGo', 'ckEnd', 'ckDrop', 'seedBuy', 'seedBuy', 'growPlant', 'growPlant', 'growPlant', 'growPrune', 'growPrune', 'growHarvest', 'growHarvest', 'growHarvest', 'mktBuy', 'mktBuy', 'mktBuy', 'mktSell', 'mktSell', 'mvSend', 'mvSend', 'mvSend', 'whEdition', 'workStart', 'workStart', 'workDone', 'workDone', 'workDone', 'travel', 'travel', 'trBuy', 'trBack', 'trSell', 'trBag', 'trGun', 'carBuy', 'carBuy', 'carUp', 'carUp', 'carUp', 'carSel', 'carSell', 'raceStreet', 'raceStreet', 'raceStreet', 'bust', 'bust', 'bust']);
   let res, arg;
   try {
     switch (kind) {
@@ -675,6 +704,13 @@ for (let n = 0; n < ACTIONS; n++) {
       case 'stockDump': arg = { d: r.chance(9000) ? r.int(0, CFG.drugs.length - 1) : anyInt(), n: pick([1, 2, 10, 0, -1, 0.5, 1e9]) }; res = E.stockDump(p, t, world, arg.d, arg.n); break;
       case 'whBuy': res = E.whBuy(p, t, world, pick(['al', 'ag', 'al', 'ag', 'lx', 'x', 3])); break;
       case 'whUp': res = E.whUp(p, t, world, pick([...REG, 'x']), pick(['sp', 'hd', 'fr', 'x'])); break;
+      case 'ckStart': res = E.ckStart(p, d, t, world); break;   // v121: mortes
+      case 'ckStudy': res = E.ckStudy(p, d, t, world); break;
+      case 'ckContact': res = E.ckContact(p, t, world); break;
+      case 'ckPick': res = E.ckPick(p, t, world, p.ck && p.ck.s.length && r.chance(8000) ? pick(p.ck.s).k : r.chance(9000) ? pick(CFG.ck.parts) : pick(['x', '__proto__', 3])); break;
+      case 'ckGo': res = E.ckGo(p, d, t, world, game); break;
+      case 'ckEnd': res = E.ckEnd(p, t, world); break;
+      case 'ckDrop': res = E.ckDrop(p, t, world); break;
       case 'seedBuy': res = E.seedBuy(p, t, world, pick([1, 3, 10, 0, -1, 0.5, 200])); break;   // v120: a estufa
       case 'growPlant': { const g = vaso(p, false); res = E.growPlant(p, t, world, g.rg, g.i); break; }
       case 'growPrune': { const g = vaso(p, true); res = E.growPrune(p, t, world, g.rg, g.i); break; }

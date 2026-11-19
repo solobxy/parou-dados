@@ -4371,3 +4371,46 @@ body.light .gpl .sw, body.light .gp.new .pl { animation: none; }
   .gpl .sw, .gp.new .pl { animation: none; }
   .gpl .pl, .gpl .cola, .gpl .n, .gpl .spr, .gpl .yl, .gpl .tip, .gp { transition: none; }
 }
+
+/* ---------- v121: mortes (plano de morte) ----------
+   Um cartão com o alvo e três passos numerados (estudar, contactos, a parte), as contas da execução e o botão vermelho no fim.
+   O vermelho só no que é mau para o jogador (polícia, morrer) e na ação que não se desfaz. */
+.cklist { margin: 0; padding-left: 18px; display: grid; gap: 4px; font-size: 14px; color: var(--tx2); }
+.ckwant { border-left: 0; box-shadow: inset 0 0 0 1.5px var(--danger); padding: 12px 14px; margin-bottom: 12px; }
+.ckwant b { color: var(--danger); }
+.ckplan { padding: 14px; display: grid; gap: 14px; }
+.ckstep { display: flex; gap: 12px; align-items: flex-start; }
+.ckstep > .grow { min-width: 0; display: grid; gap: 6px; }
+.ckstep .btn { justify-self: start; margin-top: 2px; }
+.ckn { flex: none; width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; font-weight: 800; font-size: 14px; background: var(--s3); color: var(--tx); }
+.ckstep.done .ckn { background: var(--cash); color: var(--ink); }
+.ckparts { display: grid; gap: 4px; }
+.ckpart { display: flex; justify-content: space-between; gap: 10px; font-size: 14px; }
+.ckpart span { color: var(--tx2); }
+.ckpart.off b { color: var(--tx3); font-weight: 600; }
+.ckseg { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin: 0; }
+.ckseg button { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: 8px 10px; min-height: 52px; text-align: left; }
+.ckseg button span { font-size: 13px; }
+.ckgo { border-top: 1px solid var(--s3); padding-top: 12px; }
+.ckgo .kv { display: grid; grid-template-columns: 1fr auto; gap: 6px 12px; font-size: 14px; }
+.ckgo .kv span { color: var(--tx2); }
+.ckgo .ckkill { margin-top: 12px; }
+.ckdrop { justify-self: center; font-size: 14px; color: var(--tx2); }
+.ckwill input { min-height: 44px; }
+.ckdead { text-align: center; }
+.ckdead .kv { display: grid; grid-template-columns: 1fr auto; gap: 6px 12px; text-align: left; }
+.ckdx { margin: 4px auto 0; width: 56px; height: 56px; border-radius: 50%; display: grid; place-items: center; background: rgba(255, 90, 90, .12); color: var(--danger); }
+.ckdx svg.i { width: 28px; height: 28px; }
+/* v121 (revisão): o resultado da tentativa fica num cartão no topo do plano; as contas e a folha da morte */
+.ckres { padding: 14px; margin-bottom: 12px; display: grid; gap: 8px; box-shadow: inset 0 0 0 1.5px var(--s3); }
+.ckres.win { box-shadow: inset 0 0 0 1.5px var(--danger); }
+.ckrn { font: 800 22px/1.1 var(--disp); color: var(--tx2); }
+.ckrn s { text-decoration-thickness: 2px; text-decoration-color: var(--danger); }
+.ckres .linkbtn { justify-self: start; }
+.ckkv { display: grid; grid-template-columns: 1fr auto; gap: 6px 12px; font-size: 14px; margin: 0; }
+.ckkv span { color: var(--tx2); }
+.ckfo { margin: 8px 0 0; font-size: 14px; }
+.ckgo .kv b { text-align: right; }
+.ckstep .linkbtn { justify-self: start; text-align: left; font-size: 14px; }
+.ckdk { margin: 0; font-size: 15px; color: var(--tx2); text-align: left; }
+.ckgo .kv b:first-of-type { font-size: 20px; }

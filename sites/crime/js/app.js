@@ -155,7 +155,15 @@ function react(type, out, before, opts) {
   else if (type === 'mktSell') { toast(t('tMkSold', { q: qty(r.d, r.n), x: list('drugs')[r.d].toLowerCase(), m: money(r.got) })); fx.sfx('cash'); }
   else if (type === 'mvSend') { toast(t('tSent', { q: qty(r.d, r.n), x: list('drugs')[r.d].toLowerCase(), h: hhmm(r.at), ...rgF(r.b) })); fx.sfx('claim'); }
   else if (type === 'whBuy') { toast(t('tWh', rgF(r.r))); fx.sfx('claim'); }
-  else if (type === 'seedBuy') { toast(t('tGrBuy', { n: r.n })); fx.sfx('buy'); }   // v120: a estufa (o resto dos efeitos está em grTap)
+  else if (type === 'seedBuy') { toast(t('tGrBuy', { n: r.n })); fx.sfx('buy'); }
+  else if (type === 'ckStudy') { toast(t('tCkStudy', { x: ckPartTxt(r.part), m: money(r.v) })); fx.sfx('tap'); }   // v121: mortes
+  else if (type === 'ckContact') toast(r.cost ? t('tCkContactPaid', { m: money(r.cost) }) : t('tCkContact'));
+  else if (type === 'ckHeir') toast(r.name ? t('tCkHeir', { x: r.name }) : t('tCkHeirNone'));
+  else if (type === 'ckGo') {
+    S.ckLast = { t: now(), win: r.win, target: r.target, net: r.net, lav: r.lav, fate: r.fate };   // o cartão do resultado, no ecrã do plano
+    if (r.win) { fx.stamp(t('ckStampWin').toUpperCase(), 'var(--danger)'); fx.sfx('hit'); fx.vibrate([30, 60, 30]); }
+    else { fx.sfx('fail'); fx.vibrate([60, 40, 60]); }
+  } else if (type === 'ckEnd') toast(t('tCkEnd', { m: money(r.will) }));   // v120: a estufa (o resto dos efeitos está em grTap)
   else if (type === 'whUp') { toast(t('tWhUp', { x: t('whUp_' + r.k), n: r.lvl })); fx.sfx('claim'); }
   else if (type === 'venueSet') { toast(t('vnSaved')); fx.sfx('claim'); }
   else if (type === 'venueBuy') { toast(r.lvl === 1 ? t('vnOpened_' + r.kind) : t('vnUpped', { n: r.lvl })); fx.sfx('claim'); }
@@ -477,6 +485,7 @@ function tickHud() {
 // ---------- navegação: uma cidade com locais ----------
 const PLACES = {
   vip: { ic: 'gem', img: 'luxos' },   // v119
+  morte: { ic: 'skull', img: 'beco' },   // v121: mortes (imagem provisória)
   city: { ic: 'skyline' }, empire: { ic: 'empire' }, rob: { ic: 'street', img: 'golpes' }, club: { ic: 'bolt', img: 'discoteca' }, gym: { ic: 'gym', img: 'ginasio' }, gyms: { ic: 'gym' }, livros: { img: 'livros' }, hunt: { img: 'caca' }, honras: {}, viagens: { img: 'viagens' },
   biz: { ic: 'empire', img: 'negocios' }, stash: { img: 'stash' }, acct: { img: 'contabilista' }, port: { img: 'porto' }, air: { img: 'aeroporto' }, arms: { img: 'armas' }, bank: { img: 'banco' }, hosp: { img: 'hospital' },
   jail: { img: 'prisao' }, gang: { img: 'gangue' }, bairros: { ic: 'flag', img: 'bairros' }, empresas: { ic: 'empire', img: 'empresas' }, corridas: { ic: 'car', img: 'corridas' }, work: { img: 'profissao' }, news: { img: 'jornal' }, casino: { ic: 'gem', img: 'casino' }, roulette: { img: 'roleta' }, bj: { img: 'blackjack' }, poker: { img: 'poquer' }, dice: { img: 'dados' }, wheel: { img: 'roda' }, slot: { img: 'slot' }, zeus: { img: 'zeus' }, doce: { img: 'doce' }, rebucado: { img: 'rebucado' }, alley: { img: 'beco' }, lux: { img: 'luxos' }, fights: { ic: 'fights', img: 'lutas' }, rank: { img: 'procurados' }, hitman: { img: 'assassino' }, putas: { img: 'putas' }, gigs: { img: 'biscates' }, casa: {}, myclub: { img: 'discoteca' }, mybro: { img: 'bordel' }, bolsa: { img: 'bolsa' }, job: { img: 'emprego' }, inv: { ic: 'box', img: 'inventario' }, ops: { img: 'operacoes' }, parl: { img: 'parlamento' }, cafe: { img: 'cafe' }, museum: { img: 'museu' }, uni: { img: 'universidade' }, cave: { img: 'cave' }, feira: { img: 'feira' }, dig: { img: 'escavacoes' }, arquivo: { img: 'arquivo' },
@@ -491,7 +500,7 @@ const HUB = {
   empire: [['sec_power', ['fights', 'gang', 'bairros']], ['sec_income', ['biz', 'empresas', 'myclub', 'mybro']], ['sec_assets', ['casa', 'cave', 'bank', 'bolsa', 'stash', 'acct']]],
 };
 const PARENT = { bairros: 'gang', empresas: 'empire', corridas: 'city', gyms: 'gym', livros: 'city', hunt: 'city', honras: 'city', viagens: 'city', fights: 'empire', arquivo: 'city', dig: 'city', feira: 'city', cave: 'empire', uni: 'city', museum: 'city', cafe: 'city', parl: 'city', gigs: 'city', gang: 'empire', work: 'job', job: 'city', news: 'city', casino: 'city', roulette: 'casino', bj: 'casino', poker: 'casino', dice: 'casino', wheel: 'casino', slot: 'casino', zeus: 'casino', doce: 'casino', rebucado: 'casino', club: 'city', putas: 'city', gym: 'city', alley: 'city', hosp: 'city', jail: 'city',
-  biz: 'empire', port: 'city', air: 'city', myclub: 'empire', mybro: 'empire', bolsa: 'empire', stash: 'empire', acct: 'empire', casa: 'empire', bank: 'empire', lux: 'empire', arms: 'fights', rank: 'fights', hitman: 'fights', ops: 'rob' };
+  biz: 'empire', port: 'city', air: 'city', myclub: 'empire', mybro: 'empire', bolsa: 'empire', stash: 'empire', acct: 'empire', casa: 'empire', bank: 'empire', lux: 'empire', arms: 'fights', rank: 'fights', hitman: 'fights', morte: 'fights', ops: 'rob' };
 const upOf = (id) => (S.backTo && S.backTo[id]) || PARENT[id] || 'city';   // um sítio que está em duas zonas volta para a zona de onde vieste
 const tabOf = (id) => { let x = id; for (let k = 0; k < 4 && !NAV.includes(x); k++) x = upOf(x); return NAV.includes(x) ? x : 'city'; };
 // imagens trocadas depois da última subida geral: só estas voltam a ser descarregadas (v107 metralhadoras; v108 drogas sem restos na margem e camadas do boneco viradas para o lado certo)
@@ -578,7 +587,7 @@ function shell() {
   if (S.nov) novDot(); else loadNov();   // v95: há novidades por ver? um ponto no retrato
 }
 
-const SCREENS = { vip: screenVip, poker: screenPoker, job: screenJob, city: screenCity, empire: screenEmpire, news: screenNews, casino: screenCasino, roulette: screenRoulette, bj: screenBJ, dice: screenDice, wheel: screenWheel, slot: () => screenSlotGame('slot'), zeus: () => screenSlotGame('zeus'), doce: () => screenSlotGame('doce'), rebucado: () => screenSlotGame('rebucado'), rob: screenRob, club: screenClub, gym: screenGym, gyms: screenGyms, livros: screenLivros, biz: screenBiz, port: screenPort, arms: screenArms, bank: screenBank,
+const SCREENS = { morte: screenMorte, vip: screenVip, poker: screenPoker, job: screenJob, city: screenCity, empire: screenEmpire, news: screenNews, casino: screenCasino, roulette: screenRoulette, bj: screenBJ, dice: screenDice, wheel: screenWheel, slot: () => screenSlotGame('slot'), zeus: () => screenSlotGame('zeus'), doce: () => screenSlotGame('doce'), rebucado: () => screenSlotGame('rebucado'), rob: screenRob, club: screenClub, gym: screenGym, gyms: screenGyms, livros: screenLivros, biz: screenBiz, port: screenPort, arms: screenArms, bank: screenBank,
   hosp: screenHosp, jail: screenJail, gang: screenGang, bairros: screenBairros, empresas: screenEmpresas, corridas: screenCorridas, work: screenWork, air: screenAir, putas: screenPutas, myclub: screenMyClub, mybro: screenMyBro, bolsa: screenBolsa, inv: screenInv, stash: screenStash, acct: screenAcct, casa: screenCasa, alley: screenAlley, lux: screenLux, fights: screenFights, rank: screenRank, hitman: screenHitman, ops: screenOps, gigs: screenGigs, parl: screenParl, cafe: screenCafe, museum: screenMuseum, uni: screenUni, cave: screenCave, feira: screenFeira, dig: screenDig, hunt: screenHunt, honras: screenHonras, arquivo: screenArquivo, viagens: screenViagens };
 function render(force) {
   if (!S.st) return;
@@ -607,6 +616,7 @@ function render(force) {
   $main.replaceChildren(...kids);
   S.drawn = S.tab;
   updateHud();
+  if (S.st?.me?.ck?.dead) setTimeout(ckDeadNotice, 400);   // v121: morreste (uma vez por morte)
 }
 
 // pontos na barra: há coisa à tua espera nesse separador
@@ -639,7 +649,7 @@ function busyBanner(me) {
   const L = live(me);
   if (L.jail) return h('div', { class: 'state jail' }, h('h3', null, t('jail')), h('div', { class: 't' }, t('jailSub', { t: '' }), h('b', { class: 'num', dataset: { left: me.jailUntil } }, dur(L.jail))),
     h('div', { class: 'fill big jbar', dataset: { until: me.jailUntil, jtotal: me.jailT0 && me.jailUntil > me.jailT0 ? me.jailUntil - me.jailT0 : (S.cfg.crimes[me.jailTier - 1]?.jailMin || 1) * 60000 } }, h('i')),
-    h('button', { class: 'btn buy block', on: { click: (e) => act('bail', {}, { el: e.currentTarget }) } }, t('payBail', { m: money(me.bail) })),
+    me.jsr && me.jsr.k === 'ck' ? h('p', { class: 'small' }, t('ckNoBail')) : h('button', { class: 'btn buy block', on: { click: (e) => act('bail', {}, { el: e.currentTarget }) } }, t('payBail', { m: money(me.bail) })),   // v121: preso por uma morte não há fiança
     h('div', { class: 'jlinks' }, me.jsr ? h('button', { class: 'jneed jdo', on: { click: () => openSentence() } }, t('srOpen') + ' ›') : null,   // v116
       S.tab !== 'jail' ? h('button', { class: 'jneed jdo', on: { click: () => go('jail') } }, t('jailDo') + ' ›') : null));
   if (L.hosp) return h('div', { class: 'state hosp' }, h('h3', null, t('hospital')), h('div', { class: 't' }, t('hospitalSub', { t: '' }), h('b', { class: 'num', dataset: { left: me.hospUntil } }, dur(L.hosp))),
@@ -1045,8 +1055,8 @@ function paperMe(N) {
   for (const id of me.gv?.laws || []) toca.push(h('li', null, h('span', { class: 'ptime' }, t('meLawL')), h('span', null, h('b', null, t('law_' + id) + '. '), lawFx(id))));
   for (const v of (me.mvLog || []).filter((x) => x.x && n - x.at < 864e5).slice(-4).reverse()) toca.push(h('li', null, h('span', { class: 'ptime' }, paperTime(v.at)),
     h('span', null, t(v.x === 2 ? 'meCargoTaken' : v.fine ? 'meCargoFine' : 'meCargoStop', { q: qty(v.d, v.n), x: list('drugs')[v.d].toLowerCase(), m: money(v.fine || 0), ...rgF(v.b) }))));
-  for (const e of (S.events || []).filter((x) => n - x.t < 864e5 && (x.k === 'attacked' || x.k === 'fight' || x.k === 'raid' || x.k === 'hitman')).slice(0, 5)) {
-    const txt = e.k === 'raid' ? t('evRaid', { t: tookTxt(e.took || []), m: money(e.fine || 0), ...rgF(e.r) }) : e.k === 'hitman' ? (e.win ? t('evHitman', { m: money(e.money || 0) }) : t('evHitmanFail', { who: e.by }))
+  for (const e of (S.events || []).filter((x) => n - x.t < 864e5 && (x.k === 'attacked' || x.k === 'fight' || x.k === 'raid' || x.k === 'hitman' || x.k === 'ckTry')).slice(0, 5)) {
+    const txt = e.k === 'ckTry' ? t('evCkTry_' + (e.fate || 'hosp'), { x: e.by }) : e.k === 'raid' ? t('evRaid', { t: tookTxt(e.took || []), m: money(e.fine || 0), ...rgF(e.r) }) : e.k === 'hitman' ? (e.win ? t('evHitman', { m: money(e.money || 0) }) : t('evHitmanFail', { who: e.by }))
       : e.crew ? t(e.win ? 'evCrew' : 'evCrewLost', { who: e.by, n: e.crew }) : e.mode === 'mug' ? (e.win ? t('evMug', { who: e.by, m: money(e.money) }) : t('evMugLost', { who: e.by })) : e.win ? t('evBeat', { who: e.by }) : t('evBeatLost', { who: e.by });
     toca.push(h('li', null, h('span', { class: 'ptime' }, paperTime(e.t)), h('span', null, txt)));
   }
@@ -2116,6 +2126,7 @@ function srCharge(s) {
   if (s.k === 'heist') return t('srK_heist', { x: t('gh_' + x) });
   if (s.k === 'bust') return x ? t('srK_bust', { x }) : t('srK_bust0');
   if (s.k === 'raid') return t('srK_raid');
+  if (s.k === 'ck') return t('srK_ck');   // v121
   return t('srK_crime');
 }
 const srCase = (s) => 'T' + new Date(s.t0).getUTCFullYear() + String(Math.floor(s.t0 / 1000) % 100000).padStart(5, '0');
@@ -2149,7 +2160,7 @@ function openSentence(fresh) {
       h('div', { class: 'srl' }, lead(t('srWho'), me.name), lead(t('srWhat'), srCharge(s))),
       h('div', { class: 'srl' }, ...rows),
       h('div', { class: 'srl srf' }, h('div', { class: 'srr big' }, h('span', null, t('srFinal')), h('i'), h('b', { class: 'num' }, won ? h('s', { class: 'srold' }, minTxt(R(sentenced))) : null, minTxt(R(final)))),
-        lead(t('srOut'), L.jail ? hhmm(me.jailUntil) : t('srFree')), L.jail ? lead(t('srBail'), money(me.bail)) : null),
+        lead(t('srOut'), L.jail ? (me.jailUntil - now() < 20 * 3600e3 ? hhmm(me.jailUntil) : new Date(me.jailUntil).toLocaleString(lang() === 'pt' ? 'pt-PT' : 'en-GB', { weekday: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'Europe/London' })) : t('srFree')), L.jail ? lead(t('srBail'), s.k === 'ck' ? t('srNoBail') : money(me.bail)) : null),
       s.ap ? h('div', { class: 'sra ' + (s.ap === 1 ? 'won' : 'lost') }, stamp(t(s.ap === 1 ? 'srWon' : 'srLost'), s.ap === 1 ? 'w' : 'l', anim === 'appeal'),
         h('p', null, s.ap === 1 ? t('srWonTx', { t: step(sentenced, final) }) : t('srLostTx'))) : null,
       h('div', { class: 'srsig' }, h('div', null, h('span', { class: 'srsn', 'aria-hidden': 'true' }, 'H. Pemberton'), h('small', null, t('srJudge'))), stamp(t('srGuilty'), 'g', anim === 'all')));
@@ -2183,6 +2194,8 @@ function screenJail() {
       btn(t('jbFavContact', { n: me.contacts || 0, c: J.contactsMax }), !favLeft || (me.contacts || 0) >= J.contactsMax, 'jailFavor', { kind: 'contact' })), true),
     row('fuga', t('jd_fuga', { e: J.escapeE, p: pctOf(J.escapeBp) }), L.energy < J.escapeE ? h('button', { class: 'btn sm ghost dng', disabled: true }, t('jbEscape'))
       : sureBtn('btn sm ghost dng', t('jbEscape'), 'btn sm ghost dng sure', t('jbEscapeSure'), () => act('jailEscape')))));
+  if (me.jsr && me.jsr.k === 'ck') out.push(h('h2', { class: 'sec' }, t('ckEndT')), h('div', { class: 'card stack' }, h('p', { class: 'small', style: 'margin:0' }, t('ckEndSub', { p: pctOf(S.cfg.ck.willBp) + '%' })),
+    sureBtn('btn ghost dng block', t('ckEndGo'), 'btn danger block sure', t('ckEndSure'), () => act('ckEnd'))));   // v121: acabar com tudo
   return out;
 }
 
@@ -5184,6 +5197,94 @@ function screenAlley() {
 
 // ---------- lutas e ranking ----------
 // assassino a soldo: mostra-se o preço, a pontaria e o que acontece, antes de se pagar
+// ---------- v121: mortes (CK) ----------
+// O topo do jogo: nível 60 dos dois lados. Abre-se um plano no perfil do alvo, estuda-se (cada estudo mostra uma parte da fortuna),
+// juntam-se contactos, escolhe-se a parte a atacar e mata-se. Quem morre fica com a personagem e perde o resto; a polícia investiga.
+const ckPartTxt = (k) => t('ckPart_' + k);
+function ckStartSheet(name, lv) {
+  const K = S.cfg.ck, me = S.st.me, pol = Math.min(9500, K.probeBp + K.weakBp * Math.max(0, me.level - lv));
+  const close = sheet(h('div', { class: 'stack' }, h('h2', null, t('ckStartT', { x: name })),
+    h('p', { class: 'small muted' }, t('ckStartSub', { m: money(K.cost), h: Math.round(K.planMs / 3600000) })),
+    h('div', { class: 'kv ckkv' }, h('span', null, t('ckTgtLv')), h('b', { class: 'num' }, t('ckLv', { n: lv })),
+      h('span', null, t('ckCaught')), h('b', { class: 'num c-red' }, pctOf(pol) + '%'),
+      h('span', null, t('ckNeeds')), h('b', null, t('ckNeedsV', { n: K.studyN, c: K.contacts }))),
+    lv + 15 < me.level ? h('p', { class: 'small c-red' }, t('ckWeakWarn')) : null,
+    h('button', { class: 'btn buy block big', disabled: me.cash + me.bank < K.cost, on: { click: (e) => act('ckStart', { target: name }, { el: e.currentTarget }).then((o) => { if (o) { close(); go('morte'); } }) } }, t('ckStartGo', { m: money(K.cost) }))));
+}
+// a ficha da morte que se recebeu: uma vez por morte, ao entrar
+function ckDeadNotice() {
+  const me = S.st?.me, D = me?.ck?.dead;
+  if (!D || store.get('ckSeen', 0) === D.at || (S.sheets || []).length) return;
+  store.set('ckSeen', D.at);
+  sheet(h('div', { class: 'stack ckdead' }, h('div', { class: 'ckdx', 'aria-hidden': 'true' }, icon('skull')), h('h2', null, t('ckDeadT')),
+    h('p', null, t('ckDeadSub')),
+    h('div', { class: 'kv' }, h('span', null, t('ckDeadLost')), h('b', { class: 'num c-red' }, '−' + money(D.lost)),
+      h('span', null, D.heir ? t('ckDeadWillH', { x: D.heir }) : t('ckDeadWill')), h('b', { class: 'num c-cash' }, money(D.will))),
+    h('p', { class: 'ckdk' }, t('ckDeadLostL')), h('p', { class: 'ckdk' }, t('ckDeadKeep')),
+    h('button', { class: 'btn buy block big', on: { click: () => (S.sheets || []).slice(-1)[0]?.() } }, t('ckDeadGo'))));
+}
+function screenMorte() {
+  const me = S.st.me, K = S.cfg.ck, n = now(), V = me.ck || {}, P = V.plan, out = [pageHead('morte')];
+  const b = busyBanner(me); if (b) out.push(b);
+  const R = S.ckLast && n - S.ckLast.t < 10 * 60000 ? S.ckLast : null;   // o resultado da última tentativa fica à vista
+  if (R) out.push(h('div', { class: 'card ckres' + (R.win ? ' win' : '') }, h('div', { class: 'ckrn' }, h('s', null, R.target)), h('b', null, R.win ? t('ckResWin') : t('tCkFail_' + R.fate)),
+    R.win ? h('div', { class: 'kv ckkv' }, h('span', null, t('ckResGot')), h('b', { class: 'num c-cash' }, money(R.net)), R.lav ? h('span', null, t('ckResLav')) : null, R.lav ? h('b', { class: 'num c-red' }, '−' + money(R.lav)) : null) : null,
+    h('button', { class: 'linkbtn', on: { click: () => { S.ckLast = null; render(); } } }, t('ckResOk'))));
+  if (V.wanted) out.push(h('div', { class: 'card ckwant' }, h('b', null, icon('flag'), ' ', t('ckWanted', { x: V.wanted.name })), h('p', { class: 'small', style: 'margin:4px 0 0' }, t('ckWantedSub', { h: untilTxt(V.wanted.until) }))));
+  if (me.level < K.level) {
+    out.push(h('div', { class: 'card stack' }, h('p', { class: 'small', style: 'margin:0' }, icon('lock'), ' ', t('ckLock', { n: K.level })), h('p', { class: 'small muted', style: 'margin:0' }, t('ckLockSub'))));
+  } else if (!P) {
+    out.push(h('div', { class: 'card stack' }, h('p', { style: 'margin:0' }, t('ckNoPlan', { n: K.level })),
+      h('ul', { class: 'cklist small' }, h('li', null, t('ckRule1', { n: K.studyN, c: K.contacts })), h('li', null, t('ckRule2', { p: pctOf(K.fenceBp) + '%' })),
+        h('li', null, t('ckRule3', { p: pctOf(K.probeBp) + '%', q: pctOf(K.weakBp) + '%' })), h('li', null, t('ckRule4', { p: pctOf(K.willBp) + '%' }))),
+      h('button', { class: 'btn buy block', on: { click: () => { S.rankView = 'geral'; go('rank'); } } }, t('ckFind'))));
+  } else {
+    const parts = K.parts, seen = P.s, picked = P.k, nextAt = P.next, waitS = nextAt > n, studied = seen.length;
+    const step = (i, done, title, body, right) => h('div', { class: 'ckstep' + (done ? ' done' : '') }, h('span', { class: 'ckn num', 'aria-hidden': 'true' }, done ? '✓' : String(i)),
+      h('div', { class: 'grow' }, h('b', null, title), body, right || null));
+    // 1. estudar
+    const stBtn = studied >= parts.length ? null : waitS ? h('p', { class: 'small muted', style: 'margin:0' }, t('ckStudyIn', { t: minTxt(nextAt - n) }))
+      : h('button', { class: 'btn sm ghost', disabled: live(me).energy < K.studyE, on: { click: (e) => act('ckStudy', {}, { el: e.currentTarget }) } },
+        studied >= K.studyN ? t('ckStudyMore', { e: K.studyE, p: pctOf(K.perStudyBp) + '%' }) : t('ckStudyGo', { e: K.studyE }));
+    const rows = h('div', { class: 'ckparts' }, parts.map((k, i) => { const x = seen.find((y) => y.k === k);
+      return h('div', { class: 'ckpart' + (x ? '' : ' off') }, h('span', null, ckPartTxt(k)), h('b', { class: 'num' }, x ? money(x.v) : '—')); }));
+    // 2. contactos
+    const ctGo = (e) => act('ckContact', {}, { el: e.currentTarget }), ctOff = !(me.contacts > 0) && me.cash + me.bank < K.contactCost;
+    const ctTxt = me.contacts > 0 ? t('ckContactFree', { n: me.contacts }) : t('ckContactBuy', { m: money(K.contactCost) });
+    const ctBtn = P.c >= K.contactsMax ? null : P.c >= K.contacts ? h('button', { class: 'linkbtn', disabled: ctOff, on: { click: ctGo } }, t('ckContactMore', { p: pctOf(K.perContactBp) + '%', x: ctTxt }))
+      : h('button', { class: 'btn sm ghost', disabled: ctOff, on: { click: ctGo } }, ctTxt);
+    // 3. a parte
+    const pick = h('div', { class: 'seg ckseg', role: 'group', 'aria-label': t('ckPickT') }, seen.map((x) => h('button', { 'aria-pressed': picked === x.k ? 'true' : 'false', on: { click: () => act('ckPick', { k: x.k }) } },
+      h('span', null, ckPartTxt(x.k)), h('b', { class: 'num' }, money(x.v)))));
+    const ready = studied >= K.studyN && P.c >= K.contacts && picked, why = studied < K.studyN ? t('ckWhyStudy', { n: K.studyN - studied }) : P.c < K.contacts ? t('ckWhyContacts', { n: K.contacts - P.c }) : !picked ? t('ckWhyPick') : live(me).energy < K.execE ? t('ckWhyEnergy', { e: K.execE }) : null;
+    const jailH = Math.round(P.jailMs / 3600000);
+    out.push(h('div', { class: 'card ckplan' },
+      h('div', { class: 'cktgt' }, h('div', { class: 'small muted' }, t('ckTarget')), h('h2', { style: 'margin:0' }, P.name, h('span', { class: 'muted small' }, ' · ' + t('ckLv', { n: P.lv }))),
+        h('div', { class: 'small muted' }, t('ckEndsAt', { h: untilTxt(P.end) }))),
+      step(1, studied >= K.studyN, t('ckStudyT', { a: studied, b: parts.length }), rows, stBtn),
+      step(2, P.c >= K.contacts, t('ckContactsT', { a: P.c, b: K.contacts }), P.c >= K.contacts ? null : h('div', { class: 'small muted' }, t('ckContactsSub', { n: me.contacts || 0 })), ctBtn),
+      step(3, !!picked, t('ckPickT'), seen.length ? pick : h('div', { class: 'small muted' }, t('ckPickNone')), null),
+      h('div', { class: 'ckgo' },
+        h('div', { class: 'kv' }, h('span', null, t('ckChance')), h('b', { class: 'num ' + chanceCls(P.chanceBp) }, pctOf(P.chanceBp) + '%'),
+          h('span', null, t('ckCaught')), h('b', { class: 'num c-red' }, pctOf(P.caughtBp) + '%'),
+          h('span', null, t('ckJail')), h('b', { class: 'num' }, jailH >= 48 ? t('nDays', { n: Math.round(jailH / 24) }) : jailH + ' h'),
+          P.get ? h('span', null, t('ckGet')) : null, P.get ? h('b', { class: 'num c-cash' }, money(P.get.net)) : null,
+        ),
+        P.get && P.get.lav ? h('p', { class: 'small muted', style: 'margin:6px 0 0' }, t('ckGetSub', { m: money(P.get.lav) })) : null,
+        h('p', { class: 'small ckfo' }, h('span', { class: 'muted' }, t('ckFail') + ': '), h('b', { class: 'c-red' }, t('ckFailDie', { a: pctOf(K.failDieBp) + '%' })), ' · ', t('ckFailJail', { b: pctOf(K.failJailBp) + '%' }), ' · ', t('ckFailRun', { c: pctOf(10000 - K.failDieBp - K.failJailBp) + '%' })),
+        why ? h('p', { class: 'small muted', style: 'margin:8px 0 0' }, why) : null,
+        ready && !why ? sureBtn('btn danger block big ckkill', t('ckKill', { x: P.name, e: K.execE }), 'btn danger block big sure ckkill', t('ckKillSure'), () => act('ckGo'))
+          : h('button', { class: 'btn danger block big ckkill', disabled: true }, t('ckKill', { x: P.name, e: K.execE }))),
+      h('button', { class: 'linkbtn ckdrop', on: { click: () => act('ckDrop') } }, t('ckDrop'))));
+  }
+  // o testamento
+  let inp;
+  out.push(h('h2', { class: 'sec' }, t('ckWillT')), h('div', { class: 'card stack' },
+    h('p', { class: 'small', style: 'margin:0' }, V.heirName ? t('ckWillHas', { x: V.heirName, p: pctOf(K.willBp) + '%' }) : t('ckWillNone', { p: pctOf(K.willBp) + '%' })),
+    h('div', { class: 'row ckwill' }, h('label', { class: 'sr', for: 'ckheir' }, t('ckWillLbl')), inp = h('input', { id: 'ckheir', class: 'grow', placeholder: t('ckWillPh'), maxlength: 16, autocomplete: 'off', value: V.heirName || '' }),
+      h('button', { class: 'btn ghost', on: { click: (e) => act('ckHeir', { name: inp.value.trim() }, { el: e.currentTarget }) } }, t('ckWillSave')))));
+  return out;
+}
 function hitmanSheet(x) {
   const me = S.st.me, H = S.cfg.hitman, liquid = me.cash + me.bank, pc = (bp) => (bp / 100).toString().replace('.', lang() === 'pt' ? ',' : '.');
   const why = x.hw || (liquid < x.hp ? 'NO_MONEY' : null);
@@ -5230,7 +5331,7 @@ function screenHitman() {
 function screenFights() {
   const me = S.st.me, n = now();
   const out = [pageHead('fights', t('fightsSub'))];
-  if (!me.tr) out.push(h('div', { class: 'hlinks' }, ['gang', 'arms', 'rank', 'hitman'].map((id) => h('button', { class: 'hlink', on: { click: () => go(id) } },
+  if (!me.tr) out.push(h('div', { class: 'hlinks' }, ['gang', 'arms', 'rank', 'hitman', 'morte'].map((id) => h('button', { class: 'hlink', on: { click: () => go(id) } },
     art('cenas', PLACES[id].img, 'hthumb'), h('span', null, t('p_' + id)), icon('chev')))));   // (v101: lá fora, não: a gangue, o armeiro e o assassino são de cá)
   out.push(h('div', { class: 'seg', role: 'group' }, [['targets', t('targets')], ['events', t('news')]].map(([id, lbl]) =>
     h('button', { 'aria-pressed': S.fightSeg === id ? 'true' : 'false', on: { click: () => { S.fightSeg = id; if (id === 'targets') loadTargets(); else loadEvents(true); render(); } } }, lbl))));
@@ -5317,6 +5418,9 @@ function eventRow(e) {
   if (e.k === 'gop') return opResult(e, e.out || e.cancelled ? 0 : e.respect, e.t);
   if (e.k === 'warDecl') return h('div', { class: 'card row' }, h('span', { class: 'c-red' }, icon('fist')),   // v102
     h('div', { class: 'grow' }, h('div', null, t(e.ours ? 'evWarOurs' : 'evWarTheirs', { g: e.vs.name, h: hhmm(e.start) })), h('div', { class: 'small muted' }, dur(now() - e.t))));
+  if (e.k === 'ckDead' || e.k === 'ckTry' || e.k === 'ckWill') return h('div', { class: 'card row' }, h('span', { class: e.k === 'ckWill' ? 'c-cash' : e.k === 'ckTry' ? 'muted' : 'c-red' }, icon('skull')),   // v121
+    h('div', { class: 'grow' }, h('div', null, e.k === 'ckDead' ? t(e.heir ? 'evCkDeadH' : 'evCkDead', { m: money(e.will || 0), x: e.heir || '' }) : e.k === 'ckWill' ? t('evCkWill', { x: e.from, m: money(e.money || 0) }) : t('evCkTry_' + (e.fate || 'hosp'), { x: e.by })),
+      h('div', { class: 'small muted' }, dur(now() - e.t))));
   if (e.k === 'busted') return h('div', { class: 'card row' }, h('span', { class: 'c-cash' }, icon('lock')),   // v115
     h('div', { class: 'grow' }, h('div', null, t('evBusted', { x: e.by })), h('div', { class: 'small muted' }, dur(now() - e.t))));
   if (e.k === 'pkOut' || e.k === 'pkBack') return h('button', { class: 'card row tap', on: { click: () => go('poker') } }, h('span', { class: 'muted' }, icon('gem')),   // v114
@@ -7103,10 +7207,13 @@ async function openPlayer(name, fromChat) {
   if (P.can && !P.me) {
     const C = P.can, x = { name: P.name, level: P.level, hp: C.hp, hc: C.hc, hw: C.hw };
     if (!C.why) acts.push(h('div', { class: 'row pfacts' },
-      h('button', { class: 'btn buy', on: { click: (e) => { const el = e.currentTarget; close(); withShield((drop) => act('attack', { target: P.name, mode: 'beat', drop }, { el })); } } }, t('pfBeat', { p: pct(C.chance) + '%' })),
+      h('button', { class: 'btn buy', on: { click: (e) => { const el = e.currentTarget; close(); withShield((drop) => act('attack', { target: P.name, mode: 'beat', drop }, { el })); } } }, t('pfBeat', { p: pct(C.chance) })),
       h('button', { class: 'btn ghost', on: { click: (e) => { const el = e.currentTarget; close(); withShield((drop) => act('attack', { target: P.name, mode: 'mug', drop }, { el })); } } }, t('pfMug'))));
     else acts.push(h('p', { class: 'small muted' }, t('pfCant', { x: errText(C.why).replace(/^./, (c) => c.toLowerCase()) })));
     if (C.hp && !C.same && C.hw !== 'LOW_LEVEL' && C.hw !== 'TARGET_AWAY') acts.push(h('button', { class: 'btn ghost dng', on: { click: () => { close(); hitmanSheet(x); } } }, t('hmBtn', { m: moneyShort(C.hp) })));
+    const K = S.cfg.ck, mk2 = S.st.me;   // v121: planear a morte (nível 60 dos dois lados, fora da própria gangue)
+    if (K && mk2.level >= K.level && P.level >= K.level && !C.same) acts.push(P.ckG > now() ? h('p', { class: 'small muted' }, t('ckGraceP', { h: untilTxt(P.ckG) })) : mk2.ck?.plan && mk2.ck.plan.name === P.name ? h('button', { class: 'btn ghost dng', on: { click: () => { close(); go('morte'); } } }, icon('skull'), t('ckSeePlan'))
+      : h('button', { class: 'btn ghost', on: { click: () => { close(); ckStartSheet(P.name, P.level); } } }, icon('skull'), t('ckPlanBtn')));
     if (C.same && C.bail) acts.push(h('button', { class: 'btn buy', on: { click: () => { close(); act('gangBail', { name: P.name }); } } }, icon('lock'), t('gBail', { m: moneyShort(C.bail) })));
     if (C.same && C.medic) acts.push(h('button', { class: 'btn buy', on: { click: () => { close(); act('gangMedic', { name: P.name }); } } }, icon('pill'), t('gMedic', { m: moneyShort(C.medic) })));
   }

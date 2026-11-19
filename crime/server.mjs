@@ -31,7 +31,7 @@ const RONDA_TESTE = process.env.PRIMEIRA_RONDA ? dataDe(process.env.PRIMEIRA_RON
 // Épocas de 28 dias a contar da sexta 13/11/2026 às 21:00 de Lisboa (PRIMEIRA_EPOCA=AAAA-MM-DD muda-a, para testes)
 const ANCORA = dataDe(process.env.PRIMEIRA_EPOCA || process.env.PRIMEIRA_RONDA || '2026-11-13');
 const rng = process.env.TESTE_SEMENTE ? seededRng(+process.env.TESTE_SEMENTE) : cryptoRng();   // nos testes, a sorte pode ser sempre a mesma
-const VERSAO = 120;   // sobe quando o servidor muda, para se confirmar de fora que a versão nova já está a correr
+const VERSAO = 121;   // sobe quando o servidor muda, para se confirmar de fora que a versão nova já está a correr
 const ATOS_3S = +(process.env.ATOS_3S || 15), ATOS_MIN = +(process.env.ATOS_MIN || 400); // ações por conta: 15 em 3 s, 400 por minuto
 
 // ---------- relógio que nunca anda para trás ----------
@@ -106,7 +106,7 @@ const fromJson = (s) => JSON.parse(s, (k, v) => (v && v.__map ? new Map(v.__map)
 // última hora: o que os jogadores fazem, guardado na base de dados (sobrevive a reinícios)
 const jornal = [];
 // v77: a última hora tem um travão por categoria (engine/noticias.js): com muita gente passam só as maiores, ao mesmo ritmo
-const SEM_TRAVAO = new Set(['season', 'stockBust', 'warDecl', 'warStart', 'warEnd', 'evStart']);   // (v102: as guerras são raras e saem sempre)
+const SEM_TRAVAO = new Set(['season', 'stockBust', 'warDecl', 'warStart', 'warEnd', 'evStart', 'ck', 'ckFail', 'ckFailDead']);   // (v102: as guerras são raras e saem sempre)
 const nw = () => (bolsa && bolsa.w ? NW.newsUp(bolsa.w) : null);
 // v98: os recordes de caça da época (o maior troféu de cada espécie, com o nome de quem o caçou)
 function recordesCaca(mk, p, now, r) {
@@ -515,7 +515,8 @@ function vista(p, now) {
     cd: { est: E.consumWait(p, 'est', now), med: E.consumWait(p, 'med', now) },   // v78: quanto falta na espera de cada família
     mt: p.mt, cf: p.cf, maq: p.maq,   // v83: depósito, bancada e máquinas
     pk: mesaPk(p.id) ? mesaPk(p.id).id : null, pkn: p.pkn, pkd: p.pkd, ...(() => { const s = E.sentence(p, now); return { jsr: s, appeal: s ? s.appeal : null }; })(),   // v116: a sentença e o recurso
-    ...(() => { const c = carteira(p.id); return { cr: c.cr, vip: p.vip, vipOn: p.vip > now, crRefills: E.crRefillsToday(p, now), crExits: E.crExitsToday(p, now), eRegen: E.energyRegenMs(p), seeds: p.seeds }; })(),   // v119: os créditos e o VIP
+    ...(() => { const c = carteira(p.id); return { cr: c.cr, vip: p.vip, vipOn: p.vip > now, crRefills: E.crRefillsToday(p, now), crExits: E.crExitsToday(p, now), eRegen: E.energyRegenMs(p), seeds: p.seeds,
+      ck: (() => { const v = E.ckView(p, now); return { ...v, heir: undefined, plan: v.plan ? { ...v.plan, d: undefined, name: nomeDe(v.plan.d), lv: jogadores.has(v.plan.d) ? E.level(jogadores.get(v.plan.d)) : 0, chanceBp: jogadores.has(v.plan.d) ? E.ckChanceBp(p, jogadores.get(v.plan.d), now) : 0, caughtBp: jogadores.has(v.plan.d) ? E.ckCaughtBp(p, jogadores.get(v.plan.d)) : 0, jailMs: jogadores.has(v.plan.d) ? E.ckJailMs(jogadores.get(v.plan.d), now) : 0, get: v.plan.k ? E.launderPreview(p, (v.plan.s.find((x) => x.k === v.plan.k) || { v: 0 }).v) : null } : null, heirName: v.heir ? nomeDe(v.heir) : null, wanted: v.wanted ? { until: v.wanted.until, name: nomeDe(v.wanted.d) } : null, dead: v.dead ? { at: v.dead.at, lost: v.dead.lost, will: v.dead.will, heir: v.dead.to ? nomeDe(v.dead.to) : null } : null }; })() }; })(),   // v119: os créditos e o VIP; v121: o plano de morte, procurado, a morte e o testamento
     ev: E.evView(p, now), evNext: (() => { const x = EV.nextEvent(now); return x ? { id: x.id, start: x.start, end: x.end, fx: x.fx } : null; })(),   // v117: os eventos   // v114: a mesa de póquer onde está sentado
     cars: p.cars, car: p.car, rcn: p.rcn, rsk: E.skillBp(p, 'conducao'), race: salaDe(p.id) ? salaDe(p.id).id : null,   // v112: a garagem, as corridas e a perícia
     dg: E.digView(p, now), dgc: p.dgc, arq: E.stLevel(p, 'arqueologia'),   // v85: a escavação aberta (sem a grelha), os sítios vigiados, o nível de Arqueologia
@@ -574,7 +575,7 @@ function cfgPublica() {
     round: { playDays: CFG.round.playDays, noPvpMs: CFG.round.noPvpMs, newbieShieldMs: CFG.round.newbieShieldMs }, season: CFG.season, raid: CFG.raid,   // v91: a wiki
     consum: CFG.consum, col: CFG.col, gyms: CFG.gyms, books: CFG.books,   // v94, v95
     social: CFG.social,   // v109: o chat e a vitrine
-    turf: CFG.turf, comp: CFG.comp, race: CFG.race, poker: CFG.poker, bust: CFG.bust, appeal: CFG.appeal, events: CFG.events, vip: CFG.vip, grow: CFG.grow,   // v110: o território
+    turf: CFG.turf, comp: CFG.comp, race: CFG.race, poker: CFG.poker, bust: CFG.bust, appeal: CFG.appeal, events: CFG.events, vip: CFG.vip, grow: CFG.grow, ck: CFG.ck,   // v110: o território
     mat: CFG.mat, craft: CFG.craft, feira: { ...CFG.feira, refs: FEIRA_REFS }, dig: CFG.dig, hunt: CFG.hunt, honors: E.HONORS, travel: CFG.travel,   // v83, v84, v98, v100, v101
     exam: (({ ans: _a, ...x }) => x)(CFG.exam), studies: CFG.studies,   // v81: a Universidade   // v80: as regras do exame, sem as respostas certas
     gov: { vote: CFG.gov.vote, laws: CFG.gov.laws, cof: CFG.gov.cof, parties: Object.fromEntries(Object.entries(CFG.gov.parties).map(([k, x]) => [k, { pos: x.pos, wOp: x.wOp, wLob: x.wLob }])) },   // v76: o parlamento
@@ -1037,6 +1038,7 @@ function perfilPublico(conta, nome, now, w) {
     ...base, active: true, level: E.level(o), respect: o.respect, cls: o.cls || '', av: o.av || 0, vet: vet(o),
     hon: o.honSel || null, vit: (o.honVit || []).filter((k) => o.hon && o.hon[k]), honN: Object.keys(o.hon || {}).length,
     st, online: now - visto < CFG.social.onlineMs, seen: Math.max(visto, o.t || 0),
+    ckG: o.ckG > now ? o.ckG : 0, ckN: o.ckN || 0,   // v121: morreu há pouco (não pode ser alvo) e quantas vezes já morreu
     c: { crimes: o.c?.crimes || 0, pvp: o.c?.pvpWins || 0, sets: Object.keys(o.mus || {}).filter((k) => o.mus[k] > 0).length, house: o.house || 0 },
   };
   const me = c.id === conta ? null : jogadores.get(conta);
@@ -2657,6 +2659,48 @@ function agir(conta, corpo, now) {
     case 'growPlant': r = E.growPlant(p, now, world, String(a.r || ''), int(a.i)); break;
     case 'growPrune': r = E.growPrune(p, now, world, String(a.r || ''), int(a.i)); break;
     case 'growHarvest': r = E.growHarvest(p, now, world, String(a.r || ''), int(a.i), rng); break;
+    // v121: mortes (CK). O alvo do plano é guardado pelo número da conta; o herdeiro só recebe se estiver nesta ronda e não for quem matou.
+    case 'ckStart': {
+      const c = q.contaPorNome.get(String(a.target || '').toLowerCase());
+      if (!c || !jogadores.has(c.id)) throw new E.GameError('NO_TARGET');
+      r = { ...E.ckStart(p, jogadores.get(c.id), now, world), target: c.nome };
+      break;
+    }
+    case 'ckStudy': case 'ckGo': {
+      const o = p.ck && jogadores.get(p.ck.d);
+      if (!o) throw new E.GameError(p.ck ? 'NO_TARGET' : 'NO_PLAN');   // (o alvo saiu da ronda: desiste-se do plano)
+      if (a.type === 'ckStudy') { r = E.ckStudy(p, o, now, world); break; }
+      const quem = nomeDe(p.id), b = nomeDe(o.id), herd = o.heir && o.heir !== p.id && o.heir !== o.id && jogadores.get(o.heir);
+      r = E.ckGo(p, o, now, world, rng, herd || null);
+      ctx.outros.push(o); if (r.win && herd) ctx.outros.push(herd);
+      const res = r;
+      ctx.ops.push(() => {
+        if (res.win) {
+          evento(o.id, now, { k: 'ckDead', lost: res.lost, will: res.will, heir: herd ? nomeDe(herd.id) : null });
+          if (herd) evento(herd.id, now, { k: 'ckWill', from: b, money: res.will });
+        } else evento(o.id, now, { k: 'ckTry', by: quem, fate: res.fate });
+      });
+      ctx.depois.push(() => noticia(now, res.win ? { k: 'ck', name: '', target: b } : { k: res.fate === 'dead' ? 'ckFailDead' : 'ckFail', name: quem, target: b }));
+      r = { ...r, target: b };
+      break;
+    }
+    case 'ckContact': r = E.ckContact(p, now, world); break;
+    case 'ckPick': r = E.ckPick(p, now, world, String(a.k || '')); break;
+    case 'ckDrop': r = E.ckDrop(p, now, world); break;
+    case 'ckEnd': {
+      const herd = p.heir && p.heir !== p.id && jogadores.get(p.heir);
+      r = E.ckEnd(p, now, world, herd || null);
+      if (herd) { ctx.outros.push(herd); const res = r, b = nomeDe(p.id); ctx.ops.push(() => evento(herd.id, now, { k: 'ckWill', from: b, money: res.will })); }
+      break;
+    }
+    case 'ckHeir': {
+      const nm = String(a.name || '').trim();
+      if (!nm) { r = E.ckHeir(p, now, world, null); break; }
+      const c = q.contaPorNome.get(nm.toLowerCase());
+      if (!c) throw new E.GameError('NO_TARGET');
+      r = { ...E.ckHeir(p, now, world, c.id), name: c.nome };
+      break;
+    }
     case 'mktBuy': r = E.mktBuy(p, now, world, bolsaDe(w, now), String(a.r || ''), int(a.d), int(a.n), Number.isSafeInteger(a.c) ? a.c : undefined); break;
     case 'mktSell': r = E.mktSell(p, now, world, bolsaDe(w, now), String(a.r || ''), int(a.d), int(a.n), Number.isSafeInteger(a.c) ? a.c : undefined); break;
     case 'mvSend': r = E.mvSend(p, now, world, bolsaDe(w, now), rng, String(a.a || ''), String(a.b || ''), int(a.d), int(a.n)); break;

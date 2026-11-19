@@ -49,7 +49,7 @@ export function newPlayer(id, now, world, opts = {}) {
     luxuries: 0,
     gang: null, gb: null, gangLeft: 0, gbotLeft: 0, gh: [], gbz: gbzNew(),
     emp: null,   // v111: a empresa onde trabalha ({ id, t: o tipo, s: as estrelas }); o servidor escreve-a
-    cars: [], car: -1, rcn: { n: 0, w: 0, pod: 0 }, pkn: { h: 0, w: 0, big: 0 }, pkd: null, jsr: null, evs: {}, vip: 0, vipOn: false, crd: null, seeds: 0,   // v114: mãos de póquer (jogadas, ganhas, maior pote) e as fichas compradas hoje   // v112: os carros (cada um com as peças), o que está escolhido e as corridas feitas (rc já é o resto do respeito)
+    cars: [], car: -1, rcn: { n: 0, w: 0, pod: 0 }, pkn: { h: 0, w: 0, big: 0 }, pkd: null, jsr: null, evs: {}, vip: 0, vipOn: false, crd: null, seeds: 0, ck: null, ckw: null, ckD: null, ckG: 0, ckN: 0, heir: null,   // v114: mãos de póquer (jogadas, ganhas, maior pote) e as fichas compradas hoje   // v112: os carros (cada um com as peças), o que está escolhido e as corridas feitas (rc já é o resto do respeito)
     detoxT: [],
     xp: { F: 0, I: 0, C: 0 },
     wk: CFG.crimes.map(() => 0),   // sucessos por golpe (para os objetivos)
@@ -137,6 +137,7 @@ function migrate(p) {
   if (!p.evs || typeof p.evs !== 'object' || Array.isArray(p.evs)) p.evs = {};   // v117: os eventos
   if (!Number.isSafeInteger(p.vip) || p.vip < 0) p.vip = 0;   // v119: o VIP (até quando)
   if (!Number.isSafeInteger(p.seeds) || p.seeds < 0) p.seeds = 0;   // v120: as sementes
+  if (p.ck === undefined) { p.ck = null; p.ckw = null; p.ckD = null; p.ckG = 0; p.ckN = 0; p.heir = null; }   // v121: mortes
   if (typeof p.vipOn !== 'boolean') p.vipOn = false;
   if (p.crd !== null && (!p.crd || typeof p.crd.d !== 'string' || !Number.isSafeInteger(p.crd.n))) p.crd = null;
   if (p.jsr === undefined || (p.jsr !== null && (typeof p.jsr !== 'object' || !Number.isSafeInteger(p.jsr.t0)))) p.jsr = null;   // v116: a sentença
@@ -290,6 +291,7 @@ export function touch(p, now) {
   syncAddiction(p, now);
   if (p.addiction > addictionCap(p)) p.addiction = addictionCap(p); // limite mudou nas regras
   settleMoves(p, now);   // a mercadoria que já chegou (ou que a polícia apanhou no caminho)
+  if (p.ckw) ckArrest(p, now);   // v121: a polícia chegou a quem matou
   if (p.jailUntil && p.jailUntil <= now) { p.jailUntil = 0; p.jailTier = 0; }
   if (p.hospUntil && p.hospUntil <= now) p.hospUntil = 0;
   settleClub(p, now); settleBro(p, now);   // os clientes da discoteca e do bordel até agora
@@ -937,9 +939,12 @@ function govBail(x) {
   return Math.max(1, y);
 }
 
+// v121: preso por uma morte não sai com fiança, nem com a ajuda de outros, nem com créditos (só cumprindo, fugindo, com recurso ou a morrer)
+function ckJailed(p, now) { return p.jailUntil > now && !!p.jsr && p.jsr.k === 'ck'; }
 export function payBail(p, now, world) {
   begin(p, now, world, { allowBusy: true, jailOk: true });
   if (!(p.jailUntil > now)) fail('NOT_IN_JAIL');
+  if (ckJailed(p, now)) fail('CK_NO_BAIL');
   const cost = bailCost(p, now);
   pay(p, cost);
   p.jailUntil = 0; p.jailTier = 0;
@@ -953,6 +958,7 @@ export function bailFor(payer, target, now, world) {
   begin(payer, now, world, { allowBusy: true });
   touch(target, now);
   if (!(target.jailUntil > now)) fail('NOT_IN_JAIL');
+  if (ckJailed(target, now)) fail('CK_NO_BAIL');
   const cost = bailCost(target, now);
   pay(payer, cost);
   target.jailUntil = 0; target.jailTier = 0;
@@ -3481,6 +3487,14 @@ export function repair(p, now, world, slot, kit = false) {
 const opOf = (i) => (Number.isInteger(i) ? CFG.ops[i] : undefined);
 // lavagem: do dinheiro do crime, o que passa dos primeiros 100 000 € perde 20% nas fachadas (15% com a licenciatura).
 // Devolve o que fica e quanto se perdeu; conta para o total de crime de cada um.
+// v121: quanto ficaria de um dinheiro do crime depois da lavagem, sem mexer em nada (para o ecrã mostrar antes de agir)
+export function launderPreview(p, gross) {
+  const L = CFG.launder;
+  if (!(gross > 0)) return { net: Math.max(0, gross || 0), lav: 0 };
+  const free = Math.max(0, L.freeUpTo - p.ilegal), taxed = Math.max(0, gross - free);
+  const lav = Math.floor((taxed * ((p.done.includes(L.course) ? L.courseBp : L.bp) + (law('branq') ? CFG.gov.laws.branq.addBp : 0))) / 10000);
+  return { net: gross - lav, lav };
+}
 export function launder(p, gross) {
   const L = CFG.launder;
   if (!(gross > 0)) return { net: gross, lav: 0 };
@@ -3721,6 +3735,7 @@ export function bust(p, target, now, world, rng) {
   begin(p, now, world);   // de dentro, do hospital ou de fora do país não se tira ninguém
   touch(target, now);
   if (!(target.jailUntil > now)) fail('NOT_IN_JAIL');
+  if (ckJailed(target, now)) fail('CK_NO_BAIL');
   const B = CFG.bust;
   if (p.energy < B.e) fail('NO_ENERGY', { need: B.e });
   const left = Math.max(0, Math.ceil((target.jailUntil - now) / T.MIN)), chance = bustChance(p, target, now);
@@ -3882,6 +3897,7 @@ export function crRefill(p, now, world) {
 }
 export function crJail(p, now, world) {
   begin(p, now, world, { allowBusy: true, jailOk: true }); inJail(p, now);
+  if (ckJailed(p, now)) fail('CK_NO_BAIL');
   crExit(p, now);
   p.jailUntil = 0; p.jailTier = 0;
   return { ok: true };
@@ -3962,6 +3978,168 @@ export function canAttack(a, d, now, world, drop = false, war = false) {
 export function attackChanceBp(a, d, now) {
   const W = CFG.wfight, ra = fightRng(a), rd = fightRng(d), edge = ra >= 2 * rd ? W.rngBp : rd >= 2 * ra ? -W.rngBp : 0;
   return clamp(chanceBp(attackPower(a, now), defensePower(d, now)) + fightAccBp(a) + edge, CFG.chance.minBp, CFG.chance.maxBp);
+}
+
+// ---------- v121: mortes (CK) ----------
+// Matar outro jogador é o topo do jogo: nível 60 dos dois lados, um plano com estudos do alvo, contactos e a parte da fortuna que
+// se ataca. Quem morre recomeça com a mesma personagem (nível, stats, skills, honras, gangue, emprego) e sem nada do que tinha.
+const CK_KEEP = new Set(['id', 'joinedAt', 'stats', 'respect', 'respectAt', 'peakRespect', 'contacts', 'gang', 'gb', 'gangLeft', 'gbotLeft', 'gh', 'emp',
+  'rcn', 'pkn', 'evs', 'vip', 'vipOn', 'crd', 'xp', 'wk', 'sk', 'job', 'sh', 'course', 'done', 'c', 'mi', 'mq', 'mrT', 'titles', 'cls', 'clsAt', 'av',
+  'hkN', 'hkAt', 'wm', 'cd', 'mus', 'sx', 'gym', 'gyms', 'gx', 'dgc', 'hon', 'honSel', 'honVit', 'hits', 'heir', 'ckD', 'ckG', 'ckN', 'ilegal', 'avenca', 'avD', 'avN']);   // (ilegal: o cadastro do dinheiro do crime fica)
+const ckDays = (d, now) => Math.max(0, (now - d.joinedAt) / T.DAY);
+// a pena de quem é apanhado: 3 h por cada dia de jogo da vítima, de 12 h a 7 dias
+export const ckJailMs = (d, now) => { const C = CFG.ck; return Math.min(C.jailMaxMs, Math.max(C.jailMinMs, Math.floor(ckDays(d, now) * C.jailPerDayMs))); };
+const ckDrugsC = (d) => { let c = 0; for (const r of REG()) { const s = whStock(d, r); if (s) s.forEach((n, i) => { if (n > 0 && tradable(i)) c += n * refC(i); }); } return c; };
+const ckTills = (d) => d.biz.reduce((x, b) => x + (b.stored || 0), 0) + (d.club ? d.club.till : 0) + (d.bro ? d.bro.till : 0);
+const ckCars = (d) => d.cars.reduce((x, c) => x + carValue(c), 0);
+// o que cada parte da fortuna vale agora para quem mata (a droga e os carros vendem-se a metade)
+export function ckPart(d, k) {
+  const F = CFG.ck.fenceBp;
+  if (k === 'cash') return d.cash;
+  if (k === 'wh') return Math.floor((Math.floor(ckDrugsC(d) / 100) * F) / 10000);
+  if (k === 'biz') return ckTills(d);
+  if (k === 'cars') return Math.floor((ckCars(d) * F) / 10000);
+  return 0;
+}
+// a fortuna que conta para o testamento: dinheiro, banco, droga, o que está nos negócios e os carros
+export const ckFortune = (d) => d.cash + d.bank + Math.floor(ckDrugsC(d) / 100) + ckTills(d) + ckCars(d);
+// morrer: fica a personagem, vai-se o resto. O testamento (10% da fortuna) vai para o herdeiro, se o houver; senão, para a vida nova.
+export function ckDie(p, now, world, by, heir) {
+  settleAllBiz(p, now);
+  const fortune = ckFortune(p), will = Math.floor((fortune * CFG.ck.willBp) / 10000), old = p, fresh = newPlayer(p.id, now, world);
+  const bk = old.bk, hu = old.hunt;
+  for (const k of Object.keys(fresh)) if (!CK_KEEP.has(k)) p[k] = fresh[k];
+  p.t = Math.max(now, old.t);
+  p.bk = { ...fresh.bk, done: (bk && bk.done) || {}, n: (bk && bk.n) || 0, last: bk ? bk.last : null };
+  p.hunt = { ...fresh.hunt, sk: (hu && hu.sk) || 0, n: (hu && hu.n) || 0 };
+  p.shieldUntil = 0; p.ck = null; p.ckw = null;
+  p.ckN = (p.ckN || 0) + 1; p.ckG = now + CFG.ck.graceMs;
+  p.ckD = { at: now, by: by || null, lost: fortune, will, to: heir ? heir.id : null };
+  if (heir) heir.bank += will; else p.bank += will;
+  return { fortune, will };
+}
+function ckTake(d, k) {
+  if (k === 'cash') d.cash = 0;
+  if (k === 'wh') for (const r of REG()) { const st = whStock(d, r); if (st) st.forEach((n, i) => { if (tradable(i)) st[i] = 0; }); }
+  if (k === 'biz') { d.biz.forEach((b) => { b.stored = 0; }); if (d.club) d.club.till = 0; if (d.bro) d.bro.till = 0; }
+  if (k === 'cars') { d.cars = []; d.car = -1; }
+}
+const ckLvlOk = (p) => level(p) >= CFG.ck.level;
+function ckPlanOf(a, now) {
+  const k = a.ck;
+  if (!k) fail('NO_PLAN');
+  if (now > k.end) fail('PLAN_EXPIRED');   // (fica guardado: um plano novo substitui-o; desistir apaga-o)
+  return k;
+}
+export function ckStart(a, d, now, world) {
+  const C = CFG.ck;
+  begin(a, now, world);
+  if (!ckLvlOk(a)) fail('LOW_LEVEL', { need: C.level });
+  if (a.id === d.id) fail('SELF');
+  if (!ckLvlOk(d)) fail('TARGET_LOW', { n: C.level });
+  if (sameCrew(a, d)) fail('SAME_GANG');
+  if (d.ckG > now) fail('TARGET_GRACE', { at: d.ckG });
+  if (a.ck && now <= a.ck.end) fail('PLAN_OPEN');
+  pay(a, C.cost);
+  a.ck = { d: d.id, t0: now, end: now + C.planMs, s: [], c: 0, k: null, last: 0 };
+  return { ok: true, cost: C.cost, end: a.ck.end };
+}
+// estudar o alvo: cada estudo mostra uma parte da fortuna (pela ordem: dinheiro na mão, armazéns, negócios, carros)
+export function ckStudy(a, d, now, world) {
+  const C = CFG.ck;
+  begin(a, now, world);
+  const k = ckPlanOf(a, now);
+  if (k.d !== d.id) fail('NO_PLAN');
+  if (k.s.length >= C.parts.length) fail('STUDY_DONE');
+  if (now < k.last + C.studyGapMs) fail('STUDY_WAIT', { at: k.last + C.studyGapMs });
+  if (a.energy < C.studyE) fail('NO_ENERGY', { need: C.studyE });
+  a.energy -= C.studyE;
+  const part = C.parts[k.s.length], v = ckPart(d, part);
+  k.s.push({ k: part, v, at: now }); k.last = now;
+  return { ok: true, part, v, n: k.s.length };
+}
+// um contacto: os da prisão servem (gasta-se um); senão paga-se a um informador
+export function ckContact(a, now, world) {
+  const C = CFG.ck;
+  begin(a, now, world);
+  const k = ckPlanOf(a, now);
+  if (k.c >= C.contactsMax) fail('CONTACTS_FULL');
+  let cost = 0;
+  if (a.contacts > 0) a.contacts -= 1; else { cost = C.contactCost; pay(a, cost); }
+  k.c += 1;
+  return { ok: true, n: k.c, cost };
+}
+export function ckPick(a, now, world, part) {
+  begin(a, now, world);
+  const k = ckPlanOf(a, now);
+  if (!k.s.some((x) => x.k === part)) fail('NOT_STUDIED');
+  k.k = part;
+  return { ok: true, k: part };
+}
+export function ckDrop(a, now, world) { begin(a, now, world, { allowBusy: true }); if (!a.ck) fail('NO_PLAN'); a.ck = null; return { ok: true }; }
+// a hipótese de matar: a base, os estudos e os contactos a mais, a luta (metade da diferença) e o segurança do alvo
+export function ckChanceBp(a, d, now) {
+  const C = CFG.ck, k = a.ck;
+  const extraS = k ? Math.max(0, k.s.length - C.studyN) : 0, extraC = k ? Math.max(0, k.c - C.contacts) : 0;
+  const fight = Math.floor((attackChanceBp(a, d, now) - 5000) / 2), guard = d.guard >= 0 ? CFG.guards[d.guard].block : 0;
+  return clamp(C.baseBp + extraS * C.perStudyBp + extraC * C.perContactBp + fight - guard, C.minBp, C.maxBp);
+}
+// a hipótese de a polícia chegar a quem matou: 25% e mais 4% por cada nível que a vítima estava abaixo
+export const ckCaughtBp = (a, d) => Math.min(9500, CFG.ck.probeBp + CFG.ck.weakBp * Math.max(0, level(a) - level(d)));
+export function ckGo(a, d, now, world, rng, heir = null) {
+  const C = CFG.ck;
+  begin(a, now, world);
+  const k = ckPlanOf(a, now);
+  if (k.d !== d.id) fail('NO_PLAN');
+  if (k.s.length < C.studyN) fail('CK_STUDY', { n: C.studyN });
+  if (k.c < C.contacts) fail('NEED_CONTACTS', { n: C.contacts });
+  if (!k.k) fail('NO_PICK');
+  if (!ckLvlOk(d)) fail('TARGET_LOW', { n: C.level });
+  if (d.ckG > now) fail('TARGET_GRACE', { at: d.ckG });
+  if (a.energy < C.execE) fail('NO_ENERGY', { need: C.execE });
+  const gun = gunCheck(a), ammo = ammoPerJob(a);
+  takeInv(a, 'balas', ammo); a.eq[gun].u -= 1; a.energy -= C.execE;
+  const chanceBp = ckChanceBp(a, d, now), part = k.k, dName = d.id;
+  a.ck = null;
+  if (rng.chance(chanceBp)) {
+    if (part === 'biz') settleAllBiz(d, now);
+    const loot = ckPart(d, part), caughtBp = ckCaughtBp(a, d), jailMs = ckJailMs(d, now);
+    const lv = launder(a, loot); a.cash += lv.net; ckTake(d, part);   // dinheiro do crime: passa pela lavagem; a parte levada já não conta para o testamento
+    const dead = ckDie(d, now, world, a.id, heir);
+    d.ckD.lost += loot;   // o que perdeu inclui o que lhe levaram
+    const caught = rng.chance(caughtBp), at = caught ? now + rng.int(C.dnaMs[0], C.dnaMs[1]) : 0;
+    a.ckw = { t0: now, until: caught ? at : now + C.wantedMs, at, ms: jailMs, d: dName };
+    a.c.cks = (a.c.cks || 0) + 1;
+    return { ok: true, win: true, chanceBp, part, loot, net: lv.net, lav: lv.lav, will: dead.will, lost: dead.fortune + loot, caughtBp };
+  }
+  // falhou: morre, é preso ou foge ferido; o alvo fica a saber quem foi
+  const roll = rng.int(0, 9999);
+  if (roll < C.failDieBp) { const dead = ckDie(a, now, world, null, null); return { ok: true, win: false, chanceBp, fate: 'dead', will: dead.will }; }
+  if (roll < C.failDieBp + C.failJailBp) { jailFor(a, now, ckJailMs(d, now), 3, { k: 'ck', id: null }); return { ok: true, win: false, chanceBp, fate: 'jail', until: a.jailUntil }; }
+  a.hospUntil = now + C.failHospMs;
+  return { ok: true, win: false, chanceBp, fate: 'hosp', until: a.hospUntil };
+}
+// a polícia acha o ADN: preso, com a pena da morte que fez
+function ckArrest(p, now) {
+  const w = p.ckw;
+  if (!w || !w.at || now < w.at || p.tr) return;   // lá fora, a polícia espera que volte
+  p.ckw = null;
+  if (p.jailUntil > w.at) return;
+  jailFor(p, w.at, w.ms, 3, { k: 'ck', id: null });
+  if (p.jailUntil <= now) { p.jailUntil = 0; p.jailTier = 0; }
+}
+// preso por uma morte: pode acabar com tudo (morre e sai em liberdade, como se recomeçasse)
+export function ckEnd(p, now, world, heir = null) {
+  begin(p, now, world, { allowBusy: true, jailOk: true });
+  if (!(p.jailUntil > now) || !p.jsr || p.jsr.k !== 'ck') fail('NOT_CK_JAIL');
+  const r = ckDie(p, now, world, null, heir);
+  return { ok: true, will: r.will, lost: r.fortune };
+}
+export function ckHeir(p, now, world, id) { begin(p, now, world, { allowBusy: true, jailOk: true }); if (id === p.id) fail('SELF'); p.heir = id; return { ok: true, heir: id }; }
+export function ckView(a, now) {
+  const k = a.ck && now <= a.ck.end ? a.ck : null, C = CFG.ck;
+  return { plan: k ? { d: k.d, end: k.end, s: k.s, c: k.c, k: k.k, next: Math.max(now, k.last + C.studyGapMs) } : null,
+    wanted: a.ckw && now < a.ckw.until ? { until: a.ckw.until, d: a.ckw.d } : null, dead: a.ckD || null, grace: a.ckG > now ? a.ckG : 0, heir: a.heir || null };
 }
 
 // ---------- assassino a soldo ----------
@@ -4815,6 +4993,8 @@ export function checkInvariants(p) {
     return !(w && WH_UPS.every((k) => Number.isInteger(w[k]) && w[k] >= 1 && w[k] <= 5) && Number.isSafeInteger(w.h) && w.h >= 0 && w.h <= 10000 && Number.isSafeInteger(w.f) && w.f >= 0
       && (r === 'lx' ? w.s === undefined : Array.isArray(w.s) && w.s.length === CFG.drugs.length && w.s.every((x) => Number.isSafeInteger(x) && x >= 0))); })) bad.push('warehouses');
   if (!(p.seeds >= 0 && p.seeds <= CFG.grow.seedsMax) || REG().some((r) => { const w = p.wh[r]; return w && w.g !== undefined && !(Array.isArray(w.g) && w.g.length <= 12 && w.g.every((x) => x === null || (Number.isSafeInteger(x.t0) && typeof x.pr === 'boolean'))); })) bad.push('estufa');   // v120
+  if (!(p.ck === null || (p.ck && Array.isArray(p.ck.s) && p.ck.s.length <= CFG.ck.parts.length && p.ck.c >= 0 && p.ck.c <= CFG.ck.contactsMax && (p.ck.k === null || p.ck.s.some((x) => x.k === p.ck.k))))
+    || !(p.ckw === null || (p.ckw && Number.isSafeInteger(p.ckw.until))) || !(Number.isSafeInteger(p.ckN) && p.ckN >= 0) || !(Number.isSafeInteger(p.ckG) && p.ckG >= 0)) bad('mortes');   // v121
   if (!Array.isArray(p.mv) || p.mv.length > CFG.mv.max || p.mv.some((v) => !v || !tradable(v.d) || !REG().includes(v.a) || !REG().includes(v.b) || v.a === v.b || !p.wh[v.b] || !Number.isSafeInteger(v.n) || v.n < 1
     || !Number.isSafeInteger(v.at) || v.at !== v.t0 + mvHops(v.a, v.b) * CFG.mv.hopMs || ![0, 1, 2].includes(v.x))) bad.push('moves');
   if (!Array.isArray(p.mvLog) || p.mvLog.length > CFG.mv.log || !Array.isArray(p.rz) || p.rz.length > CFG.wh.log) bad.push('move/raid logs');
