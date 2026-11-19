@@ -6,6 +6,7 @@ import { CFG, T } from './config.js';
 import { localParts } from './time.js';
 import { seededRng } from './rng.js';
 import { pressMultBp, impactBp, quoteC, trade, refC, tradable, regPos, pressOf, REG, worldUp } from './mundo.js';
+import { eventsAt } from './eventos.js';
 
 export class GameError extends Error {
   constructor(code, extra = {}) { super(code); this.code = code; Object.assign(this, extra); }
@@ -48,7 +49,7 @@ export function newPlayer(id, now, world, opts = {}) {
     luxuries: 0,
     gang: null, gb: null, gangLeft: 0, gbotLeft: 0, gh: [], gbz: gbzNew(),
     emp: null,   // v111: a empresa onde trabalha ({ id, t: o tipo, s: as estrelas }); o servidor escreve-a
-    cars: [], car: -1, rcn: { n: 0, w: 0, pod: 0 }, pkn: { h: 0, w: 0, big: 0 }, pkd: null, jsr: null,   // v114: mãos de póquer (jogadas, ganhas, maior pote) e as fichas compradas hoje   // v112: os carros (cada um com as peças), o que está escolhido e as corridas feitas (rc já é o resto do respeito)
+    cars: [], car: -1, rcn: { n: 0, w: 0, pod: 0 }, pkn: { h: 0, w: 0, big: 0 }, pkd: null, jsr: null, evs: {},   // v114: mãos de póquer (jogadas, ganhas, maior pote) e as fichas compradas hoje   // v112: os carros (cada um com as peças), o que está escolhido e as corridas feitas (rc já é o resto do respeito)
     detoxT: [],
     xp: { F: 0, I: 0, C: 0 },
     wk: CFG.crimes.map(() => 0),   // sucessos por golpe (para os objetivos)
@@ -133,6 +134,7 @@ function migrate(p) {
   if (!p.pkn || typeof p.pkn !== 'object' || !Number.isSafeInteger(p.pkn.h)) p.pkn = { h: 0, w: 0, big: 0 };
   if (p.pkd && (typeof p.pkd !== 'object' || typeof p.pkd.d !== 'string' || !Number.isSafeInteger(p.pkd.n))) p.pkd = null;
   if (p.pkd === undefined) p.pkd = null;
+  if (!p.evs || typeof p.evs !== 'object' || Array.isArray(p.evs)) p.evs = {};   // v117: os eventos
   if (p.jsr === undefined || (p.jsr !== null && (typeof p.jsr !== 'object' || !Number.isSafeInteger(p.jsr.t0)))) p.jsr = null;   // v116: a sentença
   if (!Number.isFinite(p.rc)) p.rc = 0;   // (uma versão de teste da v112 usou rc para as corridas: volta a ser o resto do respeito)
   if (!Number.isSafeInteger(p.gangLeft)) p.gangLeft = 0;
@@ -522,7 +524,7 @@ export function raceStreet(p, now, world, rng, ti, names) {
     bots.push({ name: nm, bot: true, car: c.id, up: c.up, ...carStats(c), sk: rng.int(0, Math.floor(CFG.skills.maxBp / 2)) });
   }
   const drivers = [{ ...me, me: true }, ...bots], res = raceSim(drivers, ti, rng), mine = res.find((r) => r.i === 0);
-  const prize = mine.pos <= 3 ? Math.floor((R.street[tier] * [10000, 5000, 2500][mine.pos - 1]) / 10000) : 0;
+  const prize = mine.pos <= 3 ? Math.floor((Math.floor((R.street[tier] * [10000, 5000, 2500][mine.pos - 1]) / 10000) * (10000 + evBp('race', now))) / 10000) : 0;   // v117: o Royal Ascot
   const rw = raceReward(p, now, mine.pos, prize);
   return { ok: true, kind: 's', track: ti, n: drivers.length, ...rw,
     drivers: res.map((r) => ({ name: drivers[r.i].name || null, me: !!drivers[r.i].me, bot: !!drivers[r.i].bot, car: drivers[r.i].car, up: drivers[r.i].up, laps: r.laps, spins: r.spins, total: r.total, pos: r.pos, prize: r.i === 0 ? prize : 0 })) };
@@ -704,7 +706,7 @@ const huBp = (p, i) => (p.hu && CFG.house.ups[i] ? (p.hu[i] || 0) * CFG.house.up
 export function bustChanceBp(p, now, press) {
   const acc = p.eq && p.eq.acess ? gearOf(p.eq.acess.id) : null;   // o rádio-scanner ouve a polícia a chegar
   const base = acc && acc.bustBp ? acc.bustBp : CFG.bustBp;
-  const b = cut(cut(cut(base, klass(p).bustCutBp || 0), buffBp(p, 'bust', now)), huBp(p, 2));
+  const b = cut(cut(cut(cut(base, klass(p).bustCutBp || 0), buffBp(p, 'bust', now)), huBp(p, 2)), evBp('bust', now));   // v117: as máscaras do Halloween
   return Math.min(9500, Math.floor((b * pressMultBp(press)) / 10000));
 }
 // ---------- casa ----------
@@ -827,7 +829,7 @@ export function doCrime(p, now, world, k, rng) {
   const gun = c.gun ? gunCheck(p) : null;
   const ammo = gun ? ammoPerJob(p) : 0, quiet = gun ? wStat(p.eq[gun]).bust : 0;   // v97: o silenciador da arma usada baixa a hipótese de ser apanhado
   if (gun) { takeInv(p, 'balas', ammo); p.eq[gun].u -= 1; }   // balas e um uso da arma: gastam-se antes, corra bem ou mal
-  const bp = c.p, heatBp = heatOf(p, now), respBp = respHeatOf(p, now);
+  const bp = Math.max(c.p, Math.min(9500, c.p + evBp('luck', now))), heatBp = heatOf(p, now), respBp = respHeatOf(p, now);   // v117: a sorte do São Patrício
   settleAllBiz(p, now); // a prática pode subir stats: o rendimento até aqui conta com as antigas
   p.energy -= c.e;
   p.rua = { e: ruaHot(p, now) + c.e, t: now, d: dayOf(now), de: ruaToday(p, now) + c.e };
@@ -839,7 +841,7 @@ export function doCrime(p, now, world, k, rng) {
     let roll = rng.int(0, 9999), row = c.prizes[c.prizes.length - 1];
     for (const pr of c.prizes) { if (roll < pr[0]) { row = pr; break; } roll -= pr[0]; }
     const base = rng.int(row[1], row[2]);
-    const bonus = 10000 + skillBp(p, c.fam) + (klass(p).lootBp || 0) + buffBp(p, 'loot', now) + gbp(p, 'loot') + empBp(p, 'loot') + (c.fam === 'burla' ? studyBp(p, 'burla') : 0);   // v81: artes
+    const bonus = 10000 + skillBp(p, c.fam) + (klass(p).lootBp || 0) + buffBp(p, 'loot', now) + gbp(p, 'loot') + empBp(p, 'loot') + evBp('loot', now) + (c.fam === 'burla' ? studyBp(p, 'burla') : 0);   // v81: artes; v117: o Carnaval
     const value = Math.floor((Math.floor((base * bonus) / 10000) * heatBp) / 10000);
     // o que é objeto vai para o inventário (com o valor que saiu); sem espaço, vende-se logo à pressa por metade
     let money = value, good = null, rushed = false;
@@ -853,14 +855,15 @@ export function doCrime(p, now, world, k, rng) {
     const S = CFG.street, perBar = Math.min(S.respCap, S.respBase + S.respPerLevel * level(p));
     // por golpe que corre bem: perBar × e/100 a dividir pela hipótese, para a barra dar em média perBar; o resto (em milésimos)
     // fica guardado para o golpe seguinte, para não se perder nos arredondamentos
-    const milli = Math.floor((perBar * c.e * respBp * 10) / bp) * (10000 + (klass(p).respBp || 0)) / 10000 + (p.rc || 0);
+    const milli = Math.floor((perBar * c.e * respBp * 10) / bp) * (10000 + (klass(p).respBp || 0) + evBp('resp', now)) / 10000 + (p.rc || 0);   // v117: o Ano Novo
     const resp = Math.floor(milli / 1000);
     p.rc = Math.floor(milli - resp * 1000);
     const lvl = addRespect(p, resp, now);
     const gained = practice(p, c, true);
     const R = CFG.col.sets.raras.items, col = colFind(p, rng, up(c.e * CFG.col.crimeBpPerE, klass(p).colBp || 0), () => R[rng.int(0, R.length - 1)]);   // v90: o ladrão dá mais com elas
     const book = p.c.wins % CFG.books.findEvery === 0 ? bookFind(p, now) : null;   // v95: um livro a cada 150 golpes bem-sucedidos (sem gastar sorte)
-    return { ok: true, success: true, money, value, good, rushed, lav: L.lav, base, item: row[3], crit: false, respect: resp, levelUp: lvl, chanceBp: bp, heatBp, respBp, ammo, gained, newChanceBp: bp, star: 0, ...(col ? { col } : {}), ...(book ? { book } : {}) };
+    const ev = evDrop(p, c, now, rng);   // v117: as fichas dos eventos
+    return { ok: true, success: true, money, value, good, rushed, lav: L.lav, base, item: row[3], crit: false, respect: resp, levelUp: lvl, chanceBp: bp, heatBp, respBp, ammo, gained, newChanceBp: bp, star: 0, ...(col ? { col } : {}), ...(book ? { book } : {}), ...(ev ? { ev } : {}) };
   }
   p.c.crimes += 1;
   // falhar não é sempre prisão: uma falha em quatro é apanhada
@@ -897,6 +900,7 @@ export function doCrimeAll(p, now, world, k, rng) {
       if (r.star) out.star = r.star;
       if (r.levelUp) out.levelUp = { from: out.levelUp ? out.levelUp.from : r.levelUp.from, to: r.levelUp.to };
       if (r.col) { out.col = out.col || {}; out.col[r.col] = (out.col[r.col] || 0) + 1; }
+      if (r.ev) for (const x of r.ev) { const o = (out.ev ||= []).find((y) => y.key === x.key); if (o) { o.got += x.got; o.n = x.n; o.paid.push(...x.paid); } else out.ev.push({ ...x, paid: [...x.paid] }); }   // v117
     } else if (r.busted) { out.busted = true; out.jailUntil = r.jailUntil; break; }
   }
   out.heatEnd = heatOf(p, now);
@@ -1054,7 +1058,7 @@ export function hookerPrice(p, i, now) {
   const g = CFG.hookers.list[i];
   const from = now !== undefined ? refillUsed(p, now) : 0;
   const price = Math.max(1, Math.ceil((refillCost(from, g.e) * g.valueBp) / 10000));
-  return Math.max(1, cut(price, klass(p).hkCutBp || 0));
+  return Math.max(1, cut(cut(price, klass(p).hkCutBp || 0), now !== undefined ? evBp('vice', now) : 0));   // v117: o Dia dos Namorados
 }
 export function visitHooker(p, now, world, i, rng) {
   const g = Number.isInteger(i) ? CFG.hookers.list[i] : undefined;
@@ -1151,7 +1155,8 @@ export function refillPlan(p, now) {
   const room = energyMax(p) - p.energy;
   if (room <= 0) return null;
   const from = now === undefined ? 0 : refillUsed(p, now);
-  return { energy: room, cost: refillCost(from, room), next: barPrice(Math.floor(from / 100) + 1), counts: CFG.drugs.map(() => 0) };
+  const ev = now === undefined ? 0 : evBp('refill', now);   // v117: a Oktoberfest
+  return { energy: room, cost: Math.max(1, cut(refillCost(from, room), ev)), next: barPrice(Math.floor(from / 100) + 1), counts: CFG.drugs.map(() => 0), ev };
 }
 export function refill(p, now, world) {
   begin(p, now, world);
@@ -2297,6 +2302,7 @@ export function honorVal(p, m, k) {
     case 'jail': return c.jail || 0;
     case 'esc': return c.esc || 0;
     case 'busts': return c.busts || 0;
+    case 'evtop': return c.evtop || 0;   // v117: eventos acabados (a última meta)
     case 'wt': return p.cx && p.cx.wt.includes(k) ? 1 : 0;
     case 'mods': return c.mods || 0;
     case 'missions': return p.mi || 0;
@@ -3270,7 +3276,8 @@ function takeInv(p, id, n) {
 }
 // comprar: balas (às caixas) ou uma peça de equipamento. A peça vai logo para o corpo; a que lá estava passa para o inventário.
 // v76: com o porte de arma, as armas (mão, principal e branca) ficam 15% mais baratas
-export const gearPrice = (g) => (law('armas') && ['mao', 'principal', 'branca'].includes(g.slot) ? Math.ceil((g.price * CFG.gov.laws.armas.priceBp) / 10000) : g.price);
+export const gearPrice = (g, now) => cut(gearPriceLaw(g), now !== undefined ? evBp('shop', now) : 0);   // v117: o Black Friday
+const gearPriceLaw = (g) => (law('armas') && ['mao', 'principal', 'branca'].includes(g.slot) ? Math.ceil((g.price * CFG.gov.laws.armas.priceBp) / 10000) : g.price);
 export function buyItem(p, now, world, id, n = 1) {
   if (id === 'balas') {
     if (!Number.isSafeInteger(n) || n < 1 || n > 100) fail('BAD_AMOUNT');
@@ -3289,7 +3296,7 @@ export function buyItem(p, now, world, id, n = 1) {
   if (level(p) < (g.level || 1)) fail('LOW_LEVEL', { need: g.level });
   if (g.slot === 'mod') {   // v97: acessório de arma: vai para o inventário (podem ser vários iguais), monta-se depois
     if (!roomFor(p)) fail('NO_ROOM');
-    const price = gearPrice(g);
+    const price = gearPrice(g, now);
     pay(p, price);
     p.inv.push({ id });
     return { ok: true, id, price, slot: 'mod', swapped: null };
@@ -3304,7 +3311,7 @@ export function buyItem(p, now, world, id, n = 1) {
   }
   const old = p.eq[g.slot];
   if (old && !roomFor(p)) fail('NO_ROOM');   // a que estava no corpo tem de caber no inventário
-  const price = gearPrice(g);
+  const price = gearPrice(g, now);
   pay(p, price);
   if (old) p.inv.push(old);
   p.eq[g.slot] = itemNew(id);
@@ -3425,9 +3432,9 @@ export function opStepCost(o, kind) {
   return 0;
 }
 // hipótese de correr bem, em bp: a da tabela, mais a equipa
-export function opChanceBp(p, o, st = p.op) {
+export function opChanceBp(p, o, st = p.op, now) {
   const S = CFG.opSteps;
-  return Math.min(S.maxBp, o.p + (st && st.crew ? S.crew : 0));
+  return Math.min(S.maxBp, o.p + (st && st.crew ? S.crew : 0) + (now !== undefined ? evBp('ops', now) : 0));   // v117: o fogo de artifício
 }
 // rasto (0 a 100): o que fica para trás. Baixa com o reconhecimento, a skill da família (até −10), luvas calçadas, o curso de vigilante
 // (onde há alarmes), o de motorista (onde há fuga de carro) e um contacto da prisão.
@@ -3470,7 +3477,7 @@ export function opStep(p, now, world, kind) {
   if (!price) fail('NO_STEP');   // suborno só nos golpes grandes a sério
   pay(p, price);
   p.op[kind] = true; p.op.paid += price;
-  return { ok: true, kind, price, chanceBp: opChanceBp(p, o), rasto: opRasto(p, o) };
+  return { ok: true, kind, price, chanceBp: opChanceBp(p, o, p.op, now), rasto: opRasto(p, o) };
 }
 export function opDrop(p, now, world) {
   begin(p, now, world, { allowBusy: true });
@@ -3522,7 +3529,7 @@ export function opGo(p, now, world, rng) {
   // material: as ferramentas ficam, os explosivos gastam-se; com arma, gastam-se balas e um uso
   for (const id of o.mat) if (gearOf(id).once) p.inv.splice(p.inv.findIndex((x) => x.id === id), 1);
   if (o.gun) { const s = gunOf(p); takeInv(p, 'balas', S.bullets); p.eq[s].u -= 1; }
-  const bp = opChanceBp(p, o, st), rasto = opRasto(p, o, st);
+  const bp = opChanceBp(p, o, st, now), rasto = opRasto(p, o, st);
   p.op = null; p.opPause = now + o.pauseH * T.HOUR;
   p.sk[o.fam] += S.practice;
   p.c.ops = (p.c.ops || 0) + 1;
@@ -3535,7 +3542,7 @@ export function opGo(p, now, world, rng) {
     // a Judiciária pode ligar o golpe a ti mais tarde (o suborno impede): ficas com o dinheiro, mas vais preso
     const linked = !st.bribe && rng.chance(rasto * S.linkedPer);
     if (linked) jailFor(p, now, o.jailMin * T.MIN, 100 + st.i, { k: 'op', id: o.id });
-    return { ok: true, success: true, i: st.i, money: L.net, value: o.gain, lav: L.lav, respect: resp, levelUp: lvl, chanceBp: bp, rasto, linked, jailUntil: linked ? p.jailUntil : 0 };
+    return { ok: true, success: true, i: st.i, money: L.net, value: o.gain, lav: L.lav, respect: resp, levelUp: lvl, chanceBp: bp, rasto, linked, jailUntil: linked ? p.jailUntil : 0, ...(() => { const ev = evOp(p, now); return ev ? { ev } : {}; })() };   // v117: fichas dos eventos
   }
   // correu mal: perde-se o que se pagou; sem suborno paga-se advogado (a avença cobre) e às vezes há prisão
   let lawyer = 0, busted = false;
@@ -3670,6 +3677,118 @@ export function jailEscape(p, now, world, rng) {
   const add = Math.floor(((p.jailUntil - now) * J.escapeAddBp) / 10000);
   p.jailUntil += add;
   return { ok: true, free: false, add, jailUntil: p.jailUntil };
+}
+
+// ---------- v117: eventos do ano ----------
+// os efeitos dos eventos a decorrer (somam-se quando há dois ao mesmo tempo)
+export function evBp(k, now) { let s = 0; for (const e of eventsAt(now)) if (e.fx.k === k) s += e.fx.bp; return s; }
+// o prémio de cada meta: dinheiro (mais com o nível) e o respeito de 1 ou 3 barras de golpes do nível de cada um
+export const evPrize = (p, i) => {
+  const P = CFG.events.prize[i], S = CFG.street, bar = Math.min(S.respCap, S.respBase + S.respPerLevel * level(p));
+  return { cash: P.cash + P.perLevel * level(p), resp: P.bars * bar };
+};
+// o registo de cada evento no jogador: fichas, metas pagas (bits), fichas de hoje (para o limite do dia), presente de hoje, ovos de hoje.
+// Os de eventos que já acabaram saem.
+function evRec(p, e, now) {
+  if (!p.evs || typeof p.evs !== 'object' || Array.isArray(p.evs)) p.evs = {};
+  if (!p.evs[e.key]) {
+    const on = new Set(eventsAt(now).map((x) => x.key));
+    for (const k of Object.keys(p.evs)) if (!on.has(k)) delete p.evs[k];
+    p.evs[e.key] = { n: 0, got: 0, d: '', dn: 0, g: '', gv: 0, eg: 0 };
+  }
+  const R = p.evs[e.key], d = dayOf(now);
+  if (R.d !== d) { R.d = d; R.dn = 0; R.eg = 0; }   // um dia novo: o limite e os ovos recomeçam
+  return R;
+}
+// juntar fichas: cada meta que se passa paga logo (dinheiro no banco, respeito); a última conta para a honra «Festeiro»
+function evAdd(p, e, n, now) {
+  const R = evRec(p, e, now), out = { id: e.id, key: e.key, got: n, n: 0, paid: [] };
+  R.n += n; out.n = R.n;
+  e.goals.forEach((g, i) => {
+    if (R.n < g || R.got & (1 << i)) return;
+    R.got |= 1 << i;
+    const P = evPrize(p, i);
+    p.bank += P.cash;
+    const lvl = P.resp ? addRespect(p, P.resp, now) : null;
+    if (i === e.goals.length - 1) p.c.evtop = (p.c.evtop || 0) + 1;
+    out.paid.push({ i, cash: P.cash, respect: P.resp, levelUp: lvl });
+  });
+  return out;
+}
+// fichas ganhas a jogar (golpes, golpes grandes): contam para o limite do dia
+function evEarn(p, e, n, now) {
+  const R = evRec(p, e, now), k = Math.min(n, CFG.events.dayCap - R.dn);
+  if (k <= 0) return null;
+  R.dn += k;
+  return evAdd(p, e, k, now);
+}
+// as fichas que um golpe bem feito encontra: uma por evento a decorrer, com hipótese pela stamina do golpe (já no limite, nem se tenta)
+export const evDropBp = (c) => Math.min(10000, c.e * CFG.events.perE);
+function evDrop(p, c, now, rng) {
+  const L = eventsAt(now);
+  if (!L.length) return null;
+  const bp = evDropBp(c), out = [];
+  for (const e of L) { if (evRec(p, e, now).dn >= CFG.events.dayCap) continue; if (rng.chance(bp)) { const r = evEarn(p, e, 1, now); if (r) out.push(r); } }
+  return out.length ? out : null;
+}
+// um golpe grande que corre bem dá opTokens fichas de cada evento a decorrer
+function evOp(p, now) {
+  const out = [];
+  for (const e of eventsAt(now)) { const r = evEarn(p, e, CFG.events.opTokens, now); if (r) out.push(r); }
+  return out.length ? out : null;
+}
+// o presente do dia: o envelope vermelho do Ano Novo Chinês (um valor da sorte) ou a porta do Advento (sobe até dia 24, triplo no 25)
+export function evGiftValue(p, e, now, rng) {
+  const G = CFG.events;
+  if (e.id === 'lunar') {   // abaixo do nível 20, um décimo (88, 188… 8 888): o envelope não pode valer mais do que dias de golpes
+    let r = rng.int(0, 9999), v = G.hongbao[0][1];
+    for (const [w, x] of G.hongbao) { if (r < w) { v = x; break; } r -= w; }
+    return level(p) < G.hongbaoLevel ? Math.floor(v / 10) : v;
+  }
+  const d = localParts(now).d, A = G.advent, base = A.base + A.perLevel * level(p);
+  return d === 25 ? base * A.day25 : d <= 24 ? Math.round((base * (12 + d)) / 24) : base;
+}
+// abre-se em qualquer lado, preso ou lá fora; vai para o banco
+export function evGift(p, now, world, key, rng) {
+  begin(p, now, world, { allowBusy: true, jailOk: true, trOk: 2 });
+  const e = eventsAt(now).find((x) => x.key === key);
+  if (!e) fail('NO_EVENT');
+  if (e.fx.k !== 'gift') fail('NO_GIFT');
+  const R = evRec(p, e, now), d = dayOf(now);
+  if (R.g === d) fail('GIFT_TAKEN');
+  const cash = evGiftValue(p, e, now, rng);
+  R.g = d; R.gv = cash;
+  p.bank += cash;
+  return { ok: true, id: e.id, key, cash, day: localParts(now).d };
+}
+// os ovos da Páscoa: eggs por dia, cada um num ecrã do jogo (o mesmo para o jogador o dia todo); apanhar vale eggTokens fichas
+export function evEggTabs(p, now) {
+  const G = CFG.events, d = dayOf(now), out = [];
+  let h = 2166136261; for (const ch of String(p.id) + d) { h ^= ch.charCodeAt(0); h = Math.imul(h, 16777619) >>> 0; }
+  const pool = [...G.eggTabs];
+  for (let i = 0; i < G.eggs && pool.length; i++) { h = Math.imul(h ^ (h >>> 13), 2654435761) >>> 0; out.push(pool.splice(h % pool.length, 1)[0]); }
+  return out;
+}
+export function evEgg(p, now, world, key, i) {
+  begin(p, now, world, { allowBusy: true, jailOk: true, trOk: 2 });
+  const e = eventsAt(now).find((x) => x.key === key);
+  if (!e) fail('NO_EVENT');
+  if (e.fx.k !== 'eggs') fail('NO_EGGS');
+  if (!Number.isInteger(i) || i < 0 || i >= CFG.events.eggs) fail('NO_EGG');
+  const R = evRec(p, e, now);
+  if (R.eg & (1 << i)) fail('EGG_TAKEN');
+  R.eg |= 1 << i;
+  return { ok: true, id: e.id, key, i, ev: evAdd(p, e, CFG.events.eggTokens, now) };
+}
+// o que o ecrã mostra de cada evento a decorrer
+export function evView(p, now) {
+  const d = dayOf(now);
+  return eventsAt(now).map((e) => { const R = p.evs && p.evs[e.key], today = R && R.d === d;
+    return { id: e.id, key: e.key, start: e.start, end: e.end, fx: e.fx, goals: e.goals, n: R ? R.n : 0, got: R ? R.got : 0,
+      dn: today ? R.dn : 0, cap: CFG.events.dayCap,
+      gift: e.fx.k === 'gift' ? !(R && R.g === d) : false, gv: R && R.g === d ? R.gv : 0,
+      eggs: e.fx.k === 'eggs' ? evEggTabs(p, now) : null, eg: today ? R.eg : 0,
+      prize: e.goals.map((_, i) => evPrize(p, i)) }; });
 }
 
 // ---------- parlamento (v76) ----------
@@ -4627,6 +4746,7 @@ export function checkInvariants(p) {
   if (!p.pkn || !Number.isSafeInteger(p.pkn.h) || p.pkn.w > p.pkn.h || !(p.pkn.big >= 0)) bad.push('pkn');
   if (p.pkd !== null && (!p.pkd || !Number.isSafeInteger(p.pkd.n) || p.pkd.n < 0)) bad.push('pkd');
   if (p.jsr !== null && (!p.jsr || !Number.isSafeInteger(p.jsr.t0) || ![0, 1, 2].includes(p.jsr.ap))) bad.push('jsr');
+  if (!p.evs || typeof p.evs !== 'object' || Object.values(p.evs).some((r) => !r || !Number.isSafeInteger(r.n) || r.n < 0 || !Number.isSafeInteger(r.got) || !(r.dn >= 0 && r.dn <= CFG.events.dayCap))) bad.push('eventos');
   if (!Number.isFinite(p.rc)) bad.push('rc');
   if (p.emp && p.job !== -1) bad.push('emp/job');
   if (p.honVit != null && (!Array.isArray(p.honVit) || p.honVit.length > CFG.social.vitMax || p.honVit.some((k) => !(p.hon && p.hon[k])))) bad.push('honVit');   // v109

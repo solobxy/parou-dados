@@ -4194,3 +4194,59 @@ h2.sec .jbc { margin-left: 8px; font: 700 15px/1 var(--num); color: var(--tx2); 
 .jbgo .ghe { display: inline-flex; align-items: center; gap: 2px; margin-left: 6px; opacity: .75; }
 body.light .srst, body.light .sra .srst { animation: none; }
 @media (prefers-reduced-motion: reduce) { .srst, .sra .srst { animation: none !important; } }
+
+/* v117: eventos do ano. Na cidade e nos golpes, uma linha por evento (o nome, as fichas e uma barra fina); a folha tem o resto.
+   O nome fica na cor do texto (as cores do jogo querem dizer bom, mau e respeito); a cor do evento só pinta a barra, sempre fora do
+   vermelho, do verde e do âmbar. Sem caixas dentro de caixas nem barras de cor de lado. */
+.evlist { display: grid; gap: 8px; margin: 14px 0 4px; }
+.evrow, .evs { --evc: var(--tx); display: grid; gap: 4px; width: 100%; min-height: 44px; padding: 10px 14px 12px; border: 0; border-radius: var(--rc, 12px);
+  background: var(--s1); color: var(--tx); font: 500 15px/1.3 var(--ui); text-align: left; }
+.evs { margin: 10px 0 12px; }
+.evrh { display: flex; align-items: baseline; gap: 10px; }
+.evrh > b { flex: 1; min-width: 0; font-weight: 700; }
+.evrh > .num { color: var(--tx2); white-space: nowrap; }
+.evrh > .evch { color: var(--tx2); font-size: 20px; line-height: 1; }
+.evnew { color: var(--cash); font-weight: 700; white-space: nowrap; }
+.evrs { color: var(--tx2); }
+.evbar { position: relative; height: 8px; margin-top: 8px; border-radius: 8px; background: var(--s3); }
+.evbar.thin { height: 4px; margin-top: 4px; }
+.evbar > i { position: absolute; inset: 0 auto 0 0; border-radius: inherit; background: var(--evc); transition: width .4s var(--ease-out); }
+.evtk { position: absolute; top: 0; bottom: 0; width: 3px; margin-left: -1.5px; background: var(--s1); }
+.evbar.thin .evtk { width: 2px; margin-left: -1px; }
+.evnext { margin: 14px 4px 0; text-align: center; text-wrap: balance; }
+/* a folha */
+.evsh { gap: 12px; }
+.evhd .evt { margin: 0; font: 600 30px/1.05 var(--disp); color: var(--tx); text-wrap: balance; }
+.evwhen { margin: 4px 0 0; color: var(--tx2); }
+.evd { margin: 0; font: italic 400 15.5px/1.4 var(--disp); color: var(--tx2); text-wrap: pretty; }
+.evfx { margin: 0; font: 700 15px/1.35 var(--ui); }
+.evp { --evc: var(--tx); }
+.evph { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; font-size: 15px; }
+.evph .num { color: var(--tx2); white-space: nowrap; }
+.evgl { display: grid; margin: 0; padding: 0; list-style: none; }
+.evgl li { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 9px 0; border-top: 1px solid var(--line2, #ffffff1a); }
+.evgl li:last-child { border-bottom: 1px solid var(--line2, #ffffff1a); }
+.evn { display: inline-flex; align-items: center; gap: 6px; font: 600 15px/1.3 var(--ui); color: var(--tx); }
+.evgl li.on .evn { color: var(--tx2); }
+.evgl li.on .evn svg.i { color: var(--cash); width: 16px; height: 16px; }
+.evr { display: inline-flex; flex-wrap: wrap; justify-content: flex-end; align-items: baseline; gap: 2px 8px; font: 700 15px/1.3 var(--num); text-align: right; }
+.evr s { color: var(--tx2); font-weight: 600; }
+.evr small { font: 600 14px var(--ui); color: var(--tx2); }
+.evr .c-resp { display: inline-flex; align-items: center; gap: 2px; }
+.evr .c-resp svg.i { width: 14px; height: 14px; }
+.evgd { display: flex; align-items: center; gap: 6px; margin: 0; color: var(--cash); font-weight: 600; }
+.evnote { margin: 10px 2px 12px; color: var(--tx2); }
+/* o ovo da Páscoa, no topo do ecrã onde calhou hoje */
+/* o ovo: só o ovo (alvo de 48 px), encostado a um lado, entre duas secções */
+.evegg { display: block; width: 48px; height: 52px; margin: 6px 4px 6px auto; padding: 0; border: 0; background: none; }
+.evegg.l { margin: 6px auto 6px 4px; }
+.evegg:focus-visible { outline: 2px solid var(--tx); outline-offset: 2px; border-radius: 12px; }
+.evegg-o { display: block; width: 30px; height: 38px; margin: 7px auto; border-radius: 50% 50% 46% 46% / 58% 58% 42% 42%; background: radial-gradient(circle at 35% 30%, #fff8 0 18%, transparent 19%), repeating-linear-gradient(170deg, #f1c6e3 0 7px, #c9b3f2 7px 13px, #a9d8f0 13px 19px);
+  box-shadow: inset -3px -4px 6px #0003; animation: evegg 2.4s var(--ease-out) infinite; }
+@keyframes evegg { 0%, 80%, 100% { transform: rotate(0); } 85% { transform: rotate(-9deg); } 90% { transform: rotate(8deg); } 95% { transform: rotate(-4deg); } }
+body.light .evegg-o { animation: none; }
+/* a cor de cada evento (só a barra): tons claros fora do vermelho, do verde e do âmbar */
+.ev-lunar { --evc: #f2a7c3; } .ev-namorados { --evc: #e8a6e0; } .ev-patrick { --evc: #7fd3d9; } .ev-pascoa { --evc: #c5b3f2; }
+.ev-ascot { --evc: #9ec5f2; } .ev-nottinghill { --evc: #d7a6f0; } .ev-oktober { --evc: #a8c7e8; } .ev-halloween { --evc: #b99cf0; }
+.ev-bonfire { --evc: #f0b3d6; } .ev-blackfriday { --evc: #f3efe7; } .ev-natal { --evc: #cfe3f2; } .ev-anonovo { --evc: #e3e0f6; }
+@media (prefers-reduced-motion: reduce) { .evbar > i { transition: none; } .evegg-o { animation: none; } }

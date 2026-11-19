@@ -16,6 +16,7 @@ import * as MW from './engine/mundo.js';
 import * as GV from './engine/governo.js';
 import * as NW from './engine/noticias.js';
 import * as K from './engine/poker.js';
+import * as EV from './engine/eventos.js';
 
 const PORT = +(process.env.PORT || 3170);
 const DATA = process.env.DATA || process.env.STATE_DIRECTORY || './dados';
@@ -30,7 +31,7 @@ const RONDA_TESTE = process.env.PRIMEIRA_RONDA ? dataDe(process.env.PRIMEIRA_RON
 // Épocas de 28 dias a contar da sexta 13/11/2026 às 21:00 de Lisboa (PRIMEIRA_EPOCA=AAAA-MM-DD muda-a, para testes)
 const ANCORA = dataDe(process.env.PRIMEIRA_EPOCA || process.env.PRIMEIRA_RONDA || '2026-11-13');
 const rng = process.env.TESTE_SEMENTE ? seededRng(+process.env.TESTE_SEMENTE) : cryptoRng();   // nos testes, a sorte pode ser sempre a mesma
-const VERSAO = 116;   // sobe quando o servidor muda, para se confirmar de fora que a versão nova já está a correr
+const VERSAO = 117;   // sobe quando o servidor muda, para se confirmar de fora que a versão nova já está a correr
 const ATOS_3S = +(process.env.ATOS_3S || 15), ATOS_MIN = +(process.env.ATOS_MIN || 400); // ações por conta: 15 em 3 s, 400 por minuto
 
 // ---------- relógio que nunca anda para trás ----------
@@ -105,7 +106,7 @@ const fromJson = (s) => JSON.parse(s, (k, v) => (v && v.__map ? new Map(v.__map)
 // última hora: o que os jogadores fazem, guardado na base de dados (sobrevive a reinícios)
 const jornal = [];
 // v77: a última hora tem um travão por categoria (engine/noticias.js): com muita gente passam só as maiores, ao mesmo ritmo
-const SEM_TRAVAO = new Set(['season', 'stockBust', 'warDecl', 'warStart', 'warEnd']);   // (v102: as guerras são raras e saem sempre)
+const SEM_TRAVAO = new Set(['season', 'stockBust', 'warDecl', 'warStart', 'warEnd', 'evStart']);   // (v102: as guerras são raras e saem sempre)
 const nw = () => (bolsa && bolsa.w ? NW.newsUp(bolsa.w) : null);
 // v98: os recordes de caça da época (o maior troféu de cada espécie, com o nome de quem o caçou)
 function recordesCaca(mk, p, now, r) {
@@ -512,7 +513,8 @@ function vista(p, now) {
     bustBp: E.bustChanceBp(p, now, mk ? MW.pressOf(mk.w, 'lx') : 50), lx: mk ? { crime: mk.w.lx.crime, press: MW.pressOf(mk.w, 'lx'), ed: mk.w.ed, edNext: MW.edStart(mk.w.ed + 1) } : null,
     cd: { est: E.consumWait(p, 'est', now), med: E.consumWait(p, 'med', now) },   // v78: quanto falta na espera de cada família
     mt: p.mt, cf: p.cf, maq: p.maq,   // v83: depósito, bancada e máquinas
-    pk: mesaPk(p.id) ? mesaPk(p.id).id : null, pkn: p.pkn, pkd: p.pkd, ...(() => { const s = E.sentence(p, now); return { jsr: s, appeal: s ? s.appeal : null }; })(),   // v116: a sentença e o recurso   // v114: a mesa de póquer onde está sentado
+    pk: mesaPk(p.id) ? mesaPk(p.id).id : null, pkn: p.pkn, pkd: p.pkd, ...(() => { const s = E.sentence(p, now); return { jsr: s, appeal: s ? s.appeal : null }; })(),   // v116: a sentença e o recurso
+    ev: E.evView(p, now), evNext: (() => { const x = EV.nextEvent(now); return x ? { id: x.id, start: x.start, end: x.end, fx: x.fx } : null; })(),   // v117: os eventos   // v114: a mesa de póquer onde está sentado
     cars: p.cars, car: p.car, rcn: p.rcn, rsk: E.skillBp(p, 'conducao'), race: salaDe(p.id) ? salaDe(p.id).id : null,   // v112: a garagem, as corridas e a perícia
     dg: E.digView(p, now), dgc: p.dgc, arq: E.stLevel(p, 'arqueologia'),   // v85: a escavação aberta (sem a grelha), os sítios vigiados, o nível de Arqueologia
     hon: p.hon || {}, honSel: p.honSel || null, honVit: p.honVit || [], honv: E.honorVals(p),   // v100: honras ganhas, a escolhida e os números de todas
@@ -540,9 +542,9 @@ function vista(p, now) {
     hospUntil: p.hospUntil, medic: E.medicCost(p, now),
     protectUntil: p.protectUntil, capUntil: p.capUntil, shieldUntil: p.shieldUntil,
     eq: p.eq, inv: p.inv, invCap: E.invCap(p), invUsed: E.invUsed(p), atkBp: E.atkBp(p), defBp: E.defBp(p),
-    op: p.op ? { ...p.op, chanceBp: E.opChanceBp(p, CFG.ops[p.op.i]), rasto: E.opRasto(p, CFG.ops[p.op.i]), miss: E.opMissing(p, CFG.ops[p.op.i]),
+    op: p.op ? { ...p.op, chanceBp: E.opChanceBp(p, CFG.ops[p.op.i], p.op, now), rasto: E.opRasto(p, CFG.ops[p.op.i]), miss: E.opMissing(p, CFG.ops[p.op.i]),
       cost: { recon: E.opStepCost(CFG.ops[p.op.i], 'recon'), crew: E.opStepCost(CFG.ops[p.op.i], 'crew'), bribe: E.opStepCost(CFG.ops[p.op.i], 'bribe') } } : null,
-    opsPrev: CFG.ops.map((o) => ({ chanceBp: E.opChanceBp(p, o, null), rasto: E.opRasto(p, o, null) })), opPause: p.opPause, contacts: p.contacts,
+    opsPrev: CFG.ops.map((o) => ({ chanceBp: E.opChanceBp(p, o, null, now), rasto: E.opRasto(p, o, null) })), opPause: p.opPause, contacts: p.contacts,
     avenca: p.avenca, avD: p.avD, ilegal: p.ilegal, jf: p.jf, jailT0: p.jailT0, streetBar: E.streetPerBar(p), yardBet: E.yardBet(p), jc: p.jc && p.jc.d === E.dayOf(now) ? { n: p.jc.n, w: p.jc.w } : { n: 0, w: 0 }, repair: { mao: E.repairCost(p, 'mao'), principal: E.repairCost(p, 'principal') }, guard: p.guard, tool: p.tool, gweapon: p.gweapon, toolNext: E.toolPreview(p, now), hitmanLeft: E.hitmanLeft(p, now), hmSafe: p.hmSafe, luxuries: p.luxuries, luxuryPrice: E.luxuryPrice(p),
     attack: E.attackPower(p, now), defense: E.defensePower(p, now),
     crimes: CFG.crimes.map((c, k) => ({ chance: E.crimeChanceBp(p, k, now), unlocked: E.crimeUnlocked(p, k) })),
@@ -570,7 +572,7 @@ function cfgPublica() {
     round: { playDays: CFG.round.playDays, noPvpMs: CFG.round.noPvpMs, newbieShieldMs: CFG.round.newbieShieldMs }, season: CFG.season, raid: CFG.raid,   // v91: a wiki
     consum: CFG.consum, col: CFG.col, gyms: CFG.gyms, books: CFG.books,   // v94, v95
     social: CFG.social,   // v109: o chat e a vitrine
-    turf: CFG.turf, comp: CFG.comp, race: CFG.race, poker: CFG.poker, bust: CFG.bust, appeal: CFG.appeal,   // v110: o território
+    turf: CFG.turf, comp: CFG.comp, race: CFG.race, poker: CFG.poker, bust: CFG.bust, appeal: CFG.appeal, events: CFG.events,   // v110: o território
     mat: CFG.mat, craft: CFG.craft, feira: { ...CFG.feira, refs: FEIRA_REFS }, dig: CFG.dig, hunt: CFG.hunt, honors: E.HONORS, travel: CFG.travel,   // v83, v84, v98, v100, v101
     exam: (({ ans: _a, ...x }) => x)(CFG.exam), studies: CFG.studies,   // v81: a Universidade   // v80: as regras do exame, sem as respostas certas
     gov: { vote: CFG.gov.vote, laws: CFG.gov.laws, cof: CFG.gov.cof, parties: Object.fromEntries(Object.entries(CFG.gov.parties).map(([k, x]) => [k, { pos: x.pos, wOp: x.wOp, wLob: x.wLob }])) },   // v76: o parlamento
@@ -2442,6 +2444,18 @@ abrirMundo(clock());
 carregarRonda(MUNDO);
 epocaEmDia(clock());
 setInterval(() => { try { epocaEmDia(clock()); } catch (e) { console.error('época', e.message); } }, 30_000).unref();
+// v117: quando um evento começa, sai no jornal uma vez (as notícias da ronda dizem se já saiu, mesmo depois de reiniciar)
+const evDitos = new Set(), qEvDito = db.prepare('SELECT 1 FROM noticias WHERE ronda = ? AND dados LIKE ? LIMIT 1');
+function eventosEmDia(now) {
+  if (ronda < 0) return;
+  for (const e of EV.eventsAt(now)) {
+    if (evDitos.has(e.key)) continue;
+    evDitos.add(e.key);
+    if (!qEvDito.get(ronda, '%"key":"' + e.key + '"%')) noticia(now, { k: 'evStart', id: e.id, key: e.key, end: e.end });
+  }
+}
+setInterval(() => { try { eventosEmDia(clock()); } catch (e) { console.error('eventos', e.message); } }, 60_000).unref();
+setTimeout(() => { try { eventosEmDia(clock()); } catch (e) { console.error('eventos', e.message); } }, 5000).unref();   // logo ao arrancar
 devolverMesas(clock());
 
 // ---------- ações ----------
@@ -2650,6 +2664,8 @@ function agir(conta, corpo, now) {
     case 'jailFavor': r = E.jailFavor(p, now, world, String(a.kind || '')); break;
     case 'jailEscape': r = E.jailEscape(p, now, world, rng); break;
     case 'jailAppeal': r = E.jailAppeal(p, now, world, rng); break;   // v116
+    case 'evGift': r = E.evGift(p, now, world, String(a.key || ''), rng); break;   // v117
+    case 'evEgg': r = E.evEgg(p, now, world, String(a.key || ''), int(a.i)); break;
     case 'luxury': r = E.buyLuxury(p, now, world); break;
     case 'attack': {
       const nome = String(a.target || '').toLowerCase();

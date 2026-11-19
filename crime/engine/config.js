@@ -592,6 +592,40 @@ export const CFG = {
   // mais 15 pontos com a avença do advogado e mais 5, 10 ou 15 com o curso de Direito (75% no máximo). Ganhar tira metade do que falta;
   // perder não agrava (fica a pena como estava, perdem-se as custas).
   appeal: { feeBp: 2000, feeMin: 5, baseBp: 4500, avencaBp: 1500, maxBp: 7500, cutBp: 5000 },
+  // v117: eventos do ano (as datas, em hora de Londres, calculam-se em engine/eventos.js para qualquer ano). Cada evento tem um efeito
+  // que vale para toda a gente enquanto dura, e fichas que caem dos golpes bem feitos: perE pontos-base por cada ponto de stamina do
+  // golpe (em média uma ficha por cada 100 de stamina, seja qual for o golpe), no máximo dayCap por dia (golpes e golpes grandes, que
+  // dão opTokens). Três metas por evento, pela duração: dias × 1,5, × 3,5 e × 6 (× goalsX na Páscoa, que tem os ovos). Cada meta paga
+  // uma vez, no banco: dinheiro (mais com o nível) e, nas duas de cima, o respeito de 1 e de 3 barras de golpes do nível de cada um; a
+  // última conta para a honra «Festeiro». Presentes: no Ano Novo Chinês, um envelope vermelho por dia com um valor da sorte (um décimo
+  // abaixo do nível 20); no Natal,
+  // o calendário do Advento (a subir até dia 24, o triplo no dia 25). Na Páscoa, ovos escondidos noutros ecrãs (eggs por dia, cada um
+  // vale eggTokens fichas, fora do limite do dia). Efeitos: loot = o que os golpes rendem; luck = pontos de sucesso nos golpes; bust =
+  // menos hipótese de ser apanhado; ops = pontos de sucesso nos golpes grandes; refill = stamina mais barata na discoteca; vice = putas
+  // mais baratas; shop = armas e equipamento mais baratos; resp = respeito dos golpes; race = prémios das corridas de rua.
+  events: {
+    perE: 100, dayCap: 8, opTokens: 3, goalsK: [15, 35, 60],
+    prize: [{ cash: 2000, perLevel: 100, bars: 0 }, { cash: 5000, perLevel: 250, bars: 1 }, { cash: 10000, perLevel: 500, bars: 3 }],
+    advent: { base: 500, perLevel: 50, day25: 3 },
+    hongbao: [[4000, 888], [3000, 1888], [2000, 2888], [900, 8888], [100, 88888]],   // peso em 10 000 e valor (os oitos dão sorte)
+    hongbaoLevel: 20,   // abaixo deste nível o envelope vale um décimo
+    eggs: 3, eggTokens: 2, eggTabs: ['gym', 'inv', 'empire', 'bank', 'club', 'arms', 'museum', 'uni', 'casino', 'rank'],
+    list: [
+      { id: 'lunar', fx: { k: 'gift', bp: 0 } },
+      { id: 'namorados', fx: { k: 'vice', bp: 3000 } },
+      { id: 'patrick', fx: { k: 'luck', bp: 500 } },
+      { id: 'pascoa', fx: { k: 'eggs', bp: 0 }, goalsX: 16000 },
+      { id: 'ascot', fx: { k: 'race', bp: 5000 } },
+      { id: 'nottinghill', fx: { k: 'loot', bp: 2000 } },
+      { id: 'oktober', fx: { k: 'refill', bp: 3000 } },
+      { id: 'halloween', fx: { k: 'bust', bp: 3000 } },
+      { id: 'bonfire', fx: { k: 'ops', bp: 1000 } },
+      { id: 'blackfriday', fx: { k: 'shop', bp: 3000 } },
+      { id: 'natal', fx: { k: 'gift', bp: 0 } },
+      { id: 'anonovo', fx: { k: 'resp', bp: 2500 } },
+    ],
+  },
+
   // Stamina a mais, a droga: cada barra (100) seguida custa 25 € × k + 5 € × k² (30, 70, 120, 180 €…); a escada desce 25 pontos por hora (uma barra em 4 h).
   refillBar: { a: 25, b: 5, coolPerH: 25 },
   // v79: colecionáveis e museu, à maneira dos peluches e das flores do Torn. Ficam numa vitrine (fora do inventário).
@@ -1153,6 +1187,7 @@ export const CFG = {
     { m: 'jail', cat: 'prisao', at: [1, 10, 50, 200] },
     { m: 'esc', cat: 'prisao', at: [1, 5, 25] },
     { m: 'busts', cat: 'prisao', at: [1, 10, 50, 250] },   // v115: presos tirados da prisão
+    { m: 'evtop', cat: 'missoes', at: [1, 3, 6, 11] },   // v117: eventos do ano levados até à última meta
     { m: 'wt', cat: 'arsenal', each: 'wtypes' },
     { m: 'mods', cat: 'arsenal', at: [1, 10, 50] },
     { m: 'missions', cat: 'missoes', at: [5, 10, 20, 30] },

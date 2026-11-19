@@ -127,6 +127,8 @@ function react(type, out, before, opts) {
   // v79: uma peça para a vitrine (golpe que correu bem ou avião inteiro); o aviso fica por cima do relatório
   const found = type === 'crime' || type === 'airCollect' ? (r.col ? [r.col] : []) : type === 'crimeAll' && r.col ? Object.keys(r.col) : [];
   if (found.length) setTimeout(() => { toast(t('tColFound', { x: found.map((i) => t('co_' + i)).join(', ') })); fx.vibrate([10, 40, 10]); }, 350);
+  const evs = Array.isArray(r.ev) ? r.ev : r.ev ? [r.ev] : [];   // v117: as fichas dos eventos e as metas que pagaram
+  if (evs.length) setTimeout(() => evToasts(evs, type === 'evGift' || type === 'evEgg'), found.length ? 900 : 300);   // (o presente já diz a ficha que traz)
   const books = type === 'crime' && r.book ? [r.book] : type === 'crimeAll' && r.books ? r.books : [];   // v95: um livro achado num golpe
   if (books.length) setTimeout(() => toast(t('tBkFind', { x: books.map((i) => t('bkn_' + i)).join(', ') })), found.length ? 1600 : 350);
   if (type === 'crime' || type === 'crimeAll') {
@@ -222,6 +224,8 @@ function react(type, out, before, opts) {
   else if (type === 'jailCards') { PR.cartas({ r, t, money, lang: lang(), bet: opts.args.bet, again: (b) => act('jailCards', { bet: b }) }).then(() => fx.sfx(r.win ? 'cash' : 'fail')); }
   else if (type === 'jailFavor') { toast(r.kind === 'time' ? t('tj_favTime', { t: minTxt(r.cut) }) : t('tj_favContact', { n: r.contacts, c: S.cfg.jail.contactsMax })); fx.sfx('claim'); }
   else if (type === 'bust') { if (r.freed) { toast(t('tBustOk', { x: r.target, n: r.respect })); fx.sfx('crit'); } else if (r.caught) { toast(t('tBustCaught', { t: minTxt(r.jailUntil - now()) }), true); fx.sfx('bust'); fx.vibrate([40, 60, 40]); } else { toast(t('tBustFail')); fx.sfx('tap'); } }   // v115
+  else if (type === 'evGift') { toast(t(r.id === 'lunar' ? 'tEvGiftL' : 'tEvGift', { m: money(r.cash) })); fx.sfx(r.cash >= 8888 ? 'crit' : 'claim'); }   // v117
+  else if (type === 'evEgg') { toast(t('tEvEgg', { n: r.ev.got, a: num(r.ev.n) })); fx.sfx('claim'); }
   else if (type === 'jailAppeal') { toast(r.won ? t('tAppealWon', { t: minTxt(r.cut) }) : t('tAppealLost'), !r.won); fx.sfx(r.won ? 'crit' : 'fail'); if (!r.won) fx.vibrate([40, 60, 40]); }   // v116
   else if (type === 'jailEscape') { PR.fuga({ r, t, minTxt }).then(() => { if (r.free) fx.sfx('crit'); else { fx.sfx('bust'); fx.vibrate([40, 60, 40]); } }); }
   else if (type === 'repair') { toast(r.kit ? t('tRepairedKit', { x: t('g_' + me.eq[r.slot].id), n: mtN(me, 'kit') }) : t('tRepaired', { x: t('g_' + me.eq[r.slot].id), m: money(r.price) })); fx.sfx('claim'); }
@@ -578,7 +582,9 @@ function render(force) {
   const cur = tabOf(S.tab);
   $tabs.querySelectorAll('.tab').forEach((b) => b.setAttribute('aria-current', b.dataset.tab === cur ? 'page' : 'false'));
   tabDots();
-  $main.replaceChildren(...(S.st.me.cls ? SCREENS[S.tab]() : screenClass()).filter(Boolean));
+  const kids = (S.st.me.cls ? SCREENS[S.tab]() : screenClass()).filter(Boolean), eggs = S.st.me.cls ? evEggs(S.tab) : [];   // v117: os ovos da Páscoa
+  if (eggs.length) { let at = eggSpot(kids.length, S.tab); const head = (x) => !!x && (x.matches?.('h2, h3, .sechead, .sec') || /^H[23]$/.test(x.firstElementChild?.tagName || '')); while (at < kids.length && head(kids[at - 1])) at++; kids.splice(at, 0, ...eggs); }   // nunca entre um título e o que ele abre
+  $main.replaceChildren(...kids);
   S.drawn = S.tab;
   updateHud();
 }
@@ -726,7 +732,7 @@ function screenClass() {
 
 // ---------- a cidade ----------
 // ---------- jornal da cidade: o que os outros andam a fazer ----------
-const NW_IC = { bust: 'lock', season: 'crown', hitman: 'skull', hitmanFail: 'shield', stockWin: 'cash', stockLoss: 'skull', stockBust: 'skull', air: 'cash', airLost: 'lock', cls: 'user', gangNew: 'fist', gangUp: 'empire', gangHeist: 'cash', gangHeistFail: 'lock', gangHit: 'fist', gangHitFail: 'skull', warDecl: 'fist', warStart: 'fist', warEnd: 'crown', turfStart: 'flag', turfTake: 'flag', turfHold: 'shield', compNew: 'empire', casino: 'gem', casinoLoss: 'skull', job: 'cash', crit: 'gem', spree: 'bolt', jail: 'lock', house: 'empire', lux: 'crown', beat: 'fist', mug: 'cash', fail: 'skull', sick: 'pill', lvl: 'crown', fight: 'fist', op: 'cash', opJail: 'lock', escape: 'bolt', mus: 'crown' };
+const NW_IC = { evStart: 'flag', bust: 'lock', season: 'crown', hitman: 'skull', hitmanFail: 'shield', stockWin: 'cash', stockLoss: 'skull', stockBust: 'skull', air: 'cash', airLost: 'lock', cls: 'user', gangNew: 'fist', gangUp: 'empire', gangHeist: 'cash', gangHeistFail: 'lock', gangHit: 'fist', gangHitFail: 'skull', warDecl: 'fist', warStart: 'fist', warEnd: 'crown', turfStart: 'flag', turfTake: 'flag', turfHold: 'shield', compNew: 'empire', casino: 'gem', casinoLoss: 'skull', job: 'cash', crit: 'gem', spree: 'bolt', jail: 'lock', house: 'empire', lux: 'crown', beat: 'fist', mug: 'cash', fail: 'skull', sick: 'pill', lvl: 'crown', fight: 'fist', op: 'cash', opJail: 'lock', escape: 'bolt', mus: 'crown' };
 const seedOf = (str) => { let x = 7; for (let i = 0; i < str.length; i++) x = (x * 31 + str.charCodeAt(i)) | 0; return Math.abs(x); };
 // a gangue da rua (a do bot) tem nome próprio em cada língua; as dos jogadores ficam como eles as escreveram
 const gName = (name) => (name === S.cfg?.gang?.bot?.name ? t('gBotName') : name);
@@ -734,6 +740,7 @@ function newsText(e) {
   if (e.gang) e = { ...e, gang: gName(e.gang) };
   const k = e.k === 'fight' ? (e.mode === 'mug' ? 'mug' : 'beat') : e.k, C = list('crimes');
   if (k === 'gangNew') return t('nw_gangNew', { a: e.name, g: e.gang, t: e.tag });
+  if (k === 'evStart') return tv('nw_ev_' + e.id, seedOf(e.key + k), { d: S.cfg.events ? new Date(e.end - 1).toLocaleDateString(lang() === 'pt' ? 'pt-PT' : 'en-GB', { day: 'numeric', month: 'long', timeZone: 'Europe/London' }) : '' });   // v117
   if (k === 'season') return tv('nw_season', seedOf(e.name + k + e.t), { a: e.name, n: e.n + 1, x: divName(e.d) });
   if (k === 'gangUp') return t('nw_gangUp_' + e.what, { g: e.gang, n: e.n });
   if (k === 'air' || k === 'airLost') return tv('nw_' + k, seedOf(e.name + k + e.t), { a: e.name, x: t('ar_' + e.to), m: money(e.money || 0) });
@@ -1069,7 +1076,7 @@ function screenCity() {
     museum: S.cfg.col && Object.keys(S.cfg.col.sets).some((k) => setHave(me, k) === S.cfg.col.sets[k].items.length) ? t('muBadge') : null,
   };
   const ep = season();
-  return [h('h1', { class: 'sr' }, t('p_city')), newsBar(), ...hubTiles('city', badge),
+  return [h('h1', { class: 'sr' }, t('p_city')), newsBar(), ...evBlock(me), ...hubTiles('city', badge),
     ep ? h('p', { class: 'small muted', style: 'text-align:center;margin-top:16px' }, t('seasonEnds', { n: ep.n + 1, t: nb(leftTxt(ep.end - n)) })) : null].filter(Boolean);
 }
 function placeTile(id, badge) {
@@ -1197,7 +1204,7 @@ function screenMuseum() {
 // à rua (é a ação do ecrã); depois o que cada partido deve votar, o dinheiro, o Estado, o hemiciclo e as leis.
 const PARTY = ['rv', 'cm', 'ml', 'op'];   // da esquerda para a direita, como se sentam
 const lawIs = (id) => !!S.st?.me?.gv?.laws?.includes(id);
-const gearP = (g) => (lawIs('armas') && ['mao', 'principal', 'branca'].includes(g.slot) ? Math.ceil((g.price * S.cfg.gov.laws.armas.priceBp) / 10000) : g.price);
+const gearP = (g) => { const p = lawIs('armas') && ['mao', 'principal', 'branca'].includes(g.slot) ? Math.ceil((g.price * S.cfg.gov.laws.armas.priceBp) / 10000) : g.price, b = evC('shop'); return b ? Math.floor((p * (10000 - b)) / 10000) : p; };   // v117: o Black Friday
 // bom ou mau para quem joga (verde ou vermelho); as armas livres têm das duas coisas e ficam sem cor
 const LAW_GOOD = { policia: -1, penas: -1, erva: 1, jogo: -1, luxo: -1, branq: -1, salario: 1, armas: 0 };
 function lawFx(id) {
@@ -1545,7 +1552,8 @@ function staminaHelp(me, L) {
 const skBp = (me, fam) => { const K = S.cfg.skills, n = (me.sk && me.sk[fam]) || 0; return Math.floor((K.maxBp * Math.min(n, K.fullPts)) / K.fullPts); };
 const pctOf = (bp) => (bp % 100 ? (bp / 100).toFixed(1).replace('.', lang() === 'pt' ? ',' : '.') : String(bp / 100));
 const moneyRange = (a, z) => CUR + num(a) + '–' + num(z);
-const crimeEv = (c) => c.prizes.reduce((x, [bp, a, z]) => x + (bp * (a + z)) / 2, 0) / 10000;
+const crimeEv = (c) => (c.prizes.reduce((x, [bp, a, z]) => x + (bp * (a + z)) / 2, 0) / 10000) * (1 + evC('loot') / 10000);   // v117: o Carnaval
+const crP = (c) => Math.max(c.p, Math.min(9500, c.p + evC('luck')));   // v117: a sorte do São Patrício
 const heatPct = (bp) => Math.round(bp / 100);
 // ---------- equipamento e inventário ----------
 const gearOf = (id) => S.cfg.gear.find((g) => g.id === id);
@@ -1581,7 +1589,7 @@ function gunFix(me, L, c, gs) {
 // respeito de um golpe que corre bem: uma barra vale 20 + 2 por nível (até 120), vezes o calor, a dividir pela hipótese
 function crimeResp(me, c, heatBp) {
   const St = S.cfg.street, perBar = Math.min(St.respCap, St.respBase + St.respPerLevel * me.level);
-  return Math.max(1, Math.round(((perBar * c.e) / 100) * (heatBp / 10000) / (c.p / 10000)));
+  return Math.max(1, Math.round(((perBar * c.e) / 100) * (heatBp / 10000) / (crP(c) / 10000) * (1 + evC('resp') / 10000)));
 }
 // no fim do relatório, quando entrou alguma coisa no inventário (ou não coube), o caminho para lá
 const invLink = (on) => (on ? h('button', { class: 'jneed rinv', on: { click: () => go('inv') } }, t(invFull(S.st.me) ? 'toInvFull' : 'toInv') + ' ›') : null);
@@ -1622,6 +1630,7 @@ function screenRob() {
   const me = S.st.me, C = S.cfg.crimes, L = live(me), names = list('crimes'), st = me.street || { used: 0, heatBp: 10000 };
   const out = [pageHead('rob', null, true)];
   const b = busyBanner(me); if (b) out.push(b);
+  out.push(...(me.ev || []).map((e) => evStrip(e)));   // v117: as fichas caem daqui
   const ord = C.map((c, i) => i).sort((a2, b2) => C[a2].level - C[b2].level || a2 - b2);   // por nível (os golpes novos vão no fim da lista do servidor)
   const open = ord.filter((i) => me.crimes[i].unlocked);
   let k = S.robK ?? store.get('robK', -1);
@@ -1638,7 +1647,7 @@ function screenRob() {
     h('div', { class: 'jimg' }, h('img', { src: IMG('crimes', c.id, 1), alt: '', width: 1100, height: 1100, decoding: 'async', on: { error: (e) => e.currentTarget.remove() } }), h('h2', null, names[k])),
     h('div', { class: 'jdeal' },
       h('div', null, h('span', null, t('lootAvg')), h('b', { class: 'num c-cash' }, money(media))),
-      h('div', null, h('span', null, t('chance')), h('b', { class: 'num ' + chanceCls(c.p) }, pct(c.p)))),
+      h('div', null, h('span', null, t('chance')), h('b', { class: 'num ' + chanceCls(crP(c)) }, pct(crP(c))))),
     heat < 10000 ? h('p', { class: 'jheat' }, t('jobHeat', { p: heatPct(heat), h: dur(Math.ceil(((st.used - 199) * 60) / (st.coolPerH || 50)) * 60000) })) : null,
     (st.respBp ?? 10000) < 10000 ? h('p', { class: 'jheat' }, t('jobRespDay', { p: heatPct(st.respBp) })) : null,
     noGun ? gunFix(me, L, c, gs)
@@ -1653,6 +1662,7 @@ function screenRob() {
       [t('fxFine'), money(c.fine) + ' · ' + c.jailMin + ' min', 'c-red'],
       [t('fxStam'), num(c.e)],
       [t('fxResp'), '+' + num(crimeResp(me, c, st.respBp ?? heat)), 'c-resp'],
+      ...(me.ev || []).map((e) => [t('evTok1_' + e.id).replace(/^./, (x) => x.toUpperCase()), e.dn >= e.cap ? t('evCapped') : Math.min(100, (c.e * S.cfg.events.perE) / 100) + '%']),   // v117
       ...(c.gun && gunSlot(me) ? [[t('fxBullets'), t('fxOfN', { a: S.cfg.bullets.perJob, n: num(invN(me, 'balas')) })], [capFirst(t('g_' + me.eq[gunSlot(me)].id)), t('fxUses', { n: me.eq[gunSlot(me)].u })]] : []),
     ]),
     // o sorteio do saque fica fechado: abre-se ao toque
@@ -1666,7 +1676,7 @@ function screenRob() {
     if (!me.crimes[i].unlocked) {
       if (lockedShown) return; lockedShown = true;
       rows.append(h('div', { class: 'rowi lock' }, art('crimes', x.id), h('div', { class: 'mid' }, h('div', { class: 'nm' }, names[i]), h('div', { class: 'meta' }, icon('lock'), ' ', t('opensAt', { n: x.level }))),
-        h('div', { class: 'pct' }, pct(x.p))));
+        h('div', { class: 'pct' }, pct(crP(x)))));
       return;
     }
     rows.append(h('button', { class: 'rowi' + (i === k ? ' sel' : ''), 'aria-pressed': i === k ? 'true' : 'false',
@@ -1674,7 +1684,7 @@ function screenRob() {
       art('crimes', x.id),
       h('div', { class: 'mid' }, h('div', { class: 'nm' }, names[i]),
         h('div', { class: 'meta' }, h('span', { class: 'c-cash' }, t('avgShort', { m: money(Math.round(crimeEv(x) * (1 + skBp(me, x.fam) / 10000) * (heat / 10000))) })), h('span', null, icon('bolt'), ' ' + x.e), x.gun ? h('span', null, t('withGun')) : null)),
-      h('div', { class: 'pct ' + chanceCls(x.p) }, pct(x.p))));
+      h('div', { class: 'pct ' + chanceCls(crP(x)) }, pct(crP(x)))));
   });
   out.push(rows);
   out.push(h('h2', { class: 'sec' }, t('p_ops')), opsRow(me));
@@ -1868,6 +1878,7 @@ function screenOps() {
   const me = S.st.me, O = S.cfg.ops, n = now();
   const out = [pageHead('ops', t('s_ops'), true)];
   const b = busyBanner(me); if (b) out.push(b);
+  out.push(...evNote('ops'));   // v117
   out.push(me.op ? opActive(me, b) : opPick(me, b));
   out.push(h('h2', { class: 'sec' }, t('allOps')));
   const rows = h('div', { class: 'rows' });
@@ -1933,6 +1944,90 @@ function jailInmates(me, L) {
   })));
   return out;
 }
+// ---------- v117: eventos do ano ----------
+// Na cidade, uma linha por evento (nome, fichas, barra fina); o toque abre a folha com tudo. Nos golpes, a mesma linha com o efeito
+// por baixo. Sem evento, uma linha com o próximo. Os efeitos valem para toda a gente e já vêm nos números do servidor (a loja e os golpes
+// somam-nos aqui). Na Páscoa, os ovos aparecem no topo de três ecrãs por dia.
+const evC = (k) => (S.st?.me?.ev || []).reduce((sum, e) => sum + (e.fx.k === k ? e.fx.bp : 0), 0);
+const evLoc = () => (lang() === 'pt' ? 'pt-PT' : 'en-GB');
+const evDate = (ts, wd) => new Date(ts).toLocaleDateString(evLoc(), { weekday: wd || 'long', day: 'numeric', month: 'long', timeZone: 'Europe/London' });
+const evWhen = (e) => (e.end - now() <= 86400000 ? t('evToday') : t('evUntil', { d: evDate(e.end - 1) }));   // o fim é à meia-noite de Londres: a menos de um dia, é o último
+const evFxTxt = (e) => t(e.fx.k === 'gift' ? 'evFxG_' + e.id : 'evFx_' + e.fx.k, { p: e.fx.k === 'luck' || e.fx.k === 'ops' ? e.fx.bp / 100 : pctOf(e.fx.bp), n: S.cfg.events.eggs });
+const evGoal = (e) => { const i = e.goals.findIndex((g) => e.n < g); return i < 0 ? e.goals.length - 1 : i; };
+const evDone = (e) => e.n >= e.goals[e.goals.length - 1];
+const evCount = (e) => (evDone(e) ? t('evAll', { n: num(e.n) }) : t('evOf', { a: num(e.n), b: num(e.goals[evGoal(e)]) }));
+const evEggsLeft = (e) => (e.eggs ? e.eggs.filter((_, i) => !(e.eg & (1 << i))).length : 0);
+function evToasts(evs, quiet) {
+  for (const x of evs) {
+    const e = (S.st.me.ev || []).find((y) => y.key === x.key);
+    for (const p of x.paid || []) toast(t(p.respect ? 'tEvGoalR' : 'tEvGoal', { x: t('ev_' + x.id), i: p.i + 1, m: money(p.cash), r: num(p.respect) }));
+    if (!quiet && !(x.paid || []).length && x.got) toast(t('tEvTok', { n: x.got, x: t(x.got === 1 ? 'evTok1_' + x.id : 'evTokN_' + x.id).toLowerCase(), a: num(x.n), b: num(e ? e.goals[evGoal(e)] : x.n) }));
+  }
+  if (!quiet) fx.vibrate([10, 30, 10]);
+}
+// a barra das fichas, com uma marca em cada meta
+function evBar(e, thin) {
+  const G = e.goals, top = G[G.length - 1];
+  return h('div', { class: 'evbar' + (thin ? ' thin' : ''), role: 'progressbar', 'aria-label': t('evTokN_' + e.id), 'aria-valuemin': 0, 'aria-valuemax': top, 'aria-valuenow': Math.min(e.n, top) },
+    h('i', { style: `width:${Math.min(100, (e.n / top) * 100)}%` }), G.slice(0, -1).map((g) => h('span', { class: 'evtk', style: `left:${(g / top) * 100}%` })));
+}
+// a linha da cidade: o que há para fazer salta à vista (o presente por abrir, ovos por apanhar)
+function evRow(e) {
+  const extra = e.gift ? t('evGiftNow') : evEggsLeft(e) ? t(evEggsLeft(e) === 1 ? 'evEggs1' : 'evEggsN', { n: evEggsLeft(e) }) : null;
+  return h('button', { class: 'evrow ev-' + e.id, on: { click: () => evSheet(e.key) } },
+    h('div', { class: 'evrh' }, h('b', null, t('ev_' + e.id)), extra ? h('span', { class: 'evnew' }, extra) : h('span', { class: 'num' }, evCount(e)), h('span', { class: 'evch', 'aria-hidden': 'true' }, '›')),
+    h('div', { class: 'evrs small' }, evWhen(e)), evDone(e) ? null : evBar(e, true));
+}
+function evBlock(me) {
+  const L = me.ev || [];
+  if (L.length) return [h('div', { class: 'evlist' }, L.map(evRow))];
+  const x = me.evNext;
+  return x ? [h('p', { class: 'small muted evnext' }, t('evNext', { x: nb(t('ev_' + x.id)), d: nb(evDate(x.start, 'short')), f: evFxTxt(x) }))] : [];
+}
+// a folha do evento: o efeito, as fichas, as metas e (Natal, Ano Novo Chinês) o presente; redesenha-se no sítio depois de abrir o presente
+function evSheet(key) {
+  const box = h('div', { class: 'stack evsh' });
+  let close;
+  const draw = () => {
+    const me = S.st.me, e = (me.ev || []).find((x) => x.key === key);
+    if (!e) { close?.(); return; }
+    const G = e.goals, tokN = t('evTokN_' + e.id).toLowerCase(), tok1 = t('evTok1_' + e.id);
+    box.replaceChildren(...[
+      h('div', { class: 'evhd ev-' + e.id }, h('h2', { class: 'evt' }, t('ev_' + e.id)), h('p', { class: 'evwhen small' }, evWhen(e))),
+      h('p', { class: 'evd' }, t('evD_' + e.id)),
+      e.fx.k === 'gift' ? null : h('p', { class: 'evfx' }, evFxTxt(e)),   // (nos de presente, a frase de cima já o diz)
+      h('div', { class: 'evp ev-' + e.id }, h('div', { class: 'evph' }, h('b', null, t('evTokN_' + e.id)), h('span', { class: 'num' }, evCount(e))), evBar(e)),
+      h('ol', { class: 'evgl' }, G.map((g, k) => { const paid = !!(e.got & (1 << k)), P = e.prize[k];
+        return h('li', { class: paid ? 'on' : '' }, h('span', { class: 'evn num' }, paid ? icon('check') : null, t('evGoalN', { n: num(g), x: g === 1 ? tok1.toLowerCase() : tokN })),
+          h('span', { class: 'evr num' }, paid ? h('s', null, money(P.cash)) : h('b', { class: 'c-cash' }, money(P.cash)),
+            P.resp && !paid ? h('span', { class: 'c-resp' }, icon('crown'), ' +' + num(P.resp)) : null, paid ? h('small', null, t('evPaid')) : null)); })),
+      h('p', { class: 'small muted' }, t('evHow', { x: tok1.toLowerCase(), c: e.cap, d: e.dn, o: S.cfg.events.opTokens })),
+      e.eggs ? h('p', { class: 'small' }, t('evEggsHow', { n: e.eggs.length, a: e.eggs.length - evEggsLeft(e), k: S.cfg.events.eggTokens })) : null,
+      e.fx.k === 'gift' ? (e.gift ? h('button', { class: 'btn buy block big', on: { click: async (ev) => { const o = await act('evGift', { key: e.key }, { el: ev.currentTarget }); if (o) draw(); } } }, t(e.id === 'lunar' ? 'evGiftBtnL' : 'evGiftBtn'))
+        : h('p', { class: 'evgd' }, icon('check'), ' ', t('evGiftDone', { m: money(e.gv || 0) }))) : null,
+      h('button', { class: 'btn ghost block', on: { click: () => close() } }, t('close'))].filter(Boolean));
+  };
+  draw();
+  close = sheet(box);
+}
+function evStrip(e) {
+  return h('button', { class: 'evs ev-' + e.id, on: { click: () => evSheet(e.key) } },
+    h('div', { class: 'evrh' }, h('b', null, t('ev_' + e.id)), h('span', { class: 'num' }, evCount(e)), h('span', { class: 'evch', 'aria-hidden': 'true' }, '›')),
+    h('div', { class: 'evrs small' }, evFxTxt(e)));
+}
+// nos ecrãs onde o efeito mexe nos números: uma linha a dizer que o preço ou a hipótese já o contam
+function evNote(...ks) {
+  return (S.st.me.ev || []).filter((e) => ks.includes(e.fx.k)).map((e) => h('p', { class: 'small evnote' }, h('b', null, t('ev_' + e.id)), ' · ' + evFxTxt(e) + ' ' + t('evIn')));
+}
+// os ovos da Páscoa: escondidos a meio do ecrã onde calham hoje (entre duas secções, num lado; o sítio sai do dia e do ecrã)
+function evEggs(tab) {
+  const out = [];
+  for (const e of S.st.me.ev || []) (e.eggs || []).forEach((x, i) => { if (x === tab && !(e.eg & (1 << i))) out.push(h('button', { class: 'evegg' + (i % 2 ? ' l' : ''), 'aria-label': t('evEggTake', { n: S.cfg.events.eggTokens }), on: { click: (ev) => act('evEgg', { key: e.key, i }, { el: ev.currentTarget }) } },
+    h('span', { class: 'evegg-o', 'aria-hidden': 'true' }))); });
+  return out;
+}
+const eggSpot = (n, tab) => { let h0 = 7; for (const ch of tab + (S.st.me.ev?.[0]?.key || '') + new Date(now()).getUTCDate()) h0 = (h0 * 31 + ch.charCodeAt(0)) >>> 0; return n > 2 ? 1 + (h0 % (n - 1)) : n; };
+
 // ---------- v116: a sentença ----------
 // O Dinis mostrou a folha «COURT RULING» de outro jogo: aqui é uma folha do mesmo papel do jornal, com os números verdadeiros da pena
 // (a da tabela, a lei das penas pesadas, os cortes do advogado) e o recurso: uma vez por pena, com custas, sem agravar se perder.
@@ -2022,6 +2117,7 @@ function screenClub() {
   const me = S.st.me, L = live(me), max = stamMax(me), R = S.cfg.refillBar;
   const out = [pageHead('club', t('s_club'))];
   const b = busyBanner(me); if (b) out.push(b);
+  out.push(...evNote('refill'));   // v117
   // stamina a mais: a barra a droga, cada uma mais cara no mesmo dia
   // Os dois números são o que se paga: quanto custa encher agora e quanto custa cada ponto neste degrau da escada.
   // A escada sobe a cada 100 pontos comprados no mesmo dia; a frase diz quando sobe e para quanto.
@@ -2061,6 +2157,7 @@ function screenPutas() {
   const me = S.st.me, L = live(me), H = S.cfg.hookers;
   const R = S.cfg.refillBar, out = [pageHead('putas', t('s_putas', { h: Math.round(100 / R.coolPerH) }))];
   const b = busyBanner(me); if (b) out.push(b);
+  out.push(...evNote('vice'));   // v117
   // o estado da escada de hoje: quanto acima do normal estão os preços e a que horas descem um degrau
   const used = me.refillBars || 0, kk = Math.floor(used / 100) + 1;
   if (kk > 1) {
@@ -4508,6 +4605,7 @@ function screenArms() {
   const me = S.st.me, G = S.cfg.gear, H = S.cfg.hitman, B = S.cfg.bullets, cash = me.cash + me.bank;
   const seg = ['fight', 'gang', 'def'].includes(S.armsSeg) ? S.armsSeg : 'fight';
   const out = [pageHead('arms', t('s_arms'))];
+  out.push(...evNote('shop'));   // v117
   out.push(h('div', { class: 'seg armseg', role: 'group' }, [['fight', t('arFight')], ['def', t('arDef')], ['gang', t('arGang')]].map(([id, lbl]) =>
     h('button', { 'aria-pressed': seg === id ? 'true' : 'false', on: { click: () => { S.armsSeg = id; render(); } } }, lbl))));
   const sub = (txt) => h('p', { class: 'small muted', style: 'margin:-4px 2px 10px' }, txt);
