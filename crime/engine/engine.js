@@ -2294,6 +2294,7 @@ export function honorVal(p, m, k) {
     case 'books': return Object.keys(p.bk.done || {}).length;
     case 'jail': return c.jail || 0;
     case 'esc': return c.esc || 0;
+    case 'busts': return c.busts || 0;
     case 'wt': return p.cx && p.cx.wt.includes(k) ? 1 : 0;
     case 'mods': return c.mods || 0;
     case 'missions': return p.mi || 0;
@@ -2313,6 +2314,7 @@ export function honorTrack(p, now, pre, type, r) {
   if (type === 'airCollect' && !r.seized && Number.isInteger(r.r) && CFG.air.routes[r.r]) { const id = CFG.air.routes[r.r].id; p.cx.air[id] = (p.cx.air[id] || 0) + 1; }
   if (type === 'digStart' && r.ok) c.digs = (c.digs || 0) + 1;
   if (type === 'jailEscape' && r.free) c.esc = (c.esc || 0) + 1;
+  if (type === 'bust' && r.freed) c.busts = (c.busts || 0) + 1;   // v115
   if (type === 'modFit' && r.ok) c.mods = (c.mods || 0) + 1;
   if (!pre.j && p.jailUntil > now) c.jail = (c.jail || 0) + 1;
   if (!pre.h && p.hospUntil > now) c.hosp = (c.hosp || 0) + 1;
@@ -3603,6 +3605,30 @@ export function jailFavor(p, now, world, kind) {
   const cut = Math.floor(((p.jailUntil - now) * J.favorCutBp) / 10000);
   p.jailUntil -= cut;
   return { ok: true, kind, cut, jailUntil: p.jailUntil };
+}
+// ---------- v115: tirar outros da prisão ----------
+// a hipótese de tirar alguém: menos quanto mais pena lhe falta, mais com a perícia de furto
+export function bustChance(p, target, now) {
+  const B = CFG.bust, left = Math.max(0, Math.ceil((target.jailUntil - now) / T.MIN));
+  return Math.max(B.minBp, Math.min(B.maxBp, B.baseBp - left * B.perMinBp + skillBp(p, 'furto')));
+}
+export function bust(p, target, now, world, rng) {
+  if (p === target || p.id === target.id) fail('SELF');
+  begin(p, now, world);   // de dentro, do hospital ou de fora do país não se tira ninguém
+  touch(target, now);
+  if (!(target.jailUntil > now)) fail('NOT_IN_JAIL');
+  const B = CFG.bust;
+  if (p.energy < B.e) fail('NO_ENERGY', { need: B.e });
+  const left = Math.max(0, Math.ceil((target.jailUntil - now) / T.MIN)), chance = bustChance(p, target, now);
+  p.energy -= B.e; p.sk.furto += B.e;   // a perícia sobe com a prática, corra bem ou mal
+  if (rng.chance(chance)) {
+    target.jailUntil = 0; target.jailTier = 0;
+    const resp = Math.min(B.respMax, 1 + Math.floor(left / B.respMin));
+    return { ok: true, freed: true, chance, left, respect: resp, levelUp: addRespect(p, resp, now) };
+  }
+  const caught = rng.chance(B.failJailBp);
+  if (caught) jailFor(p, now, B.jailMin * T.MIN, 1);
+  return { ok: true, freed: false, caught, chance, left, jailUntil: caught ? p.jailUntil : 0 };
 }
 export function jailEscape(p, now, world, rng) {
   begin(p, now, world, { allowBusy: true, jailOk: true }); inJail(p, now);

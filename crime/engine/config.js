@@ -581,6 +581,11 @@ export const CFG = {
   // perde-se a mercadoria. Oficina: 10 de energia, 50 €. Pátio: 10 de energia, aposta de 20 € a 200 € conforme o nível, treina a força.
   // Cartas: 1 € a 50 €, sem barra. Favores: 2 por estadia (tirar 15% ao tempo, ou um contacto para os golpes grandes, até 3).
   // Fuga: 30 de stamina, 35%; se falhar, a pena cresce metade do que falta.
+  // v115: tirar outros da prisão (à maneira dos «busts» do Torn). Gasta stamina como um golpe e treina a perícia de furto.
+  // Hipótese: baseBp, menos perMinBp por cada minuto de pena que falta, mais a perícia de furto (até CFG.skills.maxBp), entre minBp e maxBp.
+  // Se correr mal, failJailBp de ser apanhado: jailMin minutos dentro (com as reduções de sempre). Se correr bem, o preso sai e
+  // quem o tirou ganha 1 de respeito, mais 1 por cada respMin minutos que faltavam (até respMax).
+  bust: { e: 15, baseBp: 7500, perMinBp: 60, minBp: 300, maxBp: 9500, failJailBp: 4000, jailMin: 20, respMin: 10, respMax: 12, list: 50 },
   jail: { smuggleE: 20, smuggleLoseBp: 1500, workE: 10, work: 50, yardE: 10, yardMin: 20, yardMax: 200, cardsMax: 50, favors: 2, favorCutBp: 1500,
     contactsMax: 3, escapeE: 30, escapeBp: 3500, escapeAddBp: 5000 },
   // Stamina a mais, a droga: cada barra (100) seguida custa 25 € × k + 5 € × k² (30, 70, 120, 180 €…); a escada desce 25 pontos por hora (uma barra em 4 h).
@@ -1143,6 +1148,7 @@ export const CFG = {
     { m: 'books', cat: 'estudos', at: [1, 3, 10, 26] },
     { m: 'jail', cat: 'prisao', at: [1, 10, 50, 200] },
     { m: 'esc', cat: 'prisao', at: [1, 5, 25] },
+    { m: 'busts', cat: 'prisao', at: [1, 10, 50, 250] },   // v115: presos tirados da prisão
     { m: 'wt', cat: 'arsenal', each: 'wtypes' },
     { m: 'mods', cat: 'arsenal', at: [1, 10, 50] },
     { m: 'missions', cat: 'missoes', at: [5, 10, 20, 30] },

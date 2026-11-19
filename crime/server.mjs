@@ -30,7 +30,7 @@ const RONDA_TESTE = process.env.PRIMEIRA_RONDA ? dataDe(process.env.PRIMEIRA_RON
 // Épocas de 28 dias a contar da sexta 13/11/2026 às 21:00 de Lisboa (PRIMEIRA_EPOCA=AAAA-MM-DD muda-a, para testes)
 const ANCORA = dataDe(process.env.PRIMEIRA_EPOCA || process.env.PRIMEIRA_RONDA || '2026-11-13');
 const rng = process.env.TESTE_SEMENTE ? seededRng(+process.env.TESTE_SEMENTE) : cryptoRng();   // nos testes, a sorte pode ser sempre a mesma
-const VERSAO = 114;   // sobe quando o servidor muda, para se confirmar de fora que a versão nova já está a correr
+const VERSAO = 115;   // sobe quando o servidor muda, para se confirmar de fora que a versão nova já está a correr
 const ATOS_3S = +(process.env.ATOS_3S || 15), ATOS_MIN = +(process.env.ATOS_MIN || 400); // ações por conta: 15 em 3 s, 400 por minuto
 
 // ---------- relógio que nunca anda para trás ----------
@@ -158,6 +158,7 @@ function noticiar(now, a, r, p, alvo) {
     if (r.busted || r.linked) noticia(now, { k: 'opJail', name, o });
   }
   if (a.type === 'jailEscape' && r.free) noticia(now, { k: 'escape', name });
+  if (a.type === 'bust' && r.freed) noticia(now, { k: 'bust', name, target: r.target });   // v115
   if (a.type === 'classChange') noticia(now, { k: 'cls', name, from: r.from, to: r.cls });
   if (a.type === 'stockSell' && r.profit) { const kk = r.profit > 0 ? 'stockWin' : 'stockLoss', co = CFG.stocks.list[r.k].id; amostra(now, kk, Math.abs(r.profit), { name, co }, { k: kk, name, c: co, money: Math.abs(r.profit) }); }
   if (a.type === 'airCollect') { const to = CFG.air.routes[r.r].id; if (r.seized) amostra(now, 'airLost', r.amount, { name, to }, { k: 'airLost', name, to, money: r.amount }); else amostra(now, 'air', r.got - r.amount, { name, to }, { k: 'air', name, to, money: r.got - r.amount }); }
@@ -569,7 +570,7 @@ function cfgPublica() {
     round: { playDays: CFG.round.playDays, noPvpMs: CFG.round.noPvpMs, newbieShieldMs: CFG.round.newbieShieldMs }, season: CFG.season, raid: CFG.raid,   // v91: a wiki
     consum: CFG.consum, col: CFG.col, gyms: CFG.gyms, books: CFG.books,   // v94, v95
     social: CFG.social,   // v109: o chat e a vitrine
-    turf: CFG.turf, comp: CFG.comp, race: CFG.race, poker: CFG.poker,   // v110: o território
+    turf: CFG.turf, comp: CFG.comp, race: CFG.race, poker: CFG.poker, bust: CFG.bust,   // v110: o território
     mat: CFG.mat, craft: CFG.craft, feira: { ...CFG.feira, refs: FEIRA_REFS }, dig: CFG.dig, hunt: CFG.hunt, honors: E.HONORS, travel: CFG.travel,   // v83, v84, v98, v100, v101
     exam: (({ ans: _a, ...x }) => x)(CFG.exam), studies: CFG.studies,   // v81: a Universidade   // v80: as regras do exame, sem as respostas certas
     gov: { vote: CFG.gov.vote, laws: CFG.gov.laws, cof: CFG.gov.cof, parties: Object.fromEntries(Object.entries(CFG.gov.parties).map(([k, x]) => [k, { pos: x.pos, wOp: x.wOp, wLob: x.wLob }])) },   // v76: o parlamento
@@ -2658,6 +2659,16 @@ function agir(conta, corpo, now) {
       r = E.attack(p, alvo, now, world, a.mode === 'mug' ? 'mug' : 'beat', rng, a.drop === true, emGuerra(p.id, alvo.id, now) || emAssalto(p.id, alvo.id, now));   // v110: e nos assaltos aos bairros   // v102: em guerra, sem o «fraco demais»
       break;
     }
+    case 'bust': {   // v115: tirar alguém da prisão
+      const c = q.contaPorNome.get(String(a.target || '').toLowerCase());
+      if (!c || !jogadores.has(c.id)) throw new E.GameError('NO_TARGET');
+      const o = jogadores.get(c.id), quem = nomeDe(p.id);
+      r = E.bust(p, o, now, world, rng);
+      ctx.outros.push(o);
+      if (r.freed) ctx.ops.push(() => evento(o.id, now, { k: 'busted', by: quem }));
+      r = { ...r, target: nomeDe(o.id) };
+      break;
+    }
     case 'hitman': {
       // assassino a soldo: o alvo fica a saber que foi um assassino; quem pagou só se sabe quando falha
       const c = q.contaPorNome.get(String(a.target || '').toLowerCase());
@@ -3049,6 +3060,18 @@ async function tratar(req, res) {
     if (!limite('perfil:' + conta, 40, 10_000, now)) return enviar(res, 429, { error: 'SLOW_DOWN' });
     const pf = perfilPublico(conta, url.searchParams.get('n'), now, w);
     return pf ? enviar(res, 200, { now, ...pf }) : enviar(res, 404, { error: 'NO_TARGET' });
+  }
+  if (req.method === 'GET' && path === '/api/jail') {   // v115: quem está preso agora (e a hipótese de o tirar)
+    if (w.phase !== 'play') return enviar(res, 200, { now, list: [] });
+    carregarRonda(w.n);
+    const eu = jogadores.get(conta), list = [];
+    for (const [id, x] of jogadores) {
+      if (id === conta || !(x.jailUntil > now)) continue;
+      const g = gangueDe(id);
+      list.push({ name: nomeDe(id), level: E.level(x), until: x.jailUntil, tag: g ? g.tag : null, chance: eu ? E.bustChance(eu, x, now) : 0 });
+    }
+    list.sort((a, b) => a.until - b.until);
+    return enviar(res, 200, { now, list: list.slice(0, CFG.bust.list), n: list.length });
   }
   if (req.method === 'GET' && path === '/api/poker') {   // v114: o póquer
     if (w.phase !== 'play') return enviar(res, 200, { now, stakes: [], mine: null });

@@ -4138,3 +4138,9 @@ body .hlink span { font-size: clamp(15px, 4.6vw, 19px); white-space: normal; ove
 .pks.me .pc.md { width: 50px; height: 72px; }
 @media (min-width: 400px) { .pc.sm { width: 34px; height: 48px; } .pc.md { width: 48px; height: 68px; } .pks.me .pc.md { width: 56px; height: 80px; } }
 body .pc.back { min-width: 0; min-height: 0; }   /* (a regra do botão «voltar», .back, apanhava as costas das cartas) */
+/* v115: quem está preso (tirar da prisão) */
+.jbx { padding: 10px 0; }
+.jbx b { display: inline; }
+.jbx .jbn { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.jbx .small { margin-top: 2px; }
+.jbx .c-tx { color: var(--tx); }

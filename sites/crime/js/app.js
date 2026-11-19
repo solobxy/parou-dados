@@ -221,6 +221,7 @@ function react(type, out, before, opts) {
   else if (type === 'jailYard') { PR.patio({ r, t, money, again: () => act('jailYard') }).then(() => fx.sfx(r.win ? 'cash' : 'fail')); }
   else if (type === 'jailCards') { PR.cartas({ r, t, money, lang: lang(), bet: opts.args.bet, again: (b) => act('jailCards', { bet: b }) }).then(() => fx.sfx(r.win ? 'cash' : 'fail')); }
   else if (type === 'jailFavor') { toast(r.kind === 'time' ? t('tj_favTime', { t: minTxt(r.cut) }) : t('tj_favContact', { n: r.contacts, c: S.cfg.jail.contactsMax })); fx.sfx('claim'); }
+  else if (type === 'bust') { if (r.freed) { toast(t('tBustOk', { x: r.target, n: r.respect })); fx.sfx('crit'); } else if (r.caught) { toast(t('tBustCaught', { t: minTxt(r.jailUntil - now()) }), true); fx.sfx('bust'); fx.vibrate([40, 60, 40]); } else { toast(t('tBustFail')); fx.sfx('tap'); } }   // v115
   else if (type === 'jailEscape') { PR.fuga({ r, t, minTxt }).then(() => { if (r.free) fx.sfx('crit'); else { fx.sfx('bust'); fx.vibrate([40, 60, 40]); } }); }
   else if (type === 'repair') { toast(r.kit ? t('tRepairedKit', { x: t('g_' + me.eq[r.slot].id), n: mtN(me, 'kit') }) : t('tRepaired', { x: t('g_' + me.eq[r.slot].id), m: money(r.price) })); fx.sfx('claim'); }
   else if (type === 'luxury') { toast(t('luxBought', { x: list('lux')[me.luxuries - 1], n: r.respect })); fx.sfx('claim'); }
@@ -482,6 +483,7 @@ function loadFor(tab) {
   if (tab === 'empresas') loadComp();   // v111
   if (tab === 'corridas') loadRaces();   // v112
   if (tab === 'poker') { S.pkSig = null; loadPoker(); }   // v114
+  if (tab === 'jail') loadJail();   // v115
   if (tab === 'feira') { S.feiraItem = null; loadFeira(); }   // v84
   if (tab === 'club' || tab === 'putas') loadVenues();
   if (tab === 'bolsa') { S.stkSel = null; loadStocks(); }
@@ -722,7 +724,7 @@ function screenClass() {
 
 // ---------- a cidade ----------
 // ---------- jornal da cidade: o que os outros andam a fazer ----------
-const NW_IC = { season: 'crown', hitman: 'skull', hitmanFail: 'shield', stockWin: 'cash', stockLoss: 'skull', stockBust: 'skull', air: 'cash', airLost: 'lock', cls: 'user', gangNew: 'fist', gangUp: 'empire', gangHeist: 'cash', gangHeistFail: 'lock', gangHit: 'fist', gangHitFail: 'skull', warDecl: 'fist', warStart: 'fist', warEnd: 'crown', turfStart: 'flag', turfTake: 'flag', turfHold: 'shield', compNew: 'empire', casino: 'gem', casinoLoss: 'skull', job: 'cash', crit: 'gem', spree: 'bolt', jail: 'lock', house: 'empire', lux: 'crown', beat: 'fist', mug: 'cash', fail: 'skull', sick: 'pill', lvl: 'crown', fight: 'fist', op: 'cash', opJail: 'lock', escape: 'bolt', mus: 'crown' };
+const NW_IC = { bust: 'lock', season: 'crown', hitman: 'skull', hitmanFail: 'shield', stockWin: 'cash', stockLoss: 'skull', stockBust: 'skull', air: 'cash', airLost: 'lock', cls: 'user', gangNew: 'fist', gangUp: 'empire', gangHeist: 'cash', gangHeistFail: 'lock', gangHit: 'fist', gangHitFail: 'skull', warDecl: 'fist', warStart: 'fist', warEnd: 'crown', turfStart: 'flag', turfTake: 'flag', turfHold: 'shield', compNew: 'empire', casino: 'gem', casinoLoss: 'skull', job: 'cash', crit: 'gem', spree: 'bolt', jail: 'lock', house: 'empire', lux: 'crown', beat: 'fist', mug: 'cash', fail: 'skull', sick: 'pill', lvl: 'crown', fight: 'fist', op: 'cash', opJail: 'lock', escape: 'bolt', mus: 'crown' };
 const seedOf = (str) => { let x = 7; for (let i = 0; i < str.length; i++) x = (x * 31 + str.charCodeAt(i)) | 0; return Math.abs(x); };
 // a gangue da rua (a do bot) tem nome próprio em cada língua; as dos jogadores ficam como eles as escreveram
 const gName = (name) => (name === S.cfg?.gang?.bot?.name ? t('gBotName') : name);
@@ -1902,9 +1904,30 @@ function screenOps() {
 }
 // ---------- prisão ----------
 // A pena troca o que se pode fazer, não pára o jogo: a stamina e a energia continuam a encher, e lá dentro ganha-se cerca de metade do que cá fora.
+// ---------- v115: tirar outros da prisão ----------
+async function loadJail() {
+  clearTimeout(S.jlT); S.jlT = null;
+  try { S.jl = await api('GET', '/api/jail'); S.jlAt = now(); if (S.tab === 'jail') render(); } catch {}
+  if (S.tab === 'jail') S.jlT = setTimeout(loadJail, 15000);
+}
+const bustCls = (bp) => (bp >= 6000 ? 'c-cash' : bp >= 3000 ? 'c-resp' : 'c-red');
+function jailInmates(me, L) {
+  const B = S.cfg.bust, d = S.jl, out = [];
+  out.push(h('p', { class: 'small muted' }, t('buHow', { e: B.e, p: pctOf(B.failJailBp), m: B.jailMin })));
+  if (!d) { out.push(h('p', { class: 'muted' }, t('loading'))); return out; }
+  out.push(h('h2', { class: 'sec' }, t('buT'), d.n ? h('span', { class: 'small muted num' }, ' · ' + num(d.n)) : null));
+  if (!d.list.length) { out.push(h('div', { class: 'note' }, h('p', { class: 'muted' }, t('buNone')))); return out; }
+  const busy = L.hosp || me.tr;
+  out.push(h('div', { class: 'card vlist vc' }, d.list.filter((x) => x.until > now()).map((x) => h('div', { class: 'vrow jbx' },
+    h('div', { class: 'grow' }, h('div', { class: 'jbn' }, x.tag ? h('span', { class: 'gtag' }, x.tag) : null, x.tag ? ' ' : null, h('b', null, x.name)),
+      h('div', { class: 'small num muted' }, t('trNeed', { n: x.level }) + ' · ' + t('buLeft') + ' ', h('b', { class: 'c-tx', dataset: { left: x.until } }, dur(x.until - now()))),
+      h('div', { class: 'small num' }, h('b', { class: bustCls(x.chance) }, t('buChance', { p: Math.round(x.chance / 100) })))),
+    h('button', { class: 'btn sm', disabled: !!busy || L.energy < B.e, on: { click: async (e) => { const o = await act('bust', { target: x.name }, { el: e.currentTarget }); if (o) loadJail(); } } }, t('buBtn', { e: B.e }))))));
+  return out;
+}
 function screenJail() {
   const me = S.st.me, L = live(me), out = [pageHead('jail')], b = busyBanner(me);
-  if (!L.jail) { out.push(b || h('div', { class: 'note' }, h('p', { class: 'muted' }, t('notJailed')), h('button', { class: 'btn ghost', on: { click: () => go('rob') } }, t('backToWork')))); return out; }
+  if (!L.jail) { if (b) out.push(b); out.push(...jailInmates(me, L)); return out; }   // v115: cá fora vê-se quem está preso e pode tirar-se
   out.push(b);
   const J = S.cfg.jail, cash = me.cash, smug = Math.floor((me.streetBar * J.smuggleE) / 200), bet = me.yardBet, favLeft = Math.max(0, J.favors - (me.jf || 0));
   const btn = (lbl, off, type, args) => h('button', { class: 'btn sm ghost', disabled: off, on: { click: (e) => act(type, args || {}, { el: e.currentTarget }) } }, lbl);
@@ -4953,6 +4976,8 @@ function eventRow(e) {
   if (e.k === 'gop') return opResult(e, e.out || e.cancelled ? 0 : e.respect, e.t);
   if (e.k === 'warDecl') return h('div', { class: 'card row' }, h('span', { class: 'c-red' }, icon('fist')),   // v102
     h('div', { class: 'grow' }, h('div', null, t(e.ours ? 'evWarOurs' : 'evWarTheirs', { g: e.vs.name, h: hhmm(e.start) })), h('div', { class: 'small muted' }, dur(now() - e.t))));
+  if (e.k === 'busted') return h('div', { class: 'card row' }, h('span', { class: 'c-cash' }, icon('lock')),   // v115
+    h('div', { class: 'grow' }, h('div', null, t('evBusted', { x: e.by })), h('div', { class: 'small muted' }, dur(now() - e.t))));
   if (e.k === 'pkOut' || e.k === 'pkBack') return h('button', { class: 'card row tap', on: { click: () => go('poker') } }, h('span', { class: 'muted' }, icon('gem')),   // v114
     h('div', { class: 'grow' }, h('div', null, e.k === 'pkBack' ? t('evPkBack', { m: money(e.m) }) : t('evPkOut_' + (e.why || 'left'), { m: money(e.m) })), h('div', { class: 'small muted' }, dur(now() - e.t))));
   if (e.k === 'race' || e.k === 'raceOff') return h('button', { class: 'card row tap', on: { click: () => go('corridas') } }, h('span', { class: e.k === 'raceOff' ? 'muted' : e.prize ? 'c-cash' : 'muted' }, icon('car')),   // v112
