@@ -1,11 +1,11 @@
 {
-  "built_at": "2026-11-19T12:07:39.556238+00:00",
-  "db_bytes": 797310976,
-  "gz_bytes": 211576060,
+  "built_at": "2026-11-19T22:52:26.096068+00:00",
+  "db_bytes": 797323264,
+  "gz_bytes": 211576414,
   "totals": {
-    "lines": 2832,
+    "lines": 2831,
     "stops": 50528,
-    "trips": 140385,
+    "trips": 140386,
     "stop_times": 4315269,
     "operators": 33,
     "operators_ok": 30,
@@ -92,14 +92,14 @@
       "id": "transtejo_soflusa",
       "operator_name": "Transtejo Soflusa",
       "status": "OK",
-      "lines": 6,
+      "lines": 5,
       "stops": 10,
-      "trips": 937,
+      "trips": 938,
       "valid_until": "2028-12-31",
       "validade": "ok",
       "dias_validade": 773,
       "horario_prolongado": false,
-      "url": "https://api.ttsl.pt/files/GTFS.ZIP",
+      "url": "https://files.mobilitydatabase.org/mdb-2921/latest.zip",
       "last_error": null,
       "servicos_associados": null,
       "servicos_sem_calendario": null,
@@ -641,7 +641,7 @@
     }
   ],
   "desenhos": {
-    "bytes": 9872418,
+    "bytes": 9872257,
     "por_operador": {
       "cam_madeira": {
         "viagens": 1425,
@@ -769,9 +769,9 @@
         "desenhos": 9
       },
       "transtejo_soflusa": {
-        "viagens": 937,
-        "com_desenho": 937,
-        "desenhos": 18
+        "viagens": 938,
+        "com_desenho": 938,
+        "desenhos": 17
       },
       "tub_braga": {
         "viagens": 3794,
@@ -983,13 +983,13 @@
           "total": 392
         },
         "servicos_com_data_hoje": [
-          "BexpU",
+          "DU",
           "FU",
           "AU",
-          "DU",
+          "BexpU",
+          "EU",
           "BU",
-          "CU",
-          "EU"
+          "CU"
         ],
         "viagens_por_servico": [
           {
@@ -1044,5 +1044,5 @@
       }
     }
   },
-  "duration_s": 255
+  "duration_s": 679
 }
