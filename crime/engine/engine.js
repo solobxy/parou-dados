@@ -57,7 +57,7 @@ export function newPlayer(id, now, world, opts = {}) {
     mi: 0,                         // objetivos já recebidos
     mq: CFG.missions.map((_, i) => i), mrT: 0,   // os que faltam, pela ordem em que vão aparecer; e quando se trocou pela última vez
     titles: [],                    // títulos que ficam para sempre: { k: 'vet' } (veterano das rondas), { k: 'ep', n, d, pos } (pódio de uma época)
-    cls: '', clsAt: 0, av: 0, fx: {}, sick: false, hkN: CFG.hookers.list.map(() => 0), hkAt: CFG.hookers.list.map(() => 0), house: 0, hu: CFG.house.ups.map(() => 0), bj: null, wm: {}, cd: { est: 0, med: 0 }, col: {}, mus: {}, sx: { F: 0, T: 0, I: 0, C: 0 }, gs: null, gym: 'garagem', gyms: ['garagem'], gx: 0, bk: { own: {}, rd: null, on: null, done: {}, last: null, n: 0, bd: null }, mt: {}, cf: null, maq: {}, dg: null, dgc: {}, hunt: { on: null, sk: 0, tr: {}, day: '', q: {}, fc: {}, n: 0 }, hon: {}, honSel: null, cx: { air: {}, wt: [], trip: {} }, tr: null, trL: null, trB: 0, trD: null,        // profissão, avatar e efeitos temporários (kind -> { bp, until })
+    cls: '', clsAt: 0, av: 0, fx: {}, sick: false, hkN: CFG.hookers.list.map(() => 0), hkAt: CFG.hookers.list.map(() => 0), house: 0, hu: CFG.house.ups.map(() => 0), bj: null, wm: {}, cd: { est: 0, med: 0 }, col: {}, mus: {}, sx: { F: 0, T: 0, I: 0, C: 0 }, gs: null, gym: 'garagem', gyms: ['garagem'], gx: 0, bk: { own: {}, rd: null, on: null, done: {}, last: null, n: 0, bd: null }, mt: {}, cf: null, maq: {}, dg: null, dgc: {}, hunt: { on: null, sk: 0, tr: {}, day: '', q: {}, fc: {}, n: 0 }, hon: {}, honSel: null, honVit: [], cx: { air: {}, wt: [], trip: {} }, tr: null, trL: null, trB: 0, trD: null,        // profissão, avatar e efeitos temporários (kind -> { bp, until })
   };
 }
 
@@ -92,6 +92,8 @@ function migrate(p) {
   if (p.tr === undefined) { p.tr = null; p.trL = null; p.trB = 0; }   // v101: a viagem, a mala que chegou e a mala comprada
   if (p.trD === undefined) p.trD = null;   // e as viagens de hoje { d: dia de Lisboa, n }
   if (p.honSel !== null && (typeof p.honSel !== 'string' || !p.hon[p.honSel])) p.honSel = null;
+  if (!Array.isArray(p.honVit)) p.honVit = [];   // v109: a vitrine do perfil público (até 6 honras)
+  p.honVit = p.honVit.filter((k, i, v) => typeof k === 'string' && p.hon[k] && v.indexOf(k) === i).slice(0, CFG.social.vitMax);
   if (!p.hunt || typeof p.hunt !== 'object' || Array.isArray(p.hunt)) p.hunt = { on: null, sk: 0, tr: {}, day: '', q: {}, fc: {}, n: 0 };   // v98: caça (saída aberta, perícia em milésimos, troféus, saídas com licença do dia, reservas vigiadas)
   if (!p.c) p.c = { crimes: 0, wins: 0, trains: 0, refills: 0, collects: 0, pvpWins: 0, ports: 0 };
   if (!Number.isSafeInteger(p.mi)) p.mi = 0;
@@ -2151,6 +2153,18 @@ export function honorPick(p, now, world, id) {
   if (id !== null && !(typeof id === 'string' && honorOf(id) && p.hon && p.hon[id])) fail('NO_HONOR');
   p.honSel = id;
   return { ok: true, id };
+}
+
+// v109: a vitrine do perfil público: até CFG.social.vitMax honras ganhas, pela ordem escolhida (lista vazia tira tudo)
+export function honorShow(p, now, world, ids) {
+  if (!Array.isArray(ids) || ids.length > CFG.social.vitMax) fail('BAD_ACTION');
+  const out = [];
+  for (const id of ids) {
+    if (typeof id !== 'string' || !honorOf(id) || !(p.hon && p.hon[id])) fail('NO_HONOR');
+    if (!out.includes(id)) out.push(id);
+  }
+  p.honVit = out;
+  return { ok: true, ids: out };
 }
 
 // ---------- Feira da Ladra (v84) ----------
@@ -4360,6 +4374,7 @@ export function checkInvariants(p) {
   if (p.bk.on && (!bookOf(p.bk.on.id) || !Number.isSafeInteger(p.bk.on.until))) bad.push('book on');
   if (p.hon) for (const k of Object.keys(p.hon)) if (!honorOf(k) || !Number.isSafeInteger(p.hon[k])) bad.push('hon ' + k);   // v100
   if (p.honSel != null && !(p.hon && p.hon[p.honSel])) bad.push('honSel');
+  if (p.honVit != null && (!Array.isArray(p.honVit) || p.honVit.length > CFG.social.vitMax || p.honVit.some((k) => !(p.hon && p.hon[k])))) bad.push('honVit');   // v109
   if (p.biz.length !== CFG.biz.length) bad.push('biz length');
   p.biz.forEach((s, i) => {
     for (const k of ['n', 'stored', 'rem', 't']) if (!Number.isSafeInteger(s[k]) || s[k] < 0) bad.push(`biz.${k}=${s[k]}`);

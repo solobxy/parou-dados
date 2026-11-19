@@ -29,7 +29,7 @@ const RONDA_TESTE = process.env.PRIMEIRA_RONDA ? dataDe(process.env.PRIMEIRA_RON
 // Épocas de 28 dias a contar da sexta 13/11/2026 às 21:00 de Lisboa (PRIMEIRA_EPOCA=AAAA-MM-DD muda-a, para testes)
 const ANCORA = dataDe(process.env.PRIMEIRA_EPOCA || process.env.PRIMEIRA_RONDA || '2026-11-13');
 const rng = process.env.TESTE_SEMENTE ? seededRng(+process.env.TESTE_SEMENTE) : cryptoRng();   // nos testes, a sorte pode ser sempre a mesma
-const VERSAO = 108;   // sobe quando o servidor muda, para se confirmar de fora que a versão nova já está a correr
+const VERSAO = 109;   // sobe quando o servidor muda, para se confirmar de fora que a versão nova já está a correr
 const ATOS_3S = +(process.env.ATOS_3S || 15), ATOS_MIN = +(process.env.ATOS_MIN || 400); // ações por conta: 15 em 3 s, 400 por minuto
 
 // ---------- relógio que nunca anda para trás ----------
@@ -506,7 +506,7 @@ function vista(p, now) {
     cd: { est: E.consumWait(p, 'est', now), med: E.consumWait(p, 'med', now) },   // v78: quanto falta na espera de cada família
     mt: p.mt, cf: p.cf, maq: p.maq,   // v83: depósito, bancada e máquinas
     dg: E.digView(p, now), dgc: p.dgc, arq: E.stLevel(p, 'arqueologia'),   // v85: a escavação aberta (sem a grelha), os sítios vigiados, o nível de Arqueologia
-    hon: p.hon || {}, honSel: p.honSel || null, honv: E.honorVals(p),   // v100: honras ganhas, a escolhida e os números de todas
+    hon: p.hon || {}, honSel: p.honSel || null, honVit: p.honVit || [], honv: E.honorVals(p),   // v100: honras ganhas, a escolhida e os números de todas
     tr: E.trView(p), trL: p.trL, trB: p.trB, nArm: E.trWeapons(p), trCc: E.trContactCost(p), trN: p.trD && p.trD.d === E.dayOf(now) ? p.trD.n : 0,   // v101: a viagem (sem a decisão da alfândega), a mala que chegou, a mala comprada e as armas que o raio-X vê
     trw: mk ? Object.fromEntries(Object.keys(CFG.travel.goods).map((g) => { const x = E.trState(mk.w, g, now); return [g, { s: x.s, sat: x.sat }]; })) : null,   // o stock lá fora e o preço do importador
     hn: E.huntView(p, now), hk: p.hunt.sk, ht: p.hunt.tr, hfc: p.hunt.fc, hq: Object.fromEntries(CFG.hunt.sites.map((x) => [x.id, E.huntQuotaLeft(p, now, x.id)])),   // v98: a saída de caça, a perícia (milésimos), os troféus, as reservas vigiadas e as saídas com licença que faltam hoje
@@ -560,6 +560,7 @@ function cfgPublica() {
     bustBp: CFG.bustBp, crimeAllMax: CFG.crimeAllMax, casino: { minBet: CFG.casino.minBet, limits: CFG.casino.limits, slotMinC: CFG.casino.slotMinC, red: CFG.casino.red, dice: CFG.casino.dice, wheel: { segs: CFG.casino.wheel.segs, spots: CFG.casino.wheel.spots, topMult: CFG.casino.wheel.topMult.map(([m]) => m), louca: CFG.casino.wheel.louca }, slots: Object.fromEntries(Object.entries(CFG.casino.slots).map(([k, g]) => [k, { kind: g.kind, cols: g.cols, rows: g.rows, min: g.min, nsym: g.nsym, trig: g.trig, pay: g.pay, scatPay: g.scatPay, free: g.free, fs: g.fs, retrig: g.retrig, buy: g.buy, superBuy: g.superBuy, max: g.max, accFree: g.accFree, accAll: g.accAll, orbBase: g.orbBase }])) }, gang: CFG.gang, classes: CFG.classes, classChange: CFG.classChange, avatars: CFG.avatars, hookers: CFG.hookers, house: CFG.house, mastery: CFG.mastery, missions: CFG.missions.length, start: CFG.start,
     round: { playDays: CFG.round.playDays, noPvpMs: CFG.round.noPvpMs, newbieShieldMs: CFG.round.newbieShieldMs }, season: CFG.season, raid: CFG.raid,   // v91: a wiki
     consum: CFG.consum, col: CFG.col, gyms: CFG.gyms, books: CFG.books,   // v94, v95
+    social: CFG.social,   // v109: o chat e a vitrine
     mat: CFG.mat, craft: CFG.craft, feira: { ...CFG.feira, refs: FEIRA_REFS }, dig: CFG.dig, hunt: CFG.hunt, honors: E.HONORS, travel: CFG.travel,   // v83, v84, v98, v100, v101
     exam: (({ ans: _a, ...x }) => x)(CFG.exam), studies: CFG.studies,   // v81: a Universidade   // v80: as regras do exame, sem as respostas certas
     gov: { vote: CFG.gov.vote, laws: CFG.gov.laws, cof: CFG.gov.cof, parties: Object.fromEntries(Object.entries(CFG.gov.parties).map(([k, x]) => [k, { pos: x.pos, wOp: x.wOp, wLob: x.wLob }])) },   // v76: o parlamento
@@ -937,6 +938,73 @@ function vistaFeira(conta, now, item, aoff = 0, an = 40) {
     const u = qf.precos.all(ronda, item).map((x) => x.unit).sort((x, y) => x - y);
     out.item = { id: item, lista: qf.doItem.all(ronda, item, now).map((L) => linhaFeira(L, conta, now, cache)), med: u.length ? u[Math.floor(u.length / 2)] : 0, vendas: u.length,
       pedidos: qf.pedidosDoItem.all(ronda, item, now).map((L) => linhaFeira(L, conta, now, cache)) };
+  }
+  return out;
+}
+
+// ---------- v109: chat público da cidade e perfil público ----------
+// Um só canal para toda a gente. Guardam-se as mensagens dos últimos CFG.social.keepMs; as ligações saem como «[link]» (spam e burlas).
+db.exec(`CREATE TABLE IF NOT EXISTS chat_publico (id INTEGER PRIMARY KEY AUTOINCREMENT, conta TEXT NOT NULL, t INTEGER NOT NULL, txt TEXT NOT NULL);
+CREATE INDEX IF NOT EXISTS chat_publico_t ON chat_publico (t);`);
+const qc = {
+  fala: db.prepare('INSERT INTO chat_publico (conta, t, txt) VALUES (?, ?, ?)'),
+  ultimas: db.prepare('SELECT id, conta, t, txt FROM chat_publico ORDER BY id DESC LIMIT ?'),
+  depois: db.prepare('SELECT id, conta, t, txt FROM chat_publico WHERE id > ? ORDER BY id LIMIT ?'),
+  limpa: db.prepare('DELETE FROM chat_publico WHERE t < ?'),
+  max: db.prepare('SELECT MAX(id) AS m FROM chat_publico'),
+};
+let chatUlt = qc.max.get().m || 0;   // o número da última mensagem (vai no /api/state, para o botão mostrar as que não leste)
+const ultimaFala = new Map();        // conta -> { t, txt } (não repetir a mesma frase seguida)
+const vistos = new Map();            // conta -> quando fez o último pedido (para o «online» do perfil)
+const LINK_RE = /\b(?:https?:\/\/|www\.)\S+|\b[\w-]+(?:\.[\w-]+)*\.(?:com|pt|net|org|io|gg|xyz|me|ly|co|app|link|info|ru|br)\b(?:\/\S*)?/gi;
+const limpaFala = (x) => String(x || '').replace(/[\u0000-\u001f\u007f\u2028\u2029]/g, ' ').replace(/\s{2,}/g, ' ').trim().slice(0, CFG.social.max).replace(LINK_RE, '[link]');
+function linhaChat(m, conta) {
+  const o = jogadores.get(m.conta);
+  return { id: m.id, t: m.t, name: nomeDe(m.conta), lvl: o ? E.level(o) : 0, tag: tagDe(m.conta), me: m.conta === conta, txt: m.txt };
+}
+function vistaChat(conta, after) {
+  const P = CFG.social.page;
+  const rows = Number.isSafeInteger(after) && after > 0 ? qc.depois.all(after, P) : qc.ultimas.all(P).reverse();
+  return { msgs: rows.map((m) => linhaChat(m, conta)), last: chatUlt };
+}
+function falarCidade(conta, txt0, now, w) {
+  const p = jogadorDe(conta, now, w);
+  if (!p) throw new E.GameError('NO_PLAYER');
+  if (E.level(p) < CFG.social.minLevel) throw new E.GameError('LOW_LEVEL', { need: CFG.social.minLevel });
+  const txt = limpaFala(txt0);
+  if (!txt) throw new E.GameError('BAD_ACTION');
+  const u = ultimaFala.get(conta);
+  if (u && now - u.t < CFG.social.gapMs) throw new E.GameError('SLOW_DOWN');
+  if (u && u.txt === txt && now - u.t < 60_000) throw new E.GameError('SAME_MSG');
+  if (!limite('chatw:' + conta, CFG.social.rateN, CFG.social.rateMs, now)) throw new E.GameError('SLOW_DOWN');
+  const r = qc.fala.run(conta, now, txt);
+  chatUlt = Number(r.lastInsertRowid); ultimaFala.set(conta, { t: now, txt });
+  return { ok: true, id: chatUlt };
+}
+// O perfil de qualquer jogador: o que já é público no ranking e nas lutas (nível, respeito, gangue, onde está), mais a vitrine
+// das honras e o que quem vê pode fazer (atacar, pagar a fiança ou o médico a alguém do gangue). Dinheiro e posses não saem.
+function perfilPublico(conta, nome, now, w) {
+  const c = NOME_RE.test(String(nome || '')) ? q.contaPorNome.get(String(nome).toLowerCase()) : null;
+  if (!c) return null;
+  carregarRonda(w.n);
+  const o = jogadores.get(c.id), g = gangueDe(c.id), visto = vistos.get(c.id) || 0;
+  const base = { name: c.nome, since: c.criada, me: c.id === conta, gang: g ? { tag: g.tag, name: g.nome } : null };
+  if (!o) return { ...base, active: false };
+  const x = E.trWhere(o, now);
+  const st = o.jailUntil > now ? { k: 'jail', until: o.jailUntil } : o.hospUntil > now ? { k: 'hosp', until: o.hospUntil } : x ? { k: 'away', at: x.to, fly: x.st !== 'there' } : { k: 'free' };
+  const out = {
+    ...base, active: true, level: E.level(o), respect: o.respect, cls: o.cls || '', av: o.av || 0, vet: vet(o),
+    hon: o.honSel || null, vit: (o.honVit || []).filter((k) => o.hon && o.hon[k]), honN: Object.keys(o.hon || {}).length,
+    st, online: now - visto < CFG.social.onlineMs, seen: Math.max(visto, o.t || 0),
+    c: { crimes: o.c?.crimes || 0, pvp: o.c?.pvpWins || 0, sets: Object.keys(o.mus || {}).filter((k) => o.mus[k] > 0).length, house: o.house || 0 },
+  };
+  const me = c.id === conta ? null : jogadores.get(conta);
+  if (me && w.phase === 'play') {
+    const m1 = { start: w.start, playEnd: w.playEnd }, livre = { ...me, energy: CFG.pvp.energy, jailUntil: 0, hospUntil: 0, shieldUntil: 0 };
+    const why = E.canAttack(livre, o, now, m1);
+    out.can = { why: why || null, chance: why ? 0 : E.attackChanceBp(me, o, now), gain: why ? 0 : E.expectedGain(me, o, now),
+      hw: E.canHitman({ ...me, shieldUntil: 0 }, o, now, m1) || null, hp: E.hitmanPrice(o), hc: E.hitmanChanceBp(o),
+      same: !!(me.gang && me.gang === o.gang), bail: st.k === 'jail' ? E.bailCost(o, now) : 0, medic: st.k === 'hosp' ? E.medicCost(o, now) : 0 };
   }
   return out;
 }
@@ -1792,6 +1860,7 @@ function agir(conta, corpo, now) {
     case 'huntNear': r = recordesCaca(mk0, p, now, E.huntNear(p, now, world, rng)); break;
     case 'huntShoot': r = recordesCaca(mk0, p, now, E.huntShoot(p, now, world, rng, Number(a.at))); if (r.caught) noticia(now, { k: 'hcaught', name: nomeDe(p.id), site: r.site }); break;
     case 'honorPick': r = E.honorPick(p, now, world, a.id === null ? null : String(a.id || '').slice(0, 64)); break;   // v100
+    case 'honorShow': r = E.honorShow(p, now, world, Array.isArray(a.ids) ? a.ids.slice(0, CFG.social.vitMax + 1).map((x) => String(x).slice(0, 64)) : null); break;   // v109: a vitrine
     case 'huntStop': r = recordesCaca(mk0, p, now, E.huntStop(p, now, world)); break;
     case 'gymDone': r = E.gymDone(p, now, world, Array.isArray(a.taps) ? a.taps.slice(0, 64) : null); break;
     case 'craftStart': r = E.craftStart(p, now, world, String(a.id || ''), a.n === undefined ? 1 : int(a.n)); break;   // v83: a cave
@@ -2212,6 +2281,7 @@ async function tratar(req, res) {
     return enviar(res, 200, { now, round: w0, season: vistaEpoca(epocaEmDia(now)), account: null, me: null, rank: null, players: jogadores.size, feed: ultimas() });
   }
   if (!conta) return enviar(res, 401, { error: 'LOGIN_REQUIRED' });
+  vistos.set(conta, now);   // v109: o «online» do perfil público
 
   if (req.method === 'POST' && path === '/api/logout') {
     const t = lerCookie(req); if (t) q.apagarSessao.run(sha(t));
@@ -2228,7 +2298,7 @@ async function tratar(req, res) {
     // já está cheia é dada aqui e gravada, em vez de ficar a cinzento até à ação seguinte. honorsCheck só marca a data, não dá prémios.
     if (p && E.honorsCheck(p, now).length) guardar(p, now);
     // a posição que aparece no topo é a da época, na tua divisão (é aí que se compete)
-    return enviar(res, 200, { now, round: w, season: vistaEpoca(epocaEmDia(now)), account: { name: c?.nome, lang: c?.lingua }, me: p ? vista(p, now) : null, rank: posNaEpoca(now, p), players: jogadores.size, feed: ultimas() });
+    return enviar(res, 200, { now, round: w, season: vistaEpoca(epocaEmDia(now)), account: { name: c?.nome, lang: c?.lingua }, me: p ? vista(p, now) : null, rank: posNaEpoca(now, p), players: jogadores.size, feed: ultimas(), chatLast: chatUlt });
   }
   if (req.method === 'POST' && path === '/api/uso') {   // v90: os ecrãs abertos (o site junta e manda de minuto a minuto)
     if (!limite('uso:' + conta, 6, 60_000, now)) return enviar(res, 429, { error: 'SLOW_DOWN' });
@@ -2292,6 +2362,23 @@ async function tratar(req, res) {
     if (!geral) { out.prizes = premiosAgora(now, d); out.last = podioDe(ep.n - 1, d); }
     return enviar(res, 200, out);
   }
+  if (req.method === 'GET' && path === '/api/chat') {   // v109: o chat da cidade (after: só as mais novas)
+    if (!limite('chatr:' + conta, 60, 10_000, now)) return enviar(res, 429, { error: 'SLOW_DOWN' });
+    carregarRonda(w.n);
+    return enviar(res, 200, { now, ...vistaChat(conta, parseInt(url.searchParams.get('after') || '0', 10)) });
+  }
+  if (req.method === 'POST' && path === '/api/chat') {
+    let b; try { b = await lerCorpo(req); } catch { return enviar(res, 400, { error: 'BAD_REQUEST' }); }
+    try { return enviar(res, 200, { now, ...falarCidade(conta, b && b.txt, now, w) }); } catch (e) {
+      if (e instanceof E.GameError) { const { code, ...extra } = e; delete extra.message; return enviar(res, 400, { error: code, ...extra, now }); }
+      throw e;
+    }
+  }
+  if (req.method === 'GET' && path === '/api/profile') {   // v109: o perfil público
+    if (!limite('perfil:' + conta, 40, 10_000, now)) return enviar(res, 429, { error: 'SLOW_DOWN' });
+    const pf = perfilPublico(conta, url.searchParams.get('n'), now, w);
+    return pf ? enviar(res, 200, { now, ...pf }) : enviar(res, 404, { error: 'NO_TARGET' });
+  }
   if (req.method === 'GET' && path === '/api/events') {
     return enviar(res, 200, { now, list: q.eventos.all(conta).map((r) => ({ id: r.id, t: r.t, ...JSON.parse(r.dados) })) });
   }
@@ -2318,6 +2405,7 @@ setInterval(() => {
     q.limparNoticias.run(now - 15 * T.DAY);
     qm.limpar.run(Math.floor((now - 2 * T.DAY) / 100));
     qg.limpaChat.run(now - 20 * T.DAY);
+    qc.limpa.run(now - CFG.social.keepMs);   // v109
     const nome = join(dir, `jogo-${new Date(now).toISOString().slice(0, 13)}.db`);
     // v89: a cópia faz-se aos bocados, sem parar o jogo (VACUUM INTO parava tudo ~0,4 s com 50 000 jogadores)
     const limpar = () => { const fs = readdirSync(dir).filter((f) => f.endsWith('.db')).sort(); while (fs.length > 24) unlinkSync(join(dir, fs.shift())); };

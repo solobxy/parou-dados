@@ -319,7 +319,8 @@ function buildHud() {
     h('div', { class: 'hbars' },
       h('button', { class: 'sbar en', 'aria-label': t('energy') + ' · ' + t('p_club'), on: { click: () => go('club') } }, S.hud.ebar, S.hud.etxt),
       h('button', { class: 'sbar vg', 'aria-label': t('vigor') + ' · ' + t('p_gym'), on: { click: () => go('gym') } }, S.hud.gbar, S.hud.gtxt),
-      h('button', { class: 'sbar vi', 'aria-label': t('vice') + ' · ' + t('p_hosp'), on: { click: () => go('hosp') } }, S.hud.vbar, S.hud.vtxt)),
+      h('button', { class: 'sbar vi', 'aria-label': t('vice') + ' · ' + t('p_hosp'), on: { click: () => go('hosp') } }, S.hud.vbar, S.hud.vtxt),
+      S.chatFab = h('button', { class: 'chatbtn', 'aria-label': t('chatOpen'), on: { click: () => openChat() } }, icon('chat'), S.chatN = h('span', { class: 'chatn', hidden: true }))),   // v109: o chat da cidade
     S.hud.fx, S.hud.quick = h('nav', { class: 'hquick', 'aria-label': t('qkLabel') }));   // v90: a linha dos atributos saiu do topo (está no perfil); entrou a barra de atalhos
   S.hud.shown = { cash: me.cash, respect: me.respect };
   return hud;
@@ -385,6 +386,7 @@ function delta(el, d, fmt) {
 }
 
 function updateHud() {
+  chatFabSync();
   const me = S.st.me; if (!me || !S.hud.cash) return;
   const L = me.level;
   S.hud.lvl.textContent = L;
@@ -3611,11 +3613,18 @@ const HON_SAME = ['biz', 'house', 'lux', 'course', 'mus', 'wt', 'sp'];   // a de
 const honVal = (me, h) => (me.honv || {})[h.m + (h.k ? ':' + h.k : '')] || 0;
 const honBar = (h, opts) => HB.honorBar(h, honName(h), opts);
 const honNum = (h, v) => (h.m === 'nw' ? moneyShort(v) + '/' + moneyShort(h.at) : num(v) + '/' + num(h.at));
+function honShow(ids) { act('honorShow', { ids }).then((r) => { if (r) render(true); }); }   // v109: a vitrine
 function honPick(id) { act('honorPick', { id }).then((r) => { if (!r) return; if (id) toast(t('tHonOn', { x: honName(honOf(id)) })); render(true); }); }
 function screenHonras() {
   const me = S.st.me, all = S.cfg.honors || [], got = me.hon || {}, n = all.filter((h) => got[h.id]).length, sel = me.honSel && honOf(me.honSel);
   const out = [pageHead('honras', null, true)];
-  out.push(h('div', { class: 'honsel' }, sel ? honBar(sel, { cls: 'big' }) : h('p', { class: 'small muted' }, t('honNone')),
+  // v109: dois modos: a barra que aparece ao lado do nome, ou a vitrine do perfil público (até S.cfg.social.vitMax)
+  const VM = S.cfg.social.vitMax, vitM = S.honMode === 'vit', vit = me.honVit || [];
+  out.push(h('div', { class: 'seg honmode' }, [['bar', t('honModeBar')], ['vit', t('honModeVit', { n: vit.length, m: VM })]].map(([k, l]) =>
+    h('button', { 'aria-pressed': (vitM ? 'vit' : 'bar') === k ? 'true' : 'false', on: { click: () => { S.honMode = k; render(true); } } }, l))));
+  if (vitM) out.push(h('div', { class: 'honsel' }, vit.length ? h('div', { class: 'pfvit' }, vit.map(honOf).filter(Boolean).map((x) => honBar(x))) : h('p', { class: 'small muted' }, t('honVitTip', { n: VM })),
+    h('div', { class: 'row sp honsum' }, h('span', { class: 'small num' }, t('honN', { a: n, b: all.length })), vit.length ? h('button', { class: 'linkbtn', on: { click: () => honShow([]) } }, t('honVitClear')) : null)));
+  else out.push(h('div', { class: 'honsel' }, sel ? honBar(sel, { cls: 'big' }) : h('p', { class: 'small muted' }, t('honNone')),
     h('div', { class: 'row sp honsum' }, h('span', { class: 'small num' }, t('honN', { a: n, b: all.length })), sel ? h('button', { class: 'linkbtn', on: { click: () => honPick(null) } }, t('honRemove')) : null)));
   for (const cat of HON_CATS) {
     const L = all.filter((h) => h.cat === cat);
@@ -3627,9 +3636,10 @@ function screenHonras() {
     const open = S.honOpen?.[cat], shown = open ? mine : mine.slice(0, 4);
     out.push(h('section', { class: 'honcat' },
       h('h2', { class: 'sec' }, t('hcat_' + cat), h('span', { class: 'small num ' + (mine.length === L.length ? 'c-cash' : '') }, mine.length + '/' + L.length)),
-      shown.length ? h('div', { class: 'honlist' }, shown.map((x) => { const on = me.honSel === x.id;
-        return h('button', { class: 'honb' + (on ? ' on' : ''), 'aria-pressed': on ? 'true' : 'false', 'aria-label': honName(x) + ' · ' + honDesc(x), on: { click: () => honPick(on ? null : x.id) } },
-          honBar(x), h('span', { class: 'small ' + (on ? 'c-cash' : 'muted') }, on ? t('honOnT') : HON_SAME.includes(x.m) ? '' : honDesc(x))); })) : null,
+      shown.length ? h('div', { class: 'honlist' }, shown.map((x) => { const on = vitM ? vit.includes(x.id) : me.honSel === x.id;
+        const tap = () => (vitM ? (on ? honShow(vit.filter((k) => k !== x.id)) : vit.length >= VM ? toast(t('honVitFull', { n: VM }), true) : honShow([...vit, x.id])) : honPick(on ? null : x.id));
+        return h('button', { class: 'honb' + (on ? ' on' : ''), 'aria-pressed': on ? 'true' : 'false', 'aria-label': honName(x) + ' · ' + honDesc(x), on: { click: tap } },
+          honBar(x), h('span', { class: 'small ' + (on ? 'c-cash' : 'muted') }, on ? t(vitM ? 'honVitOn' : 'honOnT') : HON_SAME.includes(x.m) ? '' : honDesc(x))); })) : null,
       mine.length > 4 && !open ? h('button', { class: 'linkbtn honmore', on: { click: () => { S.honOpen = { ...(S.honOpen || {}), [cat]: true }; render(true); } } }, t('honMore', { n: mine.length - 4 })) : null,
       next.length ? h('div', { class: 'honnext' }, next.slice(0, 2).map(({ h: x, v, p }) => h('div', { class: 'honn' },
         honBar(x, { locked: true }),
@@ -4851,14 +4861,14 @@ function screenFights() {
     else if (!S.targets.length) out.push(h('div', { class: 'note' }, h('p', { class: 'muted' }, t('hmNone'))));
     else if (!can.length) out.push(h('div', { class: 'note' }, h('p', { class: 'muted' }, t('noTargets'))));
     else out.push(h('div', { class: 'stack' }, can.map((x) => h('div', { class: 'card tgt' },
-      h('div', { class: 'who2' }, S.avOk ? h('img', { class: 'avs', src: AV(x.av || 0), alt: '', width: 96, height: 96, loading: 'lazy' }) : null, h('div', null, h('div', { class: 'nm' }, x.tag ? h('span', { class: 'gtag' }, x.tag) : null, x.tag ? ' ' : '', x.name), h('div', { class: 'lv' }, t('level') + ' ' + x.level + ' · ' + titleOf(x.level) + ' · ', h('span', { class: 'c-resp' }, icon('crown'), ' ' + short(x.respect))))),
+      h('div', { class: 'who2' }, S.avOk ? h('img', { class: 'avs', src: AV(x.av || 0), alt: '', width: 96, height: 96, loading: 'lazy' }) : null, h('div', null, h('div', { class: 'nm' }, x.tag ? h('span', { class: 'gtag' }, x.tag) : null, x.tag ? ' ' : '', plink(x.name)), h('div', { class: 'lv' }, t('level') + ' ' + x.level + ' · ' + titleOf(x.level) + ' · ', h('span', { class: 'c-resp' }, icon('crown'), ' ' + short(x.respect))))),
       h('div', { class: 'pct ' + chanceCls(x.chance) }, pct(x.chance), h('small', null, t('chanceLbl'))),
       h('div', { class: 'acts' },
         h('button', { class: 'btn buy sm', disabled: !!b, on: { click: (e) => { const el = e.currentTarget; withShield((drop) => act('attack', { target: x.name, mode: 'beat', drop }, { el })); } } }, t('beat') + ' · ' + t('luxResp', { n: x.gain })),
         h('button', { class: 'btn ghost sm', disabled: !!b, on: { click: (e) => { const el = e.currentTarget; withShield((drop) => act('attack', { target: x.name, mode: 'mug', drop }, { el })); } } }, t('rob') + ' · ~' + money(x.loot)),
         x.hp && x.hw !== 'LOW_LEVEL' && x.hw !== 'TARGET_AWAY' ? h('button', { class: 'btn ghost dng sm hmb', on: { click: () => hitmanSheet(x) } }, t('hmBtn', { m: moneyShort(x.hp) })) : null)))));
     if (cant.length) out.push(h('h2', { class: 'sec' }, t('tgOffT')), h('div', { class: 'stack' }, cant.map((x) => h('div', { class: 'card tgt off' },
-      h('div', { class: 'who2' }, S.avOk ? h('img', { class: 'avs', src: AV(x.av || 0), alt: '', width: 96, height: 96, loading: 'lazy' }) : null, h('div', null, h('div', { class: 'nm' }, x.tag ? h('span', { class: 'gtag' }, x.tag) : null, x.tag ? ' ' : '', x.name), h('div', { class: 'lv' }, t('level') + ' ' + x.level + ' · ' + titleOf(x.level) + ' · ', h('span', { class: 'c-resp' }, icon('crown'), ' ' + short(x.respect))),
+      h('div', { class: 'who2' }, S.avOk ? h('img', { class: 'avs', src: AV(x.av || 0), alt: '', width: 96, height: 96, loading: 'lazy' }) : null, h('div', null, h('div', { class: 'nm' }, x.tag ? h('span', { class: 'gtag' }, x.tag) : null, x.tag ? ' ' : '', plink(x.name)), h('div', { class: 'lv' }, t('level') + ' ' + x.level + ' · ' + titleOf(x.level) + ' · ', h('span', { class: 'c-resp' }, icon('crown'), ' ' + short(x.respect))),
         h('div', { class: 'why' }, x.at ? t(x.fly ? 'whyFly' : 'whyAway', { x: x.fly ? trCityF(x.at, 'Para') : trCity(x.at) }) : errText(x.why), x.until > n ? [' · ', h('b', { class: 'num', dataset: { opend: x.until } }, dur(x.until - n))] : null)))))));
     out.push(h('button', { class: 'btn ghost block', style: 'margin-top:12px', on: { click: () => { S.targets = null; render(); loadTargets(); } } }, icon('refresh'), t('retry')));
   } else if (!S.events) out.push(h('p', { class: 'muted' }, t('loading')));
@@ -4889,7 +4899,7 @@ function screenRank() {
     out.push(h('p', { class: 'small muted rkline' }, t('rkPrize')));
   }
   const st = h('div', { class: 'rklist' });
-  const row = (r) => h('div', { class: 'rk' + (r.me ? ' me' : '') },
+  const row = (r) => h('div', { class: 'rk tap' + (r.me ? ' me' : ''), role: 'button', tabindex: '0', 'aria-label': t('pfT') + ' · ' + r.name, on: { click: () => openPlayer(r.name), keydown: (e) => { if (e.key === 'Enter') openPlayer(r.name); } } },   // v109: abre o perfil
     h('div', { class: 'p' }, r.pos), S.avOk ? h('img', { class: 'avs', src: AV(r.av || 0), alt: '', width: 96, height: 96, loading: 'lazy' }) : null,
     h('div', { style: 'min-width:0' }, h('div', { class: 'rkn' }, r.name,
       r.hon && honOf(r.hon) ? h('button', { class: 'rkhon', 'aria-label': honName(honOf(r.hon)), on: { click: (e) => { e.stopPropagation(); toast(honName(honOf(r.hon))); } } }, HB.honorEmblem(honOf(r.hon), honName(honOf(r.hon)))) : null),   // v100: a honra escolhida
@@ -5236,7 +5246,7 @@ function screenGang() {
   out.push(h('h2', { class: 'sec' }, mine.bot ? t('gBotMembersT', { n: mine.members }) : t('gMembersT', { n: mine.members, s: mine.slots })));
   out.push(h('div', { class: 'stack' }, mine.roster.map((m) => h('div', { class: 'card row gm' + (m.me ? ' me' : '') },
     S.avOk ? h('img', { class: 'avs', src: AV(m.av || 0), alt: '', width: 96, height: 96, loading: 'lazy' }) : null,
-    h('div', { class: 'grow' }, h('div', { class: 'gmn' }, h('b', null, m.name), m.role ? h('span', { class: 'grole r' + m.role }, m.role === 3 ? icon('crown') : null, t('gRole' + m.role)) : null), h('div', { class: 'small muted' }, t('gMemberLine', { l: m.level, r: short(m.respect) }) + (m.given ? ' · ' + t('gGave', { m: moneyShort(m.given) }) : '') + (m.stake ? ' · ' + t('gStake', { m: moneyShort(m.stake) }) : '')),
+    h('div', { class: 'grow' }, h('div', { class: 'gmn' }, plink(m.name, h('b', null, m.name)), m.role ? h('span', { class: 'grole r' + m.role }, m.role === 3 ? icon('crown') : null, t('gRole' + m.role)) : null), h('div', { class: 'small muted' }, t('gMemberLine', { l: m.level, r: short(m.respect) }) + (m.given ? ' · ' + t('gGave', { m: moneyShort(m.given) }) : '') + (m.stake ? ' · ' + t('gStake', { m: moneyShort(m.stake) }) : '')),
       m.jail > now() ? h('div', { class: 'small c-red' }, t('gInJail'), ' ', h('b', { class: 'num', dataset: { opend: m.jail } }, dur(m.jail - now()))) : m.hosp > now() ? h('div', { class: 'small c-red' }, t('gInHosp'), ' ', h('b', { class: 'num', dataset: { opend: m.hosp } }, dur(m.hosp - now()))) : null),
     !m.me && m.jail > now() ? h('button', { class: 'btn buy sm gsave', disabled: liquid < m.bail, on: { click: () => gAct('gangBail', { name: m.name }) } }, icon('lock'), t('gBail', { m: moneyShort(m.bail) }))
       : !m.me && m.hosp > now() ? h('button', { class: 'btn buy sm gsave', disabled: liquid < m.medic, on: { click: () => gAct('gangMedic', { name: m.name }) } }, icon('pill'), t('gMedic', { m: moneyShort(m.medic) })) : null,
@@ -6064,6 +6074,106 @@ function slotPaytable(g) {
     h('p', { class: 'small muted' }, t('slRtp', { p: t('rtp_' + g), x: num(G.max) }))));
 }
 
+// ---------- v109: chat público da cidade e perfil público ----------
+// O botão do balão, ao lado das barras de stamina, energia e vício, abre o chat (a cidade toda lê). Os nomes no chat, no ranking, nas lutas e no gangue
+// abrem o perfil público: nível, onde está, a barra e a vitrine das honras, e o que se pode fazer (atacar, assassino, fiança).
+const chatMuted = () => store.get('chatMute', []);
+function chatFabSync() {
+  if (!S.chatFab) return;
+  const me = S.st?.me, seen = store.get('chatSeen', 0), last = S.st?.chatLast || 0;
+  S.chatFab.hidden = !me || S.st.round?.phase !== 'play';
+  const n = Math.max(0, last - seen);   // os números das mensagens seguem-se: a diferença é quantas chegaram (aproximado se houve apagadas)
+  S.chatN.textContent = n > 99 ? '99+' : String(n);
+  S.chatN.hidden = !n || !seen;   // na primeira vez não se conta o histórico todo
+  if (!seen && last) store.set('chatSeen', last);
+}
+const plink = (name, extra, from) => h('button', { class: 'plink', 'aria-label': t('pfT') + ' · ' + name, on: { click: (e) => { e.stopPropagation(); if (from) from(); openPlayer(name, !!from); } } }, extra || name);
+function chatRow(m, closeChat) {
+  return h('div', { class: 'cmsg' + (m.me ? ' me' : '') },
+    h('div', { class: 'cmh' }, plink(m.name, [m.tag ? h('span', { class: 'gtag' }, m.tag) : null, h('b', null, m.name), h('small', null, ' · ' + t('level') + ' ' + m.lvl)], closeChat),
+      h('time', { class: 'small muted num' }, hhmm(m.t))),
+    h('p', null, m.txt));
+}
+async function openChat() {
+  const me = S.st.me, low = me.level < S.cfg.social.minLevel;
+  let msgs = [], last = 0, first = true, busy = false;
+  const list = h('div', { class: 'cmsgs', role: 'log', 'aria-live': 'polite', 'aria-label': t('chatT') });
+  const draw = () => {
+    const mute = new Set(chatMuted()), shown = msgs.filter((m) => !mute.has(m.name));
+    const atEnd = list.scrollHeight - list.scrollTop - list.clientHeight < 60;
+    list.replaceChildren(h('div', { class: 'cfill' }), ...(shown.length ? shown.map((m) => chatRow(m, () => close())) : [h('p', { class: 'small muted cnone' }, t('chatNone'))]));
+    if (atEnd || first) list.scrollTop = list.scrollHeight;
+    first = false;
+  };
+  const load = async () => {
+    if (busy) return; busy = true;
+    try {
+      const r = await api('GET', '/api/chat' + (last ? '?after=' + last : ''));
+      if (r.msgs.length || !last) { msgs = msgs.concat(r.msgs).slice(-150); last = msgs.length ? msgs[msgs.length - 1].id : r.last; draw(); }
+      if (S.st) S.st.chatLast = Math.max(S.st.chatLast || 0, r.last);
+      store.set('chatSeen', Math.max(store.get('chatSeen', 0), r.last)); chatFabSync();
+    } catch { /* sem rede: tenta outra vez daqui a pouco */ } finally { busy = false; }
+  };
+  const inp = h('input', { id: 'cmsg', maxlength: S.cfg.social.max, autocomplete: 'off', enterkeyhint: 'send', placeholder: t('chatPh'), value: S.chatDraft || '',
+    on: { input: (e) => { S.chatDraft = e.target.value; }, keydown: (e) => { if (e.key === 'Enter') send(); } } });
+  const btn = h('button', { class: 'btn buy', on: { click: () => send() } }, t('gSend'));
+  const send = async () => {
+    const txt = inp.value.trim(); if (!txt || btn.disabled) return;
+    btn.disabled = true;
+    try { await api('POST', '/api/chat', { txt }); inp.value = ''; S.chatDraft = ''; await load(); list.scrollTop = list.scrollHeight; }
+    catch (e) { if (e.code && e.code !== 'LOGIN_REQUIRED') toast(errText(e.code, errData(e.data)), true); }
+    btn.disabled = false; inp.focus();
+  };
+  const close = sheet(h('div', { class: 'stack chatsh' },
+    h('div', { class: 'chhd' }, h('div', { class: 'row sp' }, h('h2', null, icon('chat'), ' ', t('chatT')), h('button', { class: 'shx', 'aria-label': t('close'), on: { click: () => close() } }, icon('x'))),
+      h('p', { class: 'small muted' }, t('chatRule'))),
+    list,
+    low ? h('p', { class: 'small muted' }, t('chatLow', { n: S.cfg.social.minLevel }))
+      : h('div', { class: 'row csend' }, h('label', { class: 'sr', for: 'cmsg' }, t('chatPh')), inp, btn)));
+  await load();
+  const timer = setInterval(() => { if (!list.isConnected) { clearInterval(timer); return; } if (!document.hidden) load(); }, 4000);
+}
+async function openPlayer(name, fromChat) {
+  let P;
+  try { P = await api('GET', '/api/profile?n=' + encodeURIComponent(name)); } catch (e) { if (e.code && e.code !== 'LOGIN_REQUIRED') toast(errText(e.code), true); return; }
+  const n = now(), mutedNow = chatMuted().includes(P.name);
+  const dt = (ts) => new Date(ts).toLocaleDateString(lang() === 'pt' ? 'pt-PT' : 'en-GB', { timeZone: 'Europe/Lisbon', day: 'numeric', month: 'long', year: 'numeric' });
+  const stTxt = !P.active ? t('pfOld') : P.st.k === 'jail' ? t('pfJail', { h: hhmm(P.st.until) }) : P.st.k === 'hosp' ? t('pfHosp', { h: hhmm(P.st.until) })
+    : P.st.k === 'away' ? (P.st.fly ? t('whyFly', { x: trCityF(P.st.at, 'Para') }) : trCityF(P.st.at, 'Em')) : t('pfFree');
+  const ago = (ms) => { const m = Math.max(1, Math.round(ms / 60_000)); return m < 60 ? t('agoM', { n: m }) : m < 1440 ? t('agoH', { n: Math.round(m / 60) }) : t('agoD', { n: Math.round(m / 1440) }); };
+  const seen = P.online ? h('span', { class: 'c-cash' }, '● ' + t('pfOnline')) : P.seen ? h('span', { class: 'muted' }, t('pfSeen', { t: ago(n - P.seen) })) : null;
+  const vit = (P.vit || []).map(honOf).filter(Boolean), bar = P.hon && honOf(P.hon);
+  let close;
+  const acts = [];
+  if (P.can && !P.me) {
+    const C = P.can, x = { name: P.name, level: P.level, hp: C.hp, hc: C.hc, hw: C.hw };
+    if (!C.why) acts.push(h('div', { class: 'row pfacts' },
+      h('button', { class: 'btn buy', on: { click: (e) => { const el = e.currentTarget; close(); withShield((drop) => act('attack', { target: P.name, mode: 'beat', drop }, { el })); } } }, t('pfBeat', { p: pct(C.chance) + '%' })),
+      h('button', { class: 'btn ghost', on: { click: (e) => { const el = e.currentTarget; close(); withShield((drop) => act('attack', { target: P.name, mode: 'mug', drop }, { el })); } } }, t('pfMug'))));
+    else acts.push(h('p', { class: 'small muted' }, t('pfCant', { x: errText(C.why).replace(/^./, (c) => c.toLowerCase()) })));
+    if (C.hp && !C.same && C.hw !== 'LOW_LEVEL' && C.hw !== 'TARGET_AWAY') acts.push(h('button', { class: 'btn ghost dng', on: { click: () => { close(); hitmanSheet(x); } } }, t('hmBtn', { m: moneyShort(C.hp) })));
+    if (C.same && C.bail) acts.push(h('button', { class: 'btn buy', on: { click: () => { close(); act('gangBail', { name: P.name }); } } }, icon('lock'), t('gBail', { m: moneyShort(C.bail) })));
+    if (C.same && C.medic) acts.push(h('button', { class: 'btn buy', on: { click: () => { close(); act('gangMedic', { name: P.name }); } } }, icon('pill'), t('gMedic', { m: moneyShort(C.medic) })));
+  }
+  close = sheet(h('div', { class: 'stack pfsh' },
+    h('div', { class: 'pfhd' },
+      S.avOk && P.active ? h('img', { class: 'avs', src: AV(P.av || 0), alt: '', width: 96, height: 96 }) : null,
+      h('div', { class: 'grow' },
+        h('div', { class: 'pfn' }, P.gang ? h('span', { class: 'gtag' }, P.gang.tag) : null, P.gang ? ' ' : null, h('b', null, P.name)),
+        P.active ? h('div', { class: 'c-resp pfr num' }, icon('crown'), ' ' + num(P.respect)) : null,
+        P.active ? h('div', { class: 'small muted' }, t('level') + ' ' + P.level + ' · ' + (P.vet ? t('vetShort') : titleOf(P.level)) + (P.cls ? ' · ' + t('cl_' + P.cls) : '')) : null,
+        h('div', { class: 'small' }, seen, seen ? ' · ' : null, h('span', { class: P.active && P.st.k !== 'free' ? 'c-red' : 'muted' }, stTxt)))),
+    bar ? honBar(bar, { cls: 'big' }) : null,
+    P.active ? h('h2', { class: 'sec' }, t('pfVit'), h('span', { class: 'small num' }, t('pfHonN', { a: P.honN, b: (S.cfg.honors || []).length }))) : null,
+    P.active ? (vit.length ? h('div', { class: 'pfvit' }, vit.map((x) => h('div', { class: 'pfv' }, HB.honorEmblem(x, honName(x)), h('span', null, honName(x))))) : h('p', { class: 'small muted pfnone' }, t('pfVitNone'))) : null,
+    P.me ? h('button', { class: 'btn ghost', on: { click: () => { close(); S.honMode = 'vit'; go('honras'); } } }, t('pfVitEdit')) : null,
+    P.active ? kv([[t('pfGang'), P.gang ? P.gang.name : t('pfNoGang')], [t('pfCrimes'), num(P.c.crimes)], [t('pfPvp'), num(P.c.pvp)], [t('pfSets'), num(P.c.sets)]]) : null,
+    h('p', { class: 'small muted' }, t('pfSince', { d: dt(P.since) })),
+    ...acts,
+    fromChat ? h('button', { class: 'btn ghost', on: { click: () => { close(); openChat(); } } }, icon('chat'), t('pfBackChat')) : null,
+    !P.me ? h('button', { class: 'linkbtn', on: { click: () => { const L = chatMuted().filter((x) => x !== P.name); if (!mutedNow) L.push(P.name); store.set('chatMute', L.slice(-200)); close(); toast(mutedNow ? t('pfUnmute') : t('chatHidden')); } } }, mutedNow ? t('pfUnmute') : t('pfMute')) : null));
+}
+
 // ---------- perfil ----------
 function sheet(content) {
   const bd = h('div', { class: 'backdrop' });
@@ -6110,6 +6220,7 @@ function openProfile() {
     h('div', { class: 'hstats pstats' }, ['F', 'I', 'C', 'T'].map((s) => h('span', null, icon(STAT_IC[s]), ' ' + t('stat' + s) + ' ', h('b', { class: 'num' }, short(me.stats[s]))))),   // v90: os atributos (saíram do topo)
     me.cls ? h('p', { class: 'small muted', style: 'margin:0' }, t('cl_' + me.cls) + ' · ' + classLines(S.cfg.classes.find((c) => c.id === me.cls)).join(' · ')) : null,
     me.cls ? h('button', { class: 'btn sm', style: 'justify-self:start', on: { click: () => { close(); go('work'); } } }, t('clsChangeT')) : null,
+    h('button', { class: 'btn ghost', style: 'justify-self:start', on: { click: () => { close(); openPlayer(me.name); } } }, icon('user'), t('pfMine')),   // v109
     // v100: honras: a barra que se mostra e o caminho para todas
     h('h2', { class: 'sec', style: 'margin-top:10px' }, t('honT'), h('span', { class: 'small num' }, Object.keys(me.hon || {}).length + '/' + (S.cfg.honors || []).length)),
     h('button', { class: 'honpbtn', 'aria-label': t('honSeeA'), on: { click: () => { close(); go('honras'); } } },

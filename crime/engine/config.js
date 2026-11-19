@@ -872,6 +872,10 @@ export const CFG = {
   // Contra passar dinheiro entre contas: o preço fica entre 0,3× e 3× o de referência (objetos: o da loja; colecionáveis: a parte
   // de cada peça no que o museu paga pelo conjunto; materiais: ref; componentes: os euros da receita mais os materiais), os
   // lances também param nos 3×, e só se negoceia a partir do nível minLvl. Quem ainda tem coisas por levantar conta-as nos 10.
+  // v109: o chat público da cidade e o perfil público
+  // max: letras por mensagem; minLevel: nível para falar (trava contas feitas só para encher o chat); rate: n mensagens por janela;
+  // keep: mensagens que se guardam (as mais antigas apagam-se de hora a hora); vitMax: honras na vitrine do perfil
+  social: { max: 200, minLevel: 2, rateN: 5, rateMs: 30_000, gapMs: 2_000, keepMs: 3 * DAY, page: 50, vitMax: 6, onlineMs: 10 * MIN },
   feira: { feeBp: 500, listMs: 48 * HOUR, auctionMs: 24 * HOUR, stepBp: 500, bidEndMs: 10 * MIN, maxOpen: 10, maxPrice: 1_000_000_000, maxN: 999,
     minLvl: 5, loBp: 3000, hiBp: 30000, ref: { madeira: 40, sucata: 40, eletronica: 50, quimicos: 50, cobre: 60, pecas: 60, ferro: 400, bronze: 500, vidro: 600, malha: 900 },
     // e entre as mesmas duas contas (num sentido ou no outro), em 24 h, a diferença para o preço de referência não passa de pairMax
