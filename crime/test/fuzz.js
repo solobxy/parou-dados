@@ -677,7 +677,7 @@ for (let n = 0; n < ACTIONS; n++) {
       case 'trGun': res = E.trGun(p, t, world); break;
       case 'carBuy': res = E.carBuy(p, t, world, r.chance(8000) ? pick(CFG.race.cars).id : pick(['x', null, 5, '__proto__'])); break;   // v112
       case 'carUp': arg = r.chance(8000) ? p.car : anyInt(); res = E.carUp(p, t, world, arg, r.chance(8000) ? r.int(0, 2) : anyInt()); break;
-      case 'carSel': res = E.carSel(p, r.chance(8000) ? r.int(0, 4) : anyInt()); break;
+      case 'carSel': res = E.carSel(p, t, world, r.chance(8000) ? r.int(0, 4) : anyInt()); break;
       case 'carSell': arg = r.chance(8000) ? p.car : anyInt(); res = E.carSell(p, t, world, arg); break;
       case 'raceStreet': res = E.raceStreet(p, t, world, game, r.chance(9000) ? r.int(0, 4) : anyInt(), ['Ana', 'Rui', 'Tó', 'Zé', 'Bia', 'Nel']); break;
       case 'trBuy': { const here = before.tr ? Object.keys(CFG.travel.goods).filter((g) => CFG.travel.goods[g].at === before.tr.to) : [];

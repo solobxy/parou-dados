@@ -39,7 +39,7 @@ for (let i = 0; i < 3; i++) await act('Novato', { type: 'crime', k: 0 });
 await parar(s);
 
 const L = (n) => Math.round(1.3 * n ** 2.55);
-const hoje = (() => { const d = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Lisbon', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date()); return d; })();
+const hoje = (() => { const d = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/London', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date()); return d; })();
 const db = new DatabaseSync(join(DATA, 'jogo.db'));
 const idDe = (n) => db.prepare('SELECT id FROM contas WHERE nome = ?').get(n).id;
 const muda = (n, f) => { const id = idDe(n), row = db.prepare('SELECT estado FROM jogadores WHERE conta = ? AND ronda = 1000').get(id), e = JSON.parse(row.estado); f(e); db.prepare('UPDATE jogadores SET estado = ? WHERE conta = ? AND ronda = 1000').run(JSON.stringify(e), id); };

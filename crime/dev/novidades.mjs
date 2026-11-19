@@ -28,6 +28,14 @@ const imagens = (h) => git('show', '--format=', '--name-status', '--diff-filter=
   .split('\n').map((l) => l.split('\t')[1]).filter((f) => f && /\.(webp|png|jpg)$/.test(f) && !/-g\.\w+$/.test(f))
   .filter((f) => existsSync(join(RAIZ, f))).map((f) => f.replace(/^sites\/crime/, ''));   // só as que ainda existem
 const linha = (msg, k) => { const m = msg.match(new RegExp('^' + k + ':\\s*(.+)$', 'm')); return m ? m[1].trim() : null; };
+// v113: a linha «IMG:» às vezes é um caminho (/img/cenas/x.webp) e às vezes uma nota («cenas/corridas, carros/clio…»): fica o caminho,
+// ou o primeiro «pasta/nome» da nota se essa imagem existir; senão, nada (e vale a primeira imagem nova da versão)
+const imgDe = (s) => {
+  if (!s) return null;
+  if (/^\/img\/\S+\.(webp|png|jpg)$/.test(s)) return existsSync(join(RAIZ, 'sites/crime', s)) ? s : null;
+  const m = s.match(/^([a-z0-9_-]+\/[a-z0-9_-]+)(?=[,;\s]|$)/i), f = m && '/img/' + m[1] + '.webp';
+  return f && existsSync(join(RAIZ, 'sites/crime', f)) ? f : null;
+};
 const limpa = (s) => s.split('\n')[0].replace(/^crime:\s*/i, '').replace(/^v\d+\s*[—-]?\s*/, '').replace(/\s*\(v\d+[^)]*\)\s*$/, '').replace(/^./, (c) => c.toUpperCase());
 
 const grupos = new Map();
@@ -42,7 +50,7 @@ for (const g of grupos.values()) {
   const a = antigas[g.k];
   if (a === null) continue;   // marcado para não aparecer (trabalho interno)
   let pt = null, en = null, img = null;
-  for (const c of g.commits) { pt = linha(c.msg, 'PT') || pt; en = linha(c.msg, 'EN') || en; img = linha(c.msg, 'IMG') || img; }
+  for (const c of g.commits) { pt = linha(c.msg, 'PT') || pt; en = linha(c.msg, 'EN') || en; img = imgDe(linha(c.msg, 'IMG')) || img; }
   if (a && (a.force || !pt)) { pt = a.pt; en = a.en; }   // force: corrige o texto de uma versão já publicada (o commit não se reescreve)
   if (!img && a && a.img && existsSync(join(RAIZ, 'sites/crime', a.img))) img = a.img;
   if (!pt) { pt = limpa(g.commits[0].msg); en = en || pt; }

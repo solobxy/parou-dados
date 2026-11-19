@@ -22,8 +22,8 @@ export const CFG = {
     playDays: 13,
     totalDays: 14, // 13 de jogo + 1 de pausa
     startWeekday: 5, // sexta-feira
-    startHour: 21, // 21:00, hora de Lisboa
-    tz: 'Europe/Lisbon',
+    startHour: 21, // 21:00, hora de Londres (igual à de Lisboa desde 1996)
+    tz: 'Europe/London',
     noPvpMs: 1 * HOUR, // primeira hora da ronda sem ataques
     lateJoinAfterMs: 24 * HOUR,
     newbieShieldMs: 24 * HOUR,
@@ -126,8 +126,9 @@ export const CFG = {
   },
 
   // ---------- passo 6, parte 2: regiões, armazéns, preços por região e transporte ----------
-  // Portugal em cinco regiões numa linha de norte a sul (pos: o lugar na linha); abrem primeiro três. O jogador vive em Lisboa e não
-  // viaja: mexe-se a mercadoria. De uma região para a vizinha é 1 hora; de Lisboa ao Algarve são 2 saltos (passa pelo Alentejo).
+  // Regiões numa linha (pos: o lugar na linha); abrem primeiro três. O jogador vive em Londres e não viaja: mexe-se a mercadoria.
+  // v113: o mundo deixou de ser Portugal. Os ids ficam (são chaves guardadas): lx = Londres, al = Roterdão (o porto dos contentores),
+  // ag = Antuérpia (porto, festivais e turistas). De uma região para a vizinha é 1 hora; de Londres a Antuérpia são 2 saltos.
   regions: {
     list: [{ id: 'lx', pos: 2 }, { id: 'al', pos: 3 }, { id: 'ag', pos: 4 }],
     // criminalidade das outras regiões (a de Lisboa está em world.lx), pela mesma fórmula: base e atividade que faz metade do caminho
@@ -872,7 +873,10 @@ export const CFG = {
   // Contra passar dinheiro entre contas: o preço fica entre 0,3× e 3× o de referência (objetos: o da loja; colecionáveis: a parte
   // de cada peça no que o museu paga pelo conjunto; materiais: ref; componentes: os euros da receita mais os materiais), os
   // lances também param nos 3×, e só se negoceia a partir do nível minLvl. Quem ainda tem coisas por levantar conta-as nos 10.
-  // v110: território dos gangues (à maneira das «territory wars» do Torn, mais simples). 12 bairros de Lisboa, de 3 escalões.
+  // v110: território dos gangues (à maneira das «territory wars» do Torn, mais simples). 12 bairros de 3 escalões.
+  // v113: bairros pelo mundo; os ids são os antigos de Lisboa (chaves guardadas): baixa = Soho, parquenacoes = Kabukichō,
+  // bairroalto = Bronx, caisdosodre = Pigalle, alfama = Deira, marvila = Mong Kok, belem = Tepito, alcantara = Rocinha,
+  // campoourique = Scampia, mouraria = Hillbrow, intendente = Casbah, arroios = Patpong.
   // O bairro rende perH[escalão] por hora ao cofre de quem o tem. Para o tomar, o chefe ou o subchefe paga fee[escalão] do cofre e
   // abre um assalto de durMs: cada vitória de um membro numa luta vale winPts pontos (vezes o multiplicador da cadeia).
   // Bairro livre: conta qualquer vitória e é tomado logo que se chega a need[escalão]. Bairro de outra gangue: começa prepMs depois
@@ -920,12 +924,13 @@ export const CFG = {
       { id: 'm3', tier: 4, price: 600_000, spd: 79, acc: 78, han: 76 },
       { id: 'gt3', tier: 5, price: 2_000_000, spd: 92, acc: 88, han: 88 },
     ],
+    // v113: pistas famosas (os ids ficam): marginal = Pacific Coast Highway, ponte = Wangan, monsanto = Stelvio, baixa = Monte Carlo, estoril = Nordschleife
     tracks: [
       { id: 'marginal', w: [50, 20, 30], lap: 62_000 },
       { id: 'ponte', w: [65, 25, 10], lap: 48_000 },
       { id: 'monsanto', w: [15, 30, 55], lap: 75_000 },
       { id: 'baixa', w: [10, 45, 45], lap: 58_000 },
-      { id: 'estoril', w: [35, 30, 35], lap: 92_000 },
+      { id: 'estoril', w: [30, 30, 40], lap: 92_000 },
     ],
     street: [0, 160, 480, 1200, 2400, 4800],
     fees: [1000, 10_000, 50_000, 250_000], sizes: [2, 4, 6, 8], houseBp: 1000, waitMs: 5 * MIN, hist: 10,
@@ -991,6 +996,8 @@ export const CFG = {
     sites: [
       // v86: rare = o material raro do sítio; rareBp = hipótese de a grelha ter um (como um sexto achado, que vai para o depósito).
       // Em todas: com 35-40% só saía em 6-15% das escavações (a revisão simulou), lento demais para contar.
+      // v113: os de casa passaram para o Reino Unido (at: 'pt' é «em casa»; os ids ficam): briteiros = Maiden Castle,
+      // conimbriga = Fishbourne, troia = margens do Tamisa (Londinium), mertola = York viking; e suttonhoo (lá fora, em França) = túmulos francos
       { id: 'briteiros', at: 'pt', st: 1, price: 500, jailMin: 15, lawyer: 300, rare: 'ferro', rareBp: 10000 },
       { id: 'conimbriga', at: 'pt', st: 1, price: 1000, jailMin: 25, lawyer: 700, rare: 'bronze', rareBp: 10000 },
       { id: 'troia', at: 'pt', st: 2, price: 2000, jailMin: 40, lawyer: 1800, rare: 'vidro', rareBp: 10000 },
@@ -1186,7 +1193,7 @@ export const CFG = {
   // Com suborno só compensa nas rotas de maior risco: Culiacán +24,4% por voo (em vez de +23,8%) e Kandahar +47% (em vez de +34%).
   air: {
     minAmount: 100, bribeBp: 2000, bribeCutBp: 5000,
-    home: { lat: 38.7, lon: -9.1 },
+    home: { lat: 51.5, lon: -0.13 },   // v113: Londres
     routes: [
       { id: 'tanger', lat: 35.8, lon: -5.8, ms: 1 * HOUR, gainBp: 900, seizeBp: 500, level: nv(5), r: 2, drug: 'erva' },
       { id: 'amesterdao', lat: 52.4, lon: 4.9, ms: 2 * HOUR, gainBp: 1800, seizeBp: 900, level: nv(7), r: 4, drug: 'ecstasy' },
@@ -1205,7 +1212,7 @@ export const CFG = {
   // repõe perH por hora. O importador baixa o preço satBp por cada unidade vendida (de todos os jogadores), e volta satRecH por hora
   // até ao normal (nunca abaixo de satMin).
   // Contas (mala cheia, sem contrabando, preço normal): lucro por viagem, já sem o bilhete, e por hora de voo:
-  // Marraquexe 500 € (600/h, mala de 10), Londres 1 000 (667/h, 15), Nápoles 1 300 (780/h, 15), Cairo 2 400 (900/h, 25),
+  // Paris 500 £ (600/h, mala de 10), Tânger 1 000 (667/h, 15), Nápoles 1 300 (780/h, 15), Cairo 2 400 (900/h, 25),
   // Nova Iorque 3 600 (982/h, 25), Rio 4 800 (1 029/h, 25), Cidade do México 6 000 (1 125/h, 40), Joanesburgo 7 000 (1 235/h, 40),
   // Xangai 8 500 (1 342/h, 40), Tóquio 10 000 (1 364/h, 40). O contrabando vale em média uns 25% mais, antes da lavagem.
   travel: {
@@ -1220,8 +1227,10 @@ export const CFG = {
     perDay: 3,   // viagens (partidas) por dia de Lisboa: quem joga sem parar não vive de ir a Tânger 28 vezes por dia
     xray: { bp: 8000, max: 9500, fine: 1000 }, contact: { bp: 3000, min: 500, perBp: 1500, risk: 1500 }, graceMs: 30_000,
     dests: [
-      { id: 'ma', lat: 31.6, lon: -8.0, ms: 25 * MIN, ticket: 80, level: 5, r: 1, gun: 'revolver', gunRent: 100 },
-      { id: 'gb', lat: 51.5, lon: -0.1, ms: 45 * MIN, ticket: 200, level: 8, r: 2, gun: 'cacadeiraserrada', gunRent: 150 },
+      // v113: a casa passou a Londres. «gb» é agora Paris (o id ficou), e Paris, o mais perto, ficou com o primeiro lugar da escada
+      // (o tempo, o bilhete, o nível e as contas das mercadorias que eram de Tânger); Tânger ficou com o segundo.
+      { id: 'gb', lat: 48.86, lon: 2.35, ms: 25 * MIN, ticket: 80, level: 5, r: 1, gun: 'revolver', gunRent: 100 },
+      { id: 'ma', lat: 35.77, lon: -5.8, ms: 45 * MIN, ticket: 200, level: 8, r: 2, gun: 'cacadeiraserrada', gunRent: 150 },
       { id: 'it', lat: 40.85, lon: 14.27, ms: 50 * MIN, ticket: 260, level: 12, r: 2, gun: 'pistola', gunRent: 260 },
       { id: 'eg', lat: 30.0, lon: 31.2, ms: 80 * MIN, ticket: 500, level: 16, r: 3, gun: 'smg9', gunRent: 450 },
       { id: 'us', lat: 40.7, lon: -74.0, ms: 110 * MIN, ticket: 900, level: 20, r: 4, gun: 'pistola50', gunRent: 750 },
@@ -1233,10 +1242,10 @@ export const CFG = {
     ],
     // at: o país; buy: o preço lá; sell: o que o importador paga cá (preço normal); seizeBp: só no contrabando
     goods: {
-      argao: { at: 'ma', buy: 35, sell: 93, max: 300, perH: 150 },
-      tabaco: { at: 'ma', buy: 50, sell: 136, max: 120, perH: 60, seizeBp: 1000 },
-      whisky: { at: 'gb', buy: 60, sell: 140, max: 300, perH: 150 },
-      cartoes: { at: 'gb', buy: 90, sell: 211, max: 120, perH: 60, seizeBp: 1000 },
+      whisky: { at: 'gb', buy: 35, sell: 93, max: 300, perH: 150 },     // v113: conhaque de Paris (o id ficou)
+      cartoes: { at: 'gb', buy: 50, sell: 136, max: 120, perH: 60, seizeBp: 1000 },
+      argao: { at: 'ma', buy: 60, sell: 140, max: 300, perH: 150 },
+      tabaco: { at: 'ma', buy: 90, sell: 211, max: 120, perH: 60, seizeBp: 1000 },
       limoncello: { at: 'it', buy: 80, sell: 184, max: 300, perH: 150 },
       malas: { at: 'it', buy: 120, sell: 284, max: 120, perH: 60, seizeBp: 1200 },
       papiro: { at: 'eg', buy: 90, sell: 206, max: 300, perH: 150 },

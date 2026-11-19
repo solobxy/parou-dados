@@ -1,7 +1,7 @@
 // Jogo de crime: interface. O servidor decide tudo; aqui só se mostra e se pede.
 
 import { t, tv, list, errText, setLang, lang, guessLang } from './i18n.js';
-import { h, icon, svg, setBtn, setLocale, num, money, moneyC, moneyShort, short, dur, hoursText, pct, rid } from './ui.js';
+import { h, icon, svg, setBtn, setLocale, num, money, moneyC, moneyShort, CUR, short, dur, hoursText, pct, rid } from './ui.js';
 import * as fx from './fx.js';
 import * as RV from './reveal.js';
 import * as CZ from './crazy.js';
@@ -469,7 +469,7 @@ const PARENT = { bairros: 'gang', empresas: 'empire', corridas: 'city', gyms: 'g
 const upOf = (id) => (S.backTo && S.backTo[id]) || PARENT[id] || 'city';   // um sítio que está em duas zonas volta para a zona de onde vieste
 const tabOf = (id) => { let x = id; for (let k = 0; k < 4 && !NAV.includes(x); k++) x = upOf(x); return NAV.includes(x) ? x : 'city'; };
 // imagens trocadas depois da última subida geral: só estas voltam a ser descarregadas (v107 metralhadoras; v108 drogas sem restos na margem e camadas do boneco viradas para o lado certo)
-const IMG_V = { 'gear/pistolaaco': 19, 'gear/pistolaauto': 19, 'gear/pistolaouro': 19, 'gear/cacadeiraserrada': 19, 'gear/cacadeiradupla': 19, 'gear/cacadeiratatica': 19, 'gear/cacadeirabullpup': 19, 'gear/cacadeiracarregador': 19, 'gear/smgbullpup': 19, 'gear/cacadeirapolicial': 19, 'gear/espingardaassalto': 19, 'gear/cacadeiratambor': 19, 'gear/smgsilenciosa': 19, 'gear/smgtambor': 19, 'gear/cacadeiraauto': 19, 'gear/cacadeiragravada': 19, 'gear/pistola50ae': 19, 'gear/carabinapolicia': 19, 'gear/bullpup': 19, 'gear/carabinacarbono': 19, 'gear/carabinaprototipo': 19, 'gear/espingardaalavanca': 19, 'gear/espingardaexpress': 19, 'gear/sniperbullpup': 19, 'gear/snipersilenciosa': 19, 'gear/sniperartico': 19, 'gear/metralhadoraligeira': 19, 'gear/metralhadorafuzileiro': 19, 'gear/mod_tambor': 19, 'gear/mod_carregador': 19, 'gear/mod_luneta4': 19, 'drugs/ecstasy': 19, 'drugs/lsd': 19, 'drugs/speed': 19, 'gear/metralhadorapesada': 19, 'gear/metralhadoratripe': 19, 'gear/metralhadoracinto': 19, 'gear/metralhadoraesquadra': 19, 'gear/metralhadoramedia': 19 };
+const IMG_V = { 'cenas/regiao-lx': 20, 'cenas/regiao-al': 20, 'cenas/regiao-ag': 20, 'viagens/r_gb': 20, 'gear/pistolaaco': 19, 'gear/pistolaauto': 19, 'gear/pistolaouro': 19, 'gear/cacadeiraserrada': 19, 'gear/cacadeiradupla': 19, 'gear/cacadeiratatica': 19, 'gear/cacadeirabullpup': 19, 'gear/cacadeiracarregador': 19, 'gear/smgbullpup': 19, 'gear/cacadeirapolicial': 19, 'gear/espingardaassalto': 19, 'gear/cacadeiratambor': 19, 'gear/smgsilenciosa': 19, 'gear/smgtambor': 19, 'gear/cacadeiraauto': 19, 'gear/cacadeiragravada': 19, 'gear/pistola50ae': 19, 'gear/carabinapolicia': 19, 'gear/bullpup': 19, 'gear/carabinacarbono': 19, 'gear/carabinaprototipo': 19, 'gear/espingardaalavanca': 19, 'gear/espingardaexpress': 19, 'gear/sniperbullpup': 19, 'gear/snipersilenciosa': 19, 'gear/sniperartico': 19, 'gear/metralhadoraligeira': 19, 'gear/metralhadorafuzileiro': 19, 'gear/mod_tambor': 19, 'gear/mod_carregador': 19, 'gear/mod_luneta4': 19, 'drugs/ecstasy': 19, 'drugs/lsd': 19, 'drugs/speed': 19, 'gear/metralhadorapesada': 19, 'gear/metralhadoratripe': 19, 'gear/metralhadoracinto': 19, 'gear/metralhadoraesquadra': 19, 'gear/metralhadoramedia': 19 };
 const IMG = (kind, id, big) => `/img/${kind}/${id}${big ? '-g' : ''}.webp?${IMG_V[kind + '/' + id] || (kind === 'classes' ? 17 : 18)}`;   // v90: retratos novos das profissões; v106: casas, cave e caveira em fotografia, peças do museu recortadas
 // o que cada sítio precisa de ir buscar ao servidor (ao entrar nele, e também quando o jogo abre já nesse sítio)
 function loadFor(tab) {
@@ -622,7 +622,7 @@ function art(kind, id, cls = 'art') {
 // Pinta os valores dentro de uma frase de apoio: dinheiro a verde e respeito a âmbar; o resto fica como está.
 // Serve para as linhas cinzentas com números lá dentro se lerem de relance (o que se ganha salta à vista).
 function tint(s) {
-  const out = [], re = /(€\d+(?:[.,\u00a0\u202f ]\d{3})*(?:[–-]€?\d+(?:[.,\u00a0\u202f ]\d{3})*)?|\d+(?:[.,\u00a0\u202f ]\d{3})*(?:[–-]\d+(?:[.,\u00a0\u202f ]\d{3})*)?\u00a0€)|([+−-]?\d[\d.,]* (?:de )?(?:respeito|respect))/g;
+  const out = [], re = /(£\d+(?:[.,\u00a0\u202f ]\d{3})*(?:[–-]£?\d+(?:[.,\u00a0\u202f ]\d{3})*)?)|([+−-]?\d[\d.,]* (?:de )?(?:respeito|respect))/g;
   let i = 0, m;
   while ((m = re.exec(s))) { if (m.index > i) out.push(s.slice(i, m.index)); out.push(h('span', { class: m[1] ? 'c-cash' : 'c-resp' }, m[0])); i = m.index + m[0].length; }
   if (i < s.length) out.push(s.slice(i));
@@ -801,7 +801,7 @@ function deskList(Wm, max) {
   return out;
 }
 // hora da edição: só a hora se foi hoje, senão o dia e a hora («15/11 21:00»)
-const edTime = (t0) => { const o = { timeZone: 'Europe/Lisbon' }, d = new Date(t0), loc = lang() === 'pt' ? 'pt-PT' : 'en-GB', hm = d.toLocaleTimeString(loc, { ...o, hour: '2-digit', minute: '2-digit' });
+const edTime = (t0) => { const o = { timeZone: 'Europe/London' }, d = new Date(t0), loc = lang() === 'pt' ? 'pt-PT' : 'en-GB', hm = d.toLocaleTimeString(loc, { ...o, hour: '2-digit', minute: '2-digit' });
   return d.toLocaleDateString(loc, o) === new Date(now()).toLocaleDateString(loc, o) ? hm : d.toLocaleDateString(loc, { ...o, day: '2-digit', month: '2-digit' }) + '\n' + hm; };   // o dia por cima da hora: cabe na coluna
 const deskRow = ([at, a]) => h('li', null, h('span', { class: 'ptime' }, edTime(at)), h('span', null, h('b', null, t('ar_' + a.k) + '. '), artLine(a)));
 const lxLine = (a) => t(a.d >= 2 ? 'lxUp' : a.d <= -2 ? 'lxDown' : 'lxSame', { n: a.crime });
@@ -845,7 +845,7 @@ function rgPaper(Wm) {
 }
 // até quando: «às 15:00» se for hoje, senão «terça-feira às 15:00»
 // «às 14:30», «amanhã às 00:36», «quarta-feira às 09:00» (v80: o dia seguinte por extenso, e o hífen do dia não parte a linha)
-const untilTxt = (ts) => { const o = { timeZone: 'Europe/Lisbon' }, loc = lang() === 'pt' ? 'pt-PT' : 'en-GB', d = new Date(ts), hm = hhmm(ts), day = (x) => x.toLocaleDateString(loc, o);
+const untilTxt = (ts) => { const o = { timeZone: 'Europe/London' }, loc = lang() === 'pt' ? 'pt-PT' : 'en-GB', d = new Date(ts), hm = hhmm(ts), day = (x) => x.toLocaleDateString(loc, o);
   if (day(d) === day(new Date(now()))) return t('untilToday', { h: hm });
   if (day(d) === day(new Date(now() + 864e5))) return t('untilTomorrow', { h: hm });
   return t('untilDay', { d: d.toLocaleDateString(loc, { ...o, weekday: lang() === 'pt' ? 'long' : 'short' }).replace('-', '\u2011'), h: hm }); };
@@ -855,11 +855,11 @@ function rgEvPaper(Wm, max) {
   return rows.length ? h('section', { class: 'psec' }, h('h4', null, t('rgEvT')), h('ul', { class: 'plive' }, rows.map(([at, a]) => h('li', null, h('span', { class: 'ptime' }, edTime(at)), h('span', null, a.toAt <= now() ? rgEvLine(a, a.toAt).replace(/\.$/, '') + ' ' + t('evOver') + '.' : rgEvLine(a, a.toAt)))))) : null;
 }
 const kick = (k) => t('hl_' + k + '_t', { a: '' }).replace(/[:\s]+$/, '');   // «Procurado: {a}» sem o nome: é o antetítulo
-const paperDate = () => new Date(now()).toLocaleDateString(lang() === 'pt' ? 'pt-PT' : 'en-GB', { weekday: 'short', day: 'numeric', month: 'long', timeZone: 'Europe/Lisbon' });
+const paperDate = () => new Date(now()).toLocaleDateString(lang() === 'pt' ? 'pt-PT' : 'en-GB', { weekday: 'short', day: 'numeric', month: 'long', timeZone: 'Europe/London' });
 const toPage = (pg, alvo) => { S.newsPg = pg; render(); const e = alvo && document.querySelector(alvo); if (e) e.scrollIntoView(); else window.scrollTo({ top: 0 }); };
 const more = (pg, lbl) => h('button', { class: 'pmore', on: { click: () => toPage(pg) } }, lbl + ' →');
 // a hora a que aconteceu (hora de Lisboa); se não foi hoje, o dia. «2:03» de tempo decorrido lia-se como duas da manhã.
-const paperTime = (t0) => { const o = { timeZone: 'Europe/Lisbon' }, d = new Date(t0), loc = lang() === 'pt' ? 'pt-PT' : 'en-GB';
+const paperTime = (t0) => { const o = { timeZone: 'Europe/London' }, d = new Date(t0), loc = lang() === 'pt' ? 'pt-PT' : 'en-GB';
   return d.toLocaleDateString(loc, o) === new Date(now()).toLocaleDateString(loc, o) ? d.toLocaleTimeString(loc, { ...o, hour: '2-digit', minute: '2-digit' }) : d.toLocaleDateString(loc, { ...o, day: '2-digit', month: '2-digit' }); };
 const liveRow = (e) => h('li', null, h('span', { class: 'ptime' }, paperTime(e.t)), h('span', null, newsText(e)));
 // uma notícia: antetítulo a vermelho, título em letras grandes, a fotografia de quem a fez e o texto. kind: lead (manchete), side (chamada) ou row (lista)
@@ -949,7 +949,7 @@ function paperFront(N) {
   const Wm = N.mundo, last = Wm && Wm.arts.length ? Wm.arts[Wm.arts.length - 1] : null;
   if (last) {
     const lx = last.a.find((x) => x.k === 'lx');
-    out.push(h('section', { class: 'psec' }, h('h4', null, t('edAtH', { h: new Date(last.at).toLocaleTimeString(lang() === 'pt' ? 'pt-PT' : 'en-GB', { timeZone: 'Europe/Lisbon', hour: '2-digit', minute: '2-digit' }) })),
+    out.push(h('section', { class: 'psec' }, h('h4', null, t('edAtH', { h: new Date(last.at).toLocaleTimeString(lang() === 'pt' ? 'pt-PT' : 'en-GB', { timeZone: 'Europe/London', hour: '2-digit', minute: '2-digit' }) })),
       lx ? h('p', null, lxLine(lx) + '. ' + t('lxBust', { p: Wm.lx.press, b: pctOf(lxBustNow(Wm)) + '%' })) : null,   // a pressão e a percentagem de agora, como na tira de baixo
       Wm.rg ? h('div', { class: 'pquo prgq', 'aria-label': t('lxPress') }, [['lx', Wm.lx], ...Object.entries(Wm.rg)].map(([r, g]) => h('span', { class: g.press >= S.cfg.wh.raidMin ? 'pdn' : '' }, h('b', null, rgName(r)), t('rgPress').toLowerCase() + ' ' + g.press))) : null,
       more('country', t('pgCountry'))));
@@ -1539,7 +1539,7 @@ function staminaHelp(me, L) {
 // skill de uma família (bp a mais no que se leva), igual à do motor
 const skBp = (me, fam) => { const K = S.cfg.skills, n = (me.sk && me.sk[fam]) || 0; return Math.floor((K.maxBp * Math.min(n, K.fullPts)) / K.fullPts); };
 const pctOf = (bp) => (bp % 100 ? (bp / 100).toFixed(1).replace('.', lang() === 'pt' ? ',' : '.') : String(bp / 100));
-const moneyRange = (a, z) => (lang() === 'pt' ? num(a) + '–' + num(z) + '\u00a0€' : '€' + num(a) + '–' + num(z));
+const moneyRange = (a, z) => CUR + num(a) + '–' + num(z);
 const crimeEv = (c) => c.prizes.reduce((x, [bp, a, z]) => x + (bp * (a + z)) / 2, 0) / 10000;
 const heatPct = (bp) => Math.round(bp / 100);
 // ---------- equipamento e inventário ----------
@@ -2388,13 +2388,13 @@ function screenMyBro() {
   return out;
 }
 // ---------- bolsa ----------
-const stMoney = (c) => { const v = (c / 100).toLocaleString(lang() === 'pt' ? 'pt-PT' : 'en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2, useGrouping: 'always' }); return lang() === 'pt' ? v + '\u00a0€' : '€' + v; };
+const stMoney = (c) => { const v = (c / 100).toLocaleString(lang() === 'pt' ? 'pt-PT' : 'en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2, useGrouping: 'always' }); return CUR + v; };
 // o empurrão de uma ordem no preço (igual ao do servidor): proporcional ao tamanho, até ao teto; compra-se e vende-se já ao preço empurrado
 const stImp = (k, gross) => { const W = S.cfg.world; return W ? Math.min(W.impMaxBp, Math.floor((gross * 10000) / W.co[S.cfg.stocks.list[k].id].liq)) : 0; };
 const stExec = (price, k, n, side) => { const imp = stImp(k, Math.floor((n * price) / 100)); return side > 0 ? Math.ceil((price * (10000 + imp)) / 10000) : Math.max(1, Math.floor((price * (10000 - imp)) / 10000)); };
 const stQuote = (price, n, k) => { const ex = k == null ? price : stExec(price, k, n, 1), g = Math.ceil((n * ex) / 100); return g + Math.ceil((g * S.cfg.stocks.feeBp) / 10000); };
 // o que se sabe de uma empresa: a notícia pendente (comunicado, rumores, investigação) e o dividendo
-const edHour = (t0) => new Date(t0).toLocaleString(lang() === 'pt' ? 'pt-PT' : 'en-GB', { timeZone: 'Europe/Lisbon', weekday: 'short', hour: '2-digit', minute: '2-digit' });
+const edHour = (t0) => new Date(t0).toLocaleString(lang() === 'pt' ? 'pt-PT' : 'en-GB', { timeZone: 'Europe/London', weekday: 'short', hour: '2-digit', minute: '2-digit' });
 function stStory(c, co) {
   if (!co) return null;
   const st = co.st, rows = [];
@@ -2541,8 +2541,8 @@ function playerBros(me, L, b) {
 // ---------- emprego (passo 3) ----------
 // o que paga o turno n (1 a 6): os seis somam exatamente o dia (igual ao motor)
 const shiftPay = (x, n) => { const P = S.cfg.jobs.perDay; return Math.floor((x.day * n) / P) - Math.floor((x.day * (n - 1)) / P); };
-const hhmm = (ts) => new Date(ts).toLocaleTimeString(lang() === 'pt' ? 'pt-PT' : 'en-GB', { timeZone: 'Europe/Lisbon', hour: '2-digit', minute: '2-digit' });
-const dayKey = () => new Date(now()).toLocaleDateString('en-CA', { timeZone: 'Europe/Lisbon' });   // v95: o dia de Lisboa como o servidor o escreve (2026-11-18)
+const hhmm = (ts) => new Date(ts).toLocaleTimeString(lang() === 'pt' ? 'pt-PT' : 'en-GB', { timeZone: 'Europe/London', hour: '2-digit', minute: '2-digit' });
+const dayKey = () => new Date(now()).toLocaleDateString('en-CA', { timeZone: 'Europe/London' });   // v95: o dia de Lisboa como o servidor o escreve (2026-11-18)
 // a informação que um turno deu, numa frase; o nome do jogador e o dinheiro saltam à vista
 function tipText(x) {
   switch (x.k) {
@@ -2626,7 +2626,7 @@ const mtQ = (k, n) => t((n === 1 && t('mt1_' + k) !== 'mt1_' + k ? 'mt1_' : 'mt_
 const crIt = (id) => { const r = recipe(id); return !r || r.kind === 'comp' ? t('mt_' + id) : r.kind === 'maq' ? t('mq_' + r.biz) : t('g_' + id); };
 const crArt = (r, cls) => (r.kind === 'comp' ? art('mat', r.id, cls) : r.kind === 'maq' ? art('maq', r.biz, cls) : art('gear', r.id, cls));
 const matFrom = (id) => Object.keys(S.cfg.mat.drop).find((w) => S.cfg.mat.drop[w] === id);
-const cvDay = (ts) => new Date(ts).toLocaleDateString(lang() === 'pt' ? 'pt-PT' : 'en-GB', { day: 'numeric', month: 'short', timeZone: 'Europe/Lisbon' });
+const cvDay = (ts) => new Date(ts).toLocaleDateString(lang() === 'pt' ? 'pt-PT' : 'en-GB', { day: 'numeric', month: 'short', timeZone: 'Europe/London' });
 // a máquina de um negócio: 0 = não há, 1 = a trabalhar, 2 = a trabalhar e já dá para rever, 3 = parada (falta a revisão)
 const maqState = (me, id) => { const u = me.maq && me.maq[id], V = S.cfg.craft.rev, n = now(); return !u ? 0 : u <= n ? 3 : u - n <= V.maxMs - V.ms ? 2 : 1; };
 const cvDur = (ms) => { const m = Math.round(ms / 60000), hh = Math.floor(m / 60); return hh ? hh + ' h' + (m % 60 ? ' ' + (m % 60) + ' min' : '') : m + ' min'; };
@@ -3154,7 +3154,7 @@ async function loadNov() {
 }
 const novNew = () => !!(S.nov && S.nov.length && S.nov[0].v > (store.get('novSeen', 0) || 0));
 function novDot() { const b = document.querySelector('.badge'); if (b) b.classList.toggle('nv', novNew()); }
-const novDay = (at) => new Date(at).toLocaleDateString(lang() === 'pt' ? 'pt-PT' : 'en-GB', { timeZone: 'Europe/Lisbon', day: 'numeric', month: 'long' });
+const novDay = (at) => new Date(at).toLocaleDateString(lang() === 'pt' ? 'pt-PT' : 'en-GB', { timeZone: 'Europe/London', day: 'numeric', month: 'long' });
 function novList() {
   if (!S.nov) { loadNov(); return h('p', { class: 'small muted' }, t('loading')); }
   if (S.nov[0] && S.nov[0].v > (store.get('novSeen', 0) || 0)) { store.set('novSeen', S.nov[0].v); setTimeout(novDot, 0); }
@@ -5598,8 +5598,9 @@ function jobCompCard(me, L, b) {
 }
 // ===== v110: território dos gangues =====
 // Doze bairros num mapa de quarteirões: oeste à esquerda; o Tejo corre por baixo e sobe pelo lado leste (Marvila e o Parque das Nações ficam à beira-rio).
-const BX_POS = { campoourique: [1, 1], arroios: [2, 1], parquenacoes: [3, 1], bairroalto: [1, 2], intendente: [2, 2], marvila: [3, 2], alcantara: [1, 3], mouraria: [2, 3], alfama: [3, 3], belem: [1, 4], caisdosodre: [2, 4], baixa: [3, 4] };
-const tzN = (id) => t('tz_' + id), tzEm = (id) => t('tzEm_' + id);
+// v113: bairros pelo mundo, por continente (os ids são os antigos, de quando eram de Lisboa: são as chaves guardadas no jogo)
+const BX_CONT = [['eu', ['baixa', 'caisdosodre', 'campoourique']], ['am', ['bairroalto', 'belem', 'alcantara']], ['af', ['mouraria', 'intendente', 'alfama']], ['as', ['parquenacoes', 'marvila', 'arroios']]];
+const tzN = (id) => t('tz_' + id), tzEm = (id) => t('tzEm_' + id), tzC = (id) => t('tzC_' + id);
 const bxTag = (g) => (g ? h('span', { class: 'gtag' }, g.tag) : null);
 const bxX = (bp) => (bp / 10000).toLocaleString(lang() === 'pt' ? 'pt-PT' : 'en-GB');
 const bxLeft = (ts, cls) => h('b', { class: 'num' + (cls ? ' ' + cls : ''), dataset: { left: ts } }, dur(ts - now()));
@@ -5613,15 +5614,15 @@ const bxOurs = (d) => (d?.zones || []).filter((z) => z.as && z.as.side).sort((x,
 // o estado de um bairro numa palavra: vosso, de outro gangue, sem dono, em disputa
 const bxState = (z) => (z.as ? 'fight' : z.owner?.me ? 'mine' : z.owner ? 'them' : 'free');
 function bxTile(z) {
-  const st = bxState(z), [c, r] = BX_POS[z.id] || [1, 1], s = z.as, n = now();
+  const st = bxState(z), s = z.as, n = now();
   // a segunda linha diz de quem é; num assalto, se atacamos, se nos atacam, ou quem ataca
   const who = s ? (s.side === 'a' ? h('span', { class: 'c-cash' }, t('bxWeAtk')) : s.side === 'd' ? h('span', { class: 'c-red' }, t('bxUnderAtk')) : [bxTag(s.a), h('span', null, t('bxRaids'))])
     : z.owner ? [bxTag(z.owner), z.prot ? h('span', { class: 'bxp' }, icon('lock'), dur(z.prot - n).split(' ')[0]) : null] : h('span', { class: 'muted' }, t('bxFree'));
   const foot = s ? h('span', { class: 'num bxt' }, icon('timer'), bxLeft(n < s.start ? s.start : s.end)) : h('span', { class: 'num bxi' }, t('bxPerH', { m: money(z.perH) }));
-  const label = [tzN(z.id), s ? (s.side === 'a' ? t('bxWeAtk') : s.side === 'd' ? t('bxUnderAtk') : t('bxFight')) : z.owner ? (z.owner.me ? t('bxYours') : z.owner.tag) : t('bxFree'),
+  const label = [tzN(z.id), tzC(z.id), s ? (s.side === 'a' ? t('bxWeAtk') : s.side === 'd' ? t('bxUnderAtk') : t('bxFight')) : z.owner ? (z.owner.me ? t('bxYours') : z.owner.tag) : t('bxFree'),
     z.prot && !s ? t('bxProtT') : null, t('bxPerH', { m: money(z.perH) })].filter(Boolean).join(' · ');
-  return h('button', { class: 'bxz ' + st, style: `grid-column:${c};grid-row:${r}`, 'aria-label': label, on: { click: () => bxSheet(z.id) } },
-    h('span', { class: 'bxn' }, tzN(z.id)), h('span', { class: 'bxo' }, who), foot);
+  return h('button', { class: 'bxz ' + st, 'aria-label': label, on: { click: () => bxSheet(z.id) } },
+    h('span', { class: 'bxn' }, h('b', null, tzN(z.id)), h('span', { class: 'bxc' }, tzC(z.id))), h('span', { class: 'bxo' }, who), foot);
 }
 // o placar de um assalto: as duas barras na mesma escala, a meta marcada na de quem ataca e a regra numa frase
 function bxScore(z, withChain) {
@@ -5674,7 +5675,7 @@ function bxSheet(id) {
   const pode = !meu && !W;
   if (pode) pedir();
   close = sheet(h('div', { class: 'stack bxsh' },
-    h('h2', null, tzN(z.id)), owner, facts,
+    h('div', null, h('h2', null, tzN(z.id)), h('p', { class: 'small muted' }, tzC(z.id))), owner, facts,
     z.as ? bxScore(z, !!z.as.side) : null,
     pode ? box : null, why ? h('p', { class: 'small muted' }, why) : null));
 }
@@ -5682,7 +5683,7 @@ function bxHistRow(x) {
   const txt = x.won ? (x.d ? t('bxTookFrom', { z: tzN(x.z), a: x.a, d: x.d }) : t('bxTook', { z: tzN(x.z), a: x.a })) : x.d ? t('bxHeldOff', { z: tzN(x.z), a: x.a, d: x.d }) : t('bxFailed', { z: tzN(x.z), em: tzEm(x.z), a: x.a });
   const sc = x.d ? (x.ta || x.a) + ' ' + num(x.pa) + ' · ' + (x.td || x.d) + ' ' + num(x.pd) : t('bxPts', { n: num(x.pa) });
   return h('div', { class: 'vrow' }, h('span', { class: x.won ? 'c-resp' : 'muted' }, icon('flag')),
-    h('div', { class: 'grow' }, h('div', null, txt), h('div', { class: 'small muted num' }, sc + ' · ' + t('bxAgo', { t: dur(Math.max(60000, now() - x.fim)) }))));
+    h('div', { class: 'grow' }, h('div', null, txt), h('div', { class: 'small muted num' }, sc + ' · ' + agoTxt(now() - x.fim))));
 }
 // a cadeia do gangue: quantas seguidas, quanto falta para partir e para o próximo multiplicador
 function bxChain(ch) {
@@ -5715,9 +5716,10 @@ function screenBairros() {
   const mine = d.mine;
   for (const z of ours) out.push(h('div', { class: 'card stack bxnow' + (z.as.side === 'd' ? ' def' : '') },
     h('div', null, h('p', { class: 'small bxlbl ' + (z.as.side === 'a' ? 'c-cash' : 'c-red') }, t(z.as.side === 'a' ? 'bxWeAtk' : 'bxUnderAtk')), h('h3', { class: 'bxh' }, tzN(z.id))), bxScore(z, true)));
-  // o mapa
-  out.push(h('div', { class: 'bxmap' }, h('div', { class: 'bxgrid' }, d.zones.map(bxTile)),
-    h('div', { class: 'bxw b', 'aria-hidden': 'true' }, h('span', null, t('bxRiver'))), h('div', { class: 'bxw r', 'aria-hidden': 'true' })));
+  // o mapa: um bloco por continente
+  const byId = new Map(d.zones.map((z) => [z.id, z]));
+  out.push(h('div', { class: 'bxmap' }, BX_CONT.map(([c, ids]) => [h('p', { class: 'bxct' }, t('bxCont_' + c)),
+    h('div', { class: 'bxgrid' }, ids.map((id) => byId.get(id)).filter(Boolean).map(bxTile))])));
   out.push(h('div', { class: 'bxleg small' }, [['mine', 'bxYours'], ['them', 'bxOther'], ['fight', 'bxFight'], ['free', 'bxFree']].map(([c, k]) => h('span', null, h('i', { class: 'bxk ' + c }), t(k))),
     h('span', null, icon('lock'), t('bxProtT'))));
   // o teu gangue: bairros, quanto rende, a cadeia
@@ -6604,7 +6606,7 @@ async function openPlayer(name, fromChat) {
   let P;
   try { P = await api('GET', '/api/profile?n=' + encodeURIComponent(name)); } catch (e) { if (e.code && e.code !== 'LOGIN_REQUIRED') toast(errText(e.code), true); return; }
   const n = now(), mutedNow = chatMuted().includes(P.name);
-  const dt = (ts) => new Date(ts).toLocaleDateString(lang() === 'pt' ? 'pt-PT' : 'en-GB', { timeZone: 'Europe/Lisbon', day: 'numeric', month: 'long', year: 'numeric' });
+  const dt = (ts) => new Date(ts).toLocaleDateString(lang() === 'pt' ? 'pt-PT' : 'en-GB', { timeZone: 'Europe/London', day: 'numeric', month: 'long', year: 'numeric' });
   const stTxt = !P.active ? t('pfOld') : P.st.k === 'jail' ? t('pfJail', { h: hhmm(P.st.until) }) : P.st.k === 'hosp' ? t('pfHosp', { h: hhmm(P.st.until) })
     : P.st.k === 'away' ? (P.st.fly ? t('whyFly', { x: trCityF(P.st.at, 'Para') }) : trCityF(P.st.at, 'Em')) : t('pfFree');
   const ago = (ms) => { const m = Math.max(1, Math.round(ms / 60_000)); return m < 60 ? t('agoM', { n: m }) : m < 1440 ? t('agoH', { n: Math.round(m / 60) }) : t('agoD', { n: Math.round(m / 1440) }); };

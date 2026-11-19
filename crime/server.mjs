@@ -29,7 +29,7 @@ const RONDA_TESTE = process.env.PRIMEIRA_RONDA ? dataDe(process.env.PRIMEIRA_RON
 // Épocas de 28 dias a contar da sexta 13/11/2026 às 21:00 de Lisboa (PRIMEIRA_EPOCA=AAAA-MM-DD muda-a, para testes)
 const ANCORA = dataDe(process.env.PRIMEIRA_EPOCA || process.env.PRIMEIRA_RONDA || '2026-11-13');
 const rng = process.env.TESTE_SEMENTE ? seededRng(+process.env.TESTE_SEMENTE) : cryptoRng();   // nos testes, a sorte pode ser sempre a mesma
-const VERSAO = 112;   // sobe quando o servidor muda, para se confirmar de fora que a versão nova já está a correr
+const VERSAO = 113;   // sobe quando o servidor muda, para se confirmar de fora que a versão nova já está a correr
 const ATOS_3S = +(process.env.ATOS_3S || 15), ATOS_MIN = +(process.env.ATOS_MIN || 400); // ações por conta: 15 em 3 s, 400 por minuto
 
 // ---------- relógio que nunca anda para trás ----------
@@ -1597,7 +1597,7 @@ const qr = {
   limpaP: db.prepare('DELETE FROM corrida_pilotos WHERE ronda = ? AND corrida NOT IN (SELECT id FROM corridas WHERE ronda = ?)'),
 };
 const RACE = CFG.race, salas = new Map();   // as corridas a dinheiro abertas: id -> { id, pista, taxa, max, tier, dono, criada, prazo, pilotos: Map(conta -> ficha) }
-const BOTS_CORRIDA = ['Zé Turbo', 'Rui Nitro', 'Tó Escape', 'Nelo GTI', 'Jéssica Drift', 'Bruno Embraiagem', 'Kika Travão', 'Mário Pistão', 'Sandro Jantes', 'Vanessa Cilindrada', 'Fábio Ponteiro', 'Marco Rotunda'];
+const BOTS_CORRIDA = ['Turbo Tony', 'Nitro Nadia', 'Kenji Drift', 'Big Mike', 'Dmitri V8', 'Lola Redline', 'Santi Boost', 'Yuki Apex', 'Rico Burnout', 'Ayo Nitrous', 'Lars Launch', 'Mac Shifter'];   // v113: pilotos de rua de todo o lado
 function carregarCorridas() {
   salas.clear();
   for (const r of qr.abertas.all(ronda)) salas.set(r.id, { id: r.id, pista: r.pista, taxa: r.taxa, max: r.max, tier: r.tier, dono: r.dono, criada: r.criada, prazo: r.prazo,
@@ -2352,7 +2352,7 @@ function agir(conta, corpo, now) {
     case 'job': r = E.chooseJob(p, now, world, int(a.i)); break;
     case 'carBuy': r = E.carBuy(p, now, world, String(a.id || '')); break;   // v112: a garagem
     case 'carUp': r = E.carUp(p, now, world, int(a.i), int(a.part)); break;
-    case 'carSel': if (salaDe(conta)) throw new E.GameError('IN_RACE'); r = E.carSel(p, int(a.i)); break;
+    case 'carSel': if (salaDe(conta)) throw new E.GameError('IN_RACE'); r = E.carSel(p, now, world, int(a.i)); break;
     case 'carSell': if (salaDe(conta)) throw new E.GameError('IN_RACE'); r = E.carSell(p, now, world, int(a.i)); break;
     case 'course': r = E.startCourse(p, now, world, String(a.id || '').slice(0, 24)); break;
     case 'examStart': r = E.examStart(p, now, world, rng); break;   // v80: o exame do curso

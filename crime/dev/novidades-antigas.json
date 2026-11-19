@@ -292,12 +292,14 @@
 "en": "Gang crimes with a big picture and the risk in view."
 },
 "v70": {
-"pt": "Fichas do casino a partir de 1 €.",
-"en": "Casino chips from €1."
+"pt": "Fichas do casino a partir de £1.",
+"en": "Casino chips from £1.",
+"force": true
 },
 "v71": {
-"pt": "Objetos reais em fotografia e slots desde 0,20 €.",
-"en": "Real objects in photos and slots from €0.20."
+"pt": "Objetos reais em fotografia e slots desde £0,20.",
+"en": "Real objects in photos and slots from £0.20.",
+"force": true
 },
 "v72": {
 "pt": "Três golpes novos: bicicletas, multibanco e farmácia.",
@@ -349,8 +351,9 @@
 "en": "The Basement: parts, tools, weapons and machines."
 },
 "v84": {
-"pt": "A Feira da Ladra.",
-"en": "The Flea Market."
+"pt": "A feira.",
+"en": "The Flea Market.",
+"force": true
 },
 "v85": {
 "pt": "Escavações.",
@@ -361,8 +364,9 @@
 "en": "An arsenal of 30 weapons and rare materials from digs."
 },
 "v88": {
-"pt": "Milhares no campo de euros da feira.",
-"en": "Thousands separators in the market’s price field."
+"pt": "Milhares no campo do preço da feira.",
+"en": "Thousands separators in the market’s price field.",
+"force": true
 },
 "v89": {
 "pt": "Pedidos de compra na feira.",
@@ -412,6 +416,16 @@
 "pt": "As guerras entre gangues chegam à primeira página do jornal, com o resultado. Na cave, o preço vai no botão «Fazer»; os ginásios têm as colunas alinhadas; as honras com nomes compridos passam a duas linhas.",
 "en": "Gang wars make the front page of the paper, with the score. In the basement the price is on the “Make” button; gym columns line up; honours with long names go onto two lines.",
 "img": "/img/cenas/jornal.webp",
+"force": true
+},
+"v110": {
+"pt": "Bairros: no Império, os gangues lutam por 12 bairros que pagam à hora para o cofre.",
+"en": "Turf: in Empire, gangs fight over 12 districts that pay into the vault every hour.",
+"force": true
+},
+"v99": {
+"pt": "Negócios pequenos para começar: banca de rua (£5 000), quiosque, lavagem auto e barbearia; a lavandaria, o café, a oficina e o clube passaram a render mais.",
+"en": "Small businesses to start with: street stall (£5,000), kiosk, car wash and barbershop; the laundromat, café, garage and nightclub now earn more.",
 "force": true
 }
 }

@@ -149,16 +149,17 @@ export function num(n) {
   if (!NF) { try { NF = new Intl.NumberFormat(LOC, { useGrouping: 'always', maximumFractionDigits: 0 }); } catch { NF = new Intl.NumberFormat(LOC, { maximumFractionDigits: 0 }); } }
   return NF.format(Math.floor(n));
 }
-// euros a valores reais (base nova): «1 500 €» em português, «€1,500» em inglês; sempre por extenso
-export function money(n) { return LOC === 'pt-PT' ? num(n) + '\u00a0€' : (n < 0 ? '−€' + num(-n) : '€' + num(n)); }
-// cêntimos (só as slots apostam ao cêntimo): «0,20 €», «1,20 €»; um valor redondo escreve-se como os outros («5 €»)
+// v113: o jogo passa-se em Londres e paga-se em libras: «£1 500» em português, «£1,500» em inglês; sempre por extenso
+export const CUR = '£';
+export function money(n) { return n < 0 ? '−' + CUR + num(-n) : CUR + num(n); }
+// cêntimos (só as slots apostam ao cêntimo): «£0,20», «£1,20»; um valor redondo escreve-se como os outros («£5»)
 let NF2 = null;
 export function moneyC(c) {
   c = Math.round(c);
   if (c % 100 === 0) return money(c / 100);
   if (!NF2) { try { NF2 = new Intl.NumberFormat(LOC, { useGrouping: 'always', minimumFractionDigits: 2, maximumFractionDigits: 2 }); } catch { NF2 = new Intl.NumberFormat(LOC, { minimumFractionDigits: 2, maximumFractionDigits: 2 }); } }
   const v = NF2.format(Math.abs(c) / 100);
-  return LOC === 'pt-PT' ? (c < 0 ? '−' : '') + v + '\u00a0€' : (c < 0 ? '−€' : '€') + v;
+  return (c < 0 ? '−' : '') + CUR + v;
 }
 export function short(n) { return num(n); }   // (16/11) também o respeito e as stats por extenso: «16K» escondia o valor
 export function moneyShort(n) { return money(n); }   // os valores em dinheiro escrevem-se sempre por extenso (sem K nem M)

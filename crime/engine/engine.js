@@ -435,7 +435,7 @@ export function carUp(p, now, world, i, part) {
   c.up[part] = lv + 1;
   return { ok: true, id: c.id, part, lv: lv + 1, cost };
 }
-export function carSel(p, i) { if (!p.cars[i]) fail('NO_CAR'); p.car = i; return { ok: true, id: p.cars[i].id }; }
+export function carSel(p, now, world, i) { begin(p, now, world, { allowBusy: true }); if (!p.cars[i]) fail('NO_CAR'); p.car = i; return { ok: true, id: p.cars[i].id }; }   // v113: a garagem fica em casa (lá fora não se mexe)
 export function carSell(p, now, world, i) {
   begin(p, now, world, { allowBusy: true });
   const c = p.cars[i];
