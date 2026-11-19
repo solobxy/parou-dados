@@ -49,7 +49,7 @@ export function newPlayer(id, now, world, opts = {}) {
     luxuries: 0,
     gang: null, gb: null, gangLeft: 0, gbotLeft: 0, gh: [], gbz: gbzNew(),
     emp: null,   // v111: a empresa onde trabalha ({ id, t: o tipo, s: as estrelas }); o servidor escreve-a
-    cars: [], car: -1, rcn: { n: 0, w: 0, pod: 0 }, pkn: { h: 0, w: 0, big: 0 }, pkd: null, jsr: null, evs: {},   // v114: mãos de póquer (jogadas, ganhas, maior pote) e as fichas compradas hoje   // v112: os carros (cada um com as peças), o que está escolhido e as corridas feitas (rc já é o resto do respeito)
+    cars: [], car: -1, rcn: { n: 0, w: 0, pod: 0 }, pkn: { h: 0, w: 0, big: 0 }, pkd: null, jsr: null, evs: {}, vip: 0, vipOn: false, crd: null,   // v114: mãos de póquer (jogadas, ganhas, maior pote) e as fichas compradas hoje   // v112: os carros (cada um com as peças), o que está escolhido e as corridas feitas (rc já é o resto do respeito)
     detoxT: [],
     xp: { F: 0, I: 0, C: 0 },
     wk: CFG.crimes.map(() => 0),   // sucessos por golpe (para os objetivos)
@@ -135,6 +135,9 @@ function migrate(p) {
   if (p.pkd && (typeof p.pkd !== 'object' || typeof p.pkd.d !== 'string' || !Number.isSafeInteger(p.pkd.n))) p.pkd = null;
   if (p.pkd === undefined) p.pkd = null;
   if (!p.evs || typeof p.evs !== 'object' || Array.isArray(p.evs)) p.evs = {};   // v117: os eventos
+  if (!Number.isSafeInteger(p.vip) || p.vip < 0) p.vip = 0;   // v119: o VIP (até quando)
+  if (typeof p.vipOn !== 'boolean') p.vipOn = false;
+  if (p.crd !== null && (!p.crd || typeof p.crd.d !== 'string' || !Number.isSafeInteger(p.crd.n))) p.crd = null;
   if (p.jsr === undefined || (p.jsr !== null && (typeof p.jsr !== 'object' || !Number.isSafeInteger(p.jsr.t0)))) p.jsr = null;   // v116: a sentença
   if (!Number.isFinite(p.rc)) p.rc = 0;   // (uma versão de teste da v112 usou rc para as corridas: volta a ser o resto do respeito)
   if (!Number.isSafeInteger(p.gangLeft)) p.gangLeft = 0;
@@ -240,7 +243,8 @@ function ecoNova(p) {
 // ---------- tempo ----------
 
 // stamina máxima: a da casa
-export const energyMax = (p) => (CFG.house.tiers[p.house] || CFG.house.tiers[0]).emax || CFG.energy.max;
+export const energyMax = (p) => { const b = (CFG.house.tiers[p.house] || CFG.house.tiers[0]).emax || CFG.energy.max; return p.vipOn ? b + Math.floor((b * CFG.vip.emaxBp) / 10000) : b; };   // v119: o VIP
+export const energyRegenMs = (p) => (p.vipOn ? Math.round((CFG.energy.regenMs * 10000) / (10000 + CFG.vip.regenBp)) : CFG.energy.regenMs);
 function syncVigor(p, now) {
   const { max, regenMs } = CFG.vigor;
   if (p.vigor >= max) { p.vigorT = now; return; }
@@ -251,7 +255,7 @@ function syncVigor(p, now) {
   p.vigorT = p.vigor >= max ? now : p.vigorT + gain * regenMs;
 }
 function syncEnergy(p, now) {
-  const { regenMs } = CFG.energy, max = energyMax(p);
+  const regenMs = energyRegenMs(p), max = energyMax(p);
   if (p.energy >= max) { p.energyT = now; return; }
   const ticks = Math.floor((now - p.energyT) / regenMs);
   if (ticks <= 0) return;
@@ -278,7 +282,9 @@ export function touch(p, now) {
   if (!Number.isSafeInteger(now)) fail('BAD_TIME');
   if (now < p.t) fail('TIME_BACKWARDS');
   migrate(p);
+  p.vipOn = p.vip > now;   // v119: o VIP vale enquanto não acaba; ao acabar, a stamina a mais vai-se
   syncEnergy(p, now);
+  if (p.energy > energyMax(p)) p.energy = energyMax(p);
   syncVigor(p, now);
   syncAddiction(p, now);
   if (p.addiction > addictionCap(p)) p.addiction = addictionCap(p); // limite mudou nas regras
@@ -3791,6 +3797,43 @@ export function evView(p, now) {
       prize: e.goals.map((_, i) => evPrize(p, i)) }; });
 }
 
+// ---------- v119: o que os créditos compram (o servidor tira os créditos da carteira da conta; aqui só o efeito) ----------
+export function vipAdd(p, now, world, days) {
+  begin(p, now, world, { allowBusy: true, jailOk: true, trOk: 2 });
+  if (!Number.isSafeInteger(days) || days < 1 || days > 400) fail('BAD_AMOUNT');
+  p.vip = Math.max(now, p.vip || 0) + days * T.DAY; p.vipOn = true;
+  return { ok: true, vip: p.vip, days };
+}
+export const crRefillsToday = (p, now) => (p.crd && p.crd.d === dayOf(now) ? p.crd.n : 0);
+export const crExitsToday = (p, now) => (p.crd && p.crd.d === dayOf(now) ? p.crd.x || 0 : 0);
+function crExit(p, now) {
+  const n = crExitsToday(p, now);
+  if (n >= CFG.vip.exitsPerDay) fail('CR_DAY', { n: CFG.vip.exitsPerDay });
+  p.crd = p.crd && p.crd.d === dayOf(now) ? { ...p.crd, x: n + 1 } : { d: dayOf(now), n: 0, x: 1 };
+}
+export function crRefill(p, now, world) {
+  begin(p, now, world, { allowBusy: true, jailOk: true, trOk: 2 });
+  if (p.energy >= energyMax(p)) fail('ENERGY_FULL');
+  const it = CFG.vip.shop.find((x) => x.id === 'refill'), n = crRefillsToday(p, now);
+  if (n >= it.perDay) fail('CR_DAY', { n: it.perDay });
+  const got = energyMax(p) - p.energy;
+  p.energy += got; p.energyT = now; p.crd = { d: dayOf(now), n: n + 1, x: crExitsToday(p, now) };
+  return { ok: true, energy: got, left: it.perDay - n - 1 };
+}
+export function crJail(p, now, world) {
+  begin(p, now, world, { allowBusy: true, jailOk: true }); inJail(p, now);
+  crExit(p, now);
+  p.jailUntil = 0; p.jailTier = 0;
+  return { ok: true };
+}
+export function crHosp(p, now, world) {
+  begin(p, now, world, { allowBusy: true, trOk: 1 });
+  if (!(p.hospUntil > now)) fail('NOT_IN_HOSPITAL');
+  crExit(p, now);
+  p.hospUntil = 0;
+  return { ok: true };
+}
+
 // ---------- parlamento (v76) ----------
 // votar: nível mínimo e conta com um dia ou mais (as contas novas não contam). O voto em si guarda-se no mundo (servidor).
 export function govVoteCheck(p, now, world) {
@@ -4746,6 +4789,7 @@ export function checkInvariants(p) {
   if (!p.pkn || !Number.isSafeInteger(p.pkn.h) || p.pkn.w > p.pkn.h || !(p.pkn.big >= 0)) bad.push('pkn');
   if (p.pkd !== null && (!p.pkd || !Number.isSafeInteger(p.pkd.n) || p.pkd.n < 0)) bad.push('pkd');
   if (p.jsr !== null && (!p.jsr || !Number.isSafeInteger(p.jsr.t0) || ![0, 1, 2].includes(p.jsr.ap))) bad.push('jsr');
+  if (!Number.isSafeInteger(p.vip) || p.vip < 0 || (p.crd !== null && !(p.crd.n >= 0 && p.crd.n <= 10 && (p.crd.x || 0) <= 10))) bad.push('vip');
   if (!p.evs || typeof p.evs !== 'object' || Object.values(p.evs).some((r) => !r || !Number.isSafeInteger(r.n) || r.n < 0 || !Number.isSafeInteger(r.got) || !(r.dn >= 0 && r.dn <= CFG.events.dayCap))) bad.push('eventos');
   if (!Number.isFinite(p.rc)) bad.push('rc');
   if (p.emp && p.job !== -1) bad.push('emp/job');

@@ -4262,3 +4262,17 @@ body.light .evegg-o { animation: none; }
 /* v118: a classificação de um evento no jornal: o lugar numa coluna estreita, na letra do texto */
 .evrank li { grid-template-columns: 24px minmax(0, 1fr); }
 .evrank .ptime { font: 700 14.5px/1.35 var(--serif); color: var(--pi); }
+
+/* v119: VIP e créditos. A marca VIP é uma etiqueta pequena em dourado-claro (não o âmbar do respeito); o ecrã é o de sempre. */
+.viptag { display: inline-flex; align-items: center; padding: 1px 7px; border-radius: 5px; font: 800 13px/1.35 var(--ui); letter-spacing: .08em; color: #1b1610; background: #e9d9a8; }
+.viptag.off { color: var(--tx2); background: var(--s3); }
+.viptag.sm { margin-left: 6px; padding: 0 5px; font-size: 11.5px; vertical-align: 1px; }
+.vipst { display: grid; gap: 8px; margin-top: 12px; }
+.vipst p { margin: 0; }
+.vipst .num { color: var(--tx2); font-weight: 700; }
+.vipben { display: grid; gap: 12px; margin: 0; padding: 14px 16px; list-style: none; }
+.vipben li { display: grid; gap: 2px; }
+.vipfair { margin: 10px 4px 0; }
+.vipcr { color: var(--tx2); font-weight: 700; white-space: nowrap; }
+.vipnote { margin: 10px 4px 0; color: var(--tx); font-weight: 600; }
+.vipnote.muted { color: var(--tx2); font-weight: 400; }

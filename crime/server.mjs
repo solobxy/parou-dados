@@ -31,7 +31,7 @@ const RONDA_TESTE = process.env.PRIMEIRA_RONDA ? dataDe(process.env.PRIMEIRA_RON
 // Épocas de 28 dias a contar da sexta 13/11/2026 às 21:00 de Lisboa (PRIMEIRA_EPOCA=AAAA-MM-DD muda-a, para testes)
 const ANCORA = dataDe(process.env.PRIMEIRA_EPOCA || process.env.PRIMEIRA_RONDA || '2026-11-13');
 const rng = process.env.TESTE_SEMENTE ? seededRng(+process.env.TESTE_SEMENTE) : cryptoRng();   // nos testes, a sorte pode ser sempre a mesma
-const VERSAO = 118;   // sobe quando o servidor muda, para se confirmar de fora que a versão nova já está a correr
+const VERSAO = 119;   // sobe quando o servidor muda, para se confirmar de fora que a versão nova já está a correr
 const ATOS_3S = +(process.env.ATOS_3S || 15), ATOS_MIN = +(process.env.ATOS_MIN || 400); // ações por conta: 15 em 3 s, 400 por minuto
 
 // ---------- relógio que nunca anda para trás ----------
@@ -372,6 +372,7 @@ function jogadorDe(conta, now, w) {
     if (w.phase !== 'play') return null;
     // sem rondas, quem chega começa como toda a gente (já não há stats de compensação para quem entra tarde)
     p = E.newPlayer(conta, now, { start: w.start, playEnd: w.playEnd });
+    p.vip = carteira(conta).vip;   // v119: o VIP é da conta
     E.seasonJoin(p, epocaEmDia(now).n);
     jogadores.set(conta, p);
     guardar(p, now);
@@ -514,6 +515,7 @@ function vista(p, now) {
     cd: { est: E.consumWait(p, 'est', now), med: E.consumWait(p, 'med', now) },   // v78: quanto falta na espera de cada família
     mt: p.mt, cf: p.cf, maq: p.maq,   // v83: depósito, bancada e máquinas
     pk: mesaPk(p.id) ? mesaPk(p.id).id : null, pkn: p.pkn, pkd: p.pkd, ...(() => { const s = E.sentence(p, now); return { jsr: s, appeal: s ? s.appeal : null }; })(),   // v116: a sentença e o recurso
+    ...(() => { const c = carteira(p.id); return { cr: c.cr, vip: p.vip, vipOn: p.vip > now, crRefills: E.crRefillsToday(p, now), crExits: E.crExitsToday(p, now), eRegen: E.energyRegenMs(p) }; })(),   // v119: os créditos e o VIP
     ev: E.evView(p, now), evNext: (() => { const x = EV.nextEvent(now); return x ? { id: x.id, start: x.start, end: x.end, fx: x.fx } : null; })(),   // v117: os eventos   // v114: a mesa de póquer onde está sentado
     cars: p.cars, car: p.car, rcn: p.rcn, rsk: E.skillBp(p, 'conducao'), race: salaDe(p.id) ? salaDe(p.id).id : null,   // v112: a garagem, as corridas e a perícia
     dg: E.digView(p, now), dgc: p.dgc, arq: E.stLevel(p, 'arqueologia'),   // v85: a escavação aberta (sem a grelha), os sítios vigiados, o nível de Arqueologia
@@ -572,7 +574,7 @@ function cfgPublica() {
     round: { playDays: CFG.round.playDays, noPvpMs: CFG.round.noPvpMs, newbieShieldMs: CFG.round.newbieShieldMs }, season: CFG.season, raid: CFG.raid,   // v91: a wiki
     consum: CFG.consum, col: CFG.col, gyms: CFG.gyms, books: CFG.books,   // v94, v95
     social: CFG.social,   // v109: o chat e a vitrine
-    turf: CFG.turf, comp: CFG.comp, race: CFG.race, poker: CFG.poker, bust: CFG.bust, appeal: CFG.appeal, events: CFG.events,   // v110: o território
+    turf: CFG.turf, comp: CFG.comp, race: CFG.race, poker: CFG.poker, bust: CFG.bust, appeal: CFG.appeal, events: CFG.events, vip: CFG.vip,   // v110: o território
     mat: CFG.mat, craft: CFG.craft, feira: { ...CFG.feira, refs: FEIRA_REFS }, dig: CFG.dig, hunt: CFG.hunt, honors: E.HONORS, travel: CFG.travel,   // v83, v84, v98, v100, v101
     exam: (({ ans: _a, ...x }) => x)(CFG.exam), studies: CFG.studies,   // v81: a Universidade   // v80: as regras do exame, sem as respostas certas
     gov: { vote: CFG.gov.vote, laws: CFG.gov.laws, cof: CFG.gov.cof, parties: Object.fromEntries(Object.entries(CFG.gov.parties).map(([k, x]) => [k, { pos: x.pos, wOp: x.wOp, wLob: x.wLob }])) },   // v76: o parlamento
@@ -956,6 +958,33 @@ function vistaFeira(conta, now, item, aoff = 0, an = 40) {
 
 // ---------- v109: chat público da cidade e perfil público ----------
 // Um só canal para toda a gente. Guardam-se as mensagens dos últimos CFG.social.keepMs; as ligações saem como «[link]» (spam e burlas).
+// ---------- v119: VIP e créditos ----------
+// A carteira é da conta (sobrevive às rondas): os créditos e até quando dura o VIP. Cada movimento fica num registo (com o saldo
+// depois); os que vêm de um pagamento levam a referência dele, única, para o mesmo pagamento nunca dar créditos duas vezes.
+db.exec(`CREATE TABLE IF NOT EXISTS carteira (conta TEXT PRIMARY KEY, cr INTEGER NOT NULL DEFAULT 0, vip INTEGER NOT NULL DEFAULT 0);
+CREATE TABLE IF NOT EXISTS creditos_mov (id INTEGER PRIMARY KEY AUTOINCREMENT, conta TEXT NOT NULL, t INTEGER NOT NULL, n INTEGER NOT NULL, saldo INTEGER NOT NULL, ref TEXT UNIQUE, motivo TEXT NOT NULL);
+CREATE INDEX IF NOT EXISTS creditos_mov_conta ON creditos_mov (conta, t);`);
+const qcart = {
+  get: db.prepare('SELECT cr, vip FROM carteira WHERE conta = ?'),
+  put: db.prepare('INSERT INTO carteira (conta, cr, vip) VALUES (?, ?, ?) ON CONFLICT(conta) DO UPDATE SET cr = excluded.cr, vip = excluded.vip'),
+  mov: db.prepare('INSERT INTO creditos_mov (conta, t, n, saldo, ref, motivo) VALUES (?, ?, ?, ?, ?, ?)'),
+  ref: db.prepare('SELECT conta, n, saldo FROM creditos_mov WHERE ref = ?'),
+  hist: db.prepare('SELECT t, n, saldo, motivo FROM creditos_mov WHERE conta = ? ORDER BY id DESC LIMIT 10'),
+};
+const carteira = (conta) => qcart.get.get(conta) || { cr: 0, vip: 0 };
+// dar (ou tirar, num reembolso) créditos: só pelo servidor, com referência única. Devolve o saldo; se a referência já existe, não faz nada.
+function darCreditos(conta, n, ref, motivo, now) {
+  if (!Number.isSafeInteger(n) || n === 0 || Math.abs(n) > CFG.vip.grantMax) throw new E.GameError('BAD_AMOUNT');
+  const ja = ref ? qcart.ref.get(ref) : null;
+  if (ja) return { ok: true, dup: true, saldo: carteira(ja.conta).cr };
+  const c = carteira(conta), saldo = Math.max(0, c.cr + n);
+  db.exec('BEGIN');
+  try { qcart.put.run(conta, saldo, c.vip); qcart.mov.run(conta, now, saldo - c.cr, saldo, ref || null, String(motivo || 'admin').slice(0, 60)); db.exec('COMMIT'); }
+  catch (e) { db.exec('ROLLBACK'); throw e; }
+  return { ok: true, dup: false, saldo };
+}
+const vipDe = (conta, now) => { const o = jogadores.get(conta); return !!(o && o.vip > now); };
+
 db.exec(`CREATE TABLE IF NOT EXISTS chat_publico (id INTEGER PRIMARY KEY AUTOINCREMENT, conta TEXT NOT NULL, t INTEGER NOT NULL, txt TEXT NOT NULL);
 CREATE INDEX IF NOT EXISTS chat_publico_t ON chat_publico (t);`);
 const qc = {
@@ -972,7 +1001,7 @@ const LINK_RE = /\b(?:https?:\/\/|www\.)\S+|\b[\w-]+(?:\.[\w-]+)*\.(?:com|pt|net
 const limpaFala = (x) => String(x || '').replace(/[\u0000-\u001f\u007f\u2028\u2029]/g, ' ').replace(/\s{2,}/g, ' ').trim().slice(0, CFG.social.max).replace(LINK_RE, '[link]');
 function linhaChat(m, conta) {
   const o = jogadores.get(m.conta);
-  return { id: m.id, t: m.t, name: nomeDe(m.conta), lvl: o ? E.level(o) : 0, tag: tagDe(m.conta), me: m.conta === conta, txt: m.txt };
+  return { id: m.id, t: m.t, name: nomeDe(m.conta), lvl: o ? E.level(o) : 0, tag: tagDe(m.conta), me: m.conta === conta, txt: m.txt, vip: !!(o && o.vip > clock()) };   // v119: a marca VIP
 }
 function vistaChat(conta, after) {
   const P = CFG.social.page;
@@ -1000,7 +1029,7 @@ function perfilPublico(conta, nome, now, w) {
   if (!c) return null;
   carregarRonda(w.n);
   const o = jogadores.get(c.id), g = gangueDe(c.id), visto = vistos.get(c.id) || 0;
-  const base = { name: c.nome, since: c.criada, me: c.id === conta, gang: g ? { tag: g.tag, name: g.nome } : null };
+  const base = { name: c.nome, since: c.criada, me: c.id === conta, gang: g ? { tag: g.tag, name: g.nome } : null, vip: vipDe(c.id, now) };   // v119
   if (!o) return { ...base, active: false };
   const x = E.trWhere(o, now);
   const st = o.jailUntil > now ? { k: 'jail', until: o.jailUntil } : o.hospUntil > now ? { k: 'hosp', until: o.hospUntil } : x ? { k: 'away', at: x.to, fly: x.st !== 'there' } : { k: 'free' };
@@ -2680,6 +2709,17 @@ function agir(conta, corpo, now) {
     case 'jailAppeal': r = E.jailAppeal(p, now, world, rng); break;   // v116
     case 'evGift': r = E.evGift(p, now, world, String(a.key || ''), rng); break;   // v117
     case 'evEgg': r = E.evEgg(p, now, world, String(a.key || ''), int(a.i)); break;
+    case 'crSpend': {   // v119: o que os créditos compram; tira-se da carteira no mesmo passo em que se grava o jogador
+      const it = CFG.vip.shop.find((x) => x.id === a.id);
+      if (!it) throw new E.GameError('NO_ITEM');
+      const w0 = carteira(conta);
+      if (w0.cr < it.cr) throw new E.GameError('NO_CREDITS', { need: it.cr, have: w0.cr });
+      r = it.days ? E.vipAdd(p, now, world, it.days) : it.id === 'refill' ? E.crRefill(p, now, world) : it.id === 'jail' ? E.crJail(p, now, world) : E.crHosp(p, now, world);
+      const saldo = w0.cr - it.cr, vip = it.days ? p.vip : w0.vip;
+      ctx.ops.push(() => { qcart.put.run(conta, saldo, vip); qcart.mov.run(conta, now, -it.cr, saldo, null, 'gasto:' + it.id); });
+      r = { ...r, id: it.id, cost: it.cr, saldo };
+      break;
+    }
     case 'luxury': r = E.buyLuxury(p, now, world); break;
     case 'attack': {
       const nome = String(a.target || '').toLowerCase();
@@ -2954,6 +2994,21 @@ async function tratar(req, res) {
     return enviar(res, 200, { ok: true, ronda: w.n, fase: w.phase, jogadores: jogadores.size, v: VERSAO, epoca: vistaEpoca(epocaEmDia(now)) });
   }
   if (req.method === 'GET' && path === '/api/config') return enviar(res, 200, cfgPublica());
+  // v119: dar créditos (o sítio onde o pagamento vai ligar). Só existe com ADMIN_TOKEN no ambiente (24+ caracteres) e o mesmo no pedido.
+  if (req.method === 'POST' && path === '/api/admin/creditos') {
+    const tok = process.env.ADMIN_TOKEN || '', dado = String(req.headers['x-admin-token'] || '');
+    const igual = tok.length >= 24 && dado.length === tok.length && timingSafeEqual(Buffer.from(dado), Buffer.from(tok));
+    if (!igual) return enviar(res, 404, { error: 'NOT_FOUND' });
+    let b; try { b = await lerCorpo(req); } catch { return enviar(res, 400, { error: 'BAD_REQUEST' }); }
+    const c = NOME_RE.test(String(b.name || '')) ? q.contaPorNome.get(String(b.name).toLowerCase()) : null;
+    if (!c) return enviar(res, 404, { error: 'NO_TARGET' });
+    const ref = b.ref == null ? null : String(b.ref).slice(0, 100);
+    try { return enviar(res, 200, darCreditos(c.id, Number(b.n), ref, b.motivo, now)); }
+    catch (e) { return enviar(res, 400, { error: e.code || 'BAD_REQUEST' }); }
+  }
+  // v119: comprar créditos com dinheiro: fechado até haver meio de pagamento («Em breve»)
+  if (req.method === 'POST' && path === '/api/vip/buy') return enviar(res, 403, { error: CFG.vip.open ? 'NO_PROVIDER' : 'SOON' });
+
   if (req.method === 'GET' && path === '/api/news') {
     const w = mundo(now); carregarRonda(w.n);
     return enviar(res, 200, { now, evRank: rankEventos(now), feed: ultimas(), today: { dia: diaDe(now), items: manchetes(diaDe(now), now) }, yesterday: { dia: ontemDe(now), items: manchetes(ontemDe(now), now) }, mundo: vistaMundo(w, now), wars: guerrasDoJornal(now) });

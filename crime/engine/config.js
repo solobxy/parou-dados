@@ -592,6 +592,24 @@ export const CFG = {
   // mais 15 pontos com a avença do advogado e mais 5, 10 ou 15 com o curso de Direito (75% no máximo). Ganhar tira metade do que falta;
   // perder não agrava (fica a pena como estava, perdem-se as custas).
   appeal: { feeBp: 2000, feeMin: 5, baseBp: 4500, avencaBp: 1500, maxBp: 7500, cutBp: 5000 },
+  // v119: VIP e créditos (créditos comprados com dinheiro real). Tudo pronto por dentro; a compra fica fechada até haver meio de
+  // pagamento (open: false → no jogo aparece «Em breve»). Os créditos são da conta (não da ronda) e só entram pelo servidor, com uma
+  // referência única (a do pagamento), para nunca se darem duas vezes. O VIP não mexe em ataque, defesa nem dinheiro: dá stamina a
+  // mais (+20% no máximo), a stamina enche 25% mais depressa e uma marca ao lado do nome. Preço de referência: o «Donator Pack» do
+  // Torn custa 5 dólares por 31 dias; aqui 30 dias de VIP = 400 créditos ≈ £3,99.
+  vip: {
+    open: false,
+    emaxBp: 2000, regenBp: 2500,
+    // (revisão do v119) os pacotes batem com o que se compra (sem sobras de propósito): 150 = 7 dias, 400 = 30 dias, 1 000 = 90 dias.
+    // 1 crédito vale cerca de 1 p; os pacotes maiores têm desconto no preço, não créditos de bónus (assim o preço em £ de cada coisa é claro).
+    penceCr: 1,
+    packs: [{ id: 'c150', cr: 150, gbp: 149 }, { id: 'c400', cr: 400, gbp: 399 }, { id: 'c1000', cr: 1000, gbp: 899 }, { id: 'c2500', cr: 2500, gbp: 1999 }],
+    shop: [{ id: 'vip7', cr: 150, days: 7 }, { id: 'vip30', cr: 400, days: 30 }, { id: 'vip90', cr: 1000, days: 90 },
+      { id: 'refill', cr: 30, perDay: 3 }, { id: 'jail', cr: 25, exit: true }, { id: 'hosp', cr: 25, exit: true }],
+    exitsPerDay: 2,   // sair já da prisão ou do hospital: no máximo 2 por dia ao todo (não tira o risco nem o «tirar da prisão» dos outros)
+    grantMax: 100_000,   // um só movimento nunca dá mais do que isto (proteção contra um erro na chamada)
+  },
+
   // v117: eventos do ano (as datas, em hora de Londres, calculam-se em engine/eventos.js para qualquer ano). Cada evento tem um efeito
   // que vale para toda a gente enquanto dura, e fichas que caem dos golpes bem feitos: perE pontos-base por cada ponto de stamina do
   // golpe (em média uma ficha por cada 100 de stamina, seja qual for o golpe), no máximo dayCap por dia (golpes e golpes grandes, que

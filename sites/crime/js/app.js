@@ -225,6 +225,7 @@ function react(type, out, before, opts) {
   else if (type === 'jailFavor') { toast(r.kind === 'time' ? t('tj_favTime', { t: minTxt(r.cut) }) : t('tj_favContact', { n: r.contacts, c: S.cfg.jail.contactsMax })); fx.sfx('claim'); }
   else if (type === 'bust') { if (r.freed) { toast(t('tBustOk', { x: r.target, n: r.respect })); fx.sfx('crit'); } else if (r.caught) { toast(t('tBustCaught', { t: minTxt(r.jailUntil - now()) }), true); fx.sfx('bust'); fx.vibrate([40, 60, 40]); } else { toast(t('tBustFail')); fx.sfx('tap'); } }   // v115
   else if (type === 'evGift') { toast(t(r.id === 'lunar' ? 'tEvGiftL' : 'tEvGift', { m: money(r.cash) })); fx.sfx(r.cash >= 8888 ? 'crit' : 'claim'); }   // v117
+  else if (type === 'crSpend') { toast(t('tCr_' + (r.days ? 'vip' : r.id), { n: r.days, s: crN(r.saldo) })); fx.sfx('claim'); }   // v119
   else if (type === 'evEgg') { toast(t('tEvEgg', { n: r.ev.got, a: num(r.ev.n) })); fx.sfx('claim'); }
   else if (type === 'jailAppeal') { toast(r.won ? t('tAppealWon', { t: minTxt(r.cut) }) : t('tAppealLost'), !r.won); fx.sfx(r.won ? 'crit' : 'fail'); if (!r.won) fx.vibrate([40, 60, 40]); }   // v116
   else if (type === 'jailEscape') { PR.fuga({ r, t, minTxt }).then(() => { if (r.free) fx.sfx('crit'); else { fx.sfx('bust'); fx.vibrate([40, 60, 40]); } }); }
@@ -281,7 +282,7 @@ const stamMax = (me) => me.energyMax || S.cfg.energy.max;
 const vigMax = () => S.cfg.vigor?.max || 100;
 function live(me) {
   const n = now(), A = S.cfg.addiction;
-  const [energy, nextE] = bar(me.energy, me.energyT, stamMax(me), S.cfg.energy.regenMs, n);
+  const [energy, nextE] = bar(me.energy, me.energyT, stamMax(me), me.eRegen || S.cfg.energy.regenMs, n);   // v119: com VIP enche mais depressa
   const [vigor, nextV] = bar(me.vigor ?? vigMax(), me.vigorT ?? n, vigMax(), (S.cfg.vigor || S.cfg.energy).regenMs, n);
   let vice = me.addiction;
   if (vice > 0) vice = Math.max(0, vice - Math.max(0, Math.floor((n - me.addictionT) / A.decayMs)));
@@ -473,6 +474,7 @@ function tickHud() {
 // ---------- ecrãs ----------
 // ---------- navegação: uma cidade com locais ----------
 const PLACES = {
+  vip: { ic: 'gem', img: 'luxos' },   // v119
   city: { ic: 'skyline' }, empire: { ic: 'empire' }, rob: { ic: 'street', img: 'golpes' }, club: { ic: 'bolt', img: 'discoteca' }, gym: { ic: 'gym', img: 'ginasio' }, gyms: { ic: 'gym' }, livros: { img: 'livros' }, hunt: { img: 'caca' }, honras: {}, viagens: { img: 'viagens' },
   biz: { ic: 'empire', img: 'negocios' }, stash: { img: 'stash' }, acct: { img: 'contabilista' }, port: { img: 'porto' }, air: { img: 'aeroporto' }, arms: { img: 'armas' }, bank: { img: 'banco' }, hosp: { img: 'hospital' },
   jail: { img: 'prisao' }, gang: { img: 'gangue' }, bairros: { ic: 'flag', img: 'bairros' }, empresas: { ic: 'empire', img: 'empresas' }, corridas: { ic: 'car', img: 'corridas' }, work: { img: 'profissao' }, news: { img: 'jornal' }, casino: { ic: 'gem', img: 'casino' }, roulette: { img: 'roleta' }, bj: { img: 'blackjack' }, poker: { img: 'poquer' }, dice: { img: 'dados' }, wheel: { img: 'roda' }, slot: { img: 'slot' }, zeus: { img: 'zeus' }, doce: { img: 'doce' }, rebucado: { img: 'rebucado' }, alley: { img: 'beco' }, lux: { img: 'luxos' }, fights: { ic: 'fights', img: 'lutas' }, rank: { img: 'procurados' }, hitman: { img: 'assassino' }, putas: { img: 'putas' }, gigs: { img: 'biscates' }, casa: {}, myclub: { img: 'discoteca' }, mybro: { img: 'bordel' }, bolsa: { img: 'bolsa' }, job: { img: 'emprego' }, inv: { ic: 'box', img: 'inventario' }, ops: { img: 'operacoes' }, parl: { img: 'parlamento' }, cafe: { img: 'cafe' }, museum: { img: 'museu' }, uni: { img: 'universidade' }, cave: { img: 'cave' }, feira: { img: 'feira' }, dig: { img: 'escavacoes' }, arquivo: { img: 'arquivo' },
@@ -483,7 +485,7 @@ const PLACES = {
 const NAV = ['city', 'rob', 'gym', 'empire', 'inv'];   // v92: o império sobe para o lugar das lutas e o inventário fica no fim (as lutas estão na cidade e na barra de cima)
 const HUB = {
   // v95 (pedido do Dinis): o porto e o aeroporto passam para a cidade; a gangue e as lutas, para o império
-  city: [['sec_night', ['corridas', 'club', 'putas', 'casino', 'alley', 'arms']], ['sec_street', ['gigs', 'cafe', 'job', 'uni', 'livros', 'dig', 'hunt', 'feira', 'bank', 'museum', 'parl', 'hosp', 'jail', 'rank']], ['sec_trade', ['viagens', 'port', 'air']]],
+  city: [['sec_night', ['corridas', 'club', 'putas', 'casino', 'alley', 'arms']], ['sec_street', ['gigs', 'cafe', 'job', 'uni', 'livros', 'dig', 'hunt', 'feira', 'bank', 'museum', 'parl', 'hosp', 'jail', 'rank']], ['sec_trade', ['viagens', 'port', 'air']], ['sec_vip', ['vip']]],
   empire: [['sec_power', ['fights', 'gang', 'bairros']], ['sec_income', ['biz', 'empresas', 'myclub', 'mybro']], ['sec_assets', ['casa', 'cave', 'bank', 'bolsa', 'stash', 'acct']]],
 };
 const PARENT = { bairros: 'gang', empresas: 'empire', corridas: 'city', gyms: 'gym', livros: 'city', hunt: 'city', honras: 'city', viagens: 'city', fights: 'empire', arquivo: 'city', dig: 'city', feira: 'city', cave: 'empire', uni: 'city', museum: 'city', cafe: 'city', parl: 'city', gigs: 'city', gang: 'empire', work: 'job', job: 'city', news: 'city', casino: 'city', roulette: 'casino', bj: 'casino', poker: 'casino', dice: 'casino', wheel: 'casino', slot: 'casino', zeus: 'casino', doce: 'casino', rebucado: 'casino', club: 'city', putas: 'city', gym: 'city', alley: 'city', hosp: 'city', jail: 'city',
@@ -574,7 +576,7 @@ function shell() {
   if (S.nov) novDot(); else loadNov();   // v95: há novidades por ver? um ponto no retrato
 }
 
-const SCREENS = { poker: screenPoker, job: screenJob, city: screenCity, empire: screenEmpire, news: screenNews, casino: screenCasino, roulette: screenRoulette, bj: screenBJ, dice: screenDice, wheel: screenWheel, slot: () => screenSlotGame('slot'), zeus: () => screenSlotGame('zeus'), doce: () => screenSlotGame('doce'), rebucado: () => screenSlotGame('rebucado'), rob: screenRob, club: screenClub, gym: screenGym, gyms: screenGyms, livros: screenLivros, biz: screenBiz, port: screenPort, arms: screenArms, bank: screenBank,
+const SCREENS = { vip: screenVip, poker: screenPoker, job: screenJob, city: screenCity, empire: screenEmpire, news: screenNews, casino: screenCasino, roulette: screenRoulette, bj: screenBJ, dice: screenDice, wheel: screenWheel, slot: () => screenSlotGame('slot'), zeus: () => screenSlotGame('zeus'), doce: () => screenSlotGame('doce'), rebucado: () => screenSlotGame('rebucado'), rob: screenRob, club: screenClub, gym: screenGym, gyms: screenGyms, livros: screenLivros, biz: screenBiz, port: screenPort, arms: screenArms, bank: screenBank,
   hosp: screenHosp, jail: screenJail, gang: screenGang, bairros: screenBairros, empresas: screenEmpresas, corridas: screenCorridas, work: screenWork, air: screenAir, putas: screenPutas, myclub: screenMyClub, mybro: screenMyBro, bolsa: screenBolsa, inv: screenInv, stash: screenStash, acct: screenAcct, casa: screenCasa, alley: screenAlley, lux: screenLux, fights: screenFights, rank: screenRank, hitman: screenHitman, ops: screenOps, gigs: screenGigs, parl: screenParl, cafe: screenCafe, museum: screenMuseum, uni: screenUni, cave: screenCave, feira: screenFeira, dig: screenDig, hunt: screenHunt, honras: screenHonras, arquivo: screenArquivo, viagens: screenViagens };
 function render(force) {
   if (!S.st) return;
@@ -1098,6 +1100,7 @@ function screenCity() {
     dig: me.dg ? t('dgOnB') : null,   // v85: uma escavação a meio
     hunt: me.hn ? t('hOnB') : null,   // v98: uma saída de caça a meio
     livros: me.bk?.rd && me.bk.rd.end > n ? t('bkReadingB', { t: dur(me.bk.rd.end - n) }) : null,   // v95: a ler
+    vip: S.cfg.vip ? (S.st.me.vipOn ? t('vipOnB') : S.cfg.vip.open ? null : t('vipSoonB')) : null,   // v119 (o «Em breve» em neutro)
     museum: S.cfg.col && Object.keys(S.cfg.col.sets).some((k) => setHave(me, k) === S.cfg.col.sets[k].items.length) ? t('muBadge') : null,
   };
   const ep = season();
@@ -1108,7 +1111,7 @@ function placeTile(id, badge) {
   const me = S.st.me;
   return h('button', { class: 'tile', on: { click: () => go(id) } },
     h('img', { src: id === 'casa' ? IMG('casa', S.cfg.house.tiers[me.house].id) : IMG('cenas', PLACES[id].img), alt: '', width: 600, height: 600, loading: 'lazy', decoding: 'async', on: { error: (e) => e.currentTarget.remove() } }),
-    h('span', { class: 'lbl' + (id === 'rank' && S.st.rank ? ' up' : '') }, t('p_' + id)), badge ? h('span', { class: 'bdg' + (id === 'parl' || id === 'uni' || (id === 'cave' && /\d/.test(badge)) ? ' neu' : id === 'hosp' || id === 'jail' || (id === 'cave' && badge === t('cvRevB')) || (id === 'bairros' && badge === t('bxUnderAtk')) ? ' bad' : '') }, badge) : null,   // votar não é ganho: o aviso vai em creme
+    h('span', { class: 'lbl' + (id === 'rank' && S.st.rank ? ' up' : '') }, t('p_' + id)), badge ? h('span', { class: 'bdg' + (id === 'parl' || id === 'uni' || (id === 'vip' && !S.st.me.vipOn) || (id === 'cave' && /\d/.test(badge)) ? ' neu' : id === 'hosp' || id === 'jail' || (id === 'cave' && badge === t('cvRevB')) || (id === 'bairros' && badge === t('bxUnderAtk')) ? ' bad' : '') }, badge) : null,   // votar não é ganho: o aviso vai em creme
     // no ranking, a tua posição na época vai por baixo do nome, em texto (não é coisa para recolher)
     id === 'rank' && S.st.rank ? h('span', { class: 'tsub' }, t('rankBadge', { p: ordOf(S.st.rank) })) : null);
 }
@@ -1969,6 +1972,50 @@ function jailInmates(me, L) {
   })));
   return out;
 }
+// ---------- v119: VIP e créditos ----------
+// Pronto por dentro; a compra com dinheiro fica «Em breve» (S.cfg.vip.open). O VIP não dá ataque, defesa nem dinheiro: stamina a
+// mais, a encher mais depressa, e a marca ao lado do nome. Os créditos são da conta. Sem «mais escolhido» inventado: cada pacote
+// diz o bónus que traz.
+const gbp = (pence) => CUR + (pence / 100).toFixed(2).replace('.', lang() === 'pt' ? ',' : '.');   // como o resto do jogo: «£9,99»
+const crN = (n) => t(n === 1 ? 'vipCr1' : 'vipCrN', { n: num(n) });
+function screenVip() {
+  const me = S.st.me, V = S.cfg.vip, out = [pageHead('vip', t('vipSub'))], cr = me.cr || 0, L = live(me);
+  const base = Math.round(stamMax(me) / (me.vipOn ? 1 + V.emaxBp / 10000 : 1)), plus = base + Math.floor((base * V.emaxBp) / 10000);
+  const regenS = Math.round(S.cfg.energy.regenMs / 1000), regenV = Math.round((S.cfg.energy.regenMs * 10000) / (10000 + V.regenBp) / 1000);
+  const ms = (x) => (x % 60 ? t('vipMinS', { m: Math.floor(x / 60), s: x % 60 }) : t('vipMin', { m: x / 60 }));
+  // o preço em libras de cada coisa (o pacote com os mesmos créditos, ou ≈ 1 p por crédito)
+  const inGbp = (n) => { const pk = V.packs.find((x) => x.cr === n); return pk ? t('vipEq', { m: gbp(pk.gbp) }) : t('vipApprox', { m: gbp(n * V.penceCr) }); };
+  out.push(h('div', { class: 'card vipst' + (me.vipOn ? ' on' : '') },
+    h('div', { class: 'row sp' }, h('b', { class: 'viptag' + (me.vipOn ? '' : ' off') }, 'VIP'), h('span', { class: 'num' }, crN(cr))),
+    h('p', { class: me.vipOn ? 'c-cash' : 'muted' }, me.vipOn ? t('vipUntil', { d: new Date(me.vip).toLocaleDateString(lang() === 'pt' ? 'pt-PT' : 'en-GB', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'Europe/London' }) + ', ' + hhmm(me.vip) }) : t('vipNone'))));
+  out.push(h('h2', { class: 'sec' }, t('vipWhatT')), h('ul', { class: 'card vipben' },
+    h('li', null, h('b', null, t('vipB1', { p: pctOf(V.emaxBp) })), h('span', { class: 'small muted num' }, t('vipB1s', { a: base, b: plus }))),
+    h('li', null, h('b', null, t('vipB2', { p: pctOf(V.regenBp) })), h('span', { class: 'small muted num' }, t('vipB2s', { a: ms(regenS), b: ms(regenV) }))),
+    h('li', null, h('b', null, t('vipB3')), h('span', { class: 'small muted' }, t('vipB3s')))),
+    h('p', { class: 'small muted vipfair' }, t('vipFair')));
+  // o que os créditos compram: o preço fica sempre no botão; gastar pede um segundo toque (é dinheiro a sério). Sem créditos, só os preços.
+  const can = cr > 0, exitsLeft = V.exitsPerDay - (me.crExits || 0);
+  const row = (it, title, sub, block) => {
+    const short = it.cr - cr, why = block || (short > 0 ? t('vipShort', { n: num(short) }) : null);
+    const lbl = crN(it.cr), b = can && !why ? sureBtn('btn sm', lbl, 'btn sm sure', t('vipSure', { n: num(it.cr) }), () => act('crSpend', { id: it.id }, { el: b })) : null;
+    return h('div', { class: 'vrow' }, h('div', { class: 'grow' }, h('b', null, title), h('div', { class: 'small muted' }, [sub, inGbp(it.cr)].filter(Boolean).join(' · ')), can && why ? h('div', { class: 'small ' + (block ? 'muted' : 'c-red') }, why) : null),   // falta de créditos a vermelho; o resto é só a razão
+      b || (can ? h('button', { class: 'btn sm', disabled: true }, lbl) : h('span', { class: 'num vipcr' }, lbl)));
+  };
+  out.push(h('h2', { class: 'sec' }, t('vipDaysT')), h('div', { class: 'card vlist vc' }, V.shop.filter((x) => x.days).map((it) => row(it, t('vipDays', { n: it.days }), null))));
+  const R = V.shop.find((x) => x.id === 'refill'), J = V.shop.find((x) => x.id === 'jail'), Hh = V.shop.find((x) => x.id === 'hosp'), used = me.crRefills || 0;
+  out.push(h('h2', { class: 'sec' }, t('vipShopT')), h('div', { class: 'card vlist vc' },
+    row(R, t('vipRefill'), t('vipLeftToday', { n: R.perDay - used }), used >= R.perDay ? t('vipNoneToday') : L.energy >= stamMax(me) ? t('vipFullE') : null),
+    row(J, t('vipJail'), t('vipExits', { n: exitsLeft }), !L.jail ? t('vipOnlyJail') : exitsLeft <= 0 ? t('vipNoneToday') : null),
+    row(Hh, t('vipHosp'), t('vipExits', { n: exitsLeft }), !L.hosp ? t('vipOnlyHosp') : exitsLeft <= 0 ? t('vipNoneToday') : null)));
+  const covers = (pk) => { const it = V.shop.find((x) => x.days && x.cr === pk.cr); const off = Math.round((1 - pk.gbp / (pk.cr * V.penceCr)) * 100);
+    return [it ? t('vipDays', { n: it.days }) : null, off >= 5 ? t('vipOff', { p: off }) : null].filter(Boolean).join(' · '); };
+  out.push(h('h2', { class: 'sec' }, t('vipPacksT')), h('div', { class: 'card vlist vc' }, V.packs.map((pk) => h('div', { class: 'vrow' },
+    h('div', { class: 'grow' }, h('b', { class: 'num' }, crN(pk.cr)), covers(pk) ? h('div', { class: 'small muted' }, covers(pk)) : null),
+    h('button', { class: 'btn sm num', disabled: !V.open, on: { click: async () => { try { await api('POST', '/api/vip/buy', { pack: pk.id }); } catch (err) { toast(errText(err.code, errData(err.data)), true); } } } }, gbp(pk.gbp))))),
+    h('p', { class: 'small vipnote' + (V.open ? ' muted' : '') }, V.open ? t('vipPayNote') : t('vipSoonNote')));
+  return out;
+}
+
 // ---------- v117: eventos do ano ----------
 // Na cidade, uma linha por evento (nome, fichas, barra fina); o toque abre a folha com tudo. Nos golpes, a mesma linha com o efeito
 // por baixo. Sem evento, uma linha com o próximo. Os efeitos valem para toda a gente e já vêm nos números do servidor (a loja e os golpes
@@ -6897,7 +6944,7 @@ function chatFabSync() {
 const plink = (name, extra, from) => h('button', { class: 'plink', 'aria-label': t('pfT') + ' · ' + name, on: { click: (e) => { e.stopPropagation(); if (from) from(); openPlayer(name, !!from); } } }, extra || name);
 function chatRow(m, closeChat) {
   return h('div', { class: 'cmsg' + (m.me ? ' me' : '') },
-    h('div', { class: 'cmh' }, plink(m.name, [m.tag ? h('span', { class: 'gtag' }, m.tag) : null, h('b', null, m.name), h('small', null, ' · ' + t('level') + ' ' + m.lvl)], closeChat),
+    h('div', { class: 'cmh' }, plink(m.name, [m.tag ? h('span', { class: 'gtag' }, m.tag) : null, h('b', null, m.name), m.vip ? h('span', { class: 'viptag sm' }, 'VIP') : null, h('small', null, ' · ' + t('level') + ' ' + m.lvl)], closeChat),
       h('time', { class: 'small muted num' }, hhmm(m.t))),
     h('p', null, m.txt));
 }
@@ -6966,7 +7013,7 @@ async function openPlayer(name, fromChat) {
     h('div', { class: 'pfhd' },
       S.avOk && P.active ? h('img', { class: 'avs', src: AV(P.av || 0), alt: '', width: 96, height: 96 }) : null,
       h('div', { class: 'grow' },
-        h('div', { class: 'pfn' }, P.gang ? h('span', { class: 'gtag' }, P.gang.tag) : null, P.gang ? ' ' : null, h('b', null, P.name)),
+        h('div', { class: 'pfn' }, P.gang ? h('span', { class: 'gtag' }, P.gang.tag) : null, P.gang ? ' ' : null, h('b', null, P.name), P.vip ? h('span', { class: 'viptag sm' }, 'VIP') : null),   // v119
         P.active ? h('div', { class: 'c-resp pfr num' }, icon('crown'), ' ' + num(P.respect)) : null,
         P.active ? h('div', { class: 'small muted' }, t('level') + ' ' + P.level + ' · ' + (P.vet ? t('vetShort') : titleOf(P.level)) + (P.cls ? ' · ' + t('cl_' + P.cls) : '')) : null,
         h('div', { class: 'small' }, seen, seen ? ' · ' : null, h('span', { class: P.active && P.st.k !== 'free' ? 'c-red' : 'muted' }, stTxt)))),
