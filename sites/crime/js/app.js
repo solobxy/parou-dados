@@ -460,7 +460,7 @@ const PARENT = { gyms: 'gym', livros: 'city', hunt: 'city', honras: 'city', viag
   biz: 'empire', port: 'city', air: 'city', myclub: 'empire', mybro: 'empire', bolsa: 'empire', stash: 'empire', acct: 'empire', casa: 'empire', bank: 'empire', lux: 'empire', arms: 'fights', rank: 'fights', hitman: 'fights', ops: 'rob' };
 const upOf = (id) => (S.backTo && S.backTo[id]) || PARENT[id] || 'city';   // um sítio que está em duas zonas volta para a zona de onde vieste
 const tabOf = (id) => { let x = id; for (let k = 0; k < 4 && !NAV.includes(x); k++) x = upOf(x); return NAV.includes(x) ? x : 'city'; };
-const IMG = (kind, id, big) => `/img/${kind}/${id}${big ? '-g' : ''}.webp?${kind === 'classes' ? 17 : 16}`;   // v90: retratos novos das profissões
+const IMG = (kind, id, big) => `/img/${kind}/${id}${big ? '-g' : ''}.webp?${kind === 'classes' ? 17 : 18}`;   // v90: retratos novos das profissões; v106: casas, cave e caveira em fotografia, peças do museu recortadas
 // o que cada sítio precisa de ir buscar ao servidor (ao entrar nele, e também quando o jogo abre já nesse sítio)
 function loadFor(tab) {
   if (tab === 'fights') { if (S.fightSeg === 'events') loadEvents(true); else { S.fightSeg = 'targets'; loadTargets(); } }
@@ -1003,7 +1003,8 @@ function paperEcon() {
     Math.abs(top.pct) >= 0.03 ? h('article', { class: 'st st-lead' }, h('div', { class: 'kick' }, t(top.pct > 0 ? 'ecKup' : 'ecKdn')), h('h2', null, t(top.pct > 0 ? 'ecUp' : 'ecDown', { x: t('st_' + top.c.id), p: stPct(top.pr, top.h0).slice(1) })),
       h('div', { class: 'stb' }, h('p', null, t('ecLede', { p: stMoney(top.pr), q: stMoney(top.h0) })))) : null,
     h('section', { class: 'psec' }, h('h4', null, t('ecTitle')),
-      h('table', { class: 'pmkt' }, h('tbody', null, rows.map((r) => h('tr', { class: r.pct >= 0 ? 'pup' : 'pdn' },
+      h('table', { class: 'pmkt' }, h('tbody', null, rows.map((r) => h('tr', { class: Math.round(r.pct * 1000) === 0 ? 'pz' : r.pct > 0 ? 'pup' : 'pdn' },   // 0,0 % fica neutro (antes ia a vermelho com −0,04 %)
+
         h('th', { scope: 'row' }, t('st_' + r.c.id), h('small', null, list('stCodes')[r.k])), h('td', { class: 'pch' }, stChart(M.hist[r.k], 'mini', 96, 34)),
         h('td', { class: 'num pv' }, stMoney(r.pr)), h('td', { class: 'num pp' }, stPct(r.pr, r.h0))))))),
     h('section', { class: 'psec' }, h('h4', null, t('edDesk')), deskList(S.news?.mundo, 12).length ? h('ul', { class: 'plive' }, deskList(S.news.mundo, 12).map(deskRow)) : h('p', { class: 'pempty' }, t('edNone'))),
@@ -1130,10 +1131,11 @@ function museumSet(me, k, L) {
     h('p', { class: 'small muted msub' }, t('muHow_' + k, { p: k === 'mundo' ? S.cfg.col.airBp / 100 : '' })),
     vitrine(me, k),
     // v92: o que o museu paga, em números (a primeira entrega vale a dobrar)
-    kv([[t(first ? 'muKvFirst' : 'muKvPay'), money(payC.cash), 'c-cash'], payC.resp ? [t('fxResp'), '+' + num(payC.resp), 'c-resp'] : [t('fxResp'), t('muKvNone')],
-      left && !onPlaque(me, k) ? [t('muKvSpots'), num(left)] : null]),
+    kv([[t(first ? 'muKvFirst' : 'muKvPay'), money(payC.cash), 'c-cash'], payC.resp ? [t('fxResp'), '+' + num(payC.resp), 'c-resp'] : [t('fxResp'), t('muKvNone')]]),
+    // v106: os lugares na placa numa frase (como 3.º número ficava sozinho numa linha da grelha)
+    left && !onPlaque(me, k) ? h('p', { class: 'small muted mspots' }, t(left === 1 ? 'muSpots1' : 'muSpots', { n: num(left) })) : null,
     done ? h('button', { class: 'btn block cash big', disabled: busy, on: { click: (e) => act('museum', { set: k }, { el: e.currentTarget }) } }, t('muGive', { m: money(payC.cash) }))
-      : h('p', { class: 'small mmiss' }, miss.length <= 2 ? t(miss.length === 1 ? 'muMissOne' : 'muMissList', { x: miss.map((i) => t('co_' + i).toLowerCase()).join(t('muAnd')) }) : t('muLeft', { n: miss.length })),
+      : h('p', { class: 'small mmiss' }, t(miss.length === 1 ? 'muLeft1' : 'muLeft', { n: miss.length })),   // v106: a vitrine já diz quais faltam; aqui só quantas
     extras.length ? h('div', { class: 'mextra' }, h('h3', null, t('muExtras')), extras.map((i) => { const x = me.col[i] - 1, m = money(x * S.cfg.col.pawn);
       const lbl = t(x > 1 ? 'muSellN' : 'muSell', { n: x, m });
       const b = sureBtn('btn sm ghost num', lbl, 'btn sm ghost num dng', t('muSellSure', { m }), () => act('colSell', { id: i, n: x }, { el: b }));
@@ -1911,13 +1913,14 @@ function screenClub() {
   const feitas = me.refillBars || 0, k = Math.floor(feitas / 100) + 1, ponto = (n) => R.a * n + R.b * n * n, rf = me.refill;   // cêntimos por ponto
   out.push(h('div', { class: 'card stack vc refillc' },
     h('div', { class: 'row sp' }, h('h3', { style: 'margin:0' }, t('rfTitle')), feitas ? h('span', { class: 'small muted num' }, t('rfBought', { n: num(feitas) })) : null),
-    meter(t('energy'), L.energy, max, 'en'),
-    h('div', { class: 'facts two' },
-      h('div', { class: 'fact' }, h('b', { class: 'num' + (rf ? ' c-cash' : '') }, rf ? money(rf.cost) : t('rfFullShort')), h('span', null, rf ? t('rfNowFor', { e: rf.energy }) : t('energy'))),
+    meter('', L.energy, max, 'en'),   // o título já diz «Stamina»
+    // cheia: só o preço por ponto (o «Cheia / Stamina» repetia o título, a barra e o botão)
+    h('div', { class: 'facts ' + (rf ? 'two' : 'one') },
+      rf ? h('div', { class: 'fact' }, h('b', { class: 'num c-cash' }, money(rf.cost)), h('span', null, t('rfNowFor', { e: rf.energy }))) : null,
       h('div', { class: 'fact' }, h('b', { class: 'num' }, stMoney(ponto(k))), h('span', null, t('rfPerPoint')))),
     h('p', { class: 'small muted' }, t('rfLadder', { n: 100 - (feitas % 100), p: stMoney(ponto(k + 1)), z: stMoney(ponto(1)) })),
     h('button', { class: 'btn buy block big', disabled: !!b || !rf || me.cash + me.bank < rf.cost, on: { click: (e) => act('refill', {}, { el: e.currentTarget }) } },
-      rf ? t('rfGo', { e: rf.energy, m: money(rf.cost) }) : t('rfFull'))));
+      rf ? t('rfGo', { e: rf.energy, m: money(rf.cost) }) : t('rfFullShort'))));
   out.push(h('h2', { class: 'sec' }, t('clFx')), h('p', { class: 'small muted', style: 'margin:-4px 2px 10px' }, t('clFxSub')));
   out.push(h('div', { class: 'card meters' }, meter(t('vice'), L.vice, me.addictionCap, 'vi'), h('p', { class: 'small muted' }, t('vice') + ': ' + t('viceDown'))));
   if (L.vice >= me.addictionCap - 1) out.push(h('div', { class: 'note', style: 'margin-top:8px' }, h('p', null, t('viceFull')), h('button', { class: 'btn pri', on: { click: () => go('hosp') } }, t('goHosp'))));
@@ -1927,7 +1930,7 @@ function screenClub() {
   out.push(h('div', { class: 'card vlist vc fxl', style: 'margin-top:12px' }, S.cfg.drugs.map((g, d) => [g, d]).sort((x, y) => x[0].price - y[0].price).map(([g, d]) => {
     const price = me.drugPrices[d];
     const ok = L.vice + g.a <= me.addictionCap && me.cash + me.bank >= price && !b;
-    return h('div', { class: 'vrow fxr' }, art('drugs', g.id, 'vth'),
+    return h('div', { class: 'vrow fxr jbr' }, art('drugs', g.id, 'vth'),   // v106: a 320 px o botão desce (apertava o efeito em 5 linhas)
       h('div', { class: 'grow' }, h('b', null, list('drugs')[d]),
         h('div', { class: 'small c-vice' }, '+' + g.a + ' ' + t('vice').toLowerCase()),
         g.fx ? g.fx.map((f) => { const m = Math.round((f.ms * (10000 + more)) / 10000 / 60000); return h('div', { class: 'small' }, fxText(f) + ' · ' + (m >= 120 ? t('fxForH', { h: num(Math.round(m / 6) / 10) }) : t('fxFor', { m }))); })
@@ -1986,9 +1989,9 @@ function stockRows(me, b, quick) {
   if (!rows.length) return null;
   return h('div', { class: 'card vlist vc' }, rows.map(({ n, d }) => {
     const keep = me.club && me.hold?.includes(d);
-    const g = S.cfg.drugs[d], body = [art('drugs', g.id, 'vth'), h('div', { class: 'grow' }, h('b', null, list('drugs')[d], keep ? h('span', { class: 'chip', style: 'margin-left:6px' }, t('holdTag')) : null), h('div', { class: 'small muted num' }, qty(d, n) + ' · ' + money(n * wholesaleOf(d))))];
+    const g = S.cfg.drugs[d], body = [art('drugs', g.id, 'vth'), h('div', { class: 'grow' }, h('b', null, list('drugs')[d], keep ? h('span', { class: 'chip', style: 'margin-left:6px' }, t('holdTag')) : null), h('div', { class: 'small muted num' }, qty(d, n)), h('div', { class: 'small muted num' }, money(n * wholesaleOf(d))))];
     return quick
-      ? h('div', { class: 'vrow' }, ...body, h('button', { class: 'btn buy sm', disabled: !!b || !canTake(me, L, g), on: { click: (e) => act('stockUse', { d }, { el: e.currentTarget }) } }, t('vnUse')))
+      ? h('div', { class: 'vrow jbr' }, ...body, h('button', { class: 'btn buy sm', disabled: !!b || !canTake(me, L, g), on: { click: (e) => act('stockUse', { d }, { el: e.currentTarget }) } }, t('vnUse')))
       : h('button', { class: 'vrow tap', on: { click: () => stockSheet(d) } }, ...body, h('span', { class: 'muted', 'aria-hidden': 'true' }, '›'));
   }));
 }
@@ -2617,6 +2620,8 @@ function dgHaveLine(me, k, have) {
 // o que a receita pede, com o que falta a vermelho: o material diz de que biscate vem; o componente em falta leva à receita dele
 function needsLine(me, needs, n) {
   const last = Object.keys(needs).length - 1;
+  // v106: com alguma coisa em falta, cada material vai numa linha (o botão do que falta ocupava a linha toda e o «·» ficava solto à direita)
+  const short = Object.entries(needs).some(([k, v]) => mtN(me, k) < v * n);
   return Object.entries(needs).map(([k, v], i) => {
     const rare = dgRare(k), want = v * n, have = mtN(me, k), ok = have >= want, comp = !S.cfg.mat.base.includes(k) && !rare;
     // o raro diz de que escavação sai (v86)
@@ -2627,6 +2632,7 @@ function needsLine(me, needs, n) {
       : !rare && matFrom(k) ? h('button', { class: 'cvgo c-red', on: { click: () => { S.gkHi = matFrom(k); go('gigs'); } } }, item, '\u00a0›')   // v105: um básico em falta leva ao biscate que o dá
       : h('span', { class: 'c-red' }, item);
     // o «·» vai colado ao fim do que vem antes (depois de um botão partia a linha e ficava no início da seguinte)
+    if (short) return h('span', { class: 'cvl' }, node);
     return [i ? ' ' : null, i < last ? h('span', { class: 'cvj' }, node, '\u00a0·') : node];
   });
 }
@@ -3512,7 +3518,7 @@ function huntSiteRow(me, S2, b, best) {
   let foot;
   if (lock) foot = h('div', { class: 'small muted num' }, t('hLock', { n: S2.level, m: S2.level - me.level }));
   else if (mode === 'fur' && watched) foot = h('div', { class: 'small c-red num' }, t('hWatched'), ' ', h('span', { dataset: { left: me.hfc[S2.id], long: 1 } }, leftTxt(me.hfc[S2.id] - now())));
-  else foot = [h('div', { class: 'small muted num' }, mode === 'lic' ? t('hQuota', { n: Math.max(0, quota), q: H.quota })
+  else foot = [mode === 'lic' && quota >= H.quota ? null : h('div', { class: 'small muted num' }, mode === 'lic' ? t('hQuota', { n: Math.max(0, quota), q: H.quota })
       : [hNw(h('span', { class: 'c-red' }, t('hRanger', { p: hPct(risk) }))), ' · ', hNw(t('hJail', { m: S2.jail })), ' · ', hNw(t('hLawyer', { b: money(S2.lawyer) }))]),
     why ? h('div', { class: 'small muted' }, why) : null,
     h('button', { class: 'btn sm num hgo ' + (best ? 'buy' : 'ghost'), disabled: !!b || !can,
@@ -3567,7 +3573,8 @@ function screenHunt() {
   // a reserva que se destaca: a mais alta onde se pode ir agora
   const okSites = H.sites.filter((x) => me.level >= x.level && (tab === 'fur' ? !((me.hfc?.[x.id] || 0) > now()) : (me.hq?.[x.id] ?? H.quota) > 0 && me.cash + me.bank >= x.fee));
   const best = okSites.length ? okSites[okSites.length - 1].id : null;
-  out.push(huntGunCard(me), h('div', { class: 'card vlist' }, H.sites.map((x) => huntSiteRow(me, x, b, x.id === best))));
+  // a quota diz-se uma vez; em cada reserva só aparece depois de lá teres ido hoje
+  out.push(huntGunCard(me), tab === 'fur' ? null : h('p', { class: 'small muted hqall' }, t('hQuotaAll', { q: H.quota })), h('div', { class: 'card vlist' }, H.sites.map((x) => huntSiteRow(me, x, b, x.id === best))));
   return out;
 }
 
@@ -3624,7 +3631,7 @@ function screenHonras() {
       mine.length > 4 && !open ? h('button', { class: 'linkbtn honmore', on: { click: () => { S.honOpen = { ...(S.honOpen || {}), [cat]: true }; render(true); } } }, t('honMore', { n: mine.length - 4 })) : null,
       next.length ? h('div', { class: 'honnext' }, next.slice(0, 2).map(({ h: x, v, p }) => h('div', { class: 'honn' },
         honBar(x, { locked: true }),
-        h('div', { class: 'row sp' }, h('span', { class: 'small muted' }, honDesc(x)), h('span', { class: 'small num' }, honNum(x, Math.min(v, x.at)))),
+        h('div', { class: 'row sp' }, h('span', { class: 'small muted' }, x.m === 'nw' ? t('honNwNext') : HON_SAME.includes(x.m) ? '' : honDesc(x)), h('span', { class: 'small num' }, honNum(x, Math.min(v, x.at)))),   // v106: a fortuna já tem o alvo no contador
         p > 0 ? h('div', { class: 'fill' }, h('i', { style: `width:${(p * 100).toFixed(1)}%` })) : null))) : null));
   }
   return out;
@@ -3673,7 +3680,8 @@ function studyRow(me, st) {
     h('div', { class: 'sth' }, h('b', null, t('st_' + st.id)), n ? h('span', { class: 'small muted num' }, t('stLv', { n })) : null),
     h('p', { class: 'stst' }, t('uniStory_' + st.id)),
     n ? h('div', { class: 'small' }, t('stNow'), ' ', h('span', { class: 'c-cash' }, fxTxt(st, n))) : null,
-    next ? h('div', { class: 'small muted num' }, t('uniNext', { n: n + 1, x: fxTxt(st, n + 1), d: next.days, m: money(next.price) }) + (A && A.falta ? ' · ' + A.falta : '')) : h('div', { class: 'small c-cash' }, t('stMax')),
+    // o preço só aparece aqui quando não há botão (o botão já o diz)
+    next ? h('div', { class: 'small muted num' }, t(A && A.el && A.el.tagName === 'BUTTON' ? 'uniNext' : 'uniNextM', { n: n + 1, x: fxTxt(st, n + 1), d: next.days, m: money(next.price) }) + (A && A.falta ? ' · ' + A.falta : '')) : h('div', { class: 'small c-cash' }, t('stMax')),
     A && A.el ? h('div', { class: 'stgo' }, live ? liveTag() : A.el) : null);
 }
 function screenUni() {
@@ -3688,7 +3696,7 @@ function screenUni() {
       prof.filter((c) => !me.done.includes(c.id)).map((c) => profRow(me, c))));
   out.push(h('h2', { class: 'sec' }, t('uniSt')), h('p', { class: 'small muted usub' }, t('uniStSub')),
     h('div', { class: 'card vlist vc stl' }, L.filter((x) => x.kind === 'st').map((x) => studyRow(me, x))));
-  out.push(h('h2', { class: 'sec' }, t('uniMa')), h('div', { class: 'stl ma' }, L.filter((x) => x.kind === 'ma').map((x) => studyRow(me, x))));
+  out.push(h('h2', { class: 'sec' }, t('uniMa')), h('div', { class: 'card vlist vc stl ma' }, L.filter((x) => x.kind === 'ma').map((x) => studyRow(me, x))));   // num cartão, como as outras secções
   return out;
 }
 
@@ -4006,8 +4014,8 @@ function screenLivros() {
     let btn;
     if (reading) btn = h('button', { class: 'btn sm', disabled: true }, t('bkBusy'));
     else if (b.k === 'again' && !bk.last) btn = h('button', { class: 'btn sm', disabled: true }, t('bkRead'));
-    else if (swap) btn = sureBtn('btn sm buy', t('bkRead'), 'btn sm buy sure', t('bkSwap', { x: t('bkn_' + onB.id), n: onDays }), () => act('bookRead', { id }));
-    else btn = h('button', { class: 'btn sm buy', on: { click: (e) => act('bookRead', { id }, { el: e.currentTarget }) } }, t('bkRead'));
+    else if (swap) btn = sureBtn('btn sm ghost', t('bkRead'), 'btn sm buy sure', t('bkSwap', { x: t('bkn_' + onB.id), n: onDays }), () => act('bookRead', { id }));
+    else btn = h('button', { class: 'btn sm ghost', on: { click: (e) => act('bookRead', { id }, { el: e.currentTarget }) } }, t('bkRead'));   // vários «Ler» iguais: secundários
     return h('div', { class: 'vrow bkr' }, bkCover(id),
       h('div', { class: 'grow' }, h('b', null, t('bkn_' + id)), bkFxLine(b, bk, bk.own[id] > 1 ? ' · ' + bk.own[id] + '×' : ''), btn));
   })));
@@ -4015,12 +4023,14 @@ function screenLivros() {
   if (!jail) {
     const shelf = me.bkShelf || [], bought = bk.bd && bk.bd.d === dayKey() ? bk.bd.ids : [];
     const owned = Object.values(bk.own || {}).reduce((a, x) => a + x, 0), full = owned >= B.cap;
+    // o que já compraste hoje está na tua estante: não se repete aqui
+    const left = shelf.filter((id) => !bought.includes(id));
     out.push(h('h2', { class: 'sec' }, t('bkShelf')));
-    out.push(h('div', { class: 'card vlist vc bkl' }, shelf.map((id) => { const b = bkCfg(id), got = bought.includes(id);
+    if (!left.length) out.push(h('p', { class: 'small muted bknone' }, t('bkShelfDone')));
+    else out.push(h('div', { class: 'card vlist vc bkl' }, left.map((id) => { const b = bkCfg(id);
       return h('div', { class: 'vrow bkr' }, bkCover(id),
         h('div', { class: 'grow' }, h('b', null, t('bkn_' + id)), bkFxLine(b, bk),
-          got ? h('span', { class: 'small muted' }, t('bkBought'))
-            : h('button', { class: 'btn sm num', disabled: full || me.cash + me.bank < b.price, on: { click: (e) => act('bookBuy', { id }, { el: e.currentTarget }) } }, t('bkBuy', { m: moneyShort(b.price) }))));
+          h('button', { class: 'btn sm num', disabled: full || me.cash + me.bank < b.price, on: { click: (e) => act('bookBuy', { id }, { el: e.currentTarget }) } }, t('bkBuy', { m: moneyShort(b.price) }))));
     })));
     if (full) out.push(h('p', { class: 'small c-red' }, t('bkFull', { n: B.cap })));
   }
@@ -4400,7 +4410,7 @@ function screenArms() {
       const sel = h('select', { class: 'wsel', 'aria-label': t('sl_' + sl), on: { change: (e) => { S.armsType = { ...(S.armsType || {}), [sl]: e.currentTarget.value }; render(); } } },
         [['all', t('wBest')], ...tipos.map((k) => [k, t('wt_' + k)])].map(([v, l]) => h('option', { value: v, selected: v === tp }, l)));
       out.push(h('h2', { class: 'sec' }, h('span', null, t('sl_' + sl)), sel), list2w([...shown.map((g) => gearRow(me, g)),
-        hid ? h('button', { class: 'vmore', 'aria-expanded': open ? 'true' : 'false', on: { click: () => { S.armsAll = { ...(S.armsAll || {}), [sl + tp]: !open }; render(); } } }, open ? t('arLess') : t('wSeeAll', { n: L.length })) : null]));
+        hid ? h('button', { class: 'vmore', 'aria-expanded': open ? 'true' : 'false', on: { click: () => { S.armsAll = { ...(S.armsAll || {}), [sl + tp]: !open }; render(); } } }, open ? t('arLess') : hid === 1 ? t('arMore1') : t('arMore', { n: hid })) : null]));   // o mesmo texto do resto do jogo: «Ver as outras N»
     }
     // acessórios: compram-se aqui e montam-se no inventário, numa arma vestida
     const worn = ['branca', 'mao', 'principal'].map((sl) => me.eq[sl] && gearOf(me.eq[sl].id)?.t).filter(Boolean);
@@ -4440,14 +4450,17 @@ function screenArms() {
 // Ao estilo do Tarkov: o corpo ao meio (uma fotografia com uma camada por peça vestida) e as nove slots à volta; por baixo, o que
 // está guardado numa grelha. Arrasta-se uma peça da grelha para a slot dela para a vestir, ou de uma slot para fora do boneco
 // para a tirar. Arrastar tem sempre alternativa de um toque: tocar numa peça ou numa slot abre uma folha com os botões.
-const DOLL_ORDER = ['pernas', 'pes', 'tronco', 'acess', 'principal', 'maos', 'mao', 'branca', 'cabeca'];   // de baixo para cima
+const DOLL_ORDER = ['pernas', 'pes', 'tronco', 'acess', 'principal', 'mao', 'maos', 'branca', 'cabeca'];   // de baixo para cima (v106: a pistola fica por baixo das luvas: os dedos tapam o cabo)
 const DOLL_L = ['cabeca', 'tronco', 'maos', 'pernas', 'pes'], DOLL_R = ['principal', 'mao', 'branca', 'acess'];
 // as armas aparecem no corpo pelo tipo (uma camada por tipo), as outras peças cada uma com a sua
 const DOLL_TYPE = { pressao: 'L_espingarda', caca: 'L_espingarda', ligeira: 'L_espingarda', precisao: 'L_espingarda', cacadeira: 'L_cacadeira', repeticao: 'L_cacadeira',
   compacta: 'L_smg', metralhadora: 'L_smg', artesanal: 'L_smg', assalto: 'L_carabina', batalha: 'L_carabina', calibre50: 'L_carabina', tatica: 'L_carabina', sniper: 'L_sniper', afinada: 'L_sniper',
   pistola: 'L_pistola', pistola50: 'L_pistola', pistolaafinada: 'L_pistola', revolver: 'L_revolver', magnum: 'L_revolver',
   soqueira: 'L_soqueira', navalha: 'L_faca', facamato: 'L_faca', taco: 'L_contundente', bastao: 'L_contundente', machado: 'L_lamina', catana: 'L_lamina', katana: 'L_espada', falcata: 'L_espada', gladio: 'L_espada' };
-const DOLL = (id) => { const g = gearOf(id); return `/img/boneco/${g && g.t ? 'L_' + (g.t === 'pesada' ? 'carabina' : g.t) : DOLL_TYPE[id] || id}.webp?1`; };   // v97: as armas pelo tipo
+// v106: cada arma aparece no corpo com a sua própria fotografia (img/boneco/w/<id>): as brancas na mão direita, as de mão na esquerda,
+// as compridas ao peito com a correia. A camada do tipo fica de reserva, se a da arma faltar.
+const DOLLT = (id) => { const g = gearOf(id); return `/img/boneco/${g && g.t ? 'L_' + g.t : DOLL_TYPE[id] || id}.webp?2`; };
+const DOLL = (id) => { const g = gearOf(id); return g && g.t ? `/img/boneco/w/${id}.webp?2` : DOLLT(id); };
 const gearFits = (it) => { const g = it && !isGood(it.id) ? gearOf(it.id) : null; return g && g.slot !== 'mat' ? g.slot : null; };
 const gearStat = (g) => (g.atk ? t('dollAtk', { p: pctOf(g.atk) }) : g.def ? t('dollDef', { p: pctOf(g.def) }) : g.room ? t('dollRoom', { n: g.room }) : '');
 // na grelha, uma peça que se veste diz logo se é melhor (▲ verde) ou pior (▼ vermelho) do que a que está vestida
@@ -4462,7 +4475,7 @@ function dollFig(me) {
   return h('div', { class: 'dfig', 'aria-hidden': 'true' },
     h('img', { class: 'dl', src: DOLL('base'), alt: '', width: 480, height: 714, decoding: 'async' }),
     DOLL_ORDER.filter((sl) => me.eq[sl]).map((sl) => h('img', { class: 'dl' + (S.dollNew === sl ? ' new' : ''), dataset: { layer: sl }, src: DOLL(me.eq[sl].id), alt: '', width: 480, height: 714, decoding: 'async',
-      on: { error: (e) => e.currentTarget.remove() } })));
+      on: { error: (e) => { const el = e.currentTarget, alt = DOLLT(me.eq[sl].id); if (!el.dataset.alt && !el.src.endsWith(alt)) { el.dataset.alt = 1; el.src = alt; } else el.remove(); } } })));
 }
 function dollSlot(me, sl) {
   const it = me.eq[sl], g = it && gearOf(it.id);
@@ -4470,7 +4483,7 @@ function dollSlot(me, sl) {
     on: { click: () => { if (dragJustEnded()) return; if (it) slotSheet(sl); else freeSlotSheet(sl); } } },
     h('span', { class: 'dsl' }, t('slS_' + sl)),
     it ? Object.assign(itArt(it.id, 'dimg'), { loading: 'eager', fetchPriority: 'high', alt: itName(it.id) }) : null,
-    g && g.gun ? h('span', { class: 'du num' + (it.u > 0 ? '' : ' c-red') }, it.u + '/' + g.life) : null);
+    g && g.gun ? h('span', { class: 'du num' + (it.u > 0 ? '' : ' c-red') }, Math.min(it.u, g.life) + '/' + g.life) : null);
 }
 function dollPanel(me) {
   return h('section', { class: 'doll', 'aria-label': t('invWorn') },
@@ -4705,7 +4718,7 @@ function screenCasa() {
     h('div', { class: 'facts two' }, fact(t('hSlots'), String(cur.slots)), fact(t('hStam'), String(cur.emax))),
     nx ? h('div', { class: 'nexth' }, pic(nx.id, 'nximg'), h('div', { class: 'grow' }, h('div', { class: 'small muted' }, t('houseNext')), h('div', { class: 'nm' }, names[me.house + 1]),
       h('div', { class: 'small muted' }, t('hNextGives', { s: nx.slots, e: nx.emax })),
-      h('div', { class: 'small c-resp' }, t('r_resp', { n: num(nx.resp) })))) : h('p', { class: 'c-gold' }, t('houseTop')),
+      h('div', { class: 'small c-resp' }, t('r_resp', { n: num(nx.resp) })))) : h('p', { class: 'muted' }, t('houseTop')),
     nx && cur.price ? h('p', { class: 'small muted' }, t('hTrade', { m: money(cur.price) })) : null,
     nx ? h('button', { class: 'btn buy block big', disabled: me.cash + me.bank < me.housePrice, on: { click: (e) => act('house', {}, { el: e.currentTarget }) } },
       me.cash + me.bank < me.housePrice ? t('needMoney', { m: money(me.housePrice - me.cash - me.bank) }) : t('houseBuy', { m: money(me.housePrice) })) : null));
@@ -5692,7 +5705,8 @@ function screenWheel() {
   out.push(liveBar(g));
   out.push(h('div', { class: 'wspots lvboard' }, W.spots.map((s) => h('button', { class: 'wsp' + (res && res.s === s ? ' hit' : ''), style: `--c:${WCOL[s]}`, on: { click: () => liveBet(g, { s, amt: chipNow() }) } },
     h('b', { class: /^\d+$/.test(s) ? '' : 'wd' }, wLabel(s)), h('span', { class: 'small' }, /^\d+$/.test(s) ? s + ':1' : t('wBonus')), bets[s] ? h('span', { class: 'chipm' }, moneyShort(bets[s])) : null))));
-  out.push(h('p', { class: 'small muted', style: 'margin:12px 0 0' }, t('wRules') + ' ' + t('lvHow')));
+  // as regras numa lista curta (eram 12 linhas de parágrafo)
+  out.push(h('ul', { class: 'small muted wrules' }, list('wR').map((x) => h('li', null, x))), h('p', { class: 'small muted', style: 'margin:8px 0 0' }, t('lvHow')));
   W3.wake();
   return out;
 }

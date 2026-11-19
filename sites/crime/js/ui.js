@@ -41,7 +41,7 @@ function add(el, kids) {
 }
 // o texto nunca parte mal: o «·» fica agarrado à palavra de antes (uma linha nunca começa por «·»), os milhares escritos à mão
 // («5 000») não se separam e um intervalo («224 €–336 €») não parte a seguir ao traço
-const tidy = (s) => (s.indexOf(' ') < 0 && s.indexOf('–') < 0 && s.indexOf('-') < 0 ? s : s.replace(/ · /g, '\u00a0· ').replace(/(\d) (?=\d{3}(?!\d))/g, '$1\u00a0').replace(/(\S)–(?=\S)/g, '$1–\u2060')
+const tidy = (s) => (s.indexOf(' ') < 0 && s.indexOf('–') < 0 && s.indexOf('-') < 0 ? s : s.replace(/ ·(?=[ \u00a0])/g, '\u00a0·').replace(/(\d) (?=\d{3}(?!\d))/g, '$1\u00a0').replace(/(\S)–(?=\S)/g, '$1–\u2060')
   .replace(/(\p{L})-(?=\p{L})/gu, '$1\u2011'));   // e o hífen entre letras («comprar-te», «porta-contentores») não parte a palavra
 
 const PATHS = {

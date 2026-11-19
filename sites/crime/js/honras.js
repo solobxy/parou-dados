@@ -58,6 +58,16 @@ const GLYPH = {
   estudos: 'M-10 -8h9a3 3 0 0 1 1 2v14a3 3 0 0 0 -1 -2h-9ZM10 -8h-9a3 3 0 0 0 -1 2v14a3 3 0 0 1 1 -2h9Z', prisao: 'M-10 -10h20v20h-20zM-5 -10v20M0 -10v20M5 -10v20',
   arsenal: 'M-3 -11h6v4h-6zM-4 -7h8v15h-8z', missoes: 'M-7 11V-11M-7 -10h14l-4 5l4 5h-14',
 };
+// v106: as honras de cada tipo de arma têm o seu desenho (antes era a mesma bala em todas)
+const GLYPH_WT = {
+  soqueira: 'M-10 -5h20v7h-20zM-5 -5v7M0 -5v7M5 -5v7M-8 2Q0 10 8 2', faca: 'M-10 10L-5 5M-7 3L-3 7M-5 5L9 -9L5 1Z',
+  contundente: 'M-9 10L3 -2M-1 -9L9 1L11 -1L1 -11Z', lamina: 'M-10 10L-6 6M-8 4L-4 8M-6 6Q2 -6 10 -10Q7 -1 -2 8',
+  espada: 'M-10 10L-7 7M-9 5L-5 9M-7 7L9 -9L10 -10', pistola: 'M-10 -6h18v5h-11l-2 8h-5l2 -8h-2z',
+  revolver: 'M-11 -6h21v4h-21zM-6 -2l-2 9h5l2 -9M3 -2a3 3 0 1 0 0.1 0', smg: 'M-11 -5h22v5h-22zM-5 0v8M3 0v5M8 -8v3',
+  cacadeira: 'M-11 -5h22M-11 -1h22M-11 -5v4M-3 -1l-6 9', carabina: 'M-11 -2h22M-3 -2l-7 8M4 -2v-3h4',
+  espingarda: 'M-11 -3h22v3h-22zM-4 0l-2 8M4 0v6M6 -6v3', sniper: 'M-12 -1h14v3h-14zM2 0.5h10M-11 2l-2 7h5l2 -7M-6 -8h10v4h-10zM-3 -4v3M2 -4v3',
+  pesada: 'M-11 -3h22v4h-22zM-6 1l-3 9M-6 1l3 9M7 -7v4',
+};
 function shapePath(s, r) {
   switch (s) {
     case 'circle': return `M${-r} 0A${r} ${r} 0 1 0 ${r} 0A${r} ${r} 0 1 0 ${-r} 0`;
@@ -81,7 +91,7 @@ function grads(defs, id, s) {
 function emblem(h, s, id, f1, size = 22) {
   const em = svg('g');
   em.append(svg('path', { d: shapePath(s.shape, size), fill: `hsl(${s.hue} ${s.sat}% ${Math.max(10, s.light - 8)}%)`, stroke: `url(#${id}f)`, 'stroke-width': s.frame === 'plat' ? 4 : 2.5 }));
-  em.append(svg('path', { d: GLYPH[h.cat] || GLYPH.nivel, fill: 'none', stroke: f1, 'stroke-width': 2.4, 'stroke-linecap': 'round', 'stroke-linejoin': 'round', transform: `scale(${(size / 22).toFixed(2)})` }));
+  em.append(svg('path', { d: (h.m === 'wt' && GLYPH_WT[h.k]) || GLYPH[h.cat] || GLYPH.nivel, fill: 'none', stroke: f1, 'stroke-width': 2.4, 'stroke-linecap': 'round', 'stroke-linejoin': 'round', transform: `scale(${(size / 22).toFixed(2)})` }));
   return em;
 }
 // a barra (300×64). label: o nome escrito na barra; locked: a cinzento

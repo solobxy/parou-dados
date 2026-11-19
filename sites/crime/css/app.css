@@ -1441,7 +1441,7 @@ h1.slogo { margin: 0; }
    Os números são uma leitura, não uma segunda fila de opções: sem caixa nem contorno, só um traço a separá-los. */
 .segends { display: flex; justify-content: space-between; gap: 12px; margin-top: -2px; font-size: 14px; color: var(--tx2); }
 @media (max-width: 359px) { .seg.five { gap: 3px; padding: 3px; } .seg.five button { font-size: 13px; } }   /* cinco teclas em 320 px: «100%» não toca nas bordas */
-.facts.two { grid-template-columns: 1fr 1fr; gap: 0; }
+.facts.two { grid-template-columns: 1fr 1fr; gap: 0; } .facts.one { grid-template-columns: 1fr; gap: 0; }
 .facts.two .fact { background: none; border-radius: 0; padding: 4px 8px 2px; }
 .facts.two .fact + .fact { box-shadow: inset 1px 0 0 #ffffff1f; }
 .facts.two .fact b { font-size: 32px; }
@@ -2992,7 +2992,7 @@ body.preso .phead .pbar .back:not(.tojail) { visibility: hidden; }   /* v94: do 
 .vobj { flex: 0 0 calc((100% - 16px) / 3); margin: 0; text-align: center; }
 .vph { position: relative; aspect-ratio: 1; }
 .vph::after { content: ''; position: absolute; left: 16%; right: 16%; bottom: -6px; height: 8px; background: linear-gradient(#3b3223, #120f0a); box-shadow: inset 0 1px 0 #ffd36b40; }
-.vimg { position: relative; z-index: 1; display: block; width: 100%; height: 100%; object-fit: contain; mix-blend-mode: lighten; }
+.vimg { position: relative; z-index: 1; display: block; width: 100%; height: 100%; object-fit: contain; mix-blend-mode: lighten; -webkit-mask-image: radial-gradient(closest-side, #000 70%, #0000 100%); mask-image: radial-gradient(closest-side, #000 70%, #0000 100%); }   /* as fotos com fundo cinzento deixam de mostrar o quadrado: as arestas desvanecem */
 .vobj.gone .vimg { filter: grayscale(1) brightness(.5); opacity: .7; }
 .vobj figcaption { display: grid; grid-template-rows: 2.5em auto; gap: 2px; margin-top: 10px; line-height: 1.25; }
 .vobj figcaption b { align-self: end; font: 500 15px/1.2 'Newsreader', Georgia, serif; color: var(--tx); text-wrap: balance; }
@@ -3079,8 +3079,6 @@ body.preso .phead .pbar .back:not(.tojail) { visibility: hidden; }   /* v94: do 
 .cnow .exam { margin-top: 14px; }
 .cnow .exh { margin: 0 0 6px; font: 500 17px/1.25 'Newsreader', Georgia, serif; }
 .ufeitos { margin: 0; padding: 12px 0; border-bottom: 1px solid #ece6da14; }
-.stl.ma { padding: 0 2px; }
-.stl.ma .str:first-child { padding-top: 4px; }
 .vrow.dim b, .vrow.dim .small, .vrow.dim .muted { color: #948e83; }
 .ufeitos:last-child { border-bottom: 0; padding-bottom: 4px; }
 
@@ -3812,3 +3810,24 @@ body h2.sec + p.small, body h2.sec + p.muted, body h2.sec + .small.muted { margi
 .cvj { white-space: nowrap; } .cvj > .cvgo, .cvj > span { white-space: normal; }   /* um material e o «·» que vem a seguir não se separam */
 .vrow.tk-gig.gkhi { animation: cv-hi 1.6s ease-out; }   /* vindo da cave: o biscate que dá o material em falta */
 @media (prefers-reduced-motion: reduce) { .vrow.tk-gig.gkhi { animation: none; box-shadow: inset 0 0 0 2px var(--tx); } }
+.hqall { margin: 10px 2px 6px; }
+.wrules { margin: 12px 0 0; padding-left: 18px; } .wrules li { margin: 0 0 4px; }
+/* armas: o nome parte em linhas e o «Comprar» fica sempre à direita (antes descia quando o nome era comprido) */
+body .wl .wtop { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 6px 10px; }
+body .wl .wtop > b { flex: 1 1 0; min-width: min-content; } body .wl .wtop > :not(b) { margin-left: auto; }   /* o botão só desce quando a palavra mais comprida do nome não cabe ao lado */
+/* mosaicos: a 2.ª linha (aviso) começa na mesma aresta do nome */
+body .tile .bdg { left: 8px; right: 8px; bottom: 7px; }
+body .tile:has(.bdg) .lbl { bottom: 27px; } body .tile:has(.bdg)::after { background: linear-gradient(to top, #000d 0, #000d 50px, #0000 51px); }
+/* nomes em linhas: o nome parte em duas linhas em vez de ficar cortado com reticências («Metralha…») */
+body .vrow b { white-space: normal; text-overflow: clip; overflow-wrap: break-word; text-wrap: pretty; }   /* parte entre palavras, nunca a meio («Metralhad/ora») */
+body .vrow b .chip { white-space: nowrap; }
+.cvl { display: block; } .cvl + .cvl { margin-top: 2px; }   /* receita com falta: um material por linha */
+.mspots { margin: 8px 2px 12px; }
+body .bkl > .vrow.bkr:first-child { padding-top: 12px; }   /* a primeira capa não cola à barra da secção */
+/* v106: as peças do museu passaram a vir recortadas (fundo transparente, todas à mesma escala): sem máscara nem mistura */
+body .vimg { mix-blend-mode: normal; -webkit-mask-image: none; mask-image: none; filter: drop-shadow(0 6px 8px #0009); }
+body .vobj.gone .vimg { filter: grayscale(1) brightness(.5); }
+body .mextra .vth { -webkit-mask-image: none; mask-image: none; }
+/* depósito da cave: sem divisória na última linha (a borda sai 1 px para fora e o cartão corta-a) e com ar antes dos atalhos */
+body .cvdep { padding-bottom: 0; overflow: hidden; margin-bottom: 12px; } body .cvdep > .cvm { margin-bottom: -1px; }
+body .plaque .pcols > .pcol:last-child:nth-child(odd) { grid-column: 1 / -1; }   /* um conjunto sozinho na linha usa a largura toda */
