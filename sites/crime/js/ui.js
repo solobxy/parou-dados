@@ -36,8 +36,49 @@ function add(el, kids) {
     if (k === null || k === undefined || k === false) continue;
     if (Array.isArray(k)) add(el, k);
     else if (k instanceof Node) el.appendChild(k);
-    else el.appendChild(document.createTextNode(tidy(String(k))));
+    else {
+      const txt = tidy(String(k));
+      if (txt.indexOf('\u00a0·') < 0) { el.appendChild(document.createTextNode(txt)); continue; }
+      // v106: cada «·» separador fica num span (sdot), para se esconder quando calha no fim de uma linha (ver dotPass)
+      txt.split(/\u00a0·(?=[ \u00a0])/).forEach((part, i) => {
+        if (i) { const d = document.createElement('span'); d.className = 'sdot'; d.textContent = '\u00a0·'; el.appendChild(d); }
+        if (part) el.appendChild(document.createTextNode(part));
+      });
+    }
   }
+}
+// Um «·» que separa duas coisas não serve para nada no fim de uma linha («Negócios +10% ·» / «31 dias»): depois de cada
+// mudança no ecrã, vê-se onde cai o primeiro carácter a seguir a cada «·»; se for numa linha de baixo, o «·» fica invisível
+// (só a cor: o espaço continua lá, por isso a linha não muda de sítio). O mesmo quando é o último da caixa.
+const INLINE = new Set(['inline', 'contents']);
+function nextChar(d) {
+  let box = d.parentElement;
+  while (box && box !== document.body && INLINE.has(getComputedStyle(box).display)) box = box.parentElement;
+  if (!box) return null;
+  const w = document.createTreeWalker(box, NodeFilter.SHOW_TEXT);
+  w.currentNode = d.lastChild || d;
+  for (let n = w.nextNode(); n; n = w.nextNode()) {
+    const i = n.data.search(/[^\s\u00a0]/);
+    if (i >= 0 && n.parentElement && n.parentElement.getClientRects().length) { const r = document.createRange(); r.setStart(n, i); r.setEnd(n, i + 1); return r.getBoundingClientRect(); }
+  }
+  return null;
+}
+function dotPass() {
+  dotRaf = 0;
+  const ds = document.querySelectorAll('.sdot'), out = [];
+  for (const d of ds) {
+    const a = d.getClientRects(); if (!a.length) continue;
+    const r = a[a.length - 1], nx = nextChar(d);
+    out.push([d, !nx || nx.top >= r.bottom - 2]);
+  }
+  for (const [d, end] of out) d.classList.toggle('eol', end);
+}
+let dotRaf = 0;
+const dotLater = () => { if (!dotRaf) dotRaf = requestAnimationFrame(dotPass); };
+if (typeof document !== 'undefined' && typeof MutationObserver !== 'undefined') {
+  new MutationObserver(dotLater).observe(document.documentElement, { childList: true, subtree: true });
+  addEventListener('resize', dotLater);
+  document.fonts?.ready?.then(dotLater);
 }
 // o texto nunca parte mal: o «·» fica agarrado à palavra de antes (uma linha nunca começa por «·»), os milhares escritos à mão
 // («5 000») não se separam e um intervalo («224 €–336 €») não parte a seguir ao traço

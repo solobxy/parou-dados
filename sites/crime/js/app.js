@@ -460,7 +460,9 @@ const PARENT = { gyms: 'gym', livros: 'city', hunt: 'city', honras: 'city', viag
   biz: 'empire', port: 'city', air: 'city', myclub: 'empire', mybro: 'empire', bolsa: 'empire', stash: 'empire', acct: 'empire', casa: 'empire', bank: 'empire', lux: 'empire', arms: 'fights', rank: 'fights', hitman: 'fights', ops: 'rob' };
 const upOf = (id) => (S.backTo && S.backTo[id]) || PARENT[id] || 'city';   // um sítio que está em duas zonas volta para a zona de onde vieste
 const tabOf = (id) => { let x = id; for (let k = 0; k < 4 && !NAV.includes(x); k++) x = upOf(x); return NAV.includes(x) ? x : 'city'; };
-const IMG = (kind, id, big) => `/img/${kind}/${id}${big ? '-g' : ''}.webp?${kind === 'classes' ? 17 : 18}`;   // v90: retratos novos das profissões; v106: casas, cave e caveira em fotografia, peças do museu recortadas
+// v107: imagens trocadas depois da última subida geral (as metralhadoras tinham fotografias de espingardas de madeira)
+const IMG_V = { 'gear/metralhadorapesada': 19, 'gear/metralhadoratripe': 19, 'gear/metralhadoracinto': 19, 'gear/metralhadoraesquadra': 19, 'gear/metralhadoramedia': 19 };
+const IMG = (kind, id, big) => `/img/${kind}/${id}${big ? '-g' : ''}.webp?${IMG_V[kind + '/' + id] || (kind === 'classes' ? 17 : 18)}`;   // v90: retratos novos das profissões; v106: casas, cave e caveira em fotografia, peças do museu recortadas
 // o que cada sítio precisa de ir buscar ao servidor (ao entrar nele, e também quando o jogo abre já nesse sítio)
 function loadFor(tab) {
   if (tab === 'fights') { if (S.fightSeg === 'events') loadEvents(true); else { S.fightSeg = 'targets'; loadTargets(); } }
@@ -2633,7 +2635,7 @@ function needsLine(me, needs, n) {
       : h('span', { class: 'c-red' }, item);
     // o «·» vai colado ao fim do que vem antes (depois de um botão partia a linha e ficava no início da seguinte)
     if (short) return h('span', { class: 'cvl' }, node);
-    return [i ? ' ' : null, i < last ? h('span', { class: 'cvj' }, node, '\u00a0·') : node];
+    return [i ? ' ' : null, i < last ? h('span', { class: 'cvj' }, node, h('span', { class: 'sdot' }, '\u00a0·')) : node];
   });
 }
 function caveBench(me, preso) {
@@ -4460,7 +4462,7 @@ const DOLL_TYPE = { pressao: 'L_espingarda', caca: 'L_espingarda', ligeira: 'L_e
 // v106: cada arma aparece no corpo com a sua própria fotografia (img/boneco/w/<id>): as brancas na mão direita, as de mão na esquerda,
 // as compridas ao peito com a correia. A camada do tipo fica de reserva, se a da arma faltar.
 const DOLLT = (id) => { const g = gearOf(id); return `/img/boneco/${g && g.t ? 'L_' + g.t : DOLL_TYPE[id] || id}.webp?2`; };
-const DOLL = (id) => { const g = gearOf(id); return g && g.t ? `/img/boneco/w/${id}.webp?2` : DOLLT(id); };
+const DOLL = (id) => { const g = gearOf(id); return g && g.t ? `/img/boneco/w/${id}.webp?${IMG_V['gear/' + id] ? 3 : 2}` : DOLLT(id); };   // v107: as camadas das armas com fotografia nova
 const gearFits = (it) => { const g = it && !isGood(it.id) ? gearOf(it.id) : null; return g && g.slot !== 'mat' ? g.slot : null; };
 const gearStat = (g) => (g.atk ? t('dollAtk', { p: pctOf(g.atk) }) : g.def ? t('dollDef', { p: pctOf(g.def) }) : g.room ? t('dollRoom', { n: g.room }) : '');
 // na grelha, uma peça que se veste diz logo se é melhor (▲ verde) ou pior (▼ vermelho) do que a que está vestida

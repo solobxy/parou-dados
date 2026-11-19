@@ -3831,3 +3831,4 @@ body .mextra .vth { -webkit-mask-image: none; mask-image: none; }
 /* depósito da cave: sem divisória na última linha (a borda sai 1 px para fora e o cartão corta-a) e com ar antes dos atalhos */
 body .cvdep { padding-bottom: 0; overflow: hidden; margin-bottom: 12px; } body .cvdep > .cvm { margin-bottom: -1px; }
 body .plaque .pcols > .pcol:last-child:nth-child(odd) { grid-column: 1 / -1; }   /* um conjunto sozinho na linha usa a largura toda */
+.sdot.eol { visibility: hidden; }   /* «·» no fim de uma linha: não separa nada (ui.js, dotPass) */

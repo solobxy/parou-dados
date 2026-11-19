@@ -20,7 +20,11 @@ MAO_D, MAO_E = (126, 386), (352, 383)   # mãos (direita do boneco à esquerda d
 _S = None
 _U = None
 U2 = {'katana', 'espadamao', 'claymore'}
-CORTE = {'metralhadoraligeira': 350, 'metralhadorafuzileiro': 332}
+CORTE = {'metralhadoraligeira': 350, 'metralhadorafuzileiro': 332, 'metralhadorapesada': 305}   # v107: a .50 ao ombro, sem o tripé
+def _sem_tripe(m):   # v107: a de tripé — tira o tripé (mais acima no meio, onde está a cabeça do tripé) e as caixas de munição
+    m[285:] = False; m[262:, 230:370] = False; return m
+CORTE_F = {'metralhadoratripe': _sem_tripe}
+SEM_TAN = {'metralhadoramedia'}   # a bandoleira cor de areia não vai para o boneco
 # v106: as fotografias das pistolas e revólveres têm a arma preta em cima de fundo preto e o recorte apanhava sombras e o carregador;
 # usam-se 7 desenhos de catálogo (Flux, em dev/boneco-fontes/, fundo branco) com o mesmo tipo e as mesmas cores de cada fotografia
 FONTES = os.path.join(AQUI, 'boneco-fontes') + '/'
@@ -68,6 +72,9 @@ def recorta(id):
     o = remove(Image.open(GEAR + id + '.webp').convert('RGB'), session=_U if id in U2 else _S)
     A = np.asarray(o); m = A[..., 3] > (18 if id in U2 else 35 if tipo[id] in ('faca', 'lamina', 'contundente') else 140)   # lâminas finas e claras saem com pouca opacidade
     if id in CORTE: m[CORTE[id]:] = False   # fotografias com a arma num suporte: corta-se o suporte
+    if id in CORTE_F: m = CORTE_F[id](m)
+    if id in SEM_TAN:
+        C = A[..., :3].astype(int); m &= ~((C[..., 0] - C[..., 2] > 12) & (C[..., 0] > 35)); m[378:, 255:490] = False   # e o rolo da bandoleira no chão
     m = ndimage.binary_opening(m, iterations=1)
     lab, n = ndimage.label(m)
     if not n: return None
