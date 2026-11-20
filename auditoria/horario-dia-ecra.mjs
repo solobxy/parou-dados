@@ -85,23 +85,33 @@ const { linha, dir, paragem, amanha } = escolha;
 const browser = await chromium.launch();
 async function abrir({ largura = 390, altura = 844, tema = 'claro', falhar = false, atrasoMs = 0 } = {}) {
   const ctx = await browser.newContext({
-    extraHTTPHeaders: { 'x-forwarded-for': novoIp() },
     viewport: { width: largura, height: altura }, hasTouch: largura < 1000, isMobile: largura < 1000, locale: 'pt-PT', timezoneId: 'Europe/Lisbon', serviceWorkers: 'block',
     userAgent: largura < 1000 ? 'Mozilla/5.0 (Linux; Android 14; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Mobile Safari/537.36' : undefined,
   });
   await ctx.addInitScript({ content: `try{ Object.defineProperty(Navigator.prototype,'webdriver',{get:()=>false,configurable:true}); localStorage.setItem('parou_aviso_instalar','1'); localStorage.setItem('parou_bemvindo','visto'); localStorage.setItem('parou_tema','${tema}'); }catch(e){}` });
   const estado = { falhar, pedidos: 0 };
-  await ctx.route('**/api/lines/*/dia**', async (rt) => {
-    estado.pedidos += 1;
-    if (atrasoMs) await new Promise((r) => setTimeout(r, atrasoMs));
-    if (estado.falhar) return rt.fulfill({ status: 500, contentType: 'application/json', body: '{"error":"teste"}' });
-    return rt.continue();
+  const ip = novoIp();
+  // Só os pedidos à API levam o endereço próprio (o resto vai como sempre)
+  await ctx.route(/\/api\//, async (rt) => {
+    const url = rt.request().url();
+    if (/\/api\/lines\/[^/?]+\/dia\?/.test(url)) {
+      estado.pedidos += 1;
+      if (atrasoMs) await new Promise((r) => setTimeout(r, atrasoMs));
+      if (estado.falhar) return rt.fulfill({ status: 500, contentType: 'application/json', body: '{"error":"teste"}' });
+    }
+    return rt.continue({ headers: { ...rt.request().headers(), 'x-forwarded-for': ip } });
   });
   const p = await ctx.newPage();
   const erros = [];
+  const recusas = [];
   p.on('pageerror', (e) => erros.push(String(e).slice(0, 200)));
+  p.on('response', (r) => { if (r.status() >= 400 && r.url().startsWith(BASE)) recusas.push(`${r.status()} ${r.url().replace(BASE, '').slice(0, 90)}`); });
   await p.goto(`${BASE}/transportes?linha=${encodeURIComponent(linha.id)}`, { waitUntil: 'domcontentloaded' });
-  await p.locator('[data-teste="paragem-da-linha"]').first().waitFor({ timeout: 30000 }).catch(() => {});
+  const abriu = await p.locator('[data-teste="paragem-da-linha"]').first().waitFor({ timeout: 30000 }).then(() => true).catch(() => false);
+  if (!abriu) {
+    nota(`a linha não abriu (${largura} ${tema}): ${recusas.slice(0, 6).join(' · ') || 'sem respostas de erro'} · URL ${p.url().replace(BASE, '')}`);
+    await p.screenshot({ path: `${SAIDA}/horario-dia-nao-abriu-${largura}-${tema}.png` }).catch(() => {});
+  }
   await p.waitForTimeout(800);
   return { ctx, p, erros, estado };
 }
@@ -127,23 +137,23 @@ const dias = (p) => p.locator('[data-teste="dias-horario"] button');
   const rotulos = await dias(p).allInnerTexts().catch(() => []);
   ok('[dias] aparece a fila de dias ao tocar na paragem', rotulos.length === 7, rotulos.join(' | '));
   ok('[dias] começa em «Hoje» e «Amanhã»', rotulos[0] === 'Hoje' && rotulos[1] === 'Amanhã', rotulos.slice(0, 2).join(','));
-  ok('[dias] «Hoje» vem escolhido', (await dias(p).nth(0).getAttribute('aria-pressed')) === 'true');
+  ok('[dias] «Hoje» vem escolhido', (await dias(p).nth(0).getAttribute('aria-pressed', { timeout: 3000 }).catch(() => null)) === 'true');
   const alturas = [];
   for (let i = 0; i < rotulos.length; i++) alturas.push(Math.round((await dias(p).nth(i).boundingBox())?.height || 0));
   ok('[dias] botões com pelo menos 40 px de altura', alturas.every((h) => h >= 40), alturas.join(','));
   await p.screenshot({ path: `${SAIDA}/horario-dia-hoje.png` });
 
-  await dias(p).nth(1).click();
+  await dias(p).nth(1).click({ timeout: 3000 }).catch(() => {});
   const painel = p.locator('[data-teste="horario-dia"]');
   await painel.waitFor({ timeout: 10000 }).catch(() => {});
   ok('[amanhã] mostra o horário do dia', await painel.count() === 1);
-  ok('[amanhã] «Amanhã» fica escolhido', (await dias(p).nth(1).getAttribute('aria-pressed')) === 'true');
+  ok('[amanhã] «Amanhã» fica escolhido', (await dias(p).nth(1).getAttribute('aria-pressed', { timeout: 3000 }).catch(() => null)) === 'true');
   const texto = ((await painel.innerText().catch(() => '')) || '').replace(/\s+/g, ' ');
   const primeira = amanha.partidas[0];
   const minutosNoEcra = await painel.locator('.flex-wrap > span').count();
   ok('[amanhã] a primeira hora do servidor está no ecrã', texto.includes(primeira.hora.slice(0, 2)) && texto.includes(primeira.hora.slice(3)), `${primeira.hora} em «${texto.slice(0, 80)}»`);
   ok('[amanhã] uma hora no ecrã por cada partida do servidor', minutosNoEcra === amanha.partidas.length, `${minutosNoEcra} = ${amanha.partidas.length}`);
-  const naoMarca = await painel.evaluate((el) => [...el.querySelectorAll('*')].filter((n) => { const c = getComputedStyle(n).color; return !['rgb(17, 17, 17)', 'rgb(107, 107, 107)', 'rgba(0, 0, 0, 0)'].includes(c); }).length);
+  const naoMarca = await painel.evaluate((el) => [...el.querySelectorAll('*')].filter((n) => { const c = getComputedStyle(n).color; return !['rgb(17, 17, 17)', 'rgb(107, 107, 107)', 'rgba(0, 0, 0, 0)'].includes(c); }).length).catch(() => -1);
   ok('[amanhã] só cores da marca no tema claro', naoMarca === 0, String(naoMarca));
   await painel.scrollIntoViewIfNeeded().catch(() => {});
   await p.screenshot({ path: `${SAIDA}/horario-dia-amanha-390.png` });
@@ -154,12 +164,12 @@ const dias = (p) => p.locator('[data-teste="dias-horario"] button');
   ok('[amanhã] tocar no horário não o fecha', await painel.count() === 1);
 
   // Outro dia (o 4.º) também responde
-  await dias(p).nth(3).click();
+  await dias(p).nth(3).click({ timeout: 3000 }).catch(() => {});
   await p.waitForTimeout(400);
   await p.locator('[data-teste="horario-dia"], [data-teste="horario-dia-vazio"]').first().waitFor({ timeout: 10000 }).catch(() => {});
   ok('[outro dia] mostra horário ou uma frase clara', await p.locator('[data-teste="horario-dia"], [data-teste="horario-dia-vazio"]').count() === 1);
 
-  await dias(p).nth(0).click();
+  await dias(p).nth(0).click({ timeout: 3000 }).catch(() => {});
   await p.waitForTimeout(1500);
   ok('[hoje] voltar a «Hoje» tira o horário do dia', await p.locator('[data-teste="horario-dia"]').count() === 0);
   ok('[hoje] e mostra as partidas de hoje (ou «Sem partidas previstas»)', /Sem partidas previstas|\d\d:\d\d|\bmin\b|A carregar partidas/.test((await p.locator('[data-teste="dias-horario"]').locator('xpath=..').innerText().catch(() => '')) || ''));
@@ -171,7 +181,7 @@ const dias = (p) => p.locator('[data-teste="dias-horario"] button');
 {
   const { ctx, p, erros, estado } = await abrir({ falhar: true, atrasoMs: 1200 });
   await escolherSentidoEParagem(p);
-  await dias(p).nth(1).click();
+  await dias(p).nth(1).click({ timeout: 3000 }).catch(() => {});
   const aCarregar = await p.locator('[data-teste="horario-dia-a-carregar"]').waitFor({ timeout: 3000 }).then(() => true).catch(() => false);
   ok('[a carregar] mostra «A carregar horário…»', aCarregar);
   const erro = p.locator('[data-teste="horario-dia-erro"]');
@@ -192,7 +202,7 @@ const dias = (p) => p.locator('[data-teste="dias-horario"] button');
 for (const [largura, tema] of [[320, 'claro'], [1280, 'claro'], [390, 'escuro'], [390, 'ambar'], [390, 'porto'], [320, 'escuro']]) {
   const { ctx, p, erros } = await abrir({ largura, altura: largura > 1000 ? 860 : 780, tema });
   await escolherSentidoEParagem(p);
-  await dias(p).nth(1).click().catch(() => {});
+  await dias(p).nth(1).click({ timeout: 3000 }).catch(() => {});
   const painel = p.locator('[data-teste="horario-dia"]');
   await painel.waitFor({ timeout: 10000 }).catch(() => {});
   await painel.scrollIntoViewIfNeeded().catch(() => {});
