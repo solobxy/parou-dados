@@ -7314,7 +7314,7 @@ function renderPause() {
   const r = S.st.round;
   $main = null;
   $app.replaceChildren(h('div', { class: 'land' },
-    h('div', { class: 'word neon' }, 'Crime'),
+    h('h1', { class: 'landword neon' }, h('img', { src: '/img/logo/crookville-nome-ambar.svg', alt: 'Crookville', width: 1310, height: 277 })),
     h('h1', { style: 'font-family:var(--disp);font-weight:900;font-size:40px;text-transform:uppercase' }, t('pauseTitle')),
     h('p', { class: 'muted' }, t('pauseSub', { t: dur(Math.max(0, r.start - now())) })),
     h('p', { class: 'credit' }, h('a', { href: 'https://dinissousa.pt', target: '_blank', rel: 'noopener' }, t('credit')))));
@@ -7332,7 +7332,7 @@ async function showLanding(st) {
   const langsw = h('div', { class: 'langsw' }, [['en', 'EN'], ['pt', 'PT']].map(([l, n]) => h('button', { 'aria-pressed': lang() === l ? 'true' : 'false', on: { click: () => { applyLang(l); showLanding(info ? { players: info.jogadores, season: info.epoca } : null); } } }, n)));
   $app.replaceChildren(langsw, h('div', { class: 'land' },
     h('div', { class: 'land-art', 'aria-hidden': 'true' }, h('img', { src: '/img/cenas/entrada-g.webp?10', alt: '', width: 800, height: 800, fetchpriority: 'high', decoding: 'async' })),
-    h('div', { class: 'word neon', 'aria-label': 'Crime' }, 'Crime'),
+    h('h1', { class: 'landlogo neon' }, h('img', { src: '/img/logo/crookville-placa.svg', alt: 'Crookville', width: 784, height: 310, decoding: 'async' })),   // o logo: a placa da entrada da cidade, torta
     h('p', { class: 'tag' }, t('tagline')),
     info ? h('div', { class: 'meta' },
       h('span', null, t('playersIn', { n: num(info.jogadores) })),

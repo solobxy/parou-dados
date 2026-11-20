@@ -4414,3 +4414,10 @@ body.light .gpl .sw, body.light .gp.new .pl { animation: none; }
 .ckstep .linkbtn { justify-self: start; text-align: left; font-size: 14px; }
 .ckdk { margin: 0; font-size: 15px; color: var(--tx2); text-align: left; }
 .ckgo .kv b:first-of-type { font-size: 20px; }
+
+/* Crookville: o logo na entrada (a placa torta) e no ecrã de pausa (só o nome). As medidas vêm do próprio SVG. */
+.landlogo { margin: 0 0 4px -6px; line-height: 0; }
+.landlogo img { display: block; width: min(100%, 440px); height: auto; filter: drop-shadow(0 14px 22px rgba(0, 0, 0, .55)); }
+.landword { margin: 0; line-height: 0; }
+.landword img { display: block; width: min(100%, 420px); height: auto; }
+@media (prefers-reduced-motion: reduce) { .neon { animation: none; } }
