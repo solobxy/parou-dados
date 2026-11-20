@@ -1,0 +1,26 @@
+OK      [imagem] tocar na imagem não abre outra página 
+OK      [imagem] o endereço não muda https://2-31-13-85.sslip.io/comunidade
+OK      [imagem] abre-se o ecrã grande da imagem 
+OK      [imagem] mostra a primeira imagem /novidades/todos-autocarros-1.jpg
+OK      [imagem] a imagem carregou 
+OK      [imagem] cabe no ecrã (390×780) {"x":12,"y":201,"width":366,"height":366}
+OK      [imagem] diz «1/2» 1/2
+OK      [imagem] «seguinte» mostra a segunda 
+OK      [imagem] seta esquerda volta à primeira 
+OK      [imagem] deslizar o dedo para a esquerda passa à segunda 
+OK      [imagem] o X fecha 
+OK      [imagem] depois de fechar continua na Comunidade 
+OK      [imagem] Esc fecha 
+OK      [imagem] tocar no fundo escuro fecha 
+OK      [imagem] o gesto de voltar fecha a imagem 
+OK      [imagem] e não sai da Comunidade https://2-31-13-85.sslip.io/comunidade
+OK      [imagem] nunca aparece «Página não encontrada» 
+OK      [imagem] sem erros na consola 
+NOTA    service worker: ativo
+NOTA    a página é controlada pelo service worker: true
+OK      [service worker] abrir /novidades/todos-autocarros-1.jpg devolve a imagem (não a app) image/jpeg
+OK      [service worker] abrir /novidades/todos-autocarros-2.jpg devolve a imagem (não a app) image/jpeg
+OK      [service worker] abrir /icon-192.png devolve a imagem (não a app) image/png
+OK      [service worker] abrir /favicon.svg devolve a imagem (não a app) image/svg+xml
+
+As imagens dos posts abrem dentro da app e nunca levam a «Página não encontrada».
