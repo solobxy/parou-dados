@@ -106,7 +106,11 @@ async function abrir({ largura = 390, altura = 844, tema = 'claro', falhar = fal
   const recusas = [];
   p.on('pageerror', (e) => erros.push(String(e).slice(0, 200)));
   p.on('response', (r) => { if (r.status() >= 400 && r.url().startsWith(BASE)) recusas.push(`${r.status()} ${r.url().replace(BASE, '').slice(0, 90)}`); });
-  await p.goto(`${BASE}/transportes?linha=${encodeURIComponent(linha.id)}`, { waitUntil: 'domcontentloaded' });
+  // Como as pessoas fazem: Horários, tocar na linha da lista
+  await p.goto(`${BASE}/transportes`, { waitUntil: 'domcontentloaded' });
+  const cartao = p.locator(`[data-linha="${linha.id}"]`).first();
+  await cartao.waitFor({ timeout: 30000 }).catch(() => {});
+  await cartao.click({ timeout: 5000 }).catch((e) => nota('cartão da linha: ' + String(e).slice(0, 100)));
   const abriu = await p.locator('[data-teste="paragem-da-linha"]').first().waitFor({ timeout: 30000 }).then(() => true).catch(() => false);
   if (!abriu) {
     nota(`a linha não abriu (${largura} ${tema}): ${recusas.slice(0, 6).join(' · ') || 'sem respostas de erro'} · URL ${p.url().replace(BASE, '')}`);
@@ -225,6 +229,31 @@ for (const [largura, tema] of [[320, 'claro'], [1280, 'claro'], [390, 'escuro'],
   }
   ok(`[${largura} ${tema}] sem erros na página`, erros.length === 0, erros.join(' | '));
   await p.screenshot({ path: `${SAIDA}/horario-dia-${largura}-${tema}.png` });
+  await ctx.close();
+}
+
+// 6. Diagnóstico (não conta como falha): abrir pela ligação /transportes?linha=… (vinda das páginas públicas das linhas)
+{
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true, locale: 'pt-PT', timezoneId: 'Europe/Lisbon', serviceWorkers: 'block' });
+  await ctx.addInitScript({ content: `try{ localStorage.setItem('parou_aviso_instalar','1'); localStorage.setItem('parou_bemvindo','visto');
+    window.__reg=[]; const t0=performance.now(); const r=(s)=>window.__reg.push(Math.round(performance.now()-t0)+'ms '+s);
+    for (const k of ['pushState','replaceState']) { const o=history[k].bind(history); history[k]=(st,ti,url)=>{ r(k+' '+JSON.stringify(st)+' '+(url||'')); return o(st,ti,url); }; }
+    const og=history.go.bind(history); history.go=(n)=>{ r('go '+n+' '+String(new Error().stack||'').split('\\n').slice(2,5).join(' < ').slice(0,300)); return og(n); };
+    const ob=history.back.bind(history); history.back=()=>{ r('back'); return ob(); };
+    addEventListener('popstate',(e)=>r('popstate '+JSON.stringify(e.state)+' '+location.pathname+location.search),true);
+    let antes=null; setInterval(()=>{ const ha=!!document.querySelector('[data-teste="paragem-da-linha"]'); if(ha!==antes){ r('linha aberta: '+ha); antes=ha; } },50);
+  }catch(e){}` });
+  for (const [nome, atraso] of [['normal', 0], ['rede lenta', 1500]]) {
+    if (atraso) await ctx.route(/\/api\//, async (rt) => { await new Promise((r) => setTimeout(r, atraso)); return rt.continue({ headers: { ...rt.request().headers(), 'x-forwarded-for': novoIp() } }); });
+    const p = await ctx.newPage();
+    await p.goto(`${BASE}/transportes?linha=${encodeURIComponent(linha.id)}`, { waitUntil: 'domcontentloaded' });
+    const abriu = await p.locator('[data-teste="paragem-da-linha"]').first().waitFor({ timeout: 25000 }).then(() => true).catch(() => false);
+    await p.waitForTimeout(3000);
+    const ficou = await p.locator('[data-teste="paragem-da-linha"]').count() > 0;
+    nota(`ligação ?linha= (${nome}): abriu ${abriu}, continua aberta ${ficou}`);
+    if (!abriu || !ficou) for (const l of await p.evaluate(() => window.__reg || []).catch(() => [])) console.log('       ', l);
+    await p.close();
+  }
   await ctx.close();
 }
 
