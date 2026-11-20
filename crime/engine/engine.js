@@ -3492,15 +3492,17 @@ export function launderPreview(p, gross) {
   const L = CFG.launder;
   if (!(gross > 0)) return { net: Math.max(0, gross || 0), lav: 0 };
   const free = Math.max(0, L.freeUpTo - p.ilegal), taxed = Math.max(0, gross - free);
-  const lav = Math.floor((taxed * ((p.done.includes(L.course) ? L.courseBp : L.bp) + (law('branq') ? CFG.gov.laws.branq.addBp : 0))) / 10000);
+  const lav = Math.floor((taxed * launderBp(p)) / 10000);
   return { net: gross - lav, lav };
 }
+// v124: a parte da lavagem agora (a licenciatura baixa-a; a lei do branqueamento sobe-a) — o site usa-a para mostrar o que se recebe
+export function launderBp(p) { const L = CFG.launder; return (p.done.includes(L.course) ? L.courseBp : L.bp) + (law('branq') ? CFG.gov.laws.branq.addBp : 0); }
 export function launder(p, gross) {
   const L = CFG.launder;
   if (!(gross > 0)) return { net: gross, lav: 0 };
   const free = Math.max(0, L.freeUpTo - p.ilegal), taxed = Math.max(0, gross - free);
   p.ilegal += gross;
-  const lav = Math.floor((taxed * ((p.done.includes(L.course) ? L.courseBp : L.bp) + (law('branq') ? CFG.gov.laws.branq.addBp : 0))) / 10000);   // v76: lei do branqueamento
+  const lav = Math.floor((taxed * launderBp(p)) / 10000);   // v76: lei do branqueamento
   return { net: gross - lav, lav };
 }
 const opCut = (o, bp, min = 0) => Math.max(min, Math.ceil((o.gain * bp) / 10000));

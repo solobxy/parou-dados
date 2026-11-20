@@ -175,7 +175,7 @@ function react(type, out, before, opts) {
   else if (type === 'house') { toast(t('houseMoved', { x: list('houses')[me.house], n: r.respect })); fx.sfx('claim'); }
   else if (type === 'refill') { toast(t('rfDone', { e: r.energy, m: money(r.price) })); fx.sfx('refill'); }
   else if (type === 'dealBuy') { toast(t('dealBought', { g: num(r.grams), x: list('drugs')[r.d], m: money(r.price) })); fx.sfx('buy'); }
-  else if (type === 'deal') { toast(t('dealSold', { g: r.grams, m: money(r.money), n: r.respect }) + (r.lav ? ' · ' + t('ro_lav', { m: money(r.lav) }) : '')); fx.sfx('cash'); }
+  else if (type === 'deal') { toast(t('dealSold', { g: r.grams, m: money(r.money), n: r.respect }) + (r.lav ? ' ' + t('ro_lav', { m: money(r.lav) }) + '.' : '')); fx.sfx('cash'); }
   else if (type === 'workDone') { fx.vibrate(r.busted ? [40, 60, 40] : 14); fx.sfx(r.busted ? 'bust' : 'cash'); }
   else if (type === 'craftStart') { toast(r.kind === 'comp' ? t('tMade', { n: r.n, x: crIt(r.id).toLowerCase() }) : t('tCraft', { x: crIt(r.id), t: hhmm(r.end) })); fx.sfx(r.kind === 'comp' ? 'claim' : 'buy'); }   // v83
   else if (type === 'digStart') { S.digLast = null; toast(t('tDigGo', { x: t('dgAt_' + r.site), n: r.taps })); fx.sfx('buy'); }   // v85
@@ -1749,16 +1749,16 @@ function skillsBlock(me) {
 // venda de droga na rua: compra-se ao quilo, vende-se ao grama com stamina, até onde a clientela compra hoje
 function dealBlock(me, L, b) {
   const D = S.cfg.deal, dl = me.deal || { dst: D.list.map(() => 0), used: 0, cap: 0 }, left = Math.max(0, dl.cap - dl.used);
-  const out = [h('h2', { class: 'sec' }, t('dealTitle')), h('p', { class: 'small muted', style: 'margin:-4px 2px 10px' }, t('dealSub', { c: dl.cap, l: left }))];
+  const out = [h('h2', { class: 'sec', id: 'venda' }, t('dealTitle')), h('p', { class: 'small muted', style: 'margin:-4px 2px 10px' }, t('dealSub', { c: dl.cap, l: left }))];
   out.push(h('div', { class: 'card vlist vc' }, D.list.map((x, j) => {
     const d = S.cfg.drugs.findIndex((g) => g.id === x.drug), g = S.cfg.drugs[d], grams = Math.floor((x.perBar * D.step) / 100), have = dl.dst[j] || 0;
-    const lock = me.level < x.level, sale = Math.floor((grams * g.price * (10000 + skBp(me, 'trafico'))) / 10000);
+    const lock = me.level < x.level, sale = Math.floor((grams * g.price * (10000 + skBp(me, 'trafico'))) / 10000), net = sale - lavOf(me, sale);   // v124: o botão diz o que se recebe
     return h('div', { class: 'vrow deal' + (lock ? ' dim' : '') }, art('drugs', g.id, 'vth'),
       h('div', { class: 'grow' }, h('b', null, list('drugs')[d]),
-        h('div', { class: 'small muted num' }, lock ? t('opensAt', { n: x.level }) : t('dealHave', { g: num(have), m: money(g.price) }))),
+        h('div', { class: 'small muted num' }, lock ? t('opensAt', { n: x.level }) : t('dealHave', { g: stockTxt(have), m: money(g.price) }))),
       lock ? null : h('div', { class: 'dealb' },
         h('button', { class: 'btn ghost sm num', disabled: !!b || me.cash + me.bank < x.kg, on: { click: (e) => act('dealBuy', { j, kg: 1 }, { el: e.currentTarget }) } }, t('dealBuy', { m: money(x.kg) })),
-        h('button', { class: 'btn buy sm num', disabled: !!b || have < grams || L.energy < D.step || !left, on: { click: (e) => act('deal', { j }, { el: e.currentTarget }) } }, t('dealSell', { g: grams, m: money(sale) }))));
+        h('button', { class: 'btn buy sm num', disabled: !!b || have < grams || L.energy < D.step || !left, on: { click: (e) => act('deal', { j }, { el: e.currentTarget }) } }, t('dealSell', { g: grams, m: money(net) }))));
   })));
   out.push(h('p', { class: 'small muted', style: 'margin:8px 2px 0' }, t('dealNote', { e: D.step })));
   return out;
@@ -3199,7 +3199,7 @@ function qtyPick(n, max, on, allKey = 'fAll') {
     h('button', { class: 'btn ghost sm', type: 'button', 'aria-label': t('fMore'), on: { click: () => step(1) } }, '+'), all);
 }
 // o cabeçalho das folhas: imagem, nome, a linha de apoio e (numa arma) os usos
-const fHead = (L, sub) => h('div', { class: 'row fsh' }, fArt(L.kind, L.id, 'vth'), h('div', { class: 'grow' }, h('h2', null, fName(L.kind, L.id) + (L.n > 1 ? '\u00a0×' + L.n : '')), sub, fUses(L)));
+const fHead = (L, sub) => h('div', { class: 'row fsh' }, fArt(L.kind, L.id, 'vth'), h('div', { class: 'grow' }, h('h2', null, fName(L.kind, L.id) + (L.n > 1 ? ' ×\u2060' + L.n : '')), sub, fUses(L)));
 // falhou (o anúncio acabou, o preço mudou): fecha e mostra a feira como está agora
 const fAfter = (close) => (o) => { close(); if (!o) loadFeira(); };
 function feiraBuySheet(L) {
@@ -3328,7 +3328,7 @@ async function feiraFillSheet(kind, id) {
 }
 function feiraRow(L, right, sub) {
   return h('div', { class: 'vrow fr' }, fArt(L.kind, L.id, 'vth'),
-    h('div', { class: 'grow' }, h('b', null, fName(L.kind, L.id) + (L.n > 1 ? '\u00a0×' + L.n : '')), sub, fUses(L)), right);
+    h('div', { class: 'grow' }, h('b', null, fName(L.kind, L.id) + (L.n > 1 ? ' ×\u2060' + L.n : '')), sub, fUses(L)), right);
 }
 // grupos (catálogo e o que se pode vender): materiais, componentes, colecionáveis, objetos; dentro de cada um, por nome
 const F_GRP = (x) => (x.kind === 'mt' ? (S.cfg.mat.base.includes(x.id) ? 'mat' : S.cfg.mat.rare?.includes(x.id) ? 'rare' : 'comp') : x.kind === 'col' ? 'col' : 'inv');
@@ -5044,6 +5044,29 @@ document.addEventListener('pointercancel', () => dragStop());
 // enquanto se arrasta, o dedo não desliza a página
 document.addEventListener('touchmove', (e) => { if (DR && DR.on) e.preventDefault(); }, { passive: false });
 
+// v124: o que fica no bolso de uma venda ilegal depois da lavagem (igual ao motor: até ao limite entra limpo, daí para cima a lavagem fica com a parte dela)
+const lavOf = (me, gross) => { const L = me.lav; if (!L || !(gross > 0)) return 0; return Math.floor((Math.max(0, gross - L.free) * L.bp) / 10000); };
+const stockTxt = (g) => (g >= 1000 ? (Math.floor(g / 100) / 10).toLocaleString(lang() === 'pt' ? 'pt-PT' : 'en-GB') + ' kg' : num(g) + ' g');
+// v124: uma droga para vender na rua, aberta a partir do inventário: quanto se tem, vender uma dose, comprar mais e ir à venda na rua
+function drugSheet(j) {
+  const me = S.st.me, D = S.cfg.deal, x = D.list[j]; if (!x) return;
+  const dl = me.deal || { dst: D.list.map(() => 0), used: 0, cap: 0 }, have = dl.dst[j] || 0, left = Math.max(0, dl.cap - dl.used), L = live(me), b = busyBanner(me);
+  const d = S.cfg.drugs.findIndex((g) => g.id === x.drug), g = S.cfg.drugs[d], grams = Math.floor((x.perBar * D.step) / 100);
+  const sale = Math.floor((grams * g.price * (10000 + skBp(me, 'trafico'))) / 10000), lav = lavOf(me, sale);
+  let close = () => {};
+  const again = (p) => p.then((o) => { if (o) { close(); drugSheet(j); } });
+  const why = have < grams ? t('dealWhyGrams', { g: grams }) : !left ? t('dealWhyBuyers') : L.energy < D.step ? t('dealWhyStam', { e: D.step }) : null;
+  close = sheet(h('div', { class: 'stack dsheet' },
+    h('div', { class: 'row dsh' }, art('drugs', g.id, 'dsi'), h('div', { class: 'grow' }, h('h2', null, list('drugs')[d]),
+      h('p', { class: 'small num' }, tint(t('dealHave', { g: stockTxt(have), m: money(g.price) }))))),
+    b,
+    h('p', { class: 'small muted', style: 'margin:0' }, t('dealSub', { c: dl.cap, l: left }) + ' ' + t('dealNote', { e: D.step })),
+    h('button', { class: 'btn buy block num', disabled: !!b || !!why, on: { click: (e) => again(act('deal', { j }, { el: e.currentTarget })) } }, t('dealSell', { g: grams, m: money(sale - lav) })),
+    why && !b ? h('p', { class: 'small muted', style: 'margin:-4px 0 0' }, why) : lav ? h('p', { class: 'small muted num', style: 'margin:-4px 0 0' }, t('dealLav', { m: money(sale), l: money(lav), p: pctOf(me.lav.bp) + '%' })) : null,
+    h('button', { class: 'btn ghost block num', disabled: !!b || me.cash + me.bank < x.kg, on: { click: (e) => again(act('dealBuy', { j, kg: 1 }, { el: e.currentTarget })) } }, t('dealBuy', { m: money(x.kg) })),
+    h('button', { class: 'linkbtn', on: { click: () => { close(); go('rob'); requestAnimationFrame(() => { const el = document.getElementById('venda'), hd = document.querySelector('header.hud');
+      if (el) window.scrollBy(0, el.getBoundingClientRect().top - (hd ? hd.getBoundingClientRect().bottom : 0) - 8); }); } } }, t('dealOpen'))));
+}
 function screenInv() {
   const me = S.st.me, used = me.invUsed, cap = me.invCap, full = used >= cap;
   const out = [pageHead('inv', null, true), dollPanel(me)];
@@ -5057,9 +5080,13 @@ function screenInv() {
       on: { click: () => { if (!dragJustEnded()) itemSheet(i); } } },
       Object.assign(itArt(it.id, 'ici'), { alt: '' }), fits ? cmpMark(me, it) : null, n > 1 ? h('span', { class: 'icn num' }, n > 999 ? num(Math.floor(n / 1000)) + 'k' : num(n)) : null, h('span', { class: 'icl' }, itName(it.id)));
   });
-  const D = S.cfg.deal, drugs = ((me.deal && me.deal.dst) || []).map((g, j) => [g, S.cfg.drugs.findIndex((x) => x.id === D.list[j].drug)]).filter(([g]) => g > 0);
-  if (drugs.length) cells.push(h('button', { class: 'invc drug', on: { click: () => go('rob') } }, h('span', { class: 'icl' }, t('invDrugs')),
-    h('span', { class: 'small muted num' }, drugs.map(([g, d]) => num(g) + ' g ' + list('drugs')[d].toLowerCase()).join(' · '))));
+  // v124: a droga para vender na rua aparece como os outros itens (cada uma ocupa um espaço): imagem, gramas e nome; o toque abre a venda dela
+  const D = S.cfg.deal;
+  ((me.deal && me.deal.dst) || []).forEach((g, j) => { if (!(g > 0) || !D.list[j]) return;
+    const d = S.cfg.drugs.findIndex((x) => x.id === D.list[j].drug), nm = list('drugs')[d];
+    cells.push(h('button', { class: 'invc', 'aria-label': nm + ' · ' + stockTxt(g), on: { click: () => drugSheet(j) } },
+      Object.assign(art('drugs', D.list[j].drug, 'ici'), { alt: '' }), h('span', { class: 'icn num' }, stockTxt(g)), h('span', { class: 'icl' }, nm)));
+  });
   const alvo = Math.min(Math.max(cap, cells.length), Math.ceil((cells.length + 1) / 4) * 4);   // os espaços livres veem-se até ao fim da fila
   while (cells.length < alvo) cells.push(h('div', { class: 'invc vazio', 'aria-hidden': 'true' }));
   out.push(h('div', { class: 'invg' }, cells));

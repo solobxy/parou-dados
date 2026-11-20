@@ -3451,8 +3451,6 @@ body .tgt .pct.hi { color: var(--cash); } body .tgt .pct.mid { color: var(--oran
 .invc .icl { position: absolute; left: -9999px; }
 .invc .icn { position: absolute; right: 2px; bottom: 2px; padding: 1px 4px; border-radius: 3px; background: #000c; font: 700 13px/1.2 var(--num); color: #fff; }
 .invc.vazio { background: repeating-linear-gradient(-45deg, #232323 0 6px, #202020 6px 12px); box-shadow: none; }
-.invc.drug { grid-column: 1 / -1; aspect-ratio: auto; display: grid; gap: 2px; padding: 8px 10px; text-align: left; }
-.invc.drug .icl { position: static; font-weight: 700; color: #eee; }
 .dhint { margin: 10px 2px 0; line-height: 1.5; }
 /* a arrastar */
 .dghost { position: fixed; left: 0; top: 0; z-index: 1000; width: 68px; height: 68px; pointer-events: none; border-radius: 6px; overflow: hidden; box-shadow: 0 10px 24px #000d, 0 0 0 2px #85b200; opacity: .95; }
@@ -4429,3 +4427,32 @@ body.kb main { padding-bottom: 70vh; }   /* com o teclado aberto, espaço para o
 .landword { margin: 0; line-height: 0; }
 .landword img { display: block; width: min(100%, 420px); height: auto; }
 @media (prefers-reduced-motion: reduce) { .neon { animation: none; } }
+
+/* ===== v124: nenhuma palavra partida a meio (pedido de 20/11, com a letra maior do Android) ===== */
+/* Atalhos (Lutas): a imagem enche o botão e o nome vai por cima, em baixo, com a largura toda — «Classificação» e «Assassino» cabem inteiros */
+body .hlink { position: relative; isolation: isolate; overflow: hidden; display: flex; align-items: flex-end; gap: 0; min-height: 68px; padding: 8px 10px; background: var(--s1); }
+body .hlink .hthumb { position: absolute; inset: 0; z-index: -2; width: 100%; height: 100%; object-fit: cover; border-radius: 0; outline: 0; }
+body .hlink::after { content: ''; position: absolute; inset: 0; z-index: -1; background: linear-gradient(to top, #0a0c11f0 0%, #0a0c11a6 40%, #0a0c1126 78%, #0a0c1100 100%); }
+body .hlink span { font: 700 16px/1.15 var(--disp); color: #fff; text-shadow: 0 1px 2px #000; overflow-wrap: normal; text-wrap: balance; }
+body .hlink svg.i { display: none; }
+body .hlink:active { filter: brightness(1.15); }
+/* duas colunas no máximo; quando a letra cresce (rem) e já não cabem duas de 8rem, uma só; o último sozinho ocupa a linha toda */
+body .hlinks { grid-template-columns: repeat(auto-fit, minmax(max(8rem, calc(50% - 5px)), 1fr)); }
+body .hlink:last-child:nth-child(odd) { grid-column: 1 / -1; }
+/* com uma folha aberta, os avisos aparecem em cima e não tapam os botões dela */
+body:has(.sheet) .toasts { bottom: auto; top: calc(12px + env(safe-area-inset-top)); }
+/* Classificação: a linha de baixo (gangue, nível, título) passa à linha seguinte em vez de acabar em «…» */
+.rkl { white-space: normal; text-overflow: clip; }
+/* Ginásio: o nome da estatística vai para baixo do número quando não cabe ao lado */
+.gpow > div { flex-wrap: wrap; row-gap: 2px; }
+.gpow span { white-space: normal; overflow: visible; text-overflow: clip; }
+/* Cave: os materiais numa coluna até aos 389 px («Chemicals» partia-se a 360) */
+@media (max-width: 389px) { .cvdep { grid-template-columns: 1fr; } }
+/* Ecrãs muito estreitos ou letra muito grande: os nomes encolhem um pouco em vez de se partirem */
+@media (max-width: 339px) {
+  body .who .title { font-size: 14px; }
+  .vrow.fr .grow > b, .cont .grow b { font-size: 15px; }
+  .vrow.hkr .grow > b { font-size: 14px; }
+  .vrow.hkr .vth, .vrow.fxr .vth { width: 52px; height: 52px; }
+  .cont.rdy .open { padding: 9px 12px; }
+}
