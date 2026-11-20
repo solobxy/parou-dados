@@ -31,7 +31,7 @@ const RONDA_TESTE = process.env.PRIMEIRA_RONDA ? dataDe(process.env.PRIMEIRA_RON
 // Épocas de 28 dias a contar da sexta 13/11/2026 às 21:00 de Lisboa (PRIMEIRA_EPOCA=AAAA-MM-DD muda-a, para testes)
 const ANCORA = dataDe(process.env.PRIMEIRA_EPOCA || process.env.PRIMEIRA_RONDA || '2026-11-13');
 const rng = process.env.TESTE_SEMENTE ? seededRng(+process.env.TESTE_SEMENTE) : cryptoRng();   // nos testes, a sorte pode ser sempre a mesma
-const VERSAO = 122;   // sobe quando o servidor muda, para se confirmar de fora que a versão nova já está a correr
+const VERSAO = 123;   // sobe quando o servidor muda, para se confirmar de fora que a versão nova já está a correr
 const ATOS_3S = +(process.env.ATOS_3S || 15), ATOS_MIN = +(process.env.ATOS_MIN || 400); // ações por conta: 15 em 3 s, 400 por minuto
 
 // ---------- relógio que nunca anda para trás ----------
@@ -71,6 +71,7 @@ db.exec('CREATE UNIQUE INDEX IF NOT EXISTS contas_email ON contas(email) WHERE e
 for (const col of ['cwin', 'cnet']) { try { db.exec(`ALTER TABLE diario ADD COLUMN ${col} INTEGER NOT NULL DEFAULT 0`); } catch { /* já existe */ } }
 const q = {
   contaPorNome: db.prepare('SELECT id, nome, nome_lc, hash, criada, lingua FROM contas WHERE nome_lc = ?'),   // sem o email: esse nunca entra num pedido
+  nomesPor: db.prepare('SELECT id, nome FROM contas WHERE nome_lc >= ? AND nome_lc < ? ORDER BY nome_lc LIMIT 40'),   // v123: sugestões de nomes (só id e nome)
   contaPorId: db.prepare('SELECT id, nome, lingua, criada FROM contas WHERE id = ?'),
   novaConta: db.prepare('INSERT INTO contas (id, nome, nome_lc, hash, criada, lingua, email) VALUES (?, ?, ?, ?, ?, ?, ?)'),
   contaPorEmail: db.prepare('SELECT id FROM contas WHERE email = ?'),
@@ -3194,6 +3195,20 @@ async function tratar(req, res) {
     if (!limite('perfil:' + conta, 40, 10_000, now)) return enviar(res, 429, { error: 'SLOW_DOWN' });
     const pf = perfilPublico(conta, url.searchParams.get('n'), now, w);
     return pf ? enviar(res, 200, { now, ...pf }) : enviar(res, 404, { error: 'NO_TARGET' });
+  }
+  if (req.method === 'GET' && path === '/api/names') {   // v123: sugestões de nomes para o herdeiro (sem texto: os da gangue)
+    if (!limite('nomes:' + conta, 30, 10_000, now)) return enviar(res, 429, { error: 'SLOW_DOWN' });
+    carregarRonda(w.n);
+    const s = String(url.searchParams.get('q') || '').toLowerCase(), g = gangueDe(conta), lv = (id) => E.level(jogadores.get(id));
+    let ids;
+    if (!s) ids = g ? [...g.membros.keys()].filter((id) => id !== conta && jogadores.has(id)).sort((x, y) => jogadores.get(y).respect - jogadores.get(x).respect) : [];
+    else if (/^[a-z0-9_]{1,16}$/.test(s)) {   // por ordem alfabética, mas primeiro quem jogou nos últimos 7 dias
+      const ativo = (id) => Math.max(vistos.get(id) || 0, jogadores.get(id).t || 0) > now - 7 * 86_400_000;
+      ids = q.nomesPor.all(s, s + '~').map((c) => c.id).filter((id) => id !== conta && jogadores.has(id));
+      ids = [...ids.filter(ativo), ...ids.filter((id) => !ativo(id))];
+    }
+    else ids = [];
+    return enviar(res, 200, { now, list: ids.slice(0, 6).map((id) => ({ name: nomeDe(id), lv: lv(id) })) });
   }
   if (req.method === 'GET' && path === '/api/jail') {   // v115: quem está preso agora (e a hipótese de o tirar)
     if (w.phase !== 'play') return enviar(res, 200, { now, list: [] });

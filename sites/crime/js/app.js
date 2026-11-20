@@ -606,7 +606,7 @@ function render(force) {
   document.body.classList.toggle('gig-on', !!(S.gig && !S.gig.res && (S.tab === 'gigs' || S.tab === 'job')));
   // a meio de uma jogada no casino, nada redesenha a mesa (eventos, notícias, relógio); só mudar de sítio
   if (!force && S.casinoBusy && S.tab === S.drawn && $main && document.body.contains($main)) { tabDots(); return; }
-  if (!force && S.tab === S.drawn && document.activeElement?.id === 'bamt') { tabDots(); updateHud(); return; }   // a meio de escrever uma quantia no banco
+  if (!force && S.tab === S.drawn && ['bamt', 'ckheir'].includes(document.activeElement?.id)) { tabDots(); updateHud(); return; }   // a meio de escrever uma quantia no banco ou o nome do herdeiro (v123)
   if (!$main || !document.body.contains($main)) shell();
   const cur = tabOf(S.tab);
   $tabs.querySelectorAll('.tab').forEach((b) => b.setAttribute('aria-current', b.dataset.tab === cur ? 'page' : 'false'));
@@ -5277,12 +5277,35 @@ function screenMorte() {
           : h('button', { class: 'btn danger block big ckkill', disabled: true }, t('ckKill', { x: P.name, e: K.execE }))),
       h('button', { class: 'linkbtn ckdrop', on: { click: () => act('ckDrop') } }, t('ckDrop'))));
   }
-  // o testamento
-  let inp;
+  // o testamento (v123: sugere nomes enquanto se escreve; sem nada escrito, os da gangue)
+  const inp = h('input', { id: 'ckheir', class: 'grow', placeholder: t('ckWillPh'), maxlength: 16, autocomplete: 'off', autocapitalize: 'off', spellcheck: 'false', enterkeyhint: 'done',
+    'aria-describedby': 'ckheirsug', value: S.heirDraft != null && S.drawn === 'morte' ? S.heirDraft : V.heirName || '' });
+  const sug = h('div', { id: 'ckheirsug', class: 'cksug', 'aria-live': 'polite' });
+  const btn = h('button', { class: 'btn ghost', on: { click: (e) => save(e.currentTarget) } });
+  // o botão diz o que faz: guardar um nome novo, tirar o herdeiro (campo vazio) ou nada (o mesmo nome)
+  const same = () => inp.value.trim().toLowerCase() === (V.heirName || '').toLowerCase(), paint = () => { btn.textContent = !inp.value.trim() && V.heirName ? t('ckWillDel') : t('ckWillSave'); btn.disabled = same(); };
+  paint();
+  const save = async (el) => { if (same()) return; const o = await act('ckHeir', { name: inp.value.trim() }, { el }); if (o) { S.heirDraft = null; sug.replaceChildren(); } };
+  // com o teclado aberto, o cartão sobe para baixo da barra de cima e as sugestões ficam à vista (body.kb dá espaço por baixo para isso)
+  const lift = () => { if (document.activeElement !== inp) return; const card = inp.closest('.card'), hd = document.querySelector('header.hud'); if (!card) return;
+    const y = card.getBoundingClientRect().top - ((hd ? hd.getBoundingClientRect().bottom : 0) + 8); if (y > 4) window.scrollBy(0, y); };
+  let tm = 0, seq = 0;
+  const fill = async () => {
+    const n = ++seq, q = inp.value.trim(); let r;
+    try { r = await api('GET', '/api/names?q=' + encodeURIComponent(q)); } catch { return; }
+    if (n !== seq || !sug.isConnected || document.activeElement !== inp) return;
+    const L = (r.list || []).filter((x) => x.name.toLowerCase() !== q.toLowerCase() && x.name !== V.heirName).slice(0, 4);
+    sug.replaceChildren(...(L.length ? [h('span', { class: 'small muted' }, q ? t('ckWillSug') : t('ckWillGang'))] : []), ...L.map((x) => h('button', { type: 'button', class: 'cksb',
+      on: { pointerdown: (e) => e.preventDefault(), click: () => { inp.value = x.name; S.heirDraft = x.name; sug.replaceChildren(); paint(); inp.focus(); } } }, h('b', null, x.name), h('span', { class: 'num' }, t('ckLv', { n: x.lv })))));
+  };
+  inp.addEventListener('input', () => { S.heirDraft = inp.value; paint(); clearTimeout(tm); tm = setTimeout(fill, 180); });
+  inp.addEventListener('focus', () => { document.body.classList.add('kb'); clearTimeout(tm); fill(); setTimeout(lift, 320); });
+  inp.addEventListener('blur', () => { setTimeout(() => { if (document.activeElement !== inp) { seq++; sug.replaceChildren(); document.body.classList.remove('kb'); } }, 150); });
+  inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); save(null); } });
   out.push(h('h2', { class: 'sec' }, t('ckWillT')), h('div', { class: 'card stack' },
     h('p', { class: 'small', style: 'margin:0' }, V.heirName ? t('ckWillHas', { x: V.heirName, p: pctOf(K.willBp) + '%' }) : t('ckWillNone', { p: pctOf(K.willBp) + '%' })),
-    h('div', { class: 'row ckwill' }, h('label', { class: 'sr', for: 'ckheir' }, t('ckWillLbl')), inp = h('input', { id: 'ckheir', class: 'grow', placeholder: t('ckWillPh'), maxlength: 16, autocomplete: 'off', value: V.heirName || '' }),
-      h('button', { class: 'btn ghost', on: { click: (e) => act('ckHeir', { name: inp.value.trim() }, { el: e.currentTarget }) } }, t('ckWillSave')))));
+    h('div', { class: 'row ckwill' }, h('label', { class: 'sr', for: 'ckheir' }, t('ckWillLbl')), inp, btn),
+    sug));
   return out;
 }
 function hitmanSheet(x) {
@@ -7199,7 +7222,7 @@ async function openPlayer(name, fromChat) {
   const dt = (ts) => new Date(ts).toLocaleDateString(lang() === 'pt' ? 'pt-PT' : 'en-GB', { timeZone: 'Europe/London', day: 'numeric', month: 'long', year: 'numeric' });
   const stTxt = !P.active ? t('pfOld') : P.st.k === 'jail' ? t('pfJail', { h: hhmm(P.st.until) }) : P.st.k === 'hosp' ? t('pfHosp', { h: hhmm(P.st.until) })
     : P.st.k === 'away' ? (P.st.fly ? t('whyFly', { x: trCityF(P.st.at, 'Para') }) : trCityF(P.st.at, 'Em')) : t('pfFree');
-  const ago = (ms) => { const m = Math.max(1, Math.round(ms / 60_000)); return m < 60 ? t('agoM', { n: m }) : m < 1440 ? t('agoH', { n: Math.round(m / 60) }) : t('agoD', { n: Math.round(m / 1440) }); };
+  const ago = (ms) => { const m = Math.max(1, Math.round(ms / 60_000)); return m < 60 ? t('agoM', { n: m }) : m < 1440 ? t('agoH', { n: Math.round(m / 60) }) : Math.round(m / 1440) === 1 ? t('agoD1') : t('agoD', { n: Math.round(m / 1440) }); };
   const seen = P.online ? h('span', { class: 'c-cash' }, '● ' + t('pfOnline')) : P.seen ? h('span', { class: 'muted' }, t('pfSeen', { t: ago(n - P.seen) })) : null;
   const vit = (P.vit || []).map(honOf).filter(Boolean), bar = P.hon && honOf(P.hon);
   let close;
@@ -7210,10 +7233,15 @@ async function openPlayer(name, fromChat) {
       h('button', { class: 'btn buy', on: { click: (e) => { const el = e.currentTarget; close(); withShield((drop) => act('attack', { target: P.name, mode: 'beat', drop }, { el })); } } }, t('pfBeat', { p: pct(C.chance) })),
       h('button', { class: 'btn ghost', on: { click: (e) => { const el = e.currentTarget; close(); withShield((drop) => act('attack', { target: P.name, mode: 'mug', drop }, { el })); } } }, t('pfMug'))));
     else acts.push(h('p', { class: 'small muted' }, t('pfCant', { x: errText(C.why).replace(/^./, (c) => c.toLowerCase()) })));
-    if (C.hp && !C.same && C.hw !== 'LOW_LEVEL' && C.hw !== 'TARGET_AWAY') acts.push(h('button', { class: 'btn ghost dng', on: { click: () => { close(); hitmanSheet(x); } } }, t('hmBtn', { m: moneyShort(C.hp) })));
-    const K = S.cfg.ck, mk2 = S.st.me;   // v121: planear a morte (nível 60 dos dois lados, fora da própria gangue)
-    if (K && mk2.level >= K.level && P.level >= K.level && !C.same) acts.push(P.ckG > now() ? h('p', { class: 'small muted' }, t('ckGraceP', { h: untilTxt(P.ckG) })) : mk2.ck?.plan && mk2.ck.plan.name === P.name ? h('button', { class: 'btn ghost dng', on: { click: () => { close(); go('morte'); } } }, icon('skull'), t('ckSeePlan'))
-      : h('button', { class: 'btn ghost', on: { click: () => { close(); ckStartSheet(P.name, P.level); } } }, icon('skull'), t('ckPlanBtn')));
+    // v123: o assassino e o plano de morte lado a lado, como espancar e assaltar (os dois são para o tirar do caminho)
+    const kill = [], K = S.cfg.ck, mk2 = S.st.me;
+    if (C.hp && !C.same && C.hw !== 'LOW_LEVEL' && C.hw !== 'TARGET_AWAY') kill.push(h('button', { class: 'btn ghost dng', disabled: mk2.cash + mk2.bank < C.hp, on: { click: () => { close(); hitmanSheet(x); } } }, t('hmBtn', { m: moneyShort(C.hp) })));
+    const ckOk = K && mk2.level >= K.level && P.level >= K.level && !C.same, ckWait = ckOk && P.ckG > now();   // v121: nível 60 dos dois lados, fora da própria gangue
+    if (ckOk) kill.push(ckWait ? h('button', { class: 'btn ghost', disabled: true }, t('ckPlanBtn'))   // morreu há pouco: o botão fica no lugar, apagado, e a frase diz até quando
+      : mk2.ck?.plan && mk2.ck.plan.name === P.name ? h('button', { class: 'btn ghost dng', on: { click: () => { close(); go('morte'); } } }, t('ckSeePlan'))
+      : h('button', { class: 'btn ghost dng', on: { click: () => { close(); ckStartSheet(P.name, P.level); } } }, t('ckPlanBtn')));
+    if (kill.length) acts.push(h('div', { class: 'row pfacts' }, kill));
+    if (ckWait) acts.push(h('p', { class: 'small muted' }, t('ckGraceP', { h: untilTxt(P.ckG) })));
     if (C.same && C.bail) acts.push(h('button', { class: 'btn buy', on: { click: () => { close(); act('gangBail', { name: P.name }); } } }, icon('lock'), t('gBail', { m: moneyShort(C.bail) })));
     if (C.same && C.medic) acts.push(h('button', { class: 'btn buy', on: { click: () => { close(); act('gangMedic', { name: P.name }); } } }, icon('pill'), t('gMedic', { m: moneyShort(C.medic) })));
   }
