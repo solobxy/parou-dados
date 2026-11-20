@@ -123,7 +123,7 @@ jobs:
         working-directory: app
         run: |
           mkdir -p ../res
-          for t in pesquisa-locais cache-limitada cache-linhas-perto idioma-aparelho caminho-a-pe convite-instalar nomes-paragens ilhas fuso-ilhas; do
+          for t in pesquisa-locais cache-limitada cache-linhas-perto idioma-aparelho caminho-a-pe convite-instalar nomes-paragens ilhas fuso-ilhas horario-dia; do
             echo "== $t"
             APP=$PWD node --import tsx ../auditoria/$t.mjs 2>&1 | grep -v "Experimental\|trace-warnings" | tee ../res/$t.txt | tail -40
           done
@@ -239,6 +239,13 @@ jobs:
           mkdir -p ../res
           (cd ../app && APP=$PWD node --import tsx ../auditoria/avisos-linha.mjs 2>&1 | grep -v "Experimental\|trace-warnings") | tee ../res/avisos-linha.txt | tail -40
           SAIDA=../res timeout 300 node avisos-linha-ui.mjs 2>&1 | tee ../res/avisos-linha-ui.txt | tail -40
+
+      - name: Testar os horários dos próximos dias numa linha (browser)
+        continue-on-error: true
+        working-directory: auditoria
+        run: |
+          mkdir -p ../res
+          SAIDA=../res timeout 400 node horario-dia-ecra.mjs 2>&1 | tee ../res/horario-dia-ecra.txt | tail -60
 
       - name: Testar o movimento dos autocarros no mapa (browser)
         continue-on-error: true

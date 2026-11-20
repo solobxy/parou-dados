@@ -146,3 +146,7 @@ jobs:
       - name: Fuso dos operadores dos Açores (pela posição das paragens)
         working-directory: app
         run: APP=$PWD node --import tsx ../auditoria/fuso-ilhas.mjs 2>&1 | grep -v "Experimental\|trace-warnings" | tail -20; exit ${PIPESTATUS[0]}
+
+      - name: Horários dos próximos dias numa linha (dia útil, sábado, previsto, última paragem)
+        working-directory: app
+        run: APP=$PWD node --import tsx ../auditoria/horario-dia.mjs 2>&1 | grep -v "Experimental\|trace-warnings" | tail -30; exit ${PIPESTATUS[0]}
