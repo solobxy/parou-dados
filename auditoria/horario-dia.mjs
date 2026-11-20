@@ -19,7 +19,8 @@ const ok = (n, c, e = '') => { if (!c) falhas++; console.log(c ? 'OK     ' : 'FA
 const B = await import(path.join(APP, 'src/server/db/gtfsDatabase.ts'));
 const db = B.getDatabase();
 db.exec('CREATE TABLE IF NOT EXISTS stop_routes (stop_id TEXT, route_id TEXT, direction_id INTEGER, stop_sequence INTEGER)');
-const { DateTime } = await import('luxon');
+const { createRequire } = await import('node:module');
+const { DateTime } = createRequire(path.join(path.resolve(APP), 'package.json'))('luxon'); // o luxon é da app, não da pasta dos testes
 
 // Base: linha t:7 com 3 paragens (A → B → C) no sentido 0 e o inverso no sentido 1.
 // Serviço DU (seg–sex) até 30/11/2026; SAB (sábados) até 30/11/2026; feriado 1/12 sem nada publicado depois de 30/11.

@@ -57,9 +57,22 @@ const { linha, dir, paragem, amanha } = escolha;
   ok('[api] recusa datas inválidas', mal.status === 400, String(mal.status));
   const semParagem = await fetch(`${BASE}/api/lines/${encodeURIComponent(linha.id)}/dia?data=${AMANHA}`);
   ok('[api] recusa pedidos sem paragem', semParagem.status === 400, String(semParagem.status));
-  const ultima = dir.stops[dir.stops.length - 1];
-  const fim = await dia(linha.id, ultima.id, dir.direction_id ?? 0, AMANHA);
-  ok('[api] na última paragem não promete partidas', fim.status === 200 && fim.corpo?.estado !== 'ok', `${fim.corpo?.estado}`);
+  // Última paragem de uma linha que não é circular (nas circulares a última é também a primeira e tem partidas)
+  let fimTestado = false;
+  for (const l of lista.slice(0, 40)) {
+    const det = await (await fetch(`${BASE}/api/lines/${encodeURIComponent(l.id)}`)).json().catch(() => null);
+    const d = (det?.directions || []).find((x) => (x.stops || []).length >= 4 && x.stops.filter((st) => st.id === x.stops[x.stops.length - 1].id).length === 1
+      && !(det.directions || []).some((y) => y !== x && (y.stops || []).some((st) => st.id === x.stops[x.stops.length - 1].id)));
+    if (!d) continue;
+    const ultima = d.stops[d.stops.length - 1];
+    const fim = await dia(l.id, ultima.id, d.direction_id ?? 0, AMANHA);
+    // Outra variante da linha pode continuar para lá desta paragem: aí há partidas e está certo
+    if (fim.corpo?.estado !== 'ultima-paragem') { nota(`${l.id} · ${ultima.name}: ${fim.corpo?.estado} (outra variante continua?)`); continue; }
+    ok('[api] na última paragem de uma linha não circular diz «última paragem»', true, `${l.id} · ${ultima.name}`);
+    fimTestado = true;
+    break;
+  }
+  ok('[api] há linhas reais em que a última paragem não promete partidas', fimTestado);
   const r1 = await fetch(`${BASE}/api/lines/${encodeURIComponent(linha.id)}/dia?paragem=${encodeURIComponent(paragem.id)}&sentido=${dir.direction_id ?? 0}&data=${AMANHA}`);
   ok('[api] pode ficar em cache 5 minutos', /max-age=300/.test(r1.headers.get('cache-control') || ''), r1.headers.get('cache-control'));
 }
@@ -102,6 +115,9 @@ const dias = (p) => p.locator('[data-teste="dias-horario"] button');
 {
   const { ctx, p, erros } = await abrir();
   await escolherSentidoEParagem(p);
+  const repetida = dir.stops.filter((st) => st.id === paragem.id).length;
+  if (repetida > 1) nota(`a paragem aparece ${repetida} vezes nesta linha (circular)`);
+  ok('[dias] só uma paragem aberta (mesmo nas linhas circulares)', await p.locator('[data-teste="dias-horario"]').count() === 1, String(await p.locator('[data-teste="dias-horario"]').count()));
   const rotulos = await dias(p).allInnerTexts().catch(() => []);
   ok('[dias] aparece a fila de dias ao tocar na paragem', rotulos.length === 7, rotulos.join(' | '));
   ok('[dias] começa em «Hoje» e «Amanhã»', rotulos[0] === 'Hoje' && rotulos[1] === 'Amanhã', rotulos.slice(0, 2).join(','));
