@@ -16,6 +16,11 @@ let falhas = 0;
 const ok = (nome, cond, extra = '') => { if (!cond) falhas++; console.log(cond ? 'OK     ' : 'FALHOU ', nome, extra); };
 const nota = (s) => console.log('NOTA   ', s);
 
+// O servidor limita os pedidos à API por endereço e por minuto: cada parte do teste usa o seu (rede de exemplo 198.51.100.x)
+let proximoIp = 10;
+const novoIp = () => `198.51.100.${proximoIp++}`;
+const IP_API = novoIp();
+const obter = (url) => fetch(url, { headers: { 'x-forwarded-for': IP_API } });
 const diaLisboa = (desvio) => {
   const hoje = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Lisbon', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
   const [a, m, d] = hoje.split('-').map(Number);
@@ -23,15 +28,15 @@ const diaLisboa = (desvio) => {
 };
 const AMANHA = diaLisboa(1);
 const dia = async (id, paragem, sentido, data) => {
-  const r = await fetch(`${BASE}/api/lines/${encodeURIComponent(id)}/dia?paragem=${encodeURIComponent(paragem)}&sentido=${sentido}&data=${data}`);
+  const r = await obter(`${BASE}/api/lines/${encodeURIComponent(id)}/dia?paragem=${encodeURIComponent(paragem)}&sentido=${sentido}&data=${data}`);
   return { status: r.status, corpo: await r.json().catch(() => null) };
 };
 
 // 1. Escolher uma linha real com paragens e partidas amanhã (não UNIR: essas não têm horários por viagem)
 let escolha = null;
-const lista = ((await (await fetch(`${BASE}/api/lines?page=1`)).json()).lines || []).filter((l) => !String(l.id).startsWith('unir:'));
+const lista = ((await (await obter(`${BASE}/api/lines?page=1`)).json()).lines || []).filter((l) => !String(l.id).startsWith('unir:'));
 for (const l of lista.slice(0, 25)) {
-  const det = await (await fetch(`${BASE}/api/lines/${encodeURIComponent(l.id)}`)).json().catch(() => null);
+  const det = await (await obter(`${BASE}/api/lines/${encodeURIComponent(l.id)}`)).json().catch(() => null);
   const dir = (det?.directions || []).find((d) => (d.stops || []).length >= 4);
   if (!dir) continue;
   const paragem = dir.stops[1];
@@ -55,12 +60,12 @@ const { linha, dir, paragem, amanha } = escolha;
   ok('[api] recusa datas a mais de 14 dias', longe.status === 400, String(longe.status));
   const mal = await dia(linha.id, paragem.id, 0, '2026-13-45');
   ok('[api] recusa datas inválidas', mal.status === 400, String(mal.status));
-  const semParagem = await fetch(`${BASE}/api/lines/${encodeURIComponent(linha.id)}/dia?data=${AMANHA}`);
+  const semParagem = await obter(`${BASE}/api/lines/${encodeURIComponent(linha.id)}/dia?data=${AMANHA}`);
   ok('[api] recusa pedidos sem paragem', semParagem.status === 400, String(semParagem.status));
   // Última paragem de uma linha que não é circular (nas circulares a última é também a primeira e tem partidas)
   let fimTestado = false;
   for (const l of lista.slice(0, 40)) {
-    const det = await (await fetch(`${BASE}/api/lines/${encodeURIComponent(l.id)}`)).json().catch(() => null);
+    const det = await (await obter(`${BASE}/api/lines/${encodeURIComponent(l.id)}`)).json().catch(() => null);
     const d = (det?.directions || []).find((x) => (x.stops || []).length >= 4 && x.stops.filter((st) => st.id === x.stops[x.stops.length - 1].id).length === 1
       && !(det.directions || []).some((y) => y !== x && (y.stops || []).some((st) => st.id === x.stops[x.stops.length - 1].id)));
     if (!d) continue;
@@ -73,13 +78,14 @@ const { linha, dir, paragem, amanha } = escolha;
     break;
   }
   ok('[api] há linhas reais em que a última paragem não promete partidas', fimTestado);
-  const r1 = await fetch(`${BASE}/api/lines/${encodeURIComponent(linha.id)}/dia?paragem=${encodeURIComponent(paragem.id)}&sentido=${dir.direction_id ?? 0}&data=${AMANHA}`);
+  const r1 = await obter(`${BASE}/api/lines/${encodeURIComponent(linha.id)}/dia?paragem=${encodeURIComponent(paragem.id)}&sentido=${dir.direction_id ?? 0}&data=${AMANHA}`);
   ok('[api] pode ficar em cache 5 minutos', /max-age=300/.test(r1.headers.get('cache-control') || ''), r1.headers.get('cache-control'));
 }
 
 const browser = await chromium.launch();
 async function abrir({ largura = 390, altura = 844, tema = 'claro', falhar = false, atrasoMs = 0 } = {}) {
   const ctx = await browser.newContext({
+    extraHTTPHeaders: { 'x-forwarded-for': novoIp() },
     viewport: { width: largura, height: altura }, hasTouch: largura < 1000, isMobile: largura < 1000, locale: 'pt-PT', timezoneId: 'Europe/Lisbon', serviceWorkers: 'block',
     userAgent: largura < 1000 ? 'Mozilla/5.0 (Linux; Android 14; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Mobile Safari/537.36' : undefined,
   });
@@ -190,7 +196,7 @@ for (const [largura, tema] of [[320, 'claro'], [1280, 'claro'], [390, 'escuro'],
   const painel = p.locator('[data-teste="horario-dia"]');
   await painel.waitFor({ timeout: 10000 }).catch(() => {});
   await painel.scrollIntoViewIfNeeded().catch(() => {});
-  const larg = await p.evaluate(() => document.documentElement.scrollWidth);
+  const larg = await p.evaluate(() => document.documentElement.scrollWidth).catch(() => 99999);
   ok(`[${largura} ${tema}] horário visível`, await painel.count() === 1);
   ok(`[${largura} ${tema}] sem scroll lateral da página`, larg <= largura, `${larg}`);
   const caixa = await painel.boundingBox().catch(() => null);
