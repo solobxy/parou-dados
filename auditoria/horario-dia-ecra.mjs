@@ -232,7 +232,8 @@ for (const [largura, tema] of [[320, 'claro'], [1280, 'claro'], [390, 'escuro'],
   await ctx.close();
 }
 
-// 6. Diagnóstico (não conta como falha): abrir pela ligação /transportes?linha=… (vinda das páginas públicas das linhas)
+// 6. Abrir pela ligação /transportes?linha=… (o botão das páginas públicas das linhas). Com a rede lenta a vista
+//    montava-se duas vezes e a segunda já não via o parâmetro: a linha não abria (encontrado a 20/11/2026)
 {
   const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true, locale: 'pt-PT', timezoneId: 'Europe/Lisbon', serviceWorkers: 'block' });
   await ctx.addInitScript({ content: `try{ localStorage.setItem('parou_aviso_instalar','1'); localStorage.setItem('parou_bemvindo','visto');
@@ -250,7 +251,7 @@ for (const [largura, tema] of [[320, 'claro'], [1280, 'claro'], [390, 'escuro'],
     const abriu = await p.locator('[data-teste="paragem-da-linha"]').first().waitFor({ timeout: 25000 }).then(() => true).catch(() => false);
     await p.waitForTimeout(3000);
     const ficou = await p.locator('[data-teste="paragem-da-linha"]').count() > 0;
-    nota(`ligação ?linha= (${nome}): abriu ${abriu}, continua aberta ${ficou}`);
+    ok(`[ligação ?linha=, ${nome}] abre a linha e ela fica aberta`, abriu && ficou, `abriu ${abriu}, continua ${ficou}`);
     if (!abriu || !ficou) for (const l of await p.evaluate(() => window.__reg || []).catch(() => [])) console.log('       ', l);
     await p.close();
   }
