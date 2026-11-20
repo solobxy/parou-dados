@@ -1,0 +1,10 @@
+== 2026-11-20T21:03:53Z acao=comando
+IP: 2.31.13.85
+== Saída no servidor
+versao 8d713b6
+(Use `node --trace-warnings ...` to show where the warning was created)
+id,publicacao_id,criado | [{"id":"horarios-proximos-dias","publicacao_id":"pub-mwpgwps9-978f0a10cf","criado":1795208699529},{"id":"madeira-siga","publicacao_id":"pub-mwme4n98-773f28903e","criado":1795022632124},{"id":"metro-mondego","publicacao_id":"pub-mwj9w6bc-9a74db6b47","criado":1794834119928}]
+imagem 200 image/jpeg
+== Teste de fora
+https://2-31-13-85.sslip.io/health 200 0.438201s
+https://2-31-13-85.sslip.io/api/transit/loading-status 200 0.519230s
