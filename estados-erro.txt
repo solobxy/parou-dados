@@ -1,0 +1,18 @@
+== Planeador: o pedido falha e depois responde sem ligações
+OK      o pedido de percursos foi feito pedidos=1
+OK      com a rede a falhar aparece «Não foi possível calcular este percurso.» 
+OK      …e NÃO diz «Sem ligações encontradas» 
+OK      há um botão «Tentar outra vez» 
+OK      «Tentar outra vez» volta a pedir pedidos=2
+OK      com a resposta vazia (a sério) aparece «Sem ligações encontradas» 
+OK      …e o aviso de erro desaparece 
+OK      sem erros de JavaScript 
+== Horários: a lista de todas as linhas falha e depois responde vazia
+OK      a lista de linhas foi pedida pedidos=1
+OK      com a rede a falhar aparece «Não foi possível carregar a lista» 
+OK      …e NÃO diz que não há linhas 
+OK      «Tentar outra vez» volta a pedir pedidos=2
+OK      com a resposta vazia (a sério) aparece a mensagem de «sem linhas» 
+OK      …e o aviso de erro desaparece 
+OK      sem erros de JavaScript 
+15/15 testes OK

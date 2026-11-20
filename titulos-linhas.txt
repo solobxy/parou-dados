@@ -1,0 +1,84 @@
+        "4562 Setúbal – Vila Nogueira de Azeitão: horário Carris Metropolitana" (69)
+        "Dias úteis: 1.º autocarro às 06:35, último às 00:35, de 30 em 30 min na hora de ponta. Linha 4562 · Carris Metropolitana (Setúbal – Vila Nogueira de Azeitão): horário de sábados, 62 paragens e tempo…" (199)
+OK      [4562] título começa pelo número/nome da linha 4562 Setúbal – Vila Nogueira de Azeitão: horário Carris Metropolitana
+OK      [4562] título até 72 caracteres 69
+OK      [4562] título tem o operador (nome curto) 4562 Setúbal – Vila Nogueira de Azeitão: horário Carris Metropolitana
+OK      [4562] título diz "horário" 
+OK      [4562] título tem o início do percurso 4562 Setúbal – Vila Nogueira de Azeitão: horário Carris Metropolitana
+OK      [4562] descrição até 200 caracteres 199
+OK      [4562] descrição tem o operador 
+OK      [4562] descrição começa pelas horas dos dias úteis Dias úteis: 1.º autocarro às 06:35, últi
+OK      [4562] primeira partida certa 
+OK      [4562] última partida certa (depois da meia-noite em 00:MM) 
+        "2795 Lisboa – Santa Iria da Azóia: horário Carris Metropolitana" (63)
+        "Dias úteis: 1.º autocarro às 06:35, último às 00:35, de 30 em 30 min na hora de ponta. Linha 2795 · Carris Metropolitana (Lisboa – Santa Iria da Azóia): 40 paragens e tempo real." (178)
+OK      [2795] título começa pelo número/nome da linha 2795 Lisboa – Santa Iria da Azóia: horário Carris Metropolitana
+OK      [2795] título até 72 caracteres 63
+OK      [2795] título tem o operador (nome curto) 2795 Lisboa – Santa Iria da Azóia: horário Carris Metropolitana
+OK      [2795] título diz "horário" 
+OK      [2795] título tem o início do percurso 2795 Lisboa – Santa Iria da Azóia: horário Carris Metropolitana
+OK      [2795] descrição até 200 caracteres 178
+OK      [2795] descrição tem o operador 
+OK      [2795] descrição começa pelas horas dos dias úteis Dias úteis: 1.º autocarro às 06:35, últi
+OK      [2795] primeira partida certa 
+OK      [2795] última partida certa (depois da meia-noite em 00:MM) 
+        "Linha de Sintra Lisboa-Rossio – Mira Sintra-Meleças: horário CP" (63)
+        "Dias úteis: 1.º comboio às 05:40, último às 01:20, de 20 em 20 min na hora de ponta. Linha de Sintra · CP – Comboios de Portugal (Lisboa-Rossio – Mira Sintra-Meleças): 14 paragens." (180)
+OK      [Linha de Sintra] título começa pelo número/nome da linha Linha de Sintra Lisboa-Rossio – Mira Sintra-Meleças: horário CP
+OK      [Linha de Sintra] título até 72 caracteres 63
+OK      [Linha de Sintra] título tem o operador (nome curto) Linha de Sintra Lisboa-Rossio – Mira Sintra-Meleças: horário CP
+OK      [Linha de Sintra] título diz "horário" 
+OK      [Linha de Sintra] título tem o início do percurso Linha de Sintra Lisboa-Rossio – Mira Sintra-Meleças: horário CP
+OK      [Linha de Sintra] descrição até 200 caracteres 180
+OK      [Linha de Sintra] descrição tem o operador 
+OK      [Linha de Sintra] descrição começa pelas horas dos dias úteis Dias úteis: 1.º comboio às 05:40, último
+OK      [Linha de Sintra] primeira partida certa 
+OK      [Linha de Sintra] última partida certa (depois da meia-noite em 00:MM) 
+        "305 Cordoaria – Hospital de S. João: horário STCP | PAROU" (57)
+        "Horário da Linha 305 · STCP (Cordoaria – Hospital de S. João): 30 paragens e tempo real." (88)
+OK      [305] título começa pelo número/nome da linha 305 Cordoaria – Hospital de S. João: horário STCP | PAROU
+OK      [305] título até 72 caracteres 57
+OK      [305] título tem o operador (nome curto) 305 Cordoaria – Hospital de S. João: horário STCP | PAROU
+OK      [305] título diz "horário" 
+OK      [305] título tem o início do percurso 305 Cordoaria – Hospital de S. João: horário STCP | PAROU
+OK      [305] descrição até 200 caracteres 88
+OK      [305] descrição tem o operador 
+OK      [305] sem horário: não inventa horas Horário da Linha 305 · STCP (Cordoaria – Hospital de S. João): 30 paragens e tempo real.
+        "Linha A Estádio do Dragão – Senhor de Matosinhos: horário Metro do Porto" (72)
+        "Dias úteis: 1.º metro às 06:00, último às 22:30, de 10 em 10 min na hora de ponta. Linha A · Metro do Porto (Estádio do Dragão – Senhor de Matosinhos): 23 paragens." (164)
+OK      [A] título começa pelo número/nome da linha Linha A Estádio do Dragão – Senhor de Matosinhos: horário Metro do Porto
+OK      [A] título até 72 caracteres 72
+OK      [A] título tem o operador (nome curto) Linha A Estádio do Dragão – Senhor de Matosinhos: horário Metro do Porto
+OK      [A] título diz "horário" 
+OK      [A] título tem o início do percurso Linha A Estádio do Dragão – Senhor de Matosinhos: horário Metro do Porto
+OK      [A] descrição até 200 caracteres 164
+OK      [A] descrição tem o operador 
+OK      [A] descrição começa pelas horas dos dias úteis Dias úteis: 1.º metro às 06:00, último à
+OK      [A] primeira partida certa 
+OK      [A] última partida certa (depois da meia-noite em 00:MM) 
+        "7007 Penafiel – Polo Universitário Valongo: horário UNIR | PAROU" (64)
+        "Horário da Linha 7007 · UNIR (Penafiel – Polo Universitário Valongo): 50 paragens." (82)
+OK      [7007] título começa pelo número/nome da linha 7007 Penafiel – Polo Universitário Valongo: horário UNIR | PAROU
+OK      [7007] título até 72 caracteres 64
+OK      [7007] título tem o operador (nome curto) 7007 Penafiel – Polo Universitário Valongo: horário UNIR | PAROU
+OK      [7007] título diz "horário" 
+OK      [7007] título tem o início do percurso 7007 Penafiel – Polo Universitário Valongo: horário UNIR | PAROU
+OK      [7007] descrição até 200 caracteres 82
+OK      [7007] descrição tem o operador 
+OK      [7007] sem horário: não inventa horas Horário da Linha 7007 · UNIR (Penafiel – Polo Universitário Valongo): 50 paragens.
+OK      [4562] intervalo de 30 min na hora de ponta 
+OK      [305] com sábados e sem domingos: diz sábados e não domingos Dias úteis: 1.º autocarro às 06:35, último às 00:35, de 30 em 30 min na hora de ponta. Linha 305 · STCP (Cordoaria – Hospital de S. João): horário de sábados, 30 paragens e tempo real.
+OK      [7007] sem parênteses dentro de parênteses Horário da Linha 7007 · UNIR (Penafiel – Polo Universitário Valongo): 50 paragens.
+OK      [4562] última partida 00:35 (depois da meia-noite) 
+OK      [Metro A] metro: "1.º metro" 
+OK      [Sintra] comboio: "1.º comboio" 
+OK      [uma partida] "uma partida, às 06:15" (sem "1.º … último") Dias úteis: uma partida, às 06:15. Linha de Sintra · CP – Comboios de Portugal (Lisboa-Rossio – Mira Sintra-Meleças): 14 paragens.
+OK      [percurso "-"] título sem traço solto Linha A: horário Metro do Porto | PAROU
+OK      [intervalo] com poucas partidas de manhã: null 
+OK      [semVia] tira o "via" 
+OK      [Metro A] título "Linha A …" Linha A Estádio do Dragão – Senhor de Matosinhos: horário Metro do Porto
+OK      [Sintra] "Lisboa-Rossio" não é partido em dois Linha de Sintra Lisboa-Rossio – Mira Sintra-Meleças: horário CP
+OK      [Sintra] operador curto "CP" 
+OK      [M44] código com letra e número fica como está 
+OK      [semVia] tira "(pela A4)" no fim 
+tudo OK

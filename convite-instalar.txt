@@ -1,0 +1,21 @@
+OK      telemóvel, sem app, 1.ª vez: convida 
+OK      com a app instalada: não convida 
+OK      no computador: não convida (instala-se pelo menu) 
+OK      navegador automático: não convida 
+OK      já fechou o aviso antigo: não convida 
+OK      já apareceu nesta sessão: não convida outra vez 
+OK      fechou há 3 dias (1.ª vez): sossego 
+OK      fechou há 15 dias (1.ª vez): pode voltar 
+OK      fechou 2 vezes, a última há 30 dias: ainda sossego (45 dias) 
+OK      fechou 2 vezes, a última há 50 dias: pode voltar 
+OK      fechou 3 vezes: nunca mais 
+OK      memória estragada no telemóvel: conta como nova 
+OK      fechar soma uma vez e guarda a hora 
+OK      browser dentro do Instagram/Facebook: dentro de outra app 
+OK      Chrome e Safari normais: não 
+OK      quem abriu a app instalada conta como "com a app" mesmo depois de voltar pelo site {"amostra":1,"voltaram":1,"percentagem":100}
+OK      só pelo site: 2 pessoas, 1 voltou {"amostra":2,"voltaram":1,"percentagem":50}
+OK      aberturas da app instalada nos últimos 30 dias: 1 {"ultimos7Dias":0,"ultimos30Dias":1,"percentagemDasNovas30Dias":33.3}
+OK      o total da 1.ª semana continua igual (3 pessoas, 2 voltaram) {"amostra":3,"voltaram":2,"percentagem":66.7}
+
+Tudo OK

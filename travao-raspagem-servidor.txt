@@ -1,0 +1,10 @@
+página usada: /paragens/carris-metropolitana/4-marcos-em1023-xr-aceiro-ant-aleixo
+OK  robô: os 4 primeiros chegam à página (200, 200, 200, 200)
+OK  robô: o 5.º, de outro IP, recebe 429 (429)
+OK  a resposta 429 é a página curta, sem a app nem as estatísticas
+OK  a resposta 429 não fica em cache e diz quando voltar
+OK  uma pessoa em português, logo a seguir, chega à página (200)
+OK  o Googlebot chega à página (200)
+OK  pedido local sem X-Forwarded-For chega à página (200)
+OK  a página inicial não é travada (200)
+travão: tudo OK

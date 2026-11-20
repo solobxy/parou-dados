@@ -1,0 +1,50 @@
+OK      [preparar] há uma linha no sitemap /linhas/carris-metropolitana/1001-alfragide-estr-seminario-reboleira-estacao
+OK      [sitemap] as linhas trazem as versões noutras línguas (xhtml:link) 
+OK      [en início] 200 e na língua certa 200 en
+OK      [en início] indexável e com canónico próprio index, follow, max-image-preview:large, max-snippet:-1 https://parou.pt/en
+OK      [en início] hreflang para o português (a app) e para as outras línguas {"pt-PT":"https://parou.pt/","en":"https://parou.pt/en","de":"https://parou.pt/de","fr":"https://parou.pt/fr","x-default":"https://parou.pt/"}
+OK      [en início] o botão da app abre a app nessa língua 
+OK      [en início] JSON-LD válido com perguntas frequentes 
+OK      [en linha] 200, na língua certa, indexável 200 en index, follow, max-image-preview:large, max-snippet:-1
+OK      [en linha] canónico na própria língua https://parou.pt/en/linhas/carris-metropolitana/1001-alfragide-estr-seminario-reboleira-estacao
+OK      [en linha] hreflang das quatro línguas e x-default {"pt-PT":"https://parou.pt/linhas/carris-metropolitana/1001-alfragide-estr-seminario-reboleira-estacao","en":"https://parou.pt/en/linhas/carris-metropolitana/1001-alfragide-estr-seminario-reboleira-estacao","de":"https://parou.pt/de/linhas/carris-metropolitana/1001-alfragide-estr-seminario-reboleira-estacao","fr":"https://parou.pt/fr/linhas/carris-metropolitana/1001-alfragide-estr-seminario-reboleira-estacao","x-default":"https://parou.pt/linhas/carris-metropolitana/1001-alfragide-estr-seminario-reboleira-estacao"}
+OK      [en linha] as ligações para outras páginas ficam na mesma língua /linhas/carris-metropolitana/1001-alfragide-estr-seminario-reboleira-estacao
+OK      [en linha] o botão «Português» leva à versão portuguesa 
+OK      [en linha] JSON-LD válido e com endereços na língua 
+OK      [en sitemap] existe e tem os endereços na língua 
+OK      [de início] 200 e na língua certa 200 de
+OK      [de início] indexável e com canónico próprio index, follow, max-image-preview:large, max-snippet:-1 https://parou.pt/de
+OK      [de início] hreflang para o português (a app) e para as outras línguas {"pt-PT":"https://parou.pt/","en":"https://parou.pt/en","de":"https://parou.pt/de","fr":"https://parou.pt/fr","x-default":"https://parou.pt/"}
+OK      [de início] o botão da app abre a app nessa língua 
+OK      [de início] JSON-LD válido com perguntas frequentes 
+OK      [de linha] 200, na língua certa, indexável 200 de index, follow, max-image-preview:large, max-snippet:-1
+OK      [de linha] canónico na própria língua https://parou.pt/de/linhas/carris-metropolitana/1001-alfragide-estr-seminario-reboleira-estacao
+OK      [de linha] hreflang das quatro línguas e x-default {"pt-PT":"https://parou.pt/linhas/carris-metropolitana/1001-alfragide-estr-seminario-reboleira-estacao","en":"https://parou.pt/en/linhas/carris-metropolitana/1001-alfragide-estr-seminario-reboleira-estacao","de":"https://parou.pt/de/linhas/carris-metropolitana/1001-alfragide-estr-seminario-reboleira-estacao","fr":"https://parou.pt/fr/linhas/carris-metropolitana/1001-alfragide-estr-seminario-reboleira-estacao","x-default":"https://parou.pt/linhas/carris-metropolitana/1001-alfragide-estr-seminario-reboleira-estacao"}
+OK      [de linha] as ligações para outras páginas ficam na mesma língua /linhas/carris-metropolitana/1001-alfragide-estr-seminario-reboleira-estacao
+OK      [de linha] o botão «Português» leva à versão portuguesa 
+OK      [de linha] JSON-LD válido e com endereços na língua 
+OK      [de sitemap] existe e tem os endereços na língua 
+OK      [fr início] 200 e na língua certa 200 fr
+OK      [fr início] indexável e com canónico próprio index, follow, max-image-preview:large, max-snippet:-1 https://parou.pt/fr
+OK      [fr início] hreflang para o português (a app) e para as outras línguas {"pt-PT":"https://parou.pt/","en":"https://parou.pt/en","de":"https://parou.pt/de","fr":"https://parou.pt/fr","x-default":"https://parou.pt/"}
+OK      [fr início] o botão da app abre a app nessa língua 
+OK      [fr início] JSON-LD válido com perguntas frequentes 
+OK      [fr linha] 200, na língua certa, indexável 200 fr index, follow, max-image-preview:large, max-snippet:-1
+OK      [fr linha] canónico na própria língua https://parou.pt/fr/linhas/carris-metropolitana/1001-alfragide-estr-seminario-reboleira-estacao
+OK      [fr linha] hreflang das quatro línguas e x-default {"pt-PT":"https://parou.pt/linhas/carris-metropolitana/1001-alfragide-estr-seminario-reboleira-estacao","en":"https://parou.pt/en/linhas/carris-metropolitana/1001-alfragide-estr-seminario-reboleira-estacao","de":"https://parou.pt/de/linhas/carris-metropolitana/1001-alfragide-estr-seminario-reboleira-estacao","fr":"https://parou.pt/fr/linhas/carris-metropolitana/1001-alfragide-estr-seminario-reboleira-estacao","x-default":"https://parou.pt/linhas/carris-metropolitana/1001-alfragide-estr-seminario-reboleira-estacao"}
+OK      [fr linha] as ligações para outras páginas ficam na mesma língua /linhas/carris-metropolitana/1001-alfragide-estr-seminario-reboleira-estacao
+OK      [fr linha] o botão «Português» leva à versão portuguesa 
+OK      [fr linha] JSON-LD válido e com endereços na língua 
+OK      [fr sitemap] existe e tem os endereços na língua 
+OK      [paragem en] responde e não se indexa 200 noindex, follow
+OK      [paragem en] canónico aponta para a portuguesa e sem hreflang https://parou.pt/paragens/stcp/1-de-dezembro
+OK      [paragem pt] indexável e sem hreflang 
+OK      [?lang=en] leva à versão inglesa (301) 301 /en/linhas
+OK      [cookie de] quem escolheu alemão vai para a versão alemã (302) 302 /de/linhas
+OK      [sem prefixo] português, sem redirecionar 
+OK      [/en/mapa] página da app abre a app em inglês 302 /mapa?lang=en
+OK      [barra final] /en/linhas/ vai para /en/linhas /en/linhas
+OK      [sitemap] o índice lista os sitemaps das três línguas 
+OK      [robots] a pesquisa não se indexa em nenhuma língua 
+OK      [app /] hreflang para /en, /de e /fr 
+Todos os testes passaram

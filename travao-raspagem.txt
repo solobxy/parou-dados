@@ -1,0 +1,34 @@
+OK      robô: os 4 primeiros passam [null,null,null,null,"pegada"]
+OK      robô: do 5.º em diante é travado (pegada) ["pegada","pegada","pegada","pegada"]
+OK      robô: passada uma hora, voltam a passar 4 
+OK      robô em /en/ também conta 
+OK      robô em linhas também conta 
+OK      maiúsculas no endereço não escapam 
+OK      HEAD conta como GET 
+OK      zh-TW também é a pegada 
+OK      sem Sec-Fetch-Site (ferramenta) com zh também é a pegada 
+OK      chinês como 2.ª língua não é a pegada 
+OK      com cookie da PAROU (já cá esteve) não é a pegada 
+OK      vindo do Google (referer) não é a pegada 
+OK      vindo de outro site sem referer (cross-site) não é a pegada 
+OK      português não é a pegada 
+OK      50 visitas em chinês com cookie: nenhuma travada 
+OK      Googlebot: 400 páginas em 40 s do mesmo IP, nenhuma travada 
+OK      ExaSearchBot: nenhuma travada 
+OK      pedidos da própria máquina (testes): nenhum travado 
+OK      30 páginas num minuto do mesmo IP passam 
+OK      a 31.ª no mesmo minuto é travada (ip-minuto) ip-minuto
+OK      outro IP no mesmo minuto não é afetado 
+OK      o mesmo IP volta a passar no minuto seguinte 
+OK      300 páginas numa hora (1 a cada 11 s) passam 300
+OK      a 301.ª na mesma hora é travada (ip-hora) ip-hora
+OK      início, API, ficheiros, listas de operador e mapa nunca são travados 
+OK      pedidos POST não contam 
+OK      contadores por IP com limite de entradas {"ipMinuto":50000,"ipHora":50000,"pegada":0}
+OK      middleware: os 4 primeiros seguem para a app 
+OK      middleware: o 5.º recebe 429 e não segue 429
+OK      middleware: Retry-After, no-store e noindex {"retry-after":"900","cache-control":"no-store","x-robots-tag":"noindex","content-type":"text/html; charset=utf-8"}
+OK      middleware: página curta em HTML sem scripts 
+OK      middleware: uma pessoa em português segue para a app na mesma hora 
+OK      middleware: pedido local sem X-Forwarded-For segue sempre 
+tudo OK
