@@ -465,6 +465,27 @@ async function boot() {
     if (best) best.c = new THREE.Vector3().copy(P).lerp(Q, best.s);
     return best;
   };
+  // ponto de mira dentro da parte do corpo que o raio da câmara apanhou (o centro da cabeça, o eixo do braço, o meio do tronco), na pose dessa parte.
+  // A mira de cima vê a superfície do zombie por um ângulo; a bala sai do ombro por outro. Apontar à superfície vista de cima fazia a bala raspar por cima da cabeça ou do braço e falhar
+  const partIn = (z, i, P, Q) => {
+    poseInv(z); const [mk, zone, ty, a, bb, r0] = HP[i]; const I = z._inv[mk]; _lp.copy(P).applyMatrix4(I); _lq.copy(Q).applyMatrix4(I); let lp;
+    if (ty === 's') lp = (z.helm ? HELM : a).slice();
+    else if (ty === 'c') { _l1.set(a[0], a[1], a[2]); _l2.set(bb[0], bb[1], bb[2]); const t = clamp(segSeg(_lp, _lq, _l1, _l2)[2], 0.12, 0.88); lp = [a[0] + (bb[0] - a[0]) * t, a[1] + (bb[1] - a[1]) * t, a[2] + (bb[2] - a[2]) * t]; }
+    else { const vest = zone === 'body' && z.vest && a[1] > 0.3, c = vest ? VESTC : a, h = vest ? VESTH : bb; const dx = _lq.x - _lp.x, dy = _lq.y - _lp.y, dz = _lq.z - _lp.z, L2 = dx * dx + dy * dy + dz * dz || 1, t = clamp(((c[0] - _lp.x) * dx + (c[1] - _lp.y) * dy + (c[2] - _lp.z) * dz) / L2, 0, 1);
+      lp = [clamp(_lp.x + dx * t, c[0] - h[0] * 0.5, c[0] + h[0] * 0.5), clamp(_lp.y + dy * t, c[1] - h[1] * 0.5, c[1] + h[1] * 0.5), clamp(_lp.z + dz * t, c[2] - h[2] * 0.5, c[2] + h[2] * 0.5)]; }
+    return { z, mk, lp, zone };
+  };
+  // outros jogadores (online): os mesmos volumes que o servidor usa para decidir o tiro (cápsula de 0,3 m no eixo do corpo e esfera de 0,17 m na cabeça; deitado, perto do chão)
+  const _pa = new THREE.Vector3(), _pb = new THREE.Vector3();
+  const plHit = (P, Q, aim = false) => {
+    const T = G.net && G.net.on && G.net.targets ? G.net.targets() : null; if (!T || !T.length) return null; let best = null; const L = P.distanceTo(Q) || 1;
+    const mx = (P.x + Q.x) / 2, mz = (P.z + Q.z) / 2, half = Math.hypot(Q.x - P.x, Q.z - P.z) / 2 + 2;
+    for (const t of T) { if (Math.abs(t.x - mx) > half || Math.abs(t.z - mz) > half) continue; const parts = t.lying ? [[t.y + 0.25, t.y + 0.25, 0.5, 'body']] : [[t.y + 1.62, t.y + 1.62, 0.17, 'head'], [t.y + 0.15, t.y + 1.35, 0.3, 'body']];
+      for (const [y0, y1, r, zone] of parts) { _pa.set(t.x, y0, t.z); _pb.set(t.x, y1, t.z); const [d2, sg, u] = segSeg(P, Q, _pa, _pb); const rr = aim ? r * 1.1 : r; if (d2 > rr * rr) continue; const s = Math.max(0, sg - Math.sqrt(rr * rr - d2) / L);
+        if (!best || s < best.s) best = { s, zone, point: new THREE.Vector3(t.x, zone === 'head' ? y0 : clamp(y0 + (y1 - y0) * u, t.y + 0.5, t.y + 1.3), t.z) }; } }
+    return best;
+  };
+  const PENC = { head: 0.7, body: 0.9, arms: 0.4, legs: 0.6 }; // quanto custa atravessar cada parte (a bala passa se ainda tiver perfuração que chegue)
   // paredes, portas, árvores, chão e lajes entre pisos (devolve a fração do caminho)
   const wallHit = (P, Q) => {
     let best = 1; const dx = Q.x - P.x, dz = Q.z - P.z, dy = Q.y - P.y;
@@ -485,11 +506,17 @@ async function boot() {
     for (let i = bullets.length - 1; i >= 0; i--) {
       const b = bullets[i]; const Q = _b.copy(b.P).addScaledVector(b.v, dt); { const sp = b.v.length(); b.v.multiplyScalar(1 - Math.min(0.5, b.cd * sp * dt)); } b.v.y -= 9.81 * dt; b.t += dt;
       let s = wallHit(b.P, Q), hz = null;
-      for (const z of G.zs) { if (z.state === 'dead') continue; const r = zoneHit(z, b.P, Q); if (r && r.s < s) { s = r.s; hz = { z, r }; } }
+      for (const z of G.zs) { if (z.state === 'dead' || (b.skip && b.skip.has(z))) continue; const r = zoneHit(z, b.P, Q); if (r && r.s < s) { s = r.s; hz = { z, r }; } }
+      // outro jogador: o servidor decide o dano; aqui a bala só para nele, para o rasto bater certo com o que vês
+      const ph = G.net.on ? plHit(b.P, Q) : null; if (ph && ph.s < s) { s = ph.s; hz = null; }
       const E = _c.copy(b.P).lerp(Q, s); tracer(b.P.x, b.P.y, b.P.z, E.x, E.y, E.z, b.sup); b.dist += b.P.distanceTo(E);
-      if (hz) { hitZombie(hz.z, hz.r.zone, b, E.clone()); bullets.splice(i, 1); continue; }
-      if (s < 1) { if (!b.pel || Math.random() < 0.4) burst(E.x, E.y, E.z, 4, 0xd8c8a0, 1.6, 0.3); noise(E.x, E.z, b.pel ? 3 : 6); bullets.splice(i, 1); continue; }
-      b.P.copy(Q); if (b.t > 4 || b.P.y < -2 || (b.pel && b.dist > 160)) bullets.splice(i, 1);
+      if (ph && ph.s === s) { burst(E.x, E.y, E.z, 6, 0x7a1010, 2, 0.35); if (G.dbgShots) G.dbgShots.push({ k: 'p', zone: ph.zone }); bullets.splice(i, 1); continue; }
+      if (hz) { if (G.dbgShots) G.dbgShots.push({ k: 'z', zone: hz.r.zone, n: b.skip ? b.skip.size : 0 }); const stop = hitZombie(hz.z, hz.r.zone, b, E.clone());
+        // atravessa o corpo se a bala tiver força para isso (chumbo ao perto, bala única, espingardas): perde força e segue para o próximo
+        const c = PENC[hz.r.zone] || 0.9; if (!stop && b.bp * Math.min(1, b.v.length() / (b.v0 || 1)) > c + 0.05) { b.bp -= c; b.dmg *= 0.7; b.v.multiplyScalar(0.85); (b.skip || (b.skip = new Set())).add(hz.z); b.P.copy(E); continue; }
+        bullets.splice(i, 1); continue; }
+      if (s < 1) { if (G.dbgShots) G.dbgShots.push({ k: 'w', e: [E.x, E.y, E.z] }); if (!b.pel || Math.random() < 0.4) burst(E.x, E.y, E.z, 4, 0xd8c8a0, 1.6, 0.3); noise(E.x, E.z, b.pel ? 3 : 6); bullets.splice(i, 1); continue; }
+      b.P.copy(Q); if (b.t > 4 || b.P.y < -2 || (b.pel && b.dist > 160)) { if (G.dbgShots) G.dbgShots.push({ k: 'a' }); bullets.splice(i, 1); }
     }
   };
   // dano: munição, distância, zona do corpo e proteção (o colete/capacete trava se o nível dele for igual ou maior do que a perfuração da bala)
@@ -502,6 +529,7 @@ async function boot() {
     else if (zone === 'arms') dmg *= 0.7;
     else { dmg *= 0.6; z.limp = Math.min(2, (z.limp || 0) + (b.pel ? 0.3 : 1)); }
     const l = Math.hypot(b.v.x, b.v.z) || 1; hurtZombie(z, dmg, b.v.x / l, b.v.z / l, { zone, stop, at: E, limp: zone === 'legs' ? (b.pel ? 0.3 : 1) : 0 });
+    return stop;
   };
   // balística: gravidade e arrasto do ar (cada munição tem o seu). Tabela de queda por distância, calculada uma vez por munição e velocidade
   const BT = {};
@@ -510,8 +538,12 @@ async function boot() {
   const elevFor = (k, v0, d) => d > 1 ? -dropAt(k, v0, d) / d : 0; // radianos a subir para acertar a d metros
   G.ballis = { dropAt, elevFor };
   const _sd = new THREE.Vector3(), _sr = new THREE.Vector3(), _su = new THREE.Vector3();
-  const spreadDir = (d, ang) => { if (ang <= 0) return d.clone(); _sr.crossVectors(d, _up).normalize(); if (_sr.lengthSq() < 1e-6) _sr.set(1, 0, 0); _su.crossVectors(_sr, d).normalize(); const a = Math.tan(ang * Math.sqrt(Math.random())), ph = Math.random() * Math.PI * 2; return _sd.copy(d).addScaledVector(_sr, Math.cos(ph) * a).addScaledVector(_su, Math.sin(ph) * a).normalize().clone(); };
+  // desvio: o da mão concentra-se perto do centro (a maior parte dos tiros vai onde apontas; de vez em quando um foge); o do chumbo espalha-se por igual no cone
+  const spreadDir = (d, ang, even = false) => { if (ang <= 0) return d.clone(); _sr.crossVectors(d, _up).normalize(); if (_sr.lengthSq() < 1e-6) _sr.set(1, 0, 0); _su.crossVectors(_sr, d).normalize(); const a = Math.tan(ang * (even ? Math.sqrt(Math.random()) : Math.random())), ph = Math.random() * Math.PI * 2; return _sd.copy(d).addScaledVector(_sr, Math.cos(ph) * a).addScaledVector(_su, Math.sin(ph) * a).normalize().clone(); };
   const _wq = new THREE.Vector3();
+  // até onde vai uma bala em linha reta: a primeira parede, ou o zombie que a segura (o servidor usa isto para não acertares num jogador escondido atrás de um zombie)
+  const stopAt = (O, di, pen) => { _wq.copy(O).addScaledVector(di, 420); let s = wallHit(O, _wq), left = pen; const hs = []; for (const z of G.zs) { if (z.state === 'dead' || z.hide) continue; if (Math.abs(z.x - O.x) > 420 || Math.abs(z.z - O.z) > 420) continue; const r = zoneHit(z, O, _wq); if (r && r.s < s) hs.push(r); }
+    hs.sort((a, b) => a.s - b.s); for (const r of hs) { const c = PENC[r.zone] || 0.9; if (left > c + 0.05) left -= c; else { s = r.s; break; } } return s * 420; };
   const fire = (it, g) => {
     const p = G.p; if (p.reload > 0 || p.cd > 0) return false;
     const AM = ammoOf(g); if (!it.ak || !AM.includes(it.ak)) it.ak = AM[0];
@@ -522,8 +554,9 @@ async function boot() {
     const lo = (AIM.lean || 0) * LEAN, O = fp ? AIM.eye.clone() : new THREE.Vector3(p.x + Math.sin(p.yaw) * 0.15 + Math.cos(p.yaw) * lo, p.y + 1.35, p.z + Math.cos(p.yaw) * 0.15 - Math.sin(p.yaw) * lo);
     const dir = fp ? AIM.dir.clone() : AIM.Aw.clone().sub(O).normalize();
     { const scI = scopeItem(), zd = fp ? (scI && scI.rd ? 50 : it.zero || (scI && scI.mag >= 8 ? 200 : 100)) : Math.min(400, AIM.Aw.distanceTo(O)), el = elevFor(it.ak, v0, zd); if (el) { const hz = Math.hypot(dir.x, dir.z) || 1, a = Math.atan2(dir.y, hz) + el; dir.set(dir.x / hz * Math.cos(a), Math.sin(a), dir.z / hz * Math.cos(a)); } }
-    const mv = Math.hypot(p.vx, p.vz) > 0.6 ? 1.7 : 1, spread = fp ? (g.acc ?? g.spread * 0.2) * mv * (p.onGround ? 1 : 2) : g.spread * (1 - 0.6 * AIM.steady) * (1 - 0.2 * sk('mira')) * mv * (p.onGround ? 1 : 2); // na luneta conta a precisão mecânica da arma; o resto é a tua mão (balanço e respiração)
-    for (let i = 0; i < n; i++) bullets.push({ P: O.clone(), v: spreadDir(dir, spread + (B.pat || 0)).multiplyScalar(v0), v0, cd: B.cd || 0.001, t: 0, dmg: B.dmg * (g.dk || 1), pen: B.pen, pel: n > 1, fall: B.fall || 99, dist: 0, rng: g.rng, sup });
+    const mv = Math.hypot(p.vx, p.vz) > 0.6 ? 1.5 : 1, spread = (G.dbgSpread ?? 1) * (fp ? (g.acc ?? g.spread * 0.2) * mv * (p.onGround ? 1 : 2) : g.spread * (1 - 0.6 * AIM.steady) * (1 - 0.2 * sk('mira')) * mv * (p.onGround ? 1 : 2)); // na luneta conta a precisão mecânica da arma; o resto é a tua mão (balanço e respiração)
+    const D0 = spreadDir(dir, spread), ds = [];
+    for (let i = 0; i < n; i++) { const di = n > 1 ? spreadDir(D0, B.pat || 0, true) : D0; ds.push(di); bullets.push({ P: O.clone(), v: di.clone().multiplyScalar(v0), v0, cd: B.cd || 0.001, t: 0, dmg: B.dmg * (g.dk || 1), pen: B.pen, bp: B.bp ?? B.pen, pel: n > 1, fall: B.fall || 99, dist: 0, rng: g.rng, sup }); }
     AIM.steady *= 0.55; AIM.kick += (g.kick ?? (B.dmg > 60 ? 0.05 : 0.018)) * (1 - 0.35 * sk('mira')); AIM.idle = 0; skUp('mira', 0.0012);
     // som: o silenciador abafa o disparo; com bala subsónica quase não se ouve; supersónica ainda estala
     const ss = v0 > 343, nr = sup ? g.noise * (ss ? 0.5 : 0.2) : g.noise;
@@ -531,7 +564,7 @@ async function boot() {
     flash.position.set(mx, my, mz); flash.intensity = sup ? 0 : 6 + 14 * (1 - (G.day ?? 1)); G.flashT = 0.06; G.buzz(n > 1 ? 30 : 10);
     if (sup) audio.play('abafado', ss ? 0.85 : 0.5); else audio.play(g.auto ? 'm4' : 'pistola', it.k === 'cacadeira' || it.k === 'caca' ? 1.3 : 1);
     noise(p.x, p.z, nr);
-    if (G.net && G.net.on) { const L = G.net.near(O.x, O.z, 420) ? wallHit(O, _wq.copy(O).addScaledVector(dir, 420)) * 420 : 420; G.net.shot(O, dir, it.ak, n, L, sup); }
+    if (G.net && G.net.on) { const far = G.net.near(O.x, O.z, 420), Ls = ds.map(di => far ? stopAt(O, di, B.bp ?? B.pen) : 420); G.net.shot(O, dir, it.ak, n, Math.max(...Ls), sup, ds, Ls); }
     G.ui.refresh(true); return true;
   };
   // carregadores no inventário (mochila e cinto) de um tipo
@@ -717,6 +750,8 @@ async function boot() {
     for (let i = G.zs.length - 1; i >= 0; i--) {
       const z = G.zs[i];
       if (z.remote) { remoteZ(z, dt0, now); continue; }
+      // testes: zombie parado no sítio (frz = velocidade a fingir, para a animação de andar)
+      if (z.frz !== undefined) { z.phase = (z.phase || 0) + dt0 * z.frz * 2.6; z.mv = z.frz / 3; continue; }
       // morto: o corpo fica, afunda devagar e o zombie volta a nascer na zona dele passados uns minutos, longe da tua vista (online, quem decide é o servidor)
       if (z.state === 'dead') { z.deadT += dt0; if (z.deadT > 25) z.sink = Math.min(0.6, z.sink + dt0 * 0.25); if (!onl && z.deadT > (z.reT || 480) && Math.hypot((z.hx ?? z.x) - me.x, (z.hz ?? z.z) - me.z) > 70) reviveZ(z); continue; }
       let p = me; if (tgts.length > 1) { let bq = 1e9; for (const t of tgts) { if (!t.alive) continue; const q = Math.hypot(t.x - z.x, t.z - z.z) + ((t.lv || 0) !== (z.lv || 0) ? 25 : 0); if (q < bq) { bq = q; p = t; } } }
@@ -983,14 +1018,15 @@ async function boot() {
   const hasLight = () => G.inv.count('lanterna') > 0 || gunLight();
   G.hasLight = hasLight;
   const scopeItem = () => { const it = held(); return it && it.att && it.att.scope ? ITEMS[it.att.scope] : null; };
-  const lockW = (L, out = new THREE.Vector3()) => { const z = L.z, sc = z.sc || 1, c = Math.cos(z.yaw), sn = Math.sin(z.yaw); return out.set(z.x + (L.lx * c + L.lz * sn) * sc, (z.y || 0) + L.ly * sc, z.z + (-L.lx * sn + L.lz * c) * sc); };
-  const toLocal = (z, P) => { const sc = z.sc || 1, c = Math.cos(z.yaw), sn = Math.sin(z.yaw), dx = P.x - z.x, dz = P.z - z.z; return { z, lx: (dx * c - dz * sn) / sc, ly: (P.y - (z.y || 0)) / sc, lz: (dx * sn + dz * c) / sc }; };
+  // mira presa: um ponto dentro de uma parte do corpo (cabeça, tronco, braço…), que acompanha a animação dessa parte
+  const lockW = (L, out = new THREE.Vector3()) => { poseInv(L.z); return out.set(L.lp[0], L.lp[1], L.lp[2]).applyMatrix4(L.z._pose[L.mk]); };
+  const chestLock = z => ({ z, mk: 'torso', lp: [0, 0.43, 0], zone: 'body' });
   const inView = z => !z.hide && z.state !== 'dead';
   // ajuda à mira: só zombies (nunca jogadores), e só se estiverem à vista e com linha de tiro livre (nada de prender através de paredes)
   const _sa = new THREE.Vector3(), _sb = new THREE.Vector3();
   const clearShot = z => { const p = G.p, lo = (G.aimS.lean || 0) * 0.45; _sa.set(p.x + Math.cos(p.yaw) * lo, p.y + 1.35, p.z - Math.sin(p.yaw) * lo); for (const h of [1.25, 1.62]) { _sb.set(z.x, (z.y || 0) + h, z.z); if (wallHit(_sa, _sb) > 0.995) return true; } return false; };
   G.dbgSpawn = () => spawnPoint(false);
-  G.dbg = { item: (k, n) => mkItem(k, n), deplete: n => { n.hp = 0; n.alive = false; n.col.on = false; n.respawn = G.t + 180; hideNode(n); if (G.net.on && n.key) G.net.node(n.key); }, nodes: () => nodes, fire: () => { const it = held(), g = it && ITEMS[it.k].gun; return g ? fire(it, g) : false; }, canSee: (a, b) => canSee(a, b), clearShot: z => clearShot(z), zoneHit: (z, P, Q, k) => zoneHit(z, P, Q, k), horde: () => horde, hurt: (d, c) => hurtPlayer(d, c || 'zombie'), hitZ: (z, zone, k) => { const B = ITEMS[k].bal; hitZombie(z, zone, { dmg: B.dmg, pen: B.pen, pel: B.pel, v: new THREE.Vector3(B.v, 0, 0), v0: B.v, dist: 10, fall: B.fall || 1 }, { x: z.x, y: 1.3, z: z.z }); } }; G.V3 = THREE.Vector3; G.M4 = THREE.Matrix4; G.RC = new THREE.Raycaster();
+  G.dbg = { cols: (x, z, r) => { const out = []; near(x - r, z - r, x + r, z + r, R => { out.push(['r', R.k, +R.x0.toFixed(2), +R.z0.toFixed(2), +R.x1.toFixed(2), +R.z1.toFixed(2), R.h, R.yb || 0]); }, C => { out.push(['c', +C.x.toFixed(2), +C.z.toFixed(2), C.r, C.node ? C.node.kind + ':' + C.node.alive : (C.k || C.kind || '?'), C.on]); }); return out; }, scr: (x, y, z) => { const q = toScreen(new THREE.Vector3(x, y, z)); return [q.x, q.y, q.ok]; }, shoulder: () => { const p = G.p; return [p.x + Math.sin(p.yaw) * 0.15, p.y + 1.35, p.z + Math.cos(p.yaw) * 0.15]; }, aimA: () => [AIM.A.x, AIM.A.y, AIM.A.z, AIM.zone, !!AIM.lock], wallHit: (a, b) => wallHit(new THREE.Vector3(...a), new THREE.Vector3(...b)), item: (k, n) => mkItem(k, n), deplete: n => { n.hp = 0; n.alive = false; n.col.on = false; n.respawn = G.t + 180; hideNode(n); if (G.net.on && n.key) G.net.node(n.key); }, nodes: () => nodes, fire: () => { const it = held(), g = it && ITEMS[it.k].gun; return g ? fire(it, g) : false; }, canSee: (a, b) => canSee(a, b), clearShot: z => clearShot(z), zoneHit: (z, P, Q, k) => zoneHit(z, P, Q, k), horde: () => horde, hurt: (d, c) => hurtPlayer(d, c || 'zombie'), hitZ: (z, zone, k) => { const B = ITEMS[k].bal; hitZombie(z, zone, { dmg: B.dmg, pen: B.pen, pel: B.pel, v: new THREE.Vector3(B.v, 0, 0), v0: B.v, dist: 10, fall: B.fall || 1 }, { x: z.x, y: 1.3, z: z.z }); } }; G.V3 = THREE.Vector3; G.M4 = THREE.Matrix4; G.RC = new THREE.Raycaster();
   const lockable = z => { if (!inView(z) || !G.p) return false; if (z._lkT > G.t) return z._lk; z._lkT = G.t + 0.12; return (z._lk = canSee(G.p, z) && clearShot(z)); };
   const bestTarget = () => { const p = G.p, d = heldDef(), range = d.gun ? Math.min(d.gun.rng, 40) : 3; let best = null, bs = 1e9; for (const z of G.zs) { if (!inView(z)) continue; const dd = Math.hypot(z.x - p.x, z.z - p.z); if (dd > range) continue; const a = Math.abs(angDiff(Math.atan2(z.x - p.x, z.z - p.z), p.yaw)); if (dd > 3 && a > 1.25) continue; if (!lockable(z)) continue; const sc = dd + a * 3; if (sc < bs) { bs = sc; best = z; } } return best; };
   const _pv = new THREE.Vector3();
@@ -1000,7 +1036,8 @@ async function boot() {
     ndc.set(sx / innerWidth * 2 - 1, -(sy / innerHeight) * 2 + 1); ray3.setFromCamera(ndc, cam);
     const o = ray3.ray.origin, d = ray3.ray.direction; _a.copy(o); const end = new THREE.Vector3().copy(o).addScaledVector(d, 140);
     let best = null; for (const z of G.zs) { if (!inView(z)) continue; const r = zoneHit(z, _a, end, inflate); if (r && (!best || r.s < best.r.s)) best = { z, r }; }
-    if (best) return { z: best.z, zone: best.r.zone, point: best.r.c };
+    const pl = plHit(_a, end, true); if (pl && (!best || pl.s < best.r.s)) return { zone: pl.zone, point: pl.point, pl: true };
+    if (best) { const L = partIn(best.z, best.r.i, _a, end); return { z: best.z, zone: best.r.zone, point: lockW(L), part: L }; }
     const P = G.p, hp = new THREE.Vector3();
     // a mira por cima de um prédio (acima do rés-do-chão) aponta para a fachada ou janela onde está, e não para o chão escondido atrás dele:
     // quem está cá em baixo consegue disparar para uma janela lá em cima (a bala sobe e entra pela janela)
@@ -1017,7 +1054,7 @@ async function boot() {
     const p = G.p, d = heldDef(); if (!G.playing || !d.gun || !p.alive || p.climb || p.use || G.invOpen) return;
     const was = AIM.on; AIM.on = true; AIM.idle = 0; if (!was) AIM.steady = 0;
     AIM.scope = !!(scope && scopeItem());
-    if (TOUCH && !was && !AIM.scope) { AIM.lock = null; const z = G.cfg.assist ? bestTarget() : null; if (z) AIM.lock = { z, lx: 0, ly: 1.3, lz: 0.12 }; else { const s0 = toScreen(_c.set(p.x + Math.sin(p.yaw) * 7, p.y + 1.25, p.z + Math.cos(p.yaw) * 7)); AIM.sx = s0.x; AIM.sy = s0.y; } }
+    if (TOUCH && !was && !AIM.scope) { AIM.lock = null; const z = G.cfg.assist ? bestTarget() : null; if (z) AIM.lock = chestLock(z); else { const s0 = toScreen(_c.set(p.x + Math.sin(p.yaw) * 7, p.y + 1.25, p.z + Math.cos(p.yaw) * 7)); AIM.sx = s0.x; AIM.sy = s0.y; } }
     if (AIM.scope) { // entrar na mira: começa a olhar para onde já estavas a apontar
       // já a apontar: o ponto da retícula; a começar agora: o rato (PC) ou a direção para onde o boneco está virado, à altura dos olhos
       const eye = eyePos(_e); let T;
@@ -1053,11 +1090,11 @@ async function boot() {
     if (!AIM.on) return; AIM.idle = 0; const k = G.cfg.sens || 1;
     if (G.fp) { const R = G.ui.scopeR(), f = THREE.MathUtils.degToRad(scopeFov()) / (2 * R) * 1.1 * k; AIM.fy -= dx * f; AIM.fpit = clamp(AIM.fpit - dy * f, -1.2, 1.2); return; }
     AIM.sx = clamp(AIM.sx + dx * k, 4, innerWidth - 4); AIM.sy = clamp(AIM.sy + dy * k, 4, innerHeight - 4);
-    const pk = pick(AIM.sx, AIM.sy, 1.25); if (pk.z && lockable(pk.z)) { AIM.lock = toLocal(pk.z, pk.point); return; }
+    const pk = pick(AIM.sx, AIM.sy, 1.25); if (pk.part && lockable(pk.z)) { AIM.lock = pk.part; return; }
     AIM.lock = null;
-    if (G.cfg.assist) { let bz = null, bd = 24; for (const z of G.zs) { if (!lockable(z)) continue; const q = toScreen(lockW({ z, lx: 0, ly: 1.3, lz: 0.12 }, _c)); const dd = Math.hypot(q.x - AIM.sx, q.y - AIM.sy); if (q.ok && dd < bd) { bd = dd; bz = z; } } if (bz) AIM.lock = { z: bz, lx: 0, ly: 1.3, lz: 0.12 }; }
+    if (G.cfg.assist) { let bz = null, bd = 24; for (const z of G.zs) { if (!lockable(z)) continue; const q = toScreen(lockW(chestLock(z), _c)); const dd = Math.hypot(q.x - AIM.sx, q.y - AIM.sy); if (q.ok && dd < bd) { bd = dd; bz = z; } } if (bz) AIM.lock = chestLock(bz); }
   };
-  G.relock = () => { if (!AIM.on || G.fp) return; const z = bestTarget(); AIM.lock = z ? { z, lx: 0, ly: 1.3, lz: 0.12 } : null; AIM.idle = 0; };
+  G.relock = () => { if (!AIM.on || G.fp) return; const z = bestTarget(); AIM.lock = z ? chestLock(z) : null; AIM.idle = 0; };
   const tryFire = () => { const it = held(), d = heldDef(); if (!d.gun || !G.p.alive || G.invOpen || AIM.raise < 1) return false; return fire(it, d.gun); };
   G.fireDown = () => { if (G.car) return;
     const p = G.p; if (!G.playing || !p.alive || G.invOpen) return; const d = heldDef();
@@ -1171,10 +1208,10 @@ async function boot() {
         } else {
           if (AIM.reseed && !G.fp) { AIM.reseed = false; if (TOUCH) { const s0 = toScreen(_c.set(p.x + Math.sin(AIM.fy) * 8, p.y + 1.25, p.z + Math.cos(AIM.fy) * 8)); if (s0.ok) { AIM.sx = s0.x; AIM.sy = s0.y; } } }
           if (!TOUCH) { if (mouse.has) { AIM.sx = mouse.x; AIM.sy = mouse.y; } }
-          else if (AIM.lock) { if (!lockable(AIM.lock.z)) { const z = cfg.assist ? bestTarget() : null; AIM.lock = z ? { z, lx: 0, ly: 1.3, lz: 0.12 } : null; } if (AIM.lock) { const q = toScreen(lockW(AIM.lock, _c)); if (q.ok) { AIM.sx = q.x; AIM.sy = q.y; } } }
+          else if (AIM.lock) { if (!lockable(AIM.lock.z)) { const z = cfg.assist ? bestTarget() : null; AIM.lock = z ? chestLock(z) : null; } if (AIM.lock) { const q = toScreen(lockW(AIM.lock, _c)); if (q.ok) { AIM.sx = q.x; AIM.sy = q.y; } } }
           if ((!TOUCH && mouse.has && !G.invOpen) || AIM.on) {
-            const pk = pick(AIM.sx, AIM.sy, AIM.lock ? 1.25 : 1.0); AIM.A.copy(pk.point); AIM.zone = pk.zone || null; AIM.tgt = pk.z || null;
-            if (AIM.lock && !pk.z) lockW(AIM.lock, AIM.A);
+            if (TOUCH && AIM.lock) { lockW(AIM.lock, AIM.A); AIM.zone = AIM.lock.zone; AIM.tgt = AIM.lock.z; }
+            else { const pk = pick(AIM.sx, AIM.sy, 1.0); AIM.A.copy(pk.point); AIM.zone = pk.zone || null; AIM.tgt = pk.z || null; }
             const dd = Math.hypot(AIM.A.x - p.x, AIM.A.z - p.z); AIM.Aw.copy(AIM.A); AIM.Aw.x += Math.cos(p.yaw) * swY * dd; AIM.Aw.z -= Math.sin(p.yaw) * swY * dd; AIM.Aw.y += swP * dd;
             if (dd > 0.4) aimYaw = Math.atan2(AIM.A.x - p.x, AIM.A.z - p.z);
           }

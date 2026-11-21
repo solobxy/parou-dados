@@ -9,7 +9,7 @@ import path from 'node:path';
 const PORT = +process.env.PORT || 3190, DIR = process.env.STATE_DIRECTORY || path.join(process.cwd(), 'dados');
 const FILE = path.join(DIR, 'estado.json'), SLEEP_MS = 72 * 3600e3, BAG_MS = 45 * 60e3, MAXP = 60;
 // munições: velocidade (m/s), dano, perfuração, arrasto, bagos
-const AM = { a9: [360, 30, 1.5, 0.0018], a9s: [300, 27, 1.3, 0.002], a556: [940, 34, 2.8, 0.0012], a762: [715, 40, 2.6, 0.0011], a308: [850, 95, 3.4, 0.0007], a357: [440, 48, 2, 0.0016], c12: [400, 15, 1, 0.004, 8], c12s: [490, 85, 2.2, 0.0022] };
+const AM = { a9: [360, 30, 1.5, 0.0018], a9s: [300, 27, 1.3, 0.002], a556: [940, 34, 2.8, 0.0012], a762: [715, 40, 2.6, 0.0011], a308: [850, 95, 3.4, 0.0007], a357: [440, 48, 2, 0.0016], c12: [400, 16, 1, 0.004, 8], c12s: [490, 85, 2.2, 0.0022] };
 const NAME = /^[A-Za-z0-9_À-ÖØ-öø-ÿ-]{3,16}$/;
 
 // ---------- estado (gravado em disco)
@@ -217,6 +217,7 @@ const onMsg = (c, m) => {
   }
   const p = c.p; if (!p) return; const now = Date.now();
   if (m.t === 'st') { p.x = num(m.x, -4100, 4100); p.z = num(m.z, -4100, 4100); p.y = num(m.y, -5, 40); p.lv = num(m.lv, 0, 6) | 0; p.yaw = num(m.yaw, -10, 10); p.mv = num(m.mv, 0, 3); p.an = num(m.an, 0, 15) | 0; p.w = typeof m.w === 'string' ? m.w.slice(0, 12) : '';
+    { const now = Date.now(), H = p.hist || (p.hist = []); H.push([now, p.x, p.y, p.z]); while (H.length > 2 && now - H[0][0] > 400) H.shift(); } // onde esteve nos últimos 0,4 s (para o tiro de quem o via um pouco atrás)
     const al = !!m.al, hp = num(m.hp, 0, 100, p.hp); if (al && !p.alive) { p.hp = hp; p.hd = p.vd = null; } else p.hp = Math.min(hp, p.hp + 3); p.alive = al; // a vida que o servidor tirou não volta de repente
     if (Array.isArray(m.ar)) { const a = [num(m.ar[0], 0, 4) | 0, num(m.ar[1], 0, 4) | 0]; if (a[0] !== p.ar[0]) p.hd = null; if (a[1] !== p.ar[1]) p.vd = null; p.ar = a; } return; }
   if (m.t === 'inv') { p.inv = cleanIt(m.it).map(({ x, y, ...r }) => r); return; }
@@ -271,10 +272,10 @@ const hitTest = (O, D, k, L, tgt) => {
     // contra cada alvo: cápsula do corpo (0,3 m) e esfera da cabeça (0,16 m); deitado = cápsula no chão
     for (const T of tgt) { const by = T.y; if (Math.abs(nx - T.x) > 3 || Math.abs(nz - T.z) > 3) continue;
       const segPt = (ax, ay, az, bx, by2, bz, px, py, pz) => { const dx = bx - ax, dy = by2 - ay, dz = bz - az, l2 = dx * dx + dy * dy + dz * dz || 1e-9; let t = ((px - ax) * dx + (py - ay) * dy + (pz - az) * dz) / l2; t = Math.max(0, Math.min(1, t)); return Math.hypot(ax + dx * t - px, ay + dy * t - py, az + dz * t - pz); };
-      if (T.lying) { if (segPt(x, y, z, nx, ny, nz, T.x, by + 0.25, T.z) < 0.9 && Math.abs(ny - by) < 0.6) return { T, zone: 'body', dmg, pen, v: Math.hypot(vx, vy, vz) / v0 }; continue; }
-      const hd = segPt(x, y, z, nx, ny, nz, T.x, by + 1.62, T.z); if (hd < 0.17) return { T, zone: 'head', dmg, pen, v: Math.hypot(vx, vy, vz) / v0 };
+      if (T.lying) { if (segPt(x, y, z, nx, ny, nz, T.x, by + 0.25, T.z) < 0.9 && Math.abs(ny - by) < 0.6) return { T, zone: 'body', dmg, pen, v: Math.hypot(vx, vy, vz) / v0, dist }; continue; }
+      const hd = segPt(x, y, z, nx, ny, nz, T.x, by + 1.62, T.z); if (hd < 0.17) return { T, zone: 'head', dmg, pen, v: Math.hypot(vx, vy, vz) / v0, dist };
       // corpo: distância do segmento ao eixo vertical (amostras)
-      for (let s = 0; s <= 4; s++) { const sy = by + 0.15 + s * 0.3; if (segPt(x, y, z, nx, ny, nz, T.x, sy, T.z) < 0.3) return { T, zone: sy > 0.85 ? 'body' : 'legs', dmg, pen, v: Math.hypot(vx, vy, vz) / v0 }; } }
+      for (let s = 0; s <= 4; s++) { const sy = by + 0.15 + s * 0.3; if (segPt(x, y, z, nx, ny, nz, T.x, sy, T.z) < 0.3) return { T, zone: sy > 0.85 ? 'body' : 'legs', dmg, pen, v: Math.hypot(vx, vy, vz) / v0, dist }; } }
     x = nx; y = ny; z = nz; dist += step; }
   return null;
 };
@@ -287,13 +288,20 @@ const shot = (c, m) => {
   // para os outros: o som e o rasto do tiro
   bcast({ t: 'fx', id: c.id, o: O, d: D, sup }, o => o !== c && Math.hypot(o.p.x - O[0], o.p.z - O[2]) < (sup ? 60 : 400));
   const myClan = p.clan; const tgt = [];
-  for (const o of players.values()) if (o !== c && o.p && o.p.alive && (o.p.lv || 0) === (p.lv || 0) && !(myClan && o.p.clan === myClan) && Math.hypot(o.p.x - O[0], o.p.z - O[2]) < L + 3) tgt.push({ x: o.p.x, y: o.p.y, z: o.p.z, c: o });
+  // quem dispara vê os outros cerca de 0,1–0,3 s atrás (o caminho da rede e a suavização): conta onde o alvo está e onde esteve nesse tempo
+  for (const o of players.values()) if (o !== c && o.p && o.p.alive && (o.p.lv || 0) === (p.lv || 0) && !(myClan && o.p.clan === myClan) && Math.hypot(o.p.x - O[0], o.p.z - O[2]) < L + 3) {
+    tgt.push({ x: o.p.x, y: o.p.y, z: o.p.z, c: o }); for (const [t, x, y, z] of o.p.hist || []) if (now - t <= 320 && Math.hypot(x - o.p.x, z - o.p.z) > 0.15) tgt.push({ x, y, z, c: o }); }
   for (const [tok, s] of Object.entries(S.sleepers)) if ((s.lv || 0) === (p.lv || 0) && !(myClan && s.clan === myClan) && Math.hypot(s.x - O[0], s.z - O[2]) < L + 3) tgt.push({ x: s.x, y: s.y || 0, z: s.z, sl: tok, lying: true });
   if (!tgt.length) return;
+  // cada bala segue a direção que o jogador viu no rasto (com o desvio da arma), se não fugir mais do que 0,3 rad da mira; e para onde o cliente a viu parar (parede ou zombie)
+  const ds = Array.isArray(m.ds) ? m.ds.slice(0, n) : null, Ls = Array.isArray(m.Ls) ? m.Ls : null;
   for (let i = 0; i < n; i++) {
-    const sp = n > 1 ? 0.035 : 0; const d = [D[0] + (Math.random() - 0.5) * sp * 2, D[1] + (Math.random() - 0.5) * sp * 2, D[2] + (Math.random() - 0.5) * sp * 2];
-    const h = hitTest(O, d, k, L, tgt); if (!h) continue; const T = h.T;
-    let dmg = h.dmg * Math.max(0.3, Math.pow(h.v, 1.5)) * (0.9 + Math.random() * 0.2);
+    let d = D; if (ds && Array.isArray(ds[i]) && ds[i].length === 3) { const q = ds[i].map(v => num(v, -1, 1)), ql = Math.hypot(q[0], q[1], q[2]) || 1; q[0] /= ql; q[1] /= ql; q[2] /= ql; if (q[0] * D[0] + q[1] * D[1] + q[2] * D[2] > Math.cos(0.3)) d = q; }
+    else if (n > 1) { const sp = 0.02; d = [D[0] + (Math.random() - 0.5) * sp * 2, D[1] + (Math.random() - 0.5) * sp * 2, D[2] + (Math.random() - 0.5) * sp * 2]; }
+    const Li = Ls ? Math.min(L, num(Ls[i], 0, 900, L)) : L;
+    const h = hitTest(O, d, k, Li, tgt); if (!h) continue; const T = h.T;
+    // chumbo perde força com a distância (como no jogo, até 35 m); balas pela velocidade que ainda levam
+    let dmg = h.dmg * (n > 1 ? Math.min(1, Math.max(0.25, 1 - h.dist / 35)) : Math.max(0.3, Math.pow(h.v, 1.5))) * (0.9 + Math.random() * 0.2);
     if (T.sl) { const s = S.sleepers[T.sl]; if (!s) continue; s.hp = (s.hp ?? 100) - dmg; if (s.hp <= 0) { delete S.sleepers[T.sl]; if (S.tokens[T.sl]) S.tokens[T.sl].killed = true; mkBag(s.x, s.z, s.y || 0, s.lv || 0, s.inv, { body: 1, name: s.name }); bcast({ t: 'sleep', list: sleepList() }); send(c, { t: 'hitc', zone: h.zone, kill: true, name: s.name }); } else send(c, { t: 'hitc', zone: h.zone }); dirty = true; continue; }
     // como nos zombies: a proteção trava a bala (ainda magoa) e gasta-se até partir. Pistola: 1–2 tiros na cabeça, 3 no peito (4 com colete)
     const v = T.c.p, [helm, vest] = v.ar || [0, 0]; let pop = null;

@@ -94,7 +94,11 @@ export function makeNet({ G, scene, mkRemote, audio, Conta, enc, dec, hurt, die,
   };
   N.start = () => { want = true; retry = 0; connect(); };
   N.stop = () => { want = false; if (ws) { try { if (N.on) { closeBox(); N.sendInv(); } ws.close(); } catch (e) { } } ws = null; N.on = false; clearAll(); offline(); };
-  N.shot = (O, D, k, n, L, sup) => send({ t: 'shot', o: [+O.x.toFixed(2), +O.y.toFixed(2), +O.z.toFixed(2)], d: [+D.x.toFixed(4), +D.y.toFixed(4), +D.z.toFixed(4)], k, n, L: Math.round(L), sup: !!sup });
+  // o tiro vai com a direção de cada bala (o desvio que viste no rasto) e até onde cada uma chega antes de parar numa parede ou num zombie
+  const v4 = v => [+v.x.toFixed(4), +v.y.toFixed(4), +v.z.toFixed(4)];
+  N.shot = (O, D, k, n, L, sup, ds, Ls) => send({ t: 'shot', o: [+O.x.toFixed(2), +O.y.toFixed(2), +O.z.toFixed(2)], d: v4(D), k, n, L: Math.round(L), sup: !!sup, ds: ds ? ds.map(v4) : undefined, Ls: Ls ? Ls.map(v => Math.round(v * 10) / 10) : undefined });
+  // quem está à vista para levar um tiro (para a mira e para o rasto pararem neles)
+  N.targets = () => { const out = []; for (const r of R.values()) if (r.b.root.visible) out.push({ x: r.x, y: r.y || 0, z: r.z }); for (const s of sleepers.values()) if (s.b.root.visible) out.push({ x: s.x, y: 0, z: s.z, lying: true }); return out; };
   N.died = () => send({ t: 'died', it: G.inv.all().map(enc), force: 1 });
   // mundo partilhado
   N.cyc = () => (((Date.now() + off - cyc0) / 1000) % 1920 + 1920) % 1920;
