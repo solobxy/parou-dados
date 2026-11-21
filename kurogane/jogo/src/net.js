@@ -5,7 +5,7 @@ import * as THREE from 'three';
 const MODES = ['none', 'pistol', 'rifle', 'melee'];
 
 export function makeNet({ G, scene, mkRemote, audio, Conta, enc, dec, hurt, die, wallEnd, world, WV }) {
-  let ws = null, tok = null, sendT = 0, invT = 0, retry = 0, want = false, off = 0, cyc0 = 0, cur = null, psT = 0;
+  let ws = null, tok = null, sendT = 0, invT = 0, retry = 0, want = false, off = 0, cyc0 = 0, cur = null, psT = 0, zT = 0; const zdQ = [];
   const R = new Map(), sleepers = new Map();
   const tags = document.createElement('div'); tags.id = 'tags'; { const h = document.getElementById('hud'); if (h && h.parentNode) h.parentNode.insertBefore(tags, h); else document.body.appendChild(tags); } // por baixo do HUD e dos ecrãs por cima
   const N = { on: false, world: false, id: null, clan: null, clanInfo: null, R };
@@ -26,7 +26,7 @@ export function makeNet({ G, scene, mkRemote, audio, Conta, enc, dec, hurt, die,
   };
   const clearAll = () => { for (const id of [...R.keys()]) delRemote(id); setSleepers([]); };
   // deixa de estar ligado: os sacos do servidor saem e as caixas voltam a ser deste aparelho
-  const offline = () => { if (!N.world) return; N.world = false; cur = null; for (const b of [...G.bags]) if (b.nid) world.bags(null, [b.nid]); for (const c of G.W.containers) if (c.wid != null && !c.own) { c.grid = null; c.next = 0; } };
+  const offline = () => { if (!N.world) return; N.world = false; cur = null; for (const b of [...G.bags]) if (b.nid) world.bags(null, [b.nid]); for (const c of G.W.containers) if (c.wid != null && !c.own) { c.grid = null; c.next = 0; } zdQ.length = 0; world.z.offline(); };
   const onMsg = m => {
     switch (m.t) {
       case 'ok': {
@@ -47,12 +47,13 @@ export function makeNet({ G, scene, mkRemote, audio, Conta, enc, dec, hurt, die,
           const ar = a[12] || [0, 0], ak = ar.join(); if (ak !== r.ar) { r.ar = ak; r.b.setGear({ head: ar[0] ? { k: 'capacete' } : null, vest: ar[1] ? { k: 'colete' } : null }); }
           if (r.w !== a[8]) { r.w = a[8]; r.b.setWeapon(a[8] || null, {}); } }
         for (const r of R.values()) if (!seen.has(r.id)) { r.s1 = r.s0 = null; r.b.root.visible = false; r.el.style.display = 'none'; }
+        if (m.zu) world.z.rows(m.zu); if (m.zg) world.z.gone(m.zg);
         return;
       }
       case 'fx': {
         const p = G.p, d = p ? Math.hypot(m.o[0] - p.x, m.o[2] - p.z) : 99;
         audio.play(m.sup ? 'abafado' : 'pistola', Math.max(0.04, 1 - d / (m.sup ? 70 : 320)) * (m.sup ? 0.6 : 1));
-        wallEnd(m.o, m.d); if (G.heardShot && d < 300) G.heardShot(); if (p && d > 2.5) G.ui.sound(m.o[0], m.o[2], 't', d); return;
+        wallEnd(m.o, m.d); if (G.noise) G.noise(m.o[0], m.o[2], m.sup ? 12 : 34); if (G.heardShot && d < 300) G.heardShot(); if (p && d > 2.5) G.ui.sound(m.o[0], m.o[2], 't', d); return;
       }
       case 'hit': hurt(m.dmg, m.by, m.zone, m.pop); return;
       case 'hitc': { const r = m.on != null ? R.get(m.on) : null; G.ui.hit(!!m.kill, m.zone, false, r ? new THREE.Vector3(r.x, (r.y || 0) + (m.zone === 'head' ? 1.6 : 1.1), r.z) : null); G.buzz && G.buzz(m.kill ? [25, 40, 35] : 14); if (m.kill) G.ui.toast('Abateste ' + (m.name || 'um jogador')); return; }
@@ -60,6 +61,9 @@ export function makeNet({ G, scene, mkRemote, audio, Conta, enc, dec, hurt, die,
       case 'dr': world.door(m.i, m.o); return;
       case 'nd': world.node(m.k, m.ms); return;
       case 'wx': world.wx(m.r); return;
+      case 'zk': world.z.killed(m.i, m.by, m.head); return;
+      case 'zh': world.z.hit(m.i, m.dx, m.dz); return;
+      case 'zat': hurt(m.dmg, null, 'body', null, 'zombie'); return;
       case 'bg': world.bags(m.add, m.del); return;
       case 'opn': { if (!cur || cur.key !== m.c) return; const gen = world.opened(cur.c, m); if (G.box !== cur.c) { cur = null; return; } cur.sig = gen ? '' : sigOf(cur.c); cur.open = true; return; }
       case 'clan': if (m.erro) { if (N.onClan && N.onClan(m.erro)) return; G.ui.toast(m.erro); return; } else { N.clan = m.info ? m.info.id : null; N.clanInfo = m.info; for (const r of R.values()) r.el.classList.toggle('mate', mate(r.clan)); } if (N.onClan) N.onClan(); return;
@@ -86,6 +90,10 @@ export function makeNet({ G, scene, mkRemote, audio, Conta, enc, dec, hurt, die,
   // mundo partilhado
   N.cyc = () => (((Date.now() + off - cyc0) / 1000) % 1920 + 1920) % 1920;
   N.door = (i, o) => send({ t: 'dr', i, o: o ? 1 : 0 });
+  // zombies: lista inicial (mundo novo), dano (junto num só envio por imagem) e ataques a outros jogadores
+  N.zseed = L => send({ t: 'zs', L });
+  N.zd = o => zdQ.push(o);
+  N.zatk = (i, to, dmg) => send({ t: 'za', i, to, dmg: +dmg.toFixed(1) });
   N.node = k => send({ t: 'nd', k });
   N.bag = (x, z, y, lv, it) => send({ t: 'bag', x: +x.toFixed(2), z: +z.toFixed(2), y: +y.toFixed(2), lv, it });
   // caixas e sacos: pede ao servidor (só uma pessoa de cada vez); enquanto estiver aberta vai mandando o que tem; ao fechar manda o fim
@@ -103,6 +111,8 @@ export function makeNet({ G, scene, mkRemote, audio, Conta, enc, dec, hurt, die,
     if (!N.on) return; const now = performance.now();
     { const hide = G.mapOpen || G.invOpen || G.paused || !G.playing; if (tags.hidden !== hide) tags.hidden = hide; }
     sendT -= dt; if (sendT <= 0 && me) { sendT = 0.1; send({ t: 'st', ...me }); }
+    if (zdQ.length) { send({ t: 'zd', L: zdQ.splice(0, 40) }); }
+    zT -= dt; if (zT <= 0 && N.world) { zT = 0.1; const L = world.z.up(); if (L.length) send({ t: 'zu', L }); }
     if (cur) { if (cur.open && G.box !== cur.c) closeBox(); else if (cur.open) { psT -= dt; if (psT <= 0) { psT = 0.4; const sg = sigOf(cur.c); if (sg !== cur.sig) { cur.sig = sg; send({ t: 'ps', c: cur.key, it: world.encG(cur.c.grid) }); } } } else if (performance.now() - cur.t > 4000) cur = null; }
     invT -= dt; if (invT <= 0) { invT = 15; N.sendInv(); }
     const lv = me ? me.lv : 0;

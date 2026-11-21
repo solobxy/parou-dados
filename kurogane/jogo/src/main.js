@@ -404,15 +404,18 @@ async function boot() {
   G.sk = sk; G.SKN = SKN;
   // durabilidade da proteção: cada bala travada gasta-a; o capacete salta e o colete parte-se
   const armDur = z => { if (z.helm0 == null) { z.helm0 = z.helm || 0; z.vest0 = z.vest || 0; } z.hd = z.helm ? 20 : 0; z.vd = z.vest ? (z.vest >= 3 ? 50 : 25) : 0; };
+  const zDie = (z, head) => { z.state = 'dead'; z.deadT = 0; z.sink = 0; z.head = !!head; z.atkT = 0; z.mv = 0; if (!head) audio.play('carne', vol(z.x, z.z)); };
   const hurtZombie = (z, dmg, dx, dz, o = {}) => {
     if (o.zone && z.state !== 'dead') skUp('mira', o.zone === 'head' ? 0.011 : 0.0055);
-    const kill = z.hp - dmg <= 0, at = o.at;
-    z.hp -= dmg; z.hitT = 0.15; z.x += dx * 0.12; z.z += dz * 0.12;
+    const kill = z.hp - dmg <= 0, at = o.at, onl = G.net.world && z.nid != null;
+    z.hp -= dmg; z.hitT = 0.15; if (!z.remote) { z.x += dx * 0.12; z.z += dz * 0.12; }
     if (o.stop) { burst(at.x, at.y, at.z, 6, 0xffe2a0, 3.2, 0.25); audio.play('ricochete', vol(z.x, z.z)); }
     else if (o.zone === 'head') { burst(at.x, at.y, at.z, 16, 0x6a0c08, 3.6, 0.7); burst(at.x, at.y, at.z, 6, 0xd8c8b0, 2.4, 0.5); audio.play('cabeca', vol(z.x, z.z)); }
     else burst(at ? at.x : z.x, at ? at.y : 1.2, at ? at.z : z.z, 7, 0x7a0e0a, 3);
-    if (z.state !== 'chase') { z.state = 'chase'; z.lost = 0; }
+    if (z.state !== 'chase' && !z.remote) { z.state = 'chase'; z.lost = 0; }
     G.ui.hit(kill, o.zone, o.stop, at || new THREE.Vector3(z.x, (z.y || 0) + 1.25, z.z)); G.buzz(kill ? (o.zone === 'head' ? [20, 30, 60] : [25, 40, 35]) : 14);
+    if (onl) { G.net.zd({ i: z.nid, dmg: +dmg.toFixed(1), zone: o.zone || 'body', h: z.helm || 0, v: z.vest || 0, hd: z.hd, vd: z.vd, dx: +dx.toFixed(2), dz: +dz.toFixed(2), limp: o.limp || 0 });
+      if (kill) { zDie(z, o.zone === 'head'); z.predDead = performance.now(); } else if (!o.stop && o.zone !== 'head') audio.play('carne', 0.6 * vol(z.x, z.z)); return; }
     if (kill) { z.state = 'dead'; z.deadT = 0; z.head = o.zone === 'head'; G.p.kills++; if (o.zone !== 'head') audio.play('carne', vol(z.x, z.z)); if (Math.random() < 0.32) { const g = new Grid(6, 4); rollLoot(z.kind === 'mil' ? 'militar' : 'zombie', g); dropBag(z.x, z.z, g, { lv: z.lv || 0, y: (z.base || 0) + groundY(z.x, z.z, z.lv || 0) }); } }
     else if (!o.stop && o.zone !== 'head') audio.play('carne', 0.6 * vol(z.x, z.z));
   };
@@ -497,7 +500,7 @@ async function boot() {
     else if (zone === 'body') { if (z.vest && b.pen <= z.vest) { z.vd = (z.vd ?? 25) - dmg; dmg *= 0.8; stop = true; if (z.vd <= 0) { z.vest = 0; burst(E.x, E.y, E.z, 10, 0x3d4436, 3, 0.5); } } else if (z.vest) dmg *= 0.8; }
     else if (zone === 'arms') dmg *= 0.7;
     else { dmg *= 0.6; z.limp = Math.min(2, (z.limp || 0) + (b.pel ? 0.3 : 1)); }
-    const l = Math.hypot(b.v.x, b.v.z) || 1; hurtZombie(z, dmg, b.v.x / l, b.v.z / l, { zone, stop, at: E });
+    const l = Math.hypot(b.v.x, b.v.z) || 1; hurtZombie(z, dmg, b.v.x / l, b.v.z / l, { zone, stop, at: E, limp: zone === 'legs' ? (b.pel ? 0.3 : 1) : 0 });
   };
   // balística: gravidade e arrasto do ar (cada munição tem o seu). Tabela de queda por distância, calculada uma vez por munição e velocidade
   const BT = {};
@@ -683,13 +686,32 @@ async function boot() {
       // soldados na base militar (capacete IIIA e colete III); polícias na cidade (colete IIIA)
       if (zn && zn.kind === 'mil' && Math.random() < 0.55) { zb.kind = 'mil'; zb.helm = 2; zb.vest = Math.random() < 0.6 ? 2 : 3; zb.hp = 70; } else if (zn && zn.kind === 'city' && Math.random() < 0.12) { zb.kind = 'pol'; zb.vest = 2; zb.helm = Math.random() < 0.4 ? 2 : 0; zb.hp = 75; } armDur(zb);
       G.zs.push(zb); return true; } return false; };
+  // online: um zombie que outro jogador simula — anda para onde ele diz (com 120 ms de atraso, para ficar suave)
+  const ZST = ['wander', 'alert', 'chase', 'dead', 'chase'];
+  const remoteZ = (z, dt, now) => {
+    if (z.hitT > 0) z.hitT -= dt;
+    if (z.state === 'dead') { z.deadT += dt; if (z.deadT > 25) z.sink = Math.min(0.6, z.sink + dt * 0.25); return; }
+    const B = z.buf; if (!B || !B.length) return; const tR = now - 120; let a = null, b = null;
+    for (let k = B.length - 1; k >= 0; k--) if (B[k].t <= tR) { a = B[k]; b = B[k + 1] || B[k]; break; } if (!a) a = b = B[0];
+    const f = b === a ? 1 : clamp((tR - a.t) / (b.t - a.t), 0, 1), nx = a.x + (b.x - a.x) * f, nz = a.z + (b.z - a.z) * f, moved = Math.hypot(nx - z.x, nz - z.z);
+    if (moved > 8) { z.x = nx; z.z = nz; } else { z.x = nx; z.z = nz; z.phase += moved * 2.6; }
+    z.yaw = a.yaw + angDiff(b.yaw, a.yaw) * f; z.mv = a.mv + (b.mv - a.mv) * f; z.lv = b.lv;
+    if (b.st === 4 && z.lastSt !== 4) z.atkT = 0.6; z.lastSt = b.st; z.state = ZST[b.st] || 'wander'; if (z.atkT > 0) z.atkT -= dt;
+    stairUpdate(z); z.y = (z.base || 0) + groundY(z.x, z.z, z.lv || 0);
+  };
   const updZombies = dt0 => {
     navBudget = 2;
-    const p = G.p;
+    const me = G.p, onl = G.net.world, now = performance.now();
+    // quem os zombies podem perseguir: tu e, online, os outros jogadores vivos por perto
+    const tgts = me && G.playing ? [me] : [];
+    if (onl) for (const r of G.net.R.values()) { const b = r.s1; if (!b || !b[10] || b[11]) continue; const t = r.tg || (r.tg = { remote: true, rid: r.id, alive: true, h: 0 }); t.x = r.x; t.z = r.z; t.lv = b[4] || 0; t.base = Math.max(0, (r.y || 0) - groundY(r.x, r.z, t.lv)); t.sprint = b[6] > 1.3; tgts.push(t); }
     for (let i = G.zs.length - 1; i >= 0; i--) {
       const z = G.zs[i];
-      // morto: o corpo fica, afunda devagar e o zombie volta a nascer na zona dele passados uns minutos, longe da tua vista
-      if (z.state === 'dead') { z.deadT += dt0; if (z.deadT > 25) z.sink = Math.min(0.6, z.sink + dt0 * 0.25); if (z.deadT > (z.reT || 480) && Math.hypot((z.hx ?? z.x) - p.x, (z.hz ?? z.z) - p.z) > 70) reviveZ(z); continue; }
+      if (z.remote) { remoteZ(z, dt0, now); continue; }
+      // morto: o corpo fica, afunda devagar e o zombie volta a nascer na zona dele passados uns minutos, longe da tua vista (online, quem decide é o servidor)
+      if (z.state === 'dead') { z.deadT += dt0; if (z.deadT > 25) z.sink = Math.min(0.6, z.sink + dt0 * 0.25); if (!onl && z.deadT > (z.reT || 480) && Math.hypot((z.hx ?? z.x) - me.x, (z.hz ?? z.z) - me.z) > 70) reviveZ(z); continue; }
+      let p = me; if (tgts.length > 1) { let bq = 1e9; for (const t of tgts) { if (!t.alive) continue; const q = Math.hypot(t.x - z.x, t.z - z.z) + ((t.lv || 0) !== (z.lv || 0) ? 25 : 0); if (q < bq) { bq = q; p = t; } } }
+      const dMe = me ? Math.hypot(me.x - z.x, me.z - z.z) : 99;
       const dx = p.x - z.x, dz = p.z - z.z, d = Math.hypot(dx, dz), zl = z.lv || 0, same = zl === p.lv;
       // longe de ti pensa menos vezes (mais leve), mas fica no mapa onde estava
       let dt = dt0; if (d > 90 && z.state !== 'chase') { z.acc = (z.acc || 0) + dt0; if (z.acc < 0.5) continue; dt = z.acc; z.acc = 0; }
@@ -697,8 +719,8 @@ async function boot() {
       if (z.think <= 0) {
         z.think = 0.22 + Math.random() * 0.12;
         const face = Math.abs(angDiff(Math.atan2(dx, dz), z.yaw)) < 1.05;
-        const sr = 6 + 4 * (G.day ?? 1) + (G.lightOn ? 8 : 0); const sees = p.alive && G.playing && d < sr && (d < 3.5 || face) && canSee(z, p); z.sees = sees;
-        if (sees) { if (z.state !== 'chase') { audio.play('grunhido', 0.8 * vol(z.x, z.z)); G.ui.sound(z.x, z.z, 'z', d); } z.state = 'chase'; z.tx = p.x; z.tz = p.z; z.lost = 0; z.mem = 6; }
+        const sr = 6 + 4 * (G.day ?? 1) + (p === me && G.lightOn ? 8 : 0); const sees = p.alive && G.playing && d < sr && (d < 3.5 || face) && canSee(z, p); z.sees = sees;
+        if (sees) { if (z.state !== 'chase') { audio.play('grunhido', 0.8 * vol(z.x, z.z)); G.ui.sound(z.x, z.z, 'z', dMe); } z.state = 'chase'; z.tx = p.x; z.tz = p.z; z.lost = 0; z.mem = 6; }
         else if (z.state === 'chase') { z.lost += 0.28; if (z.lost > 3.2 || !p.alive) { z.state = 'alert'; } }
         if (p.alive && p.sprint && d < 7 && same && z.state === 'wander') { z.state = 'alert'; z.tx = p.x; z.tz = p.z; }
       }
@@ -726,7 +748,7 @@ async function boot() {
       z.atkCd -= dt;
       const close = sameLevel(z, p), reach = close && d < 1.3 && p.h < 1.7 && los(z.x, z.z, p.x, p.z, null, 'sg', zl, 0.5);
       if (z.state === 'chase' && p.alive && reach) { sp = 0; if (z.atkT <= 0 && z.atkCd <= 0) { z.atkT = 0.6; z.atkCd = 1.6; } }
-      if (z.atkT > 0) { z.atkT -= dt; if (z.atkT <= 0 && p.alive && close && d < 1.45 && p.h < 1.7 && los(z.x, z.z, p.x, p.z, null, 'sg', zl, 0.5)) hurtPlayer(6 + Math.random() * 4, 'zombie'); sp = 0; }
+      if (z.atkT > 0) { z.atkT -= dt; if (z.atkT <= 0 && p.alive && close && d < 1.45 && p.h < 1.7 && los(z.x, z.z, p.x, p.z, null, 'sg', zl, 0.5)) { const dm = 6 + Math.random() * 4; if (p.remote) G.net.zatk(z.nid, p.rid, dm); else hurtPlayer(dm, 'zombie'); } sp = 0; }
       // rumo: vira devagar e anda para onde está virado (menos aos solavancos)
       let mx = tx - z.x, mz = tz - z.z; const ml = Math.hypot(mx, mz);
       let des = z.yaw;
@@ -737,13 +759,13 @@ async function boot() {
       mx = Math.sin(z.yaw) * z.v; mz = Math.cos(z.yaw) * z.v;
       for (const o of G.zs) { if (o === z || o.state === 'dead' || (o.lv || 0) !== zl) continue; const ox = z.x - o.x, oz = z.z - o.z, od = ox * ox + oz * oz; if (od < 0.5 && od > 1e-6) { const k = (0.7 - Math.sqrt(od)) * 1.6; mx += ox * k; mz += oz * k; } }
       const ox = z.x, oz = z.z; z.x += mx * dt; z.z += mz * dt; collide(z, 0.3);
-      if (sameLevel(z, p) && p.alive && p.h < 1) { const qx = z.x - p.x, qz = z.z - p.z, qd = Math.hypot(qx, qz); if (qd < 0.62 && qd > 1e-4) { z.x = p.x + qx / qd * 0.62; z.z = p.z + qz / qd * 0.62; } }
+      for (const t of tgts) if (sameLevel(z, t) && t.alive && t.h < 1) { const qx = z.x - t.x, qz = z.z - t.z, qd = Math.hypot(qx, qz); if (qd < 0.62 && qd > 1e-4) { z.x = t.x + qx / qd * 0.62; z.z = t.z + qz / qd * 0.62; } }
       const moved = Math.hypot(z.x - ox, z.z - oz);
       if (sp > 0.3 && moved < sp * dt * 0.3) { z.stuck += dt; if (z.stuck > 0.6) { z.stuck = 0; if (z.state === 'wander') z.wT = 0; else if (z.path) { z.path = null; z.navT = 0; z.det = 0.5; z.detDir = Math.random() < 0.5 ? -1 : 1; } else { z.det = 1.0; z.detDir = Math.random() < 0.5 ? -1 : 1; z.navT = 0; } } } else z.stuck = Math.max(0, z.stuck - dt);
       z.mv = moved / dt / 3.0; z.phase += moved * 2.6;
       stairUpdate(z); z.y = (z.base || 0) + groundY(z.x, z.z, z.lv || 0);
-      if (z.state === 'chase' && d < 22) { z.groan -= dt; if (z.groan <= 0) { z.groan = 3 + Math.random() * 5; audio.play('grunhido', 0.6 * vol(z.x, z.z)); G.ui.sound(z.x, z.z, 'z', d); } }
-      if (G.playing && z.state === 'chase' && d < 16 && d > 2.5 && z.v > 1) { z.stepT = (z.stepT || 0) - dt; if (z.stepT <= 0) { z.stepT = 0.8; G.ui.sound(z.x, z.z, 'p', d); } }
+      if (z.state === 'chase' && dMe < 22) { z.groan -= dt; if (z.groan <= 0) { z.groan = 3 + Math.random() * 5; audio.play('grunhido', 0.6 * vol(z.x, z.z)); G.ui.sound(z.x, z.z, 'z', dMe); } }
+      if (G.playing && z.state === 'chase' && dMe < 16 && dMe > 2.5 && z.v > 1) { z.stepT = (z.stepT || 0) - dt; if (z.stepT <= 0) { z.stepT = 0.8; G.ui.sound(z.x, z.z, 'p', dMe); } }
     }
   };
   const hurtPlayer = (dmg, cause, raw) => {
@@ -782,6 +804,39 @@ async function boot() {
   W.onSector = S => { if (!nodeWait.size) return; const now = Date.now(); for (const n of S.nodes) { const u = nodeWait.get(n.key); if (u && u > now) nodeOff(n, u - now); } };
   const bagRows = rows => { const me = (Conta.ativo() || {}).nome; for (const [id, x, z, y, lv, body, name] of rows) { if (G.bags.some(b => b.nid === id)) continue; const mine = body && name === me; const b = dropBag(x, z, new Grid(6, 4), { net: true, nid: id, body: !!body, lv, y, mine, label: body ? (mine ? 'Revistar o teu corpo' : 'Revistar o corpo de ' + name) : 'Revistar saco' }); b.grid = null; b.mesh.position.set(x, y, z); } };
   const bagGone = id => { const i = G.bags.findIndex(b => b.nid === id); if (i < 0) return; const b = G.bags[i]; scene.remove(b.mesh); G.bags.splice(i, 1); if (G.box === b) { G.box = null; if (G.invOpen) G.ui.openInv(null); } };
+  // ---------- zombies online: o servidor guarda-os todos; simulas os que estão mais perto de ti e vês os outros como quem os simula os vê
+  const zById = new Map(), zSent = new Map(), KIND = ['', 'mil', 'pol'], KC = { mil: 1, pol: 2 };
+  const zClear = () => { G.zs.length = 0; zById.clear(); zSent.clear(); };
+  const zNet = {
+    // mundo novo: espalha os zombies pelas zonas do jogo e manda a lista ao servidor
+    seed: () => { popWorld(); const L = G.zs.map(z => [+z.x.toFixed(1), +z.z.toFixed(1), KC[z.kind] || 0, z.helm || 0, z.vest || 0, Math.round(z.hp)]); zClear(); return L; },
+    rows: U => { const now = performance.now();
+      for (const [i, x10, z10, lv, y100, mv10, st, hp, k, h, v, l10, own, hx10, hz10] of U) {
+        const x = x10 / 10, zz = z10 / 10; let z = zById.get(i);
+        if (!z) { z = zAt(x, zz); Object.assign(z, { nid: i, hx: hx10 / 10, hz: hz10 / 10, kind: KIND[k] || undefined, helm: h, vest: v, lv, yaw: y100 / 100, hpMax: k === 1 ? 70 : k === 2 ? 75 : 80 }); armDur(z); z.helm = h; z.vest = v; z.hp = hp; z.limp = l10 / 10; z.remote = !own; z.buf = own ? null : [];
+          if (st === 3) { z.state = 'dead'; z.deadT = 60; z.sink = 0.6; } else z.state = ZST[st] || 'wander'; if (!own) z.buf.push({ t: now, x, z: zz, lv, yaw: z.yaw, mv: mv10 / 10, st });
+          stairUpdate(z); z.y = (z.base || 0) + groundY(z.x, z.z, z.lv || 0); zById.set(i, z); G.zs.push(z); continue; }
+        // passa a ser simulado aqui, ou deixa de ser
+        if (own && z.remote) { Object.assign(z, { remote: false, buf: null, x, z: zz, lv, yaw: y100 / 100, tx: x, tz: zz, think: 0, path: null, v: 0, lost: 0 }); if (z.state !== 'dead') z.state = st === 3 ? 'dead' : ZST[st] || 'wander'; zSent.delete(i); }
+        else if (!own && !z.remote) { z.remote = true; z.buf = []; }
+        z.helm = h; z.vest = v; z.limp = l10 / 10;
+        if (st === 3) { if (z.state !== 'dead') zDie(z, false); z.hp = 0; z.predDead = 0; continue; }
+        if (z.state === 'dead') { if (z.predDead && now - z.predDead < 2500) continue; // a morte que previmos ainda não chegou ao servidor
+          Object.assign(z, { state: ZST[st] || 'wander', deadT: 0, sink: 0, head: false, x, z: zz, lv, predDead: 0 }); armDur(z); z.helm = h; z.vest = v; if (z.remote) z.buf = []; }
+        z.hp = hp; if (z.remote) { z.buf.push({ t: now, x, z: zz, lv, yaw: y100 / 100, mv: mv10 / 10, st }); if (z.buf.length > 10) z.buf.shift(); }
+      } },
+    gone: ids => { for (const i of ids) { const z = zById.get(i); if (!z) continue; zById.delete(i); zSent.delete(i); const j = G.zs.indexOf(z); if (j >= 0) G.zs.splice(j, 1); } },
+    // morte confirmada pelo servidor; se foste tu, conta e pode largar loot
+    killed: (i, by, head) => { const z = zById.get(i); if (z) { if (z.state !== 'dead') zDie(z, head); z.hp = 0; z.predDead = 0; }
+      if (by === G.net.id && G.p) { G.p.kills++; if (z && Math.random() < 0.32) { const g = new Grid(6, 4); rollLoot(z.kind === 'mil' ? 'militar' : 'zombie', g); dropBag(z.x, z.z, g, { lv: z.lv || 0, y: (z.base || 0) + groundY(z.x, z.z, z.lv || 0) }); } } },
+    // outro jogador acertou num zombie que tu simulas: empurrão e vira-se
+    hit: (i, dx, dz) => { const z = zById.get(i); if (!z || z.remote || z.state === 'dead') return; z.x += dx * 0.12; z.z += dz * 0.12; z.hitT = 0.15; if (z.state !== 'chase') { z.state = 'chase'; z.lost = 0; } },
+    // os teus zombies que mudaram (10 vezes por segundo)
+    up: () => { const out = []; for (const z of G.zs) { if (z.remote || z.nid == null || z.state === 'dead') continue; const st = z.atkT > 0 ? 4 : z.state === 'chase' ? 2 : z.state === 'alert' ? 1 : 0;
+        const a = [z.nid, Math.round(z.x * 10), Math.round(z.z * 10), z.lv || 0, Math.round(z.yaw * 20) * 5, Math.round((z.mv || 0) * 10), st, Math.round((z.limp || 0) * 10)], sg = a.join(); if (zSent.get(z.nid) === sg) continue; zSent.set(z.nid, sg); out.push(a); } return out; },
+    offline: () => { zClear(); popWorld(); },
+  };
+  G.noise = (x, z, r) => noise(x, z, r);
   const netWorld = {
     // ao ligar: o mundo passa a ser o do servidor (sacos, caixas, portas, árvores, tempo)
     reset: w => {
@@ -791,7 +846,9 @@ async function boot() {
       for (const n of nodes) if (!n.alive && n.key) { n.alive = true; n.hp = n.max; n.col.on = true; showNode(n); }
       nodeWait.clear(); const now = Date.now(); for (const [k, ms] of w.nodes) { nodeWait.set(k, now + ms); const n = nodes.find(q => q.key === k); if (n) nodeOff(n, ms); }
       G.rainT = G.rain = w.wx; bagRows(w.bags);
+      zClear(); if (w.zseed) G.net.zseed(zNet.seed());
     },
+    z: zNet,
     door: (i, o) => { const D = doorById.get(i); if (D) setDoor(D, o, false, true); },
     node: (k, ms) => { nodeWait.set(k, Date.now() + ms); const n = nodes.find(q => q.key === k); if (n) nodeOff(n, ms); },
     bags: (add, del) => { if (add) bagRows(add); for (const id of del || []) bagGone(id); },
@@ -807,15 +864,15 @@ async function boot() {
     encG,
   };
   G.net = makeNet({ G, scene, mkRemote, bagMesh: bagM, audio, Conta, enc, dec, die, world: netWorld, WV,
-    hurt: (dmg, by, zone, pop) => {
-      if (!G.p || !G.p.alive) return; G.killer = by;
+    hurt: (dmg, by, zone, pop, cause) => {
+      if (!G.p || !G.p.alive) return; if (cause === 'zombie') { hurtPlayer(dmg, 'zombie'); return; } G.killer = by;
       if (pop) { const s = pop === 'head' ? 'head' : 'vest'; if (G.inv.eq[s]) { G.inv.eq[s] = null; refresh(); G.ui.toast(s === 'head' ? 'O teu capacete partiu-se' : 'O teu colete partiu-se'); } }
       hurtPlayer(dmg, 'pvp', true); if (zone === 'head') G.shakeT = Math.max(G.shakeT || 0, 0.25);
     },
     give: L => { let n = 0, chao = 0; for (const it of L) { const left = G.inv.give(it); n++; if (left) { it.n = left; G.dropItem(it); chao++; } } audio.play('apanhar'); refresh(); G.ui.toast(!n ? 'Já alguém levou esta mochila' : chao ? 'Apanhaste a mochila (o que não coube ficou no chão)' : 'Apanhaste a mochila'); },
     wallEnd: (o, d) => { _wa.set(o[0], o[1], o[2]); _wb.copy(_wa).addScaledVector(_wb.set(d[0], d[1], d[2]), 300); const t = wallHit(_wa, _wb); const E = _wb.sub(_wa).multiplyScalar(t).add(_wa); tracer(o[0], o[1], o[2], E.x, E.y, E.z); if (G.p && Math.hypot(o[0] - G.p.x, o[2] - G.p.z) < 60) { flash.position.set(o[0], o[1], o[2]); flash.intensity = 5 + 12 * (1 - (G.day ?? 1)); G.flashT = 0.06; } } });
   const decG = (L, g, rows) => { for (const o of L || []) { const it = dec(o); if (!it) continue; if (g.fits(it, o.x, o.y, rows)) g.add(it, o.x, o.y); else g.insert(it, rows); } return g; };
-  const saveWorld = () => { if (!G.zs.length) return; if (G.net && G.net.world) { Conta.gravarMundo({ v: 1, when: Date.now(), base: G.base.save(encG) }); return; } Conta.gravarMundo({ v: 1, when: Date.now(), cyc: Math.round(G.cyc || 0),
+  const saveWorld = () => { if (G.net && G.net.world) { Conta.gravarMundo({ v: 1, when: Date.now(), base: G.base.save(encG) }); return; } if (!G.zs.length) return; Conta.gravarMundo({ v: 1, when: Date.now(), cyc: Math.round(G.cyc || 0),
     zs: G.zs.map(z => [Math.round(z.x * 10) / 10, Math.round(z.z * 10) / 10, Math.round((z.hx ?? z.x) * 10) / 10, Math.round((z.hz ?? z.z) * 10) / 10, Math.round(z.hp), z.kind || '', z.helm || 0, z.vest || 0, z.limp || 0, z.state === 'dead' ? Math.round(z.deadT) : -1, z.lv || 0, z.state === 'chase' ? 1 : 0]),
     bags: G.bags.filter(b => b.grid && !b.grid.empty).map(b => ({ x: b.x, z: b.z, lv: b.lv || 0, y: +b.mesh.position.y.toFixed(2), body: b.body, age: Math.round(G.t - b.t), c: [b.grid.cols, b.grid.rows], g: encG(b.grid) })),
     wx: [+(G.rain || 0).toFixed(2), G.rainT || 0, Math.round(WX.t)], base: G.base.save(encG), locks: W.doors.filter(D => D.lock).map(D => [W.doors.indexOf(D), Math.round(D.lock.hp), D.lock.broke || 0]),
@@ -867,6 +924,7 @@ async function boot() {
     G.wasCombat = !!(ch && ch.combat); G.combatT = -99; G.quit = null;
     // o mundo do perfil volta como estava: zombies, sacos no chão, o que já tiraste das caixas e a hora (quem saiu a meio de uma luta volta a meio dela)
     if (wd) restoreWorld(wd); else if (ch && ch.zs) restoreZs(ch.zs); else popWorld();
+    if (!G.zs.length) popWorld(); // mundo gravado online (só com a base): os zombies deste aparelho voltam a nascer
     SECTORS.fill(G.p.x, G.p.z);
     refresh(); save(); G.ui.showHUD(cont ? 'Acordaste onde adormeceste.' : kit ? 'Kit de teste: começas à beira do mapa do centro.' : whereMsg(G.p.x, G.p.z));
     G.killer = null; if (G.online && !kit) G.net.start(); else G.net.stop();

@@ -97,7 +97,7 @@ const mkBag = (x, z, y, lv, it, o = {}) => {
 // e manda para aqui; os outros veem o mesmo. Dano e mortes passam sempre por aqui.
 const zRow = (i, z, own) => [i, Math.round(z.x * 10), Math.round(z.z * 10), z.lv, Math.round(z.yaw * 100), Math.round((z.mv || 0) * 10), z.st, Math.round(z.hp), z.k, z.h, z.v, Math.round((z.limp || 0) * 10), own ? 1 : 0, Math.round(z.hx * 10), Math.round(z.hz * 10)];
 // para quem o simula, a posição vem dele: só se volta a mandar quando muda a vida, a proteção ou morre
-const zSig = (z, own, row) => own ? 'o' + (z.st === 3 ? 3 : 0) + ',' + row[7] + ',' + z.h + ',' + z.v : row.join();
+const zSig = (z, own, row) => own ? 'o' + (z.st === 3 ? 3 : 0) + ',' + row[7] + ',' + z.h + ',' + z.v + ',' + row[11] : row.join();
 const zNear = (x, z, r) => { let n = 0; for (const c of players.values()) if (c.p && Math.hypot(c.p.x - x, c.p.z - z) < r) n++; return n; };
 
 // dano num zombie: conta aqui; quem o simula recebe o empurrão (e o zombie vira-se para quem disparou)
@@ -168,7 +168,7 @@ const onMsg = (c, m) => {
     dirty = true; return; }
   // quem simula manda a posição dos seus zombies
   if (m.t === 'zu') { if (!Array.isArray(m.L)) return; for (const a of m.L.slice(0, 400)) { const z = S.w.zs[a[0]]; if (!z || z.o !== c.id || z.st === 3) continue;
-      z.x = num(a[1], -41000, 41000) / 10; z.z = num(a[2], -41000, 41000) / 10; z.lv = num(a[3], 0, 6) | 0; z.yaw = num(a[4], -1000, 1000) / 100; z.mv = num(a[5], 0, 40) / 10; z.st = num(a[6], 0, 2) | 0; z.limp = num(a[7], 0, 20) / 10; } return; }
+      z.x = num(a[1], -41000, 41000) / 10; z.z = num(a[2], -41000, 41000) / 10; z.lv = num(a[3], 0, 6) | 0; z.yaw = num(a[4], -1000, 1000) / 100; z.mv = num(a[5], 0, 40) / 10; z.st = num(a[6], 0, 4) | 0; z.limp = num(a[7], 0, 20) / 10; } return; }
   // dano a um zombie (de quem disparou ou bateu): a vida conta aqui
   if (m.t === 'zd') { for (const d of (Array.isArray(m.L) ? m.L : [m]).slice(0, 40)) zHit(c, p, d, now); return; }
   // ataque de um zombie a outro jogador (decidido por quem o simula)
