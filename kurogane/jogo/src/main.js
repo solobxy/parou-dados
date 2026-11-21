@@ -480,9 +480,19 @@ async function boot() {
   const plHit = (P, Q, aim = false) => {
     const T = G.net && G.net.on && G.net.targets ? G.net.targets() : null; if (!T || !T.length) return null; let best = null; const L = P.distanceTo(Q) || 1;
     const mx = (P.x + Q.x) / 2, mz = (P.z + Q.z) / 2, half = Math.hypot(Q.x - P.x, Q.z - P.z) / 2 + 2;
-    for (const t of T) { if (Math.abs(t.x - mx) > half || Math.abs(t.z - mz) > half) continue; const parts = t.lying ? [[t.y + 0.25, t.y + 0.25, 0.5, 'body']] : [[t.y + 1.62, t.y + 1.62, 0.17, 'head'], [t.y + 0.15, t.y + 1.35, 0.3, 'body']];
-      for (const [y0, y1, r, zone] of parts) { _pa.set(t.x, y0, t.z); _pb.set(t.x, y1, t.z); const [d2, sg, u] = segSeg(P, Q, _pa, _pb); const rr = aim ? r * 1.1 : r; if (d2 > rr * rr) continue; const s = Math.max(0, sg - Math.sqrt(rr * rr - d2) / L);
-        if (!best || s < best.s) best = { s, zone, point: new THREE.Vector3(t.x, zone === 'head' ? y0 : clamp(y0 + (y1 - y0) * u, t.y + 0.5, t.y + 1.3), t.z) }; } }
+    const ent = (d2, sg, r) => Math.max(0, sg - Math.sqrt(Math.max(0, r * r - d2)) / L);
+    for (const t of T) { if (Math.abs(t.x - mx) > half || Math.abs(t.z - mz) > half) continue; let h = null;
+      if (t.lying) { _pa.set(t.x, t.y + 0.25, t.z); const [d2, sg] = segSeg(P, Q, _pa, _pa); if (d2 <= 0.25) h = { s: ent(d2, sg, 0.5), zone: 'body', point: _pa.clone() }; }
+      else {
+        _pa.set(t.x, t.y + 1.62, t.z); const [dh, sh] = segSeg(P, Q, _pa, _pa); _pa.set(t.x, t.y + 0.15, t.z); _pb.set(t.x, t.y + 1.35, t.z); const [db, sb, u] = segSeg(P, Q, _pa, _pb);
+        const body = (y) => ({ s: ent(db, sb, 0.33), zone: 'body', point: new THREE.Vector3(t.x, y, t.z) });
+        if (!aim) { const hi = dh <= 0.17 * 0.17 ? ent(dh, sh, 0.17) : 9, bi = db <= 0.09 ? ent(db, sb, 0.3) : 9; if (hi < 9 || bi < 9) h = hi < bi ? { s: hi, zone: 'head' } : { s: bi, zone: 'body' }; }
+        // a mirar: vista de cima, a cabeça tapa o meio do corpo; só é cabeça com a mira mesmo em cima dela, senão vai ao peito
+        else if (dh <= 0.1 * 0.1) h = { s: ent(dh, sh, 0.1), zone: 'head', point: new THREE.Vector3(t.x, t.y + 1.62, t.z) };
+        else if (db <= 0.33 * 0.33) h = body(clamp(t.y + 0.15 + 1.2 * u, t.y + 0.5, t.y + 1.3));
+        else if (dh <= 0.2 * 0.2) h = { s: ent(dh, sh, 0.2), zone: 'body', point: new THREE.Vector3(t.x, t.y + 1.3, t.z) };
+      }
+      if (h && (!best || h.s < best.s)) best = h; }
     return best;
   };
   const PENC = { head: 0.7, body: 0.9, arms: 0.4, legs: 0.6 }; // quanto custa atravessar cada parte (a bala passa se ainda tiver perfuração que chegue)
@@ -1026,7 +1036,7 @@ async function boot() {
   const _sa = new THREE.Vector3(), _sb = new THREE.Vector3();
   const clearShot = z => { const p = G.p, lo = (G.aimS.lean || 0) * 0.45; _sa.set(p.x + Math.cos(p.yaw) * lo, p.y + 1.35, p.z - Math.sin(p.yaw) * lo); for (const h of [1.25, 1.62]) { _sb.set(z.x, (z.y || 0) + h, z.z); if (wallHit(_sa, _sb) > 0.995) return true; } return false; };
   G.dbgSpawn = () => spawnPoint(false);
-  G.dbg = { cols: (x, z, r) => { const out = []; near(x - r, z - r, x + r, z + r, R => { out.push(['r', R.k, +R.x0.toFixed(2), +R.z0.toFixed(2), +R.x1.toFixed(2), +R.z1.toFixed(2), R.h, R.yb || 0]); }, C => { out.push(['c', +C.x.toFixed(2), +C.z.toFixed(2), C.r, C.node ? C.node.kind + ':' + C.node.alive : (C.k || C.kind || '?'), C.on]); }); return out; }, scr: (x, y, z) => { const q = toScreen(new THREE.Vector3(x, y, z)); return [q.x, q.y, q.ok]; }, shoulder: () => { const p = G.p; return [p.x + Math.sin(p.yaw) * 0.15, p.y + 1.35, p.z + Math.cos(p.yaw) * 0.15]; }, aimA: () => [AIM.A.x, AIM.A.y, AIM.A.z, AIM.zone, !!AIM.lock], wallHit: (a, b) => wallHit(new THREE.Vector3(...a), new THREE.Vector3(...b)), item: (k, n) => mkItem(k, n), deplete: n => { n.hp = 0; n.alive = false; n.col.on = false; n.respawn = G.t + 180; hideNode(n); if (G.net.on && n.key) G.net.node(n.key); }, nodes: () => nodes, fire: () => { const it = held(), g = it && ITEMS[it.k].gun; return g ? fire(it, g) : false; }, canSee: (a, b) => canSee(a, b), clearShot: z => clearShot(z), zoneHit: (z, P, Q, k) => zoneHit(z, P, Q, k), horde: () => horde, hurt: (d, c) => hurtPlayer(d, c || 'zombie'), hitZ: (z, zone, k) => { const B = ITEMS[k].bal; hitZombie(z, zone, { dmg: B.dmg, pen: B.pen, pel: B.pel, v: new THREE.Vector3(B.v, 0, 0), v0: B.v, dist: 10, fall: B.fall || 1 }, { x: z.x, y: 1.3, z: z.z }); } }; G.V3 = THREE.Vector3; G.M4 = THREE.Matrix4; G.RC = new THREE.Raycaster();
+  G.dbg = { pick: (x, y) => { const r = pick(x, y, 1); return [r.zone || null, !!r.pl, +r.point.x.toFixed(2), +r.point.y.toFixed(2), +r.point.z.toFixed(2)]; }, plHit: (a, b) => plHit(new THREE.Vector3(...a), new THREE.Vector3(...b), true), cam: () => [cam.position.x, cam.position.y, cam.position.z], cols: (x, z, r) => { const out = []; near(x - r, z - r, x + r, z + r, R => { out.push(['r', R.k, +R.x0.toFixed(2), +R.z0.toFixed(2), +R.x1.toFixed(2), +R.z1.toFixed(2), R.h, R.yb || 0]); }, C => { out.push(['c', +C.x.toFixed(2), +C.z.toFixed(2), C.r, C.node ? C.node.kind + ':' + C.node.alive : (C.k || C.kind || '?'), C.on]); }); return out; }, scr: (x, y, z) => { const q = toScreen(new THREE.Vector3(x, y, z)); return [q.x, q.y, q.ok]; }, shoulder: () => { const p = G.p; return [p.x + Math.sin(p.yaw) * 0.15, p.y + 1.35, p.z + Math.cos(p.yaw) * 0.15]; }, aimA: () => [AIM.A.x, AIM.A.y, AIM.A.z, AIM.zone, !!AIM.lock], wallHit: (a, b) => wallHit(new THREE.Vector3(...a), new THREE.Vector3(...b)), item: (k, n) => mkItem(k, n), deplete: n => { n.hp = 0; n.alive = false; n.col.on = false; n.respawn = G.t + 180; hideNode(n); if (G.net.on && n.key) G.net.node(n.key); }, nodes: () => nodes, fire: () => { const it = held(), g = it && ITEMS[it.k].gun; return g ? fire(it, g) : false; }, canSee: (a, b) => canSee(a, b), clearShot: z => clearShot(z), zoneHit: (z, P, Q, k) => zoneHit(z, P, Q, k), horde: () => horde, hurt: (d, c) => hurtPlayer(d, c || 'zombie'), hitZ: (z, zone, k) => { const B = ITEMS[k].bal; hitZombie(z, zone, { dmg: B.dmg, pen: B.pen, pel: B.pel, v: new THREE.Vector3(B.v, 0, 0), v0: B.v, dist: 10, fall: B.fall || 1 }, { x: z.x, y: 1.3, z: z.z }); } }; G.V3 = THREE.Vector3; G.M4 = THREE.Matrix4; G.RC = new THREE.Raycaster();
   const lockable = z => { if (!inView(z) || !G.p) return false; if (z._lkT > G.t) return z._lk; z._lkT = G.t + 0.12; return (z._lk = canSee(G.p, z) && clearShot(z)); };
   const bestTarget = () => { const p = G.p, d = heldDef(), range = d.gun ? Math.min(d.gun.rng, 40) : 3; let best = null, bs = 1e9; for (const z of G.zs) { if (!inView(z)) continue; const dd = Math.hypot(z.x - p.x, z.z - p.z); if (dd > range) continue; const a = Math.abs(angDiff(Math.atan2(z.x - p.x, z.z - p.z), p.yaw)); if (dd > 3 && a > 1.25) continue; if (!lockable(z)) continue; const sc = dd + a * 3; if (sc < bs) { bs = sc; best = z; } } return best; };
   const _pv = new THREE.Vector3();
@@ -1054,7 +1064,7 @@ async function boot() {
     const p = G.p, d = heldDef(); if (!G.playing || !d.gun || !p.alive || p.climb || p.use || G.invOpen) return;
     const was = AIM.on; AIM.on = true; AIM.idle = 0; if (!was) AIM.steady = 0;
     AIM.scope = !!(scope && scopeItem());
-    if (TOUCH && !was && !AIM.scope) { AIM.lock = null; const z = G.cfg.assist ? bestTarget() : null; if (z) AIM.lock = chestLock(z); else { const s0 = toScreen(_c.set(p.x + Math.sin(p.yaw) * 7, p.y + 1.25, p.z + Math.cos(p.yaw) * 7)); AIM.sx = s0.x; AIM.sy = s0.y; } }
+    if (TOUCH && !was && !AIM.scope) { AIM.lock = null; AIM.off = null; const z = G.cfg.assist ? bestTarget() : null; if (z) AIM.lock = chestLock(z); else { const s0 = toScreen(_c.set(p.x + Math.sin(p.yaw) * 7, p.y + 1.25, p.z + Math.cos(p.yaw) * 7)); AIM.sx = s0.x; AIM.sy = s0.y; AIM.off = { x: Math.sin(p.yaw) * 7, y: p.y + 1.25, z: Math.cos(p.yaw) * 7 }; } }
     if (AIM.scope) { // entrar na mira: começa a olhar para onde já estavas a apontar
       // já a apontar: o ponto da retícula; a começar agora: o rato (PC) ou a direção para onde o boneco está virado, à altura dos olhos
       const eye = eyePos(_e); let T;
@@ -1090,8 +1100,9 @@ async function boot() {
     if (!AIM.on) return; AIM.idle = 0; const k = G.cfg.sens || 1;
     if (G.fp) { const R = G.ui.scopeR(), f = THREE.MathUtils.degToRad(scopeFov()) / (2 * R) * 1.1 * k; AIM.fy -= dx * f; AIM.fpit = clamp(AIM.fpit - dy * f, -1.2, 1.2); return; }
     AIM.sx = clamp(AIM.sx + dx * k, 4, innerWidth - 4); AIM.sy = clamp(AIM.sy + dy * k, 4, innerHeight - 4);
-    const pk = pick(AIM.sx, AIM.sy, 1.25); if (pk.part && lockable(pk.z)) { AIM.lock = pk.part; return; }
-    AIM.lock = null;
+    const pk = pick(AIM.sx, AIM.sy, 1.25); if (pk.part && lockable(pk.z)) { AIM.lock = pk.part; AIM.off = null; return; }
+    AIM.lock = null; { const p = G.p; AIM.off = { x: pk.point.x - p.x, y: pk.point.y, z: pk.point.z - p.z }; }
+    if (pk.pl) return; // em cima de outro jogador: a ajuda não salta para um zombie que esteja ao lado dele
     if (G.cfg.assist) { let bz = null, bd = 24; for (const z of G.zs) { if (!lockable(z)) continue; const q = toScreen(lockW(chestLock(z), _c)); const dd = Math.hypot(q.x - AIM.sx, q.y - AIM.sy); if (q.ok && dd < bd) { bd = dd; bz = z; } } if (bz) AIM.lock = chestLock(bz); }
   };
   G.relock = () => { if (!AIM.on || G.fp) return; const z = bestTarget(); AIM.lock = z ? chestLock(z) : null; AIM.idle = 0; };
@@ -1206,9 +1217,10 @@ async function boot() {
           const end = _a.copy(AIM.eye).addScaledVector(AIM.dir, 160); let bz = null; for (const z of G.zs) { if (z.state === 'dead') continue; const r = zoneHit(z, AIM.eye, end); if (r && (!bz || r.s < bz.s)) bz = r; }
           const ws = wallHit(AIM.eye, end); AIM.zone = bz && bz.s < ws ? bz.zone : null; AIM.dist = (bz && bz.s < ws ? bz.s : ws) * 160;
         } else {
-          if (AIM.reseed && !G.fp) { AIM.reseed = false; if (TOUCH) { const s0 = toScreen(_c.set(p.x + Math.sin(AIM.fy) * 8, p.y + 1.25, p.z + Math.cos(AIM.fy) * 8)); if (s0.ok) { AIM.sx = s0.x; AIM.sy = s0.y; } } }
+          if (AIM.reseed && !G.fp) { AIM.reseed = false; AIM.off = null; if (TOUCH) { const s0 = toScreen(_c.set(p.x + Math.sin(AIM.fy) * 8, p.y + 1.25, p.z + Math.cos(AIM.fy) * 8)); if (s0.ok) { AIM.sx = s0.x; AIM.sy = s0.y; } } }
           if (!TOUCH) { if (mouse.has) { AIM.sx = mouse.x; AIM.sy = mouse.y; } }
-          else if (AIM.lock) { if (!lockable(AIM.lock.z)) { const z = cfg.assist ? bestTarget() : null; AIM.lock = z ? chestLock(z) : null; } if (AIM.lock) { const q = toScreen(lockW(AIM.lock, _c)); if (q.ok) { AIM.sx = q.x; AIM.sy = q.y; } } }
+          else if (!AIM.lock && AIM.off && AIM.on) { const q = toScreen(_c.set(p.x + AIM.off.x, AIM.off.y, p.z + AIM.off.z)); if (q.ok) { AIM.sx = q.x; AIM.sy = q.y; } }
+          else if (AIM.lock) { if (!lockable(AIM.lock.z)) { const z = cfg.assist ? bestTarget() : null; AIM.lock = z ? chestLock(z) : null; if (!z) AIM.off = { x: AIM.A.x - p.x, y: AIM.A.y, z: AIM.A.z - p.z }; } if (AIM.lock) { const q = toScreen(lockW(AIM.lock, _c)); if (q.ok) { AIM.sx = q.x; AIM.sy = q.y; } } }
           if ((!TOUCH && mouse.has && !G.invOpen) || AIM.on) {
             if (TOUCH && AIM.lock) { lockW(AIM.lock, AIM.A); AIM.zone = AIM.lock.zone; AIM.tgt = AIM.lock.z; }
             else { const pk = pick(AIM.sx, AIM.sy, 1.0); AIM.A.copy(pk.point); AIM.zone = pk.zone || null; AIM.tgt = pk.z || null; }

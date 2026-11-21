@@ -217,7 +217,7 @@ const onMsg = (c, m) => {
   }
   const p = c.p; if (!p) return; const now = Date.now();
   if (m.t === 'st') { p.x = num(m.x, -4100, 4100); p.z = num(m.z, -4100, 4100); p.y = num(m.y, -5, 40); p.lv = num(m.lv, 0, 6) | 0; p.yaw = num(m.yaw, -10, 10); p.mv = num(m.mv, 0, 3); p.an = num(m.an, 0, 15) | 0; p.w = typeof m.w === 'string' ? m.w.slice(0, 12) : '';
-    { const now = Date.now(), H = p.hist || (p.hist = []); H.push([now, p.x, p.y, p.z]); while (H.length > 2 && now - H[0][0] > 400) H.shift(); } // onde esteve nos últimos 0,4 s (para o tiro de quem o via um pouco atrás)
+    { const now = Date.now(), H = p.hist || (p.hist = []); H.push([now, p.x, p.y, p.z]); while (H.length > 2 && now - H[0][0] > 500) H.shift(); } // onde esteve nos últimos 0,5 s (para o tiro de quem o via um pouco atrás)
     const al = !!m.al, hp = num(m.hp, 0, 100, p.hp); if (al && !p.alive) { p.hp = hp; p.hd = p.vd = null; } else p.hp = Math.min(hp, p.hp + 3); p.alive = al; // a vida que o servidor tirou não volta de repente
     if (Array.isArray(m.ar)) { const a = [num(m.ar[0], 0, 4) | 0, num(m.ar[1], 0, 4) | 0]; if (a[0] !== p.ar[0]) p.hd = null; if (a[1] !== p.ar[1]) p.vd = null; p.ar = a; } return; }
   if (m.t === 'inv') { p.inv = cleanIt(m.it).map(({ x, y, ...r }) => r); return; }
@@ -290,7 +290,9 @@ const shot = (c, m) => {
   const myClan = p.clan; const tgt = [];
   // quem dispara vê os outros cerca de 0,1–0,3 s atrás (o caminho da rede e a suavização): conta onde o alvo está e onde esteve nesse tempo
   for (const o of players.values()) if (o !== c && o.p && o.p.alive && (o.p.lv || 0) === (p.lv || 0) && !(myClan && o.p.clan === myClan) && Math.hypot(o.p.x - O[0], o.p.z - O[2]) < L + 3) {
-    tgt.push({ x: o.p.x, y: o.p.y, z: o.p.z, c: o }); for (const [t, x, y, z] of o.p.hist || []) if (now - t <= 320 && Math.hypot(x - o.p.x, z - o.p.z) > 0.15) tgt.push({ x, y, z, c: o }); }
+    // o caminho que fez nos últimos 0,45 s, com pontos a cada ~0,25 m (quem dispara vê-o algures nesse caminho)
+    const P = (o.p.hist || []).filter(h => now - h[0] <= 450).map(h => [h[1], h[2], h[3]]); P.push([o.p.x, o.p.y, o.p.z]); tgt.push({ x: o.p.x, y: o.p.y, z: o.p.z, c: o });
+    for (let i = P.length - 1; i > 0; i--) { const a = P[i], b = P[i - 1], dd = Math.hypot(b[0] - a[0], b[2] - a[2]); if (dd < 0.15 || dd > 6) continue; const n = Math.min(8, Math.ceil(dd / 0.25)); for (let k = 1; k <= n; k++) { const f = k / n; tgt.push({ x: a[0] + (b[0] - a[0]) * f, y: a[1] + (b[1] - a[1]) * f, z: a[2] + (b[2] - a[2]) * f, c: o }); } } }
   for (const [tok, s] of Object.entries(S.sleepers)) if ((s.lv || 0) === (p.lv || 0) && !(myClan && s.clan === myClan) && Math.hypot(s.x - O[0], s.z - O[2]) < L + 3) tgt.push({ x: s.x, y: s.y || 0, z: s.z, sl: tok, lying: true });
   if (!tgt.length) return;
   // cada bala segue a direção que o jogador viu no rasto (com o desvio da arma), se não fugir mais do que 0,3 rad da mira; e para onde o cliente a viu parar (parede ou zombie)
