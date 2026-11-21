@@ -47,7 +47,7 @@ export function makeNet({ G, scene, mkRemote, audio, Conta, enc, dec, hurt, die,
           const ar = a[12] || [0, 0], ak = ar.join(); if (ak !== r.ar) { r.ar = ak; r.b.setGear({ head: ar[0] ? { k: 'capacete' } : null, vest: ar[1] ? { k: 'colete' } : null }); }
           if (r.w !== a[8]) { r.w = a[8]; r.b.setWeapon(a[8] || null, {}); } }
         for (const r of R.values()) if (!seen.has(r.id)) { r.s1 = r.s0 = null; r.b.root.visible = false; r.el.style.display = 'none'; }
-        if (m.zu) world.z.rows(m.zu); if (m.zg) world.z.gone(m.zg);
+        if (m.zu) world.z.rows(m.zu); if (m.zg) world.z.gone(m.zg); if (m.cu) G.cars.rows(m.cu); if (m.cg) G.cars.gone(m.cg);
         return;
       }
       case 'fx': {
@@ -55,7 +55,7 @@ export function makeNet({ G, scene, mkRemote, audio, Conta, enc, dec, hurt, die,
         audio.play(m.sup ? 'abafado' : 'pistola', Math.max(0.04, 1 - d / (m.sup ? 70 : 320)) * (m.sup ? 0.6 : 1));
         wallEnd(m.o, m.d); if (G.noise) G.noise(m.o[0], m.o[2], m.sup ? 12 : 34); if (G.heardShot && d < 300) G.heardShot(); if (p && d > 2.5) G.ui.sound(m.o[0], m.o[2], 't', d); return;
       }
-      case 'hit': hurt(m.dmg, m.by, m.zone, m.pop); return;
+      case 'hit': hurt(m.dmg, m.by, m.zone, m.pop, m.car ? 'carro' : null); return;
       case 'hitc': { const r = m.on != null ? R.get(m.on) : null; G.ui.hit(!!m.kill, m.zone, false, r ? new THREE.Vector3(r.x, (r.y || 0) + (m.zone === 'head' ? 1.6 : 1.1), r.z) : null); G.buzz && G.buzz(m.kill ? [25, 40, 35] : 14); if (m.kill) G.ui.toast('Abateste ' + (m.name || 'um jogador')); return; }
       case 'sleep': setSleepers(m.list); return;
       case 'dr': world.door(m.i, m.o); return;
@@ -64,6 +64,7 @@ export function makeNet({ G, scene, mkRemote, audio, Conta, enc, dec, hurt, die,
       case 'zk': world.z.killed(m.i, m.by, m.head); return;
       case 'zh': world.z.hit(m.i, m.dx, m.dz); return;
       case 'zat': hurt(m.dmg, null, 'body', null, 'zombie'); return;
+      case 'cin': { const c = G.cars.list.find(q => q.id === m.id); if (m.ok && c) G.cars.seated(c, m.seat); else G.ui.toast('Esse lugar já está ocupado'); return; }
       case 'zseed': if (N.world) N.zseed(world.z.seed()); return;
       case 'bb': world.base(m); return;
       case 'bno': G.ui.toast(m.e || 'Não deu'); G.base.refused(m.a, m.k); return;
@@ -82,7 +83,7 @@ export function makeNet({ G, scene, mkRemote, audio, Conta, enc, dec, hurt, die,
     if (ws || !want) return; const a = Conta.ativo(); if (!a || !a.nome) return;
     try { tok = localStorage.getItem(tokKey()); } catch (e) { }
     let opened = false; try { ws = new WebSocket(url()); } catch (e) { ws = null; G.ui.toast('Sem ligação ao servidor. Continuas sozinho.'); return; }
-    ws.onopen = () => { opened = true; send({ t: 'hi', name: a.nome, look: a.look || {}, tok, wv: WV, x: G.p ? G.p.x : 0, z: G.p ? G.p.z : 0 }); };
+    ws.onopen = () => { opened = true; send({ t: 'hi', name: a.nome, look: a.look || {}, tok, wv: WV, x: G.p ? G.p.x : 0, z: G.p ? G.p.z : 0, cars: G.cars.spawnPoints() }); };
     ws.onmessage = e => { try { onMsg(JSON.parse(e.data)); } catch (er) { console.error(er); } };
     ws.onclose = () => {
       const was = N.on; ws = null; N.on = false; clearAll(); offline();
@@ -121,7 +122,7 @@ export function makeNet({ G, scene, mkRemote, audio, Conta, enc, dec, hurt, die,
     { const hide = G.mapOpen || G.invOpen || G.paused || !G.playing; if (tags.hidden !== hide) tags.hidden = hide; }
     sendT -= dt; if (sendT <= 0 && me) { sendT = 0.1; send({ t: 'st', ...me }); }
     if (zdQ.length) { send({ t: 'zd', L: zdQ.splice(0, 40) }); }
-    zT -= dt; if (zT <= 0 && N.world) { zT = 0.1; const L = world.z.up(); if (L.length) send({ t: 'zu', L }); }
+    zT -= dt; if (zT <= 0 && N.world) { zT = 0.1; const L = world.z.up(); if (L.length) send({ t: 'zu', L }); const ca = G.cars.up(); if (ca) send({ t: 'cu', L: [ca] }); }
     if (cur) { if (cur.open && G.box !== cur.c) closeBox(); else if (cur.open) { psT -= dt; if (psT <= 0) { psT = 0.4; const sg = sigOf(cur.c); if (sg !== cur.sig) { cur.sig = sg; send({ t: 'ps', c: cur.key, it: world.encG(cur.c.grid) }); } } } else if (performance.now() - cur.t > 4000) cur = null; }
     invT -= dt; if (invT <= 0) { invT = 15; N.sendInv(); }
     const lv = me ? me.lv : 0;
@@ -131,7 +132,7 @@ export function makeNet({ G, scene, mkRemote, audio, Conta, enc, dec, hurt, die,
       const x = a[1] + (b[1] - a[1]) * f, z = a[2] + (b[2] - a[2]) * f, y = a[3] + (b[3] - a[3]) * Math.min(1, f);
       let dy = b[5] - a[5]; while (dy > Math.PI) dy -= 2 * Math.PI; while (dy < -Math.PI) dy += 2 * Math.PI;
       r.step += Math.hypot(x - r.x, z - r.z) * 2.6; r.x = x; r.z = z; r.y = y;
-      const vis = !b[11] && b[10] && (b[4] || 0) === lv && see({ x, z, lv: b[4] || 0 });
+      const vis = !b[11] && b[10] && !((b[7] | 0) & 8) && (b[4] || 0) === lv && see({ x, z, lv: b[4] || 0 });
       r.b.root.visible = vis; if (!vis) { r.el.style.display = 'none'; continue; }
       r.b.root.position.set(x, y, z); r.b.root.rotation.set(0, a[5] + dy * Math.min(1, f), 0);
       const an = b[7] | 0; r.b.pose(dt, b[6], MODES[an & 3], -1, 0, 0, -1, r.step, an & 4 ? 1 : 0.25, null);

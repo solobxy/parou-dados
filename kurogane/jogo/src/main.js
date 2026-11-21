@@ -14,6 +14,7 @@ import { initUI } from './ui.js';
 import { makeBase } from './base.js';
 import { makeNav } from './nav.js';
 import { makeNet } from './net.js';
+import { makeCars } from './cars.js';
 
 const TOUCH = matchMedia('(pointer: coarse)').matches || ('ontouchstart' in window && navigator.maxTouchPoints > 0);
 const DEBUG = /debug/.test(location.hash) || window.__test;
@@ -670,7 +671,7 @@ async function boot() {
     if (!c.bag && !c.own) { if (!c.grid) { c.grid = new Grid(c.slots[0], c.slots[1]); rollLoot(c.table, c.grid); c.next = G.t + 300; } else if (G.t > c.next && c.grid.list.length < 2) { rollLoot(c.table, c.grid); c.next = G.t + 300; } }
     G.box = c; G.ui.openInv(c);
   };
-  G.interact = () => { const pr = G.prompt; if (!pr) return; if (pr.own && pr.bed) { G.base.use(pr); return; } if (pr.own && pr.bench) { G.box = null; G.ui.openInv(null, 'craft'); return; } if (pr.door) { const D = pr.door; if (D.lock && D.lock.hp > 0) { G.ui.toast('Trancada. Só abre com explosivos (' + Math.round(D.lock.hp / D.lock.max * 100) + '%)'); audio.play('vazio'); return; } if (!setDoor(D, D.target ? 0 : 1)) G.ui.toast('Está alguém na porta'); return; } openBox(pr); };
+  G.interact = () => { const pr = G.prompt; if (!pr) return; if (pr.carExit) { G.cars.exit(); return; } if (pr.car) { if (pr.full) return; if (pr.fuel) { const h = held(); if (h && h.k === 'gasolina' && G.cars.refuel(pr.car, h)) { consume(h); G.ui.refresh(true); } return; } G.cars.enter(pr.car); return; } if (pr.own && pr.bed) { G.base.use(pr); return; } if (pr.own && pr.bench) { G.box = null; G.ui.openInv(null, 'craft'); return; } if (pr.door) { const D = pr.door; if (D.lock && D.lock.hp > 0) { G.ui.toast('Trancada. Só abre com explosivos (' + Math.round(D.lock.hp / D.lock.max * 100) + '%)'); audio.play('vazio'); return; } if (!setDoor(D, D.target ? 0 : 1)) G.ui.toast('Está alguém na porta'); return; } openBox(pr); };
 
   // ---------- zombies
   const zoneAt = (x, z) => { if (inCity(x, z)) return W.zones[0]; let best = null; for (const zn of W.zones) { if (zn.kind === 'city') continue; const d = Math.hypot(x - zn.x, z - zn.z); if (d < zn.r && (!best || zn.r < best.r)) best = zn; } return best; };
@@ -784,7 +785,7 @@ async function boot() {
     if (p.hp <= 0) die(cause);
   };
   const die = cause => {
-    const p = G.p; if (!p.alive) return; p.alive = false; p.hp = 0; p.cause = cause; G.deadAt = { x: p.x, z: p.z }; audio.play('morte'); if (G.aimEnd) G.aimEnd(); try { window.estat && window.estat('morte', cause); } catch (e) { }
+    const p = G.p; if (!p.alive) return; if (G.car) G.cars.exit(); p.alive = false; p.hp = 0; p.cause = cause; G.deadAt = { x: p.x, z: p.z }; audio.play('morte'); if (G.aimEnd) G.aimEnd(); try { window.estat && window.estat('morte', cause); } catch (e) { }
     if (G.net && G.net.on) { if (cause !== 'dormir') G.net.died(); }
     else { const g = new Grid(6, 10); for (const it of G.inv.all()) g.insert(it); if (!g.empty) dropBag(p.x, p.z, g, { body: true, lv: p.lv, y: p.base + groundY(p.x, p.z, p.lv) }); }
     G.inv = new Inv(); G.ui.refresh(true);
@@ -805,6 +806,8 @@ async function boot() {
   const encG = g => g.list.map(e => ({ ...enc(e.it), x: e.x, y: e.y }));
   // ---------- online (servidor de jogo): outros jogadores, PvP, quem dorme, mochilas partilhadas e clãs
   const _wa = new THREE.Vector3(), _wb = new THREE.Vector3();
+  // ---------- carros
+  G.cars = makeCars({ scene, G, W, collide, solidAt, groundY, addRect, removeRect, audio, hurtZombie, sameLevel });
   // o mundo partilhado (online): aplicar o que vem do servidor
   const doorById = new Map(W.doors.filter(D => D.wid != null).map(D => [D.wid, D]));
   const nodeWait = new Map(); // chave → quando volta (ms), para setores que ainda não estão carregados
@@ -856,9 +859,10 @@ async function boot() {
       G.rainT = G.rain = w.wx; bagRows(w.bags);
       zClear(); if (w.zseed) G.net.zseed(zNet.seed());
       G.base.clear(); G.base.online({ send: G.net.raw, uid: G.net.uid }); G.base.applyNet(w.base);
+      G.cars.clear();
       for (const [i, hp, broke] of w.locks || []) netWorld.lock(i, hp, broke);
     },
-    leave: () => { G.base.online(null); G.base.clear(); const wd = Conta.lerMundo(); if (wd && wd.base) G.base.load(wd.base, decG); },
+    leave: () => { G.cars.clear(); G.cars.spawnLocal(); G.base.online(null); G.base.clear(); const wd = Conta.lerMundo(); if (wd && wd.base) G.base.load(wd.base, decG); },
     base: m => G.base.applyNet(m),
     lock: (i, hp, broke) => { const D = doorById.get(i); if (!D || !D.lock) return; D.lock.hp = hp; D.lock.broke = broke; if (hp <= 0) { D.target = D.t = 1; } },
     boom: m => { ghostGone(m.k, m.x, m.z); explode({ k: m.k, P: new THREE.Vector3(m.x, m.y, m.z), lv: m.lv, remote: true }); },
@@ -881,7 +885,7 @@ async function boot() {
   };
   G.net = makeNet({ G, scene, mkRemote, bagMesh: bagM, audio, Conta, enc, dec, die, world: netWorld, WV,
     hurt: (dmg, by, zone, pop, cause) => {
-      if (!G.p || !G.p.alive) return; if (cause === 'zombie') { hurtPlayer(dmg, 'zombie'); return; } G.killer = by;
+      if (!G.p || !G.p.alive) return; if (cause === 'zombie') { hurtPlayer(dmg, 'zombie'); return; } G.killer = by; if (cause === 'carro') { hurtPlayer(dmg, 'carro', true); return; }
       if (pop) { const s = pop === 'head' ? 'head' : 'vest'; if (G.inv.eq[s]) { G.inv.eq[s] = null; refresh(); G.ui.toast(s === 'head' ? 'O teu capacete partiu-se' : 'O teu colete partiu-se'); } }
       hurtPlayer(dmg, 'pvp', true); if (zone === 'head') G.shakeT = Math.max(G.shakeT || 0, 0.25);
     },
@@ -944,7 +948,7 @@ async function boot() {
     if (!G.zs.length) popWorld();
     SECTORS.fill(G.p.x, G.p.z);
     refresh(); save(); G.ui.showHUD(cont ? 'Acordaste onde adormeceste.' : kit ? 'Kit de teste: começas à beira do mapa do centro.' : whereMsg(G.p.x, G.p.z));
-    G.killer = null; if (G.online && !kit) G.net.start(); else G.net.stop();
+    G.killer = null; G.cars.clear(); G.cars.spawnLocal(); if (G.online && !kit) G.net.start(); else G.net.stop();
   };
 
   // ---------- controlos
@@ -1055,7 +1059,7 @@ async function boot() {
   };
   G.relock = () => { if (!AIM.on || G.fp) return; const z = bestTarget(); AIM.lock = z ? { z, lx: 0, ly: 1.3, lz: 0.12 } : null; AIM.idle = 0; };
   const tryFire = () => { const it = held(), d = heldDef(); if (!d.gun || !G.p.alive || G.invOpen || AIM.raise < 1) return false; return fire(it, d.gun); };
-  G.fireDown = () => {
+  G.fireDown = () => { if (G.car) return;
     const p = G.p; if (!G.playing || !p.alive || G.invOpen) return; const d = heldDef();
     { const it = held(); if (it && it.k === 'planta') { G.base.place(); return; } if (it && it.k === 'martelo') { G.base.upgrade(); return; } if (it && it.k === 'granada') { throwGrenade(it); return; } if (it && it.k === 'c4') { plantC4(it); return; } }
     if (!d.gun) { G.tapAttack(); return; }
@@ -1128,6 +1132,9 @@ async function boot() {
       let il = Math.hypot(ix, iy); if (il > 1) { ix /= il; iy /= il; il = 1; }
       // eixos do movimento: na vista de cima, os do ecrã; na mira (primeira pessoa), para a frente é para onde estás a olhar
       let Fx = FWD.x, Fz = FWD.y, Rx = RGT.x, Rz = RGT.y; if (G.fp && AIM.fy != null) { Fx = Math.sin(AIM.fy); Fz = Math.cos(AIM.fy); Rx = -Fz; Rz = Fx; }
+      if (G.car) { if (G.carSeat === 0 && p.alive) { const kb = keys.has('KeyW') || keys.has('KeyS') || keys.has('KeyA') || keys.has('KeyD') || keys.has('ArrowUp') || keys.has('ArrowDown');
+          G.cars.drive(dt, kb ? { kb: true, t: (keys.has('KeyW') || keys.has('ArrowUp') ? 1 : 0) - (keys.has('KeyS') || keys.has('ArrowDown') ? 1 : 0), s: (keys.has('KeyA') || keys.has('ArrowLeft') ? 1 : 0) - (keys.has('KeyD') || keys.has('ArrowRight') ? 1 : 0) } : { yaw: Math.atan2(Rx * ix + Fx * iy, Rz * ix + Fz * iy), m: il }); }
+        ix = iy = il = 0; if (G.autoRun) G.setAuto(false); if (AIM.on) aimEnd(); }
       // correr sempre: segue em frente sem tocar no polegar; o polegar vira; puxar para trás, mirar ou abrir o inventário para
       if (G.autoRun) {
         if (!p.alive || G.invOpen || G.mapOpen || AIM.on || p.use) G.setAuto(false);
@@ -1251,11 +1258,14 @@ async function boot() {
       if (p.alive && !p.climb && p.h < 0.6) for (const c of [...W.containers, ...G.bags]) { if ((c.lv || 0) !== p.lv) continue; const d = Math.hypot(c.x - p.x, c.z - p.z); if (d < bd && los(p.x, p.z, c.x, c.z, [c.x, c.z], 'sg', p.lv, 0.5)) { best = c; bd = d; } }
       const dn = p.alive && !p.climb && p.h < 0.6 ? G.doorAt(p) : null;
       if (dn && (!best || dn.d < bd - 0.2) && (!cfg.autoDoor || Math.hypot(p.vx, p.vz) < 0.5 || !dn.D.auto)) best = { door: dn.D, label: dn.D.lock && dn.D.lock.hp > 0 ? 'Porta trancada' : dn.D.target ? 'Fechar porta' : 'Abrir porta', x: dn.D.x, z: dn.D.z };
+      if (G.car) best = { label: G.car.hp <= 0 || G.carSeat ? 'Sair do carro' : 'Sair do carro', carExit: true, x: p.x, z: p.z };
+      else if (p.alive && !p.climb && !p.lv) { const c = G.cars.nearest(p); if (c) { const cd = Math.hypot(c.x - p.x, c.z - p.z) - 1.2, h = held();
+          if (!best || cd < bd) best = h && h.k === 'gasolina' ? { label: 'Pôr gasolina no carro (' + Math.round(c.fuel) + ' L)', car: c, fuel: true, x: c.x, z: c.z } : G.cars.seatFree(c) < 0 ? { label: 'Carro cheio', car: c, full: true, x: c.x, z: c.z } : { label: c.seats[0] ? 'Entrar no carro (passageiro)' : 'Conduzir', car: c, x: c.x, z: c.z }; } }
       G.prompt = best;
       if (G.net.on) { const d = heldDef(), it = held(), mode = d.gun ? (d.long ? 2 : 1) : d.melee && it ? 3 : 0, eq = G.inv.eq, lvl = s => eq[s] ? ITEMS[eq[s].k].lvl || 0 : 0;
-        G.net.frame(dt, { x: +p.x.toFixed(2), z: +p.z.toFixed(2), y: +p.y.toFixed(2), lv: p.lv || 0, yaw: +Math.atan2(Math.sin(p.root), Math.cos(p.root)).toFixed(2), mv: +Math.min(3, p.mv || 0).toFixed(2), an: mode + (AIM.on ? 4 : 0), w: mode ? it.k : '', hp: Math.round(Math.max(0, p.hp)), al: p.alive ? 1 : 0, ar: [lvl('head'), lvl('vest')] }, o => canSee(p, o)); }
+        G.net.frame(dt, { x: +p.x.toFixed(2), z: +p.z.toFixed(2), y: +p.y.toFixed(2), lv: p.lv || 0, yaw: +Math.atan2(Math.sin(p.root), Math.cos(p.root)).toFixed(2), mv: +Math.min(3, p.mv || 0).toFixed(2), an: (G.car ? 8 : mode + (AIM.on ? 4 : 0)), w: mode ? it.k : '', hp: Math.round(Math.max(0, p.hp)), al: p.alive ? 1 : 0, ar: [lvl('head'), lvl('vest')] }, o => canSee(p, o)); }
       if (G.box && (Math.hypot(G.box.x - p.x, G.box.z - p.z) > 2.6)) { G.box = null; if (G.invOpen) G.ui.openInv(null); }
-      updZombies(dt);
+      updZombies(dt); G.cars.update(dt);
       // sacos: os vazios desaparecem, os velhos também
       if (!G.net.world) for (let i = G.bags.length - 1; i >= 0; i--) { const b = G.bags[i]; if ((b.grid.empty && G.box !== b) || G.t - b.t > (b.body ? 1500 : 900)) { scene.remove(b.mesh); G.bags.splice(i, 1); if (G.box === b) G.box = null; } }
       // recursos voltam a crescer
@@ -1321,7 +1331,7 @@ async function boot() {
       if (PROJ.dirty || PROJ.mode !== 'top') topProj();
       const e = AIM.fpT > 0 && p ? easeD(Math.min(1, AIM.fpT / 0.55)) : 0;
       v3b.copy(camT); if (e > 0) { v3b.x += (AIM.A.x - camT.x) * 0.45 * e; v3b.z += (AIM.A.z - camT.z) * 0.45 * e; v3b.y = camT.y + 0.4 * e; }
-      cam.position.copy(v3b).add(camOff(1 - 0.72 * e)); if (G.shakeT > 0) { G.shakeT -= dt; const a = Math.min(1, G.shakeT) * 0.9; cam.position.x += (Math.random() - 0.5) * a; cam.position.z += (Math.random() - 0.5) * a; cam.position.y += (Math.random() - 0.5) * a * 0.5; } cam.lookAt(v3b.x, v3b.y + 1.0, v3b.z);
+      cam.position.copy(v3b).add(camOff((1 - 0.72 * e) * (G.car ? 1 + 0.35 * Math.min(1, Math.abs(G.car.v) / 17) : 1))); if (G.shakeT > 0) { G.shakeT -= dt; const a = Math.min(1, G.shakeT) * 0.9; cam.position.x += (Math.random() - 0.5) * a; cam.position.z += (Math.random() - 0.5) * a; cam.position.y += (Math.random() - 0.5) * a * 0.5; } cam.lookAt(v3b.x, v3b.y + 1.0, v3b.z);
     }
     cam.updateMatrixWorld();
     scene.fog.near = G.fp ? 300 : 62; scene.fog.far = G.fp ? 850 : 150;
@@ -1332,7 +1342,7 @@ async function boot() {
     if (p && G.playing && p.alive && !G.fp) { VU.uVisK.value = 0.06 + 0.03 * (G.day ?? 1); VIS.t -= dt; const dk = W.doors.reduce((a, D) => a + (D.rc.off ? 1 : 0), 0) + ':' + p.lv + ':' + Math.round((AIM.lean || 0) * 4); VIS.cd = (VIS.cd || 0) - dt; if ((VIS.cd <= 0 && Math.hypot(p.x - VIS.x, p.z - VIS.z) > 0.1) || dk !== VIS.key || VIS.t <= 0) { VIS.x = p.x; VIS.z = p.z; VIS.key = dk; VIS.t = 0.5; VIS.cd = 0.12; const lo = (AIM.lean || 0) * LEAN; drawVis(p.x + Math.cos(p.yaw) * lo, p.z - Math.sin(p.yaw) * lo, p.lv, p.bld && p.lv > 0 ? p.bld : null); } }
     else VU.uVisK.value = 1;
     if (G0.xray) G0.xray.visible = !G.fp;
-    body.root.visible = !!(p && G.playing && p.alive && !G.fp);
+    body.root.visible = !!(p && G.playing && p.alive && !G.fp && !G.car);
     // onde fica o círculo no ecrã (para os sons à volta e a mira)
     if (p && G.playing && !G.fp) { const c0 = toScreen(_c.set(vc.x, p.y + 0.9, vc.z)), S = G.ui.safe(); G.view = { cx: c0.x, cy: c0.y, rx: Math.max(60, Math.min(c0.x - S.x0, S.x1 - c0.x) - 34), ry: Math.max(60, Math.min(c0.y - S.y0, S.y1 - c0.y) - 34), fp: false }; }
     else { const SC = G.ui.scopeC(); G.view = { cx: SC.x, cy: SC.y, rx: G.ui.scopeR(), ry: G.ui.scopeR(), fp: true, yaw: AIM.fy }; }

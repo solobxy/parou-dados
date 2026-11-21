@@ -20,6 +20,13 @@ export const audio = {
       const s = ctx.createBufferSource(); s.buffer = buf; s.loop = true; const f = ctx.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 5000; const g = ctx.createGain(); g.gain.value = 0; s.connect(f); f.connect(g); g.connect(master); s.start(); this._rn = { s, f, g }; }
     const R = this._rn; R.g.gain.setTargetAtTime(level * (inside ? 0.22 : 0.42), t, 0.6); R.f.frequency.setTargetAtTime(inside ? 900 : 5200, t, 0.4);
   },
+  // motor do carro: dois osciladores filtrados; o tom sobe com a velocidade
+  engine(on, sp) {
+    if (!this.on || !ctx) return; const t = ctx.currentTime;
+    if (!this._en) { if (!on) return; const g = ctx.createGain(); g.gain.value = 0; const f = ctx.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 420; f.Q.value = 1.2; f.connect(g); g.connect(master);
+      const o1 = ctx.createOscillator(), o2 = ctx.createOscillator(); o1.type = 'sawtooth'; o2.type = 'square'; o1.frequency.value = 38; o2.frequency.value = 19; const g2 = ctx.createGain(); g2.gain.value = 0.35; o1.connect(f); o2.connect(g2); g2.connect(f); o1.start(); o2.start(); this._en = { g, f, o1, o2 }; }
+    const E = this._en; E.g.gain.setTargetAtTime(on ? 0.11 + 0.06 * sp : 0, t, 0.15); E.o1.frequency.setTargetAtTime(38 + 95 * sp, t, 0.12); E.o2.frequency.setTargetAtTime(19 + 47 * sp, t, 0.12); E.f.frequency.setTargetAtTime(380 + 900 * sp, t, 0.15);
+  },
   thunder(v = 1) { if (!this.on || !ctx) return; const t = ctx.currentTime + 0.4 + Math.random() * 1.6; this.noise(t, 2.8, 380, 60, 0.7 * v); this.noise(t + 0.15, 2.2, 160, 40, 0.55 * v); this.tone(t, 1.8, 55, 30, 0.35 * v, 'sine'); },
   noise(t0, dur, f0, f1, g0, type = 'lowpass', q = 0.8, dest = master) {
     const s = ctx.createBufferSource(); s.buffer = noiseBuf; const f = ctx.createBiquadFilter(); f.type = type; f.Q.value = q; f.frequency.setValueAtTime(f0, t0); f.frequency.exponentialRampToValueAtTime(Math.max(40, f1), t0 + dur);
