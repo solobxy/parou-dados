@@ -47,16 +47,16 @@ server.listen(0, async () => {
     await W(1800);
     const dtx = await B.ev(() => document.getElementById('dCause').textContent); console.log('ecrã de morte:', dtx); ok(/Ana matou-te/.test(dtx), 'diz quem te matou');
     await B.page.screenshot({ path: path.join(outDir, 'net-morte.png') });
-    const bagA = await A.ev(() => (G.netBags || []).map(b => b.label + ' @' + b.x.toFixed(0)));
+    const bagA = await A.ev(() => G.bags.map(b => b.label + ' @' + b.x.toFixed(0)));
     console.log('mochilas que o A vê:', bagA.join(' | ')); ok(bagA.length === 1, 'a mochila do Bruno aparece no mundo para o A');
     // A vai à mochila e apanha
     const before = await A.ev(() => G.inv.all().length);
-    await A.ev(() => { const b = G.netBags[0]; G.p.x = b.x + 0.8; G.p.z = b.z; });
+    await A.ev(() => { const b = G.bags[0]; G.p.x = b.x + 0.8; G.p.z = b.z; });
     await W(900);
-    const pr = await A.ev(() => G.prompt && G.prompt.label); console.log('prompt do A:', pr); ok(/Bruno/.test(pr || ''), 'aparece «Apanhar a mochila de Bruno»');
-    await A.ev(() => G.interact()); await W(900);
-    const after = await A.ev(() => [G.inv.all().length, (G.netBags || []).length]);
-    console.log('itens do A antes/depois:', before, after[0], '· mochilas:', after[1]); ok(after[0] > before && after[1] === 0, 'apanhou o que o Bruno tinha e a mochila desaparece');
+    const pr = await A.ev(() => G.prompt && G.prompt.label); console.log('prompt do A:', pr); ok(/corpo de Bruno/.test(pr || ''), 'aparece «Revistar o corpo de Bruno»');
+    await A.ev(() => G.interact()); await W(1200); await A.ev(() => { document.getElementById('takeAll').click(); G.ui.closeInv(); }); await W(1200);
+    const after = await A.ev(() => [G.inv.all().length, G.bags.length]);
+    console.log('itens do A antes/depois:', before, after[0], '· mochilas:', after[1]); ok(after[0] > before, 'levou o que o Bruno tinha (o que não coube fica no corpo: ' + after[1] + ')');
     // clã: A cria, B renasce e entra com o código; tiros entre os dois não magoam
     await B.ev(() => G.respawn(false)); await W(500);
     await A.ev(() => G.net.clanCmd('create', 'Ronin')); await W(600);
@@ -76,8 +76,8 @@ server.listen(0, async () => {
     const sl = await A.ev(() => [...document.querySelectorAll('.ntag.sleep')].map(e => e.textContent + (e.style.display === 'none' ? ' (escondido)' : '')).join(','));
     console.log('a dormir:', sl); ok(/Bruno · a dormir/.test(sl), 'o Bruno ficou a dormir no mundo');
     await A.page.screenshot({ path: path.join(outDir, 'net-dormir.png') });
-    let k = 0; for (; k < 8; k++) { const b = await A.ev(() => (G.netBags || []).length); if (b) break; await A.ev(s => { G.fp = false; G.aimS.Aw = new G.V3(s[0] + 6, 0.35, s[1]); G.p.reload = 0; G.p.cd = 0; G.inv.belt[G.sel].ammo = 5; return G.dbg.fire(); }, spot); await W(600); }
-    const bl = await A.ev(() => (G.netBags || []).map(b => b.label).join(','));
+    const nb0 = await A.ev(() => G.bags.length); let k = 0; for (; k < 8; k++) { const b = await A.ev(() => G.bags.length); if (b > nb0) break; await A.ev(s => { G.fp = false; G.aimS.Aw = new G.V3(s[0] + 6, 0.35, s[1]); G.p.reload = 0; G.p.cd = 0; G.inv.belt[G.sel].ammo = 5; return G.dbg.fire(); }, spot); await W(600); }
+    const bl = await A.ev(n0 => G.bags.length > n0 ? G.bags[G.bags.length - 1].label : '', nb0);
     ok(/Bruno/.test(bl), `matou quem dormia em ${k} tiros e ficou a mochila (${bl})`);
     // o Bruno volta: sabe que o mataram a dormir
     const B2 = await mk('Bruno', 'pb', tokB); await B2.page.click('#sKit'); await W(2500); await B2.ev(() => G.net.start()); await W(4500);

@@ -207,6 +207,9 @@ async function boot() {
   const _gc = new THREE.Color();
   const SECTORS = makeSectors({ scene, W, nodes, addCirc, removeCirc, near, CORE, MAP, mats: { tree: tm, grass: grassMat, grassTint: () => _gc.setHSL(0.22 + Math.random() * 0.05, 0.45, 0.24 + Math.random() * 0.12) }, geos: { cedar, broad, rock: rockGeo, bush: bushGeo, grass: grassGeo },
     iMesh: (geo, mat, list, matOf, shadow, CH) => iMesh(geo, mat, list, matOf, shadow, CH, geo === grassGeo ? () => _gc.setHSL(0.22 + Math.random() * 0.05, 0.45, 0.24 + Math.random() * 0.12) : null) });
+  // mundo partilhado: caixas, portas e recursos têm a mesma chave em todos os aparelhos (a ordem em que o mundo é construído)
+  W.containers.forEach((c, i) => c.wid = i); W.doors.forEach((D, i) => D.wid = i); nodes.forEach((n, i) => n.key = 'c' + i);
+  const WV = (() => { let h = 0; const t = W.zones.map(z => z.name + Math.round(z.x) + ',' + Math.round(z.z)).join('|') + W.containers.map(c => c.table || '').join(''); for (let i = 0; i < t.length; i++) h = (h * 31 + t.charCodeAt(i)) | 0; return [W.containers.length, W.doors.length, nodes.length, (h >>> 0).toString(36)].join('.'); })();
   // contorno das portas e janelas que estão escondidas atrás de paredes e telhados (raio-x)
   { const b = new Builder(0); const DOOR = new THREE.Color(0xf2a33a), WIN = new THREE.Color(0x8fc3e8);
     for (const o of W.openings) { if (o.y0 > 2.5) continue; const c = o.k === 'd' ? DOOR : WIN, th = 0.06, w = o.w, hgt = o.y1 - o.y0, cy = (o.y0 + o.y1) / 2;
@@ -232,8 +235,8 @@ async function boot() {
       leafM.instanceMatrix.needsUpdate = true; knobM.instanceMatrix.needsUpdate = true;
     }
   };
-  const doorBlocked = D => { const r = D.rc, m = 0.34, inR = o => (o.lv || 0) === D.lv && o.x > r.x0 - m && o.x < r.x1 + m && o.z > r.z0 - m && o.z < r.z1 + m; if (G.p && G.p.alive && inR(G.p)) return true; for (const z of G.zs) if (z.state !== 'dead' && inR(z)) return true; return false; };
-  const setDoor = (D, open, auto = false) => { if (D.target === open) return true; if (D.lock && D.lock.hp > 0) return false; if (!open && doorBlocked(D)) return false; D.target = open; D.auto = auto && open === 1; D.autoT = 0; audio.play(open ? 'porta' : 'portaF', G.p ? clamp(1 - Math.hypot(D.x - G.p.x, D.z - G.p.z) / 30, 0, 1) : 0.5); if (G.p) noise(D.x, D.z, 4); return true; };
+  const doorBlocked = D => { const r = D.rc, m = 0.34, inR = o => (o.lv || 0) === D.lv && o.x > r.x0 - m && o.x < r.x1 + m && o.z > r.z0 - m && o.z < r.z1 + m; if (G.p && G.p.alive && inR(G.p)) return true; for (const z of G.zs) if (z.state !== 'dead' && inR(z)) return true; if (G.net && G.net.on) for (const o of G.net.R.values()) if (o.s1 && o.s1[10] && inR({ x: o.x, z: o.z, lv: o.s1[4] })) return true; return false; };
+  const setDoor = (D, open, auto = false, remote = false) => { if (D.target === open) return true; if (D.lock && D.lock.hp > 0) return false; if (!open && doorBlocked(D)) { if (remote && G.net.on && D.wid != null) G.net.door(D.wid, 1); return false; } D.target = open; D.auto = auto && open === 1; D.autoT = 0; if (!remote && G.net && G.net.on && D.wid != null && !D.base) G.net.door(D.wid, open); audio.play(open ? 'porta' : 'portaF', G.p ? clamp(1 - Math.hypot(D.x - G.p.x, D.z - G.p.z) / 30, 0, 1) : 0.5); if (G.p) noise(D.x, D.z, 4); return true; };
   const updDoors = dt => {
     for (const D of W.doors) {
       if (D.t !== D.target) D.t = D.target > D.t ? Math.min(D.target, D.t + dt / 0.55) : Math.max(D.target, D.t - dt / 0.5);
@@ -594,7 +597,7 @@ async function boot() {
   const WX = { t: 420 + Math.random() * 600, bolt: 30 }, wetBase = {};
   for (const k of ['asph', 'conc', 'tile', 'grass', 'dirt']) if (mats[k]) wetBase[k] = { c: mats[k].color.clone(), r: mats[k].roughness };
   const updWeather = dt => {
-    if (G.playing) { WX.t -= dt; if (WX.t <= 0) { if (G.rainT > 0) { G.rainT = 0; WX.t = 600 + Math.random() * 900; } else { G.rainT = 0.5 + Math.random() * 0.5; WX.t = 180 + Math.random() * 240; } } }
+    if (G.playing && !G.net.world) { WX.t -= dt; if (WX.t <= 0) { if (G.rainT > 0) { G.rainT = 0; WX.t = 600 + Math.random() * 900; } else { G.rainT = 0.5 + Math.random() * 0.5; WX.t = 180 + Math.random() * 240; } } }
     const r0 = G.rain || 0, tg = G.rainT || 0; G.rain = tg > r0 ? Math.min(tg, r0 + dt / 25) : Math.max(tg, r0 - dt / 35); const rn = G.rain;
     if (G.boltT > 0) G.boltT -= dt;
     if (rn > 0.7 && G.playing) { WX.bolt -= dt; if (WX.bolt <= 0) { WX.bolt = 25 + Math.random() * 50; G.boltT = 0.22; audio.thunder(0.6 + Math.random() * 0.4); } }
@@ -621,7 +624,7 @@ async function boot() {
     const g = m.g, kind = best.kind; let k, n, extra = 0;
     if (kind === 'tree') { k = 'madeira'; n = g.wood; } else if (kind === 'stone') { k = 'pedraR'; n = g.stone; } else { k = kind === 'sulfur' ? 'enxofre' : 'metal'; n = g.ore; extra = Math.round(g.stone * 0.4); }
     n = Math.max(1, Math.min(n, best.hp)); best.hp -= n; best.shake = 0.25; { const f = n * 0.5 * sk('rec'); n += Math.floor(f) + (Math.random() < f % 1 ? 1 : 0); } skUp('rec', 0.0077);
-    if (best.hp <= 0) { n += Math.round(best.max * 0.15); best.alive = false; best.col.on = false; best.respawn = G.t + 180; hideNode(best); }
+    if (best.hp <= 0) { n += Math.round(best.max * 0.15); best.alive = false; best.col.on = false; best.respawn = G.t + 180; hideNode(best); if (G.net && G.net.on && best.key) G.net.node(best.key); }
     gain(k, n); if (extra) gain('pedraR', extra);
     const hx = best.x - Math.sin(p.yaw) * best.r * 0.6, hz = best.z - Math.cos(p.yaw) * best.r * 0.6;
     burst(hx, 1.0, hz, 6, kind === 'tree' ? 0xc9a877 : kind === 'sulfur' ? 0xe0c43a : kind === 'metal' ? 0x9a5a32 : 0x9a988f, 2.6, 0.5);
@@ -644,17 +647,19 @@ async function boot() {
 
   // sacos no chão
   const dropBag = (x, z, grid, o = {}) => {
-    for (const b of G.bags) if (!o.body && !b.body && (b.lv || 0) === (o.lv ?? 0) && Math.hypot(b.x - x, b.z - z) < 1.6) { for (const e of [...grid.list]) b.grid.insert(e.it); return b; }
+    if (G.net && G.net.world && !o.net) { if (!grid.empty) G.net.bag(x, z, o.y ?? groundY(x, z), o.lv ?? 0, encG(grid)); return null; }
+    if (!o.net) for (const b of G.bags) if (!o.body && !b.body && (b.lv || 0) === (o.lv ?? 0) && Math.hypot(b.x - x, b.z - z) < 1.6) { for (const e of [...grid.list]) b.grid.insert(e.it); return b; }
     const lv = o.lv ?? 0, y0 = o.y ?? groundY(x, z); const m = (o.body ? bodyBagM : bagM).clone(); m.position.set(x + (o.body ? 0 : (Math.random() - 0.5) * 0.4), y0, z + (o.body ? 0 : (Math.random() - 0.5) * 0.4)); m.rotation.y = Math.random() * 6; scene.add(m);
-    const b = { x, z, grid, mesh: m, label: o.body ? 'Revistar o teu corpo' : 'Revistar saco', body: !!o.body, t: G.t, bag: true, lv }; G.bags.push(b); return b;
+    const b = { x, z, grid, mesh: m, label: o.label || (o.body ? 'Revistar o teu corpo' : 'Revistar saco'), body: !!o.body, t: G.t, bag: true, lv, nid: o.nid, mine: o.mine }; G.bags.push(b); return b;
   };
   G.dropGrid = (x, z, g) => dropBag(x, z, g);
   G.dropItem = it => { const g = new Grid(6, 4); g.insert(it); const p = G.p; dropBag(p.x + Math.sin(p.yaw) * 0.6, p.z + Math.cos(p.yaw) * 0.6, g, { lv: p.lv, y: p.base + groundY(p.x, p.z, p.lv) }); };
   const openBox = c => {
+    if (G.net && G.net.world && (c.nid || (c.wid != null && !c.own))) { G.net.open(c); return; } // online: a caixa vem do servidor (só uma pessoa de cada vez)
     if (!c.bag && !c.own) { if (!c.grid) { c.grid = new Grid(c.slots[0], c.slots[1]); rollLoot(c.table, c.grid); c.next = G.t + 300; } else if (G.t > c.next && c.grid.list.length < 2) { rollLoot(c.table, c.grid); c.next = G.t + 300; } }
     G.box = c; G.ui.openInv(c);
   };
-  G.interact = () => { const pr = G.prompt; if (!pr) return; if (pr.netBag) { G.net.take(pr.netBag); G.prompt = null; return; } if (pr.own && pr.bed) { G.base.use(pr); return; } if (pr.own && pr.bench) { G.box = null; G.ui.openInv(null, 'craft'); return; } if (pr.door) { const D = pr.door; if (D.lock && D.lock.hp > 0) { G.ui.toast('Trancada. Só abre com explosivos (' + Math.round(D.lock.hp / D.lock.max * 100) + '%)'); audio.play('vazio'); return; } if (!setDoor(D, D.target ? 0 : 1)) G.ui.toast('Está alguém na porta'); return; } openBox(pr); };
+  G.interact = () => { const pr = G.prompt; if (!pr) return; if (pr.own && pr.bed) { G.base.use(pr); return; } if (pr.own && pr.bench) { G.box = null; G.ui.openInv(null, 'craft'); return; } if (pr.door) { const D = pr.door; if (D.lock && D.lock.hp > 0) { G.ui.toast('Trancada. Só abre com explosivos (' + Math.round(D.lock.hp / D.lock.max * 100) + '%)'); audio.play('vazio'); return; } if (!setDoor(D, D.target ? 0 : 1)) G.ui.toast('Está alguém na porta'); return; } openBox(pr); };
 
   // ---------- zombies
   const zoneAt = (x, z) => { if (inCity(x, z)) return W.zones[0]; let best = null; for (const zn of W.zones) { if (zn.kind === 'city') continue; const d = Math.hypot(x - zn.x, z - zn.z); if (d < zn.r && (!best || zn.r < best.r)) best = zn; } return best; };
@@ -769,7 +774,38 @@ async function boot() {
   const encG = g => g.list.map(e => ({ ...enc(e.it), x: e.x, y: e.y }));
   // ---------- online (servidor de jogo): outros jogadores, PvP, quem dorme, mochilas partilhadas e clãs
   const _wa = new THREE.Vector3(), _wb = new THREE.Vector3();
-  G.net = makeNet({ G, scene, mkRemote, bagMesh: bagM, audio, Conta, enc, dec, die,
+  // o mundo partilhado (online): aplicar o que vem do servidor
+  const doorById = new Map(W.doors.filter(D => D.wid != null).map(D => [D.wid, D]));
+  const nodeWait = new Map(); // chave → quando volta (ms), para setores que ainda não estão carregados
+  const nodeOff = (n, ms) => { if (!n.alive) return; n.alive = false; n.col.on = false; n.respawn = G.t + ms / 1000; hideNode(n); };
+  W.onSector = S => { if (!nodeWait.size) return; const now = Date.now(); for (const n of S.nodes) { const u = nodeWait.get(n.key); if (u && u > now) nodeOff(n, u - now); } };
+  const bagRows = rows => { const me = (Conta.ativo() || {}).nome; for (const [id, x, z, y, lv, body, name] of rows) { if (G.bags.some(b => b.nid === id)) continue; const mine = body && name === me; const b = dropBag(x, z, new Grid(6, 4), { net: true, nid: id, body: !!body, lv, y, mine, label: body ? (mine ? 'Revistar o teu corpo' : 'Revistar o corpo de ' + name) : 'Revistar saco' }); b.grid = null; b.mesh.position.set(x, y, z); } };
+  const bagGone = id => { const i = G.bags.findIndex(b => b.nid === id); if (i < 0) return; const b = G.bags[i]; scene.remove(b.mesh); G.bags.splice(i, 1); if (G.box === b) { G.box = null; if (G.invOpen) G.ui.openInv(null); } };
+  const netWorld = {
+    // ao ligar: o mundo passa a ser o do servidor (sacos, caixas, portas, árvores, tempo)
+    reset: w => {
+      for (const b of G.bags) scene.remove(b.mesh); G.bags.length = 0; if (G.box && (G.box.bag || G.box.wid != null)) { G.box = null; if (G.invOpen) G.ui.closeInv(); }
+      for (const c of W.containers) if (c.wid != null && !c.own) { c.grid = null; c.next = 0; }
+      for (const D of doorById.values()) { if (D.lock) continue; D.target = D.t = 0; D.auto = false; } for (const [i, o] of w.doors) { const D = doorById.get(i); if (D && !D.lock) D.target = D.t = o; }
+      for (const n of nodes) if (!n.alive && n.key) { n.alive = true; n.hp = n.max; n.col.on = true; showNode(n); }
+      nodeWait.clear(); const now = Date.now(); for (const [k, ms] of w.nodes) { nodeWait.set(k, now + ms); const n = nodes.find(q => q.key === k); if (n) nodeOff(n, ms); }
+      G.rainT = G.rain = w.wx; bagRows(w.bags);
+    },
+    door: (i, o) => { const D = doorById.get(i); if (D) setDoor(D, o, false, true); },
+    node: (k, ms) => { nodeWait.set(k, Date.now() + ms); const n = nodes.find(q => q.key === k); if (n) nodeOff(n, ms); },
+    bags: (add, del) => { if (add) bagRows(add); for (const id of del || []) bagGone(id); },
+    wx: r => { G.rainT = r; },
+    // caixa ou saco aberto: monta a grelha com o que o servidor tem (ou enche uma caixa nova com loot)
+    opened: (c, m) => {
+      if (m.busy) { G.ui.toast(m.busy + ' está a revistar isto'); return false; } if (m.gone) { bagGone(c.nid); return false; } if (m.far) { G.ui.toast('Chega-te mais perto'); return false; }
+      let g;
+      if (c.nid) { let rows = m.body ? 10 : 4; for (;;) { g = decG(m.it, new Grid(6, rows)); if (g.list.length >= m.it.length || rows >= 16) break; rows += 2; } }
+      else { g = new Grid(c.slots[0], c.slots[1]); if (m.gen) rollLoot(c.table, g); else { decG(m.it, g); if (m.roll) rollLoot(c.table, g); } }
+      c.grid = g; G.box = c; G.ui.openInv(c); return !!(m.gen || m.roll);
+    },
+    encG,
+  };
+  G.net = makeNet({ G, scene, mkRemote, bagMesh: bagM, audio, Conta, enc, dec, die, world: netWorld, WV,
     hurt: (dmg, by, zone, pop) => {
       if (!G.p || !G.p.alive) return; G.killer = by;
       if (pop) { const s = pop === 'head' ? 'head' : 'vest'; if (G.inv.eq[s]) { G.inv.eq[s] = null; refresh(); G.ui.toast(s === 'head' ? 'O teu capacete partiu-se' : 'O teu colete partiu-se'); } }
@@ -778,9 +814,9 @@ async function boot() {
     give: L => { let n = 0, chao = 0; for (const it of L) { const left = G.inv.give(it); n++; if (left) { it.n = left; G.dropItem(it); chao++; } } audio.play('apanhar'); refresh(); G.ui.toast(!n ? 'Já alguém levou esta mochila' : chao ? 'Apanhaste a mochila (o que não coube ficou no chão)' : 'Apanhaste a mochila'); },
     wallEnd: (o, d) => { _wa.set(o[0], o[1], o[2]); _wb.copy(_wa).addScaledVector(_wb.set(d[0], d[1], d[2]), 300); const t = wallHit(_wa, _wb); const E = _wb.sub(_wa).multiplyScalar(t).add(_wa); tracer(o[0], o[1], o[2], E.x, E.y, E.z); if (G.p && Math.hypot(o[0] - G.p.x, o[2] - G.p.z) < 60) { flash.position.set(o[0], o[1], o[2]); flash.intensity = 5 + 12 * (1 - (G.day ?? 1)); G.flashT = 0.06; } } });
   const decG = (L, g, rows) => { for (const o of L || []) { const it = dec(o); if (!it) continue; if (g.fits(it, o.x, o.y, rows)) g.add(it, o.x, o.y); else g.insert(it, rows); } return g; };
-  const saveWorld = () => { if (!G.zs.length) return; Conta.gravarMundo({ v: 1, when: Date.now(), cyc: Math.round(G.cyc || 0),
+  const saveWorld = () => { if (!G.zs.length) return; if (G.net && G.net.world) { Conta.gravarMundo({ v: 1, when: Date.now(), base: G.base.save(encG) }); return; } Conta.gravarMundo({ v: 1, when: Date.now(), cyc: Math.round(G.cyc || 0),
     zs: G.zs.map(z => [Math.round(z.x * 10) / 10, Math.round(z.z * 10) / 10, Math.round((z.hx ?? z.x) * 10) / 10, Math.round((z.hz ?? z.z) * 10) / 10, Math.round(z.hp), z.kind || '', z.helm || 0, z.vest || 0, z.limp || 0, z.state === 'dead' ? Math.round(z.deadT) : -1, z.lv || 0, z.state === 'chase' ? 1 : 0]),
-    bags: G.bags.filter(b => !b.grid.empty).map(b => ({ x: b.x, z: b.z, lv: b.lv || 0, y: +b.mesh.position.y.toFixed(2), body: b.body, age: Math.round(G.t - b.t), c: [b.grid.cols, b.grid.rows], g: encG(b.grid) })),
+    bags: G.bags.filter(b => b.grid && !b.grid.empty).map(b => ({ x: b.x, z: b.z, lv: b.lv || 0, y: +b.mesh.position.y.toFixed(2), body: b.body, age: Math.round(G.t - b.t), c: [b.grid.cols, b.grid.rows], g: encG(b.grid) })),
     wx: [+(G.rain || 0).toFixed(2), G.rainT || 0, Math.round(WX.t)], base: G.base.save(encG), locks: W.doors.filter(D => D.lock).map(D => [W.doors.indexOf(D), Math.round(D.lock.hp), D.lock.broke || 0]),
     cont: W.containers.map((c, i) => c.grid && !c.own ? [i, Math.max(0, Math.round((c.next || 0) - G.t)), encG(c.grid)] : null).filter(Boolean) }); };
   const saveChar = () => { const p = G.p; if (!p || !p.alive) return; Conta.gravarPersonagem({ v: 1, when: Date.now(), x: +p.x.toFixed(2), z: +p.z.toFixed(2), y: +p.y.toFixed(2), lv: p.lv || 0, base: p.base || 0, bld: p.bld ? p.bld.id : null, yaw: +p.yaw.toFixed(3), sel: G.sel, hp: p.hp, food: p.food, water: p.water, bleed: p.bleed, kills: p.kills, sk: p.sk, combat: !!(G.inCombat && G.inCombat()),
@@ -874,7 +910,7 @@ async function boot() {
   const _sa = new THREE.Vector3(), _sb = new THREE.Vector3();
   const clearShot = z => { const p = G.p, lo = (G.aimS.lean || 0) * 0.45; _sa.set(p.x + Math.cos(p.yaw) * lo, p.y + 1.35, p.z - Math.sin(p.yaw) * lo); for (const h of [1.25, 1.62]) { _sb.set(z.x, (z.y || 0) + h, z.z); if (wallHit(_sa, _sb) > 0.995) return true; } return false; };
   G.dbgSpawn = () => spawnPoint(false);
-  G.dbg = { fire: () => { const it = held(), g = it && ITEMS[it.k].gun; return g ? fire(it, g) : false; }, canSee: (a, b) => canSee(a, b), clearShot: z => clearShot(z), zoneHit: (z, P, Q, k) => zoneHit(z, P, Q, k), horde: () => horde, hurt: (d, c) => hurtPlayer(d, c || 'zombie'), hitZ: (z, zone, k) => { const B = ITEMS[k].bal; hitZombie(z, zone, { dmg: B.dmg, pen: B.pen, pel: B.pel, v: new THREE.Vector3(B.v, 0, 0), v0: B.v, dist: 10, fall: B.fall || 1 }, { x: z.x, y: 1.3, z: z.z }); } }; G.V3 = THREE.Vector3; G.M4 = THREE.Matrix4; G.RC = new THREE.Raycaster();
+  G.dbg = { deplete: n => { n.hp = 0; n.alive = false; n.col.on = false; n.respawn = G.t + 180; hideNode(n); if (G.net.on && n.key) G.net.node(n.key); }, nodes: () => nodes, fire: () => { const it = held(), g = it && ITEMS[it.k].gun; return g ? fire(it, g) : false; }, canSee: (a, b) => canSee(a, b), clearShot: z => clearShot(z), zoneHit: (z, P, Q, k) => zoneHit(z, P, Q, k), horde: () => horde, hurt: (d, c) => hurtPlayer(d, c || 'zombie'), hitZ: (z, zone, k) => { const B = ITEMS[k].bal; hitZombie(z, zone, { dmg: B.dmg, pen: B.pen, pel: B.pel, v: new THREE.Vector3(B.v, 0, 0), v0: B.v, dist: 10, fall: B.fall || 1 }, { x: z.x, y: 1.3, z: z.z }); } }; G.V3 = THREE.Vector3; G.M4 = THREE.Matrix4; G.RC = new THREE.Raycaster();
   const lockable = z => { if (!inView(z) || !G.p) return false; if (z._lkT > G.t) return z._lk; z._lkT = G.t + 0.12; return (z._lk = canSee(G.p, z) && clearShot(z)); };
   const bestTarget = () => { const p = G.p, d = heldDef(), range = d.gun ? Math.min(d.gun.rng, 40) : 3; let best = null, bs = 1e9; for (const z of G.zs) { if (!inView(z)) continue; const dd = Math.hypot(z.x - p.x, z.z - p.z); if (dd > range) continue; const a = Math.abs(angDiff(Math.atan2(z.x - p.x, z.z - p.z), p.yaw)); if (dd > 3 && a > 1.25) continue; if (!lockable(z)) continue; const sc = dd + a * 3; if (sc < bs) { bs = sc; best = z; } } return best; };
   const _pv = new THREE.Vector3();
@@ -1134,7 +1170,7 @@ async function boot() {
       if (p.alive && MAP - Math.max(Math.abs(p.x), Math.abs(p.z)) < 2.2 && G.t > (G.edgeT || 0)) { G.edgeT = G.t + 6; G.ui.toast('Chegaste ao limite do mapa'); }
       // interagir
       let best = null, bd = 1.9;
-      if (p.alive && !p.climb && p.h < 0.6) for (const c of [...W.containers, ...G.bags, ...(G.net && G.net.on ? G.netBags || [] : [])]) { if ((c.lv || 0) !== p.lv) continue; const d = Math.hypot(c.x - p.x, c.z - p.z); if (d < bd && los(p.x, p.z, c.x, c.z, [c.x, c.z], 'sg', p.lv, 0.5)) { best = c; bd = d; } }
+      if (p.alive && !p.climb && p.h < 0.6) for (const c of [...W.containers, ...G.bags]) { if ((c.lv || 0) !== p.lv) continue; const d = Math.hypot(c.x - p.x, c.z - p.z); if (d < bd && los(p.x, p.z, c.x, c.z, [c.x, c.z], 'sg', p.lv, 0.5)) { best = c; bd = d; } }
       const dn = p.alive && !p.climb && p.h < 0.6 ? G.doorAt(p) : null;
       if (dn && (!best || dn.d < bd - 0.2) && (!cfg.autoDoor || Math.hypot(p.vx, p.vz) < 0.5 || !dn.D.auto)) best = { door: dn.D, label: dn.D.lock && dn.D.lock.hp > 0 ? 'Porta trancada' : dn.D.target ? 'Fechar porta' : 'Abrir porta', x: dn.D.x, z: dn.D.z };
       G.prompt = best;
@@ -1143,7 +1179,7 @@ async function boot() {
       if (G.box && (Math.hypot(G.box.x - p.x, G.box.z - p.z) > 2.6)) { G.box = null; if (G.invOpen) G.ui.openInv(null); }
       updZombies(dt);
       // sacos: os vazios desaparecem, os velhos também
-      for (let i = G.bags.length - 1; i >= 0; i--) { const b = G.bags[i]; if ((b.grid.empty && G.box !== b) || G.t - b.t > (b.body ? 1500 : 900)) { scene.remove(b.mesh); G.bags.splice(i, 1); if (G.box === b) G.box = null; } }
+      if (!G.net.world) for (let i = G.bags.length - 1; i >= 0; i--) { const b = G.bags[i]; if ((b.grid.empty && G.box !== b) || G.t - b.t > (b.body ? 1500 : 900)) { scene.remove(b.mesh); G.bags.splice(i, 1); if (G.box === b) G.box = null; } }
       // recursos voltam a crescer
       G.nodeT = (G.nodeT || 0) - dt; if (G.nodeT <= 0) { G.nodeT = 2; for (const n of nodes) if (!n.alive && G.t > n.respawn && Math.hypot(n.x - p.x, n.z - p.z) > 25) { n.alive = true; n.hp = n.max; n.col.on = true; showNode(n); } }
       for (const n of nodes) if (n.shake > 0) { n.shake -= dt; const a = Math.sin(n.shake * 60) * n.shake * 0.12; _hm.copy(n.m0).multiply(mat4(0, 0, 0, 0, a, a * 0.5)); if (n.alive) { n.mesh.setMatrixAt(n.idx, n.shake > 0 ? _hm : n.m0); n.mesh.instanceMatrix.needsUpdate = true; } }
@@ -1160,7 +1196,7 @@ async function boot() {
       updZombies(dt);
     }
     // dia e noite: 25 min de dia (06:00 a 18:00) e 7 min de noite (18:00 a 06:00), ciclo de 32 min
-    if (G.playing) G.cyc = ((G.cyc ?? 900) + dt) % 1920; const cy = G.cyc ?? 900;
+    if (G.net.world) G.cyc = G.net.cyc(); else if (G.playing) G.cyc = ((G.cyc ?? 900) + dt) % 1920; const cy = G.cyc ?? 900;
     G.tod = cy < 1500 ? 0.25 + 0.5 * cy / 1500 : (0.75 + 0.5 * (cy - 1500) / 420) % 1;
     { const ang = (G.tod - 0.25) * Math.PI * 2, el = Math.sin(ang), D = sm(-0.1, 0.2, el); G.day = D;
       SUNDIR.set(-Math.cos(ang) * 0.9, Math.max(0.18, Math.abs(el)), 0.42).normalize();

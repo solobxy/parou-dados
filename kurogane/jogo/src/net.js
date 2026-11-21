@@ -4,11 +4,11 @@ import * as THREE from 'three';
 
 const MODES = ['none', 'pistol', 'rifle', 'melee'];
 
-export function makeNet({ G, scene, mkRemote, bagMesh, audio, Conta, enc, dec, hurt, die, give, wallEnd }) {
-  let ws = null, tok = null, sendT = 0, invT = 0, retry = 0, want = false;
-  const R = new Map(), sleepers = new Map(), bags = new Map();
+export function makeNet({ G, scene, mkRemote, audio, Conta, enc, dec, hurt, die, wallEnd, world, WV }) {
+  let ws = null, tok = null, sendT = 0, invT = 0, retry = 0, want = false, off = 0, cyc0 = 0, cur = null, psT = 0;
+  const R = new Map(), sleepers = new Map();
   const tags = document.createElement('div'); tags.id = 'tags'; { const h = document.getElementById('hud'); if (h && h.parentNode) h.parentNode.insertBefore(tags, h); else document.body.appendChild(tags); } // por baixo do HUD e dos ecrãs por cima
-  const N = { on: false, id: null, clan: null, clanInfo: null, R };
+  const N = { on: false, world: false, id: null, clan: null, clanInfo: null, R };
   const url = () => { try { const o = localStorage.getItem('kg.srv'); if (o) return o; } catch (e) { } return (location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + '/srv/ws'; };
   const tokKey = () => 'kg.tok.' + ((Conta.ativo() || {}).id || 'x');
   const send = o => { if (ws && ws.readyState === 1) ws.send(JSON.stringify(o)); };
@@ -24,23 +24,21 @@ export function makeNet({ G, scene, mkRemote, bagMesh, audio, Conta, enc, dec, h
     for (const s of sleepers.values()) { scene.remove(s.b.root); s.el.remove(); } sleepers.clear();
     for (const [k, x, z, lv, yaw, name, look, clan] of list) { const b = mkRemote(look); b.pose(0, 0, 'none'); b.root.position.set(x, 0.16, z); b.root.rotation.set(-Math.PI / 2, yaw, 0, 'YXZ'); b.root.visible = false; sleepers.set(k, { x, z, lv, b, name, el: tag(name + ' · a dormir', 'sleep') }); }
   };
-  const setBags = list => {
-    for (const g of bags.values()) scene.remove(g.mesh); bags.clear();
-    for (const [id, x, z, lv, n, name] of list) { const m = bagMesh.clone(); m.position.set(x, 0.02, z); m.rotation.y = (id.charCodeAt(0) % 7) * 0.9; scene.add(m); const mine = name && name === (Conta.ativo() || {}).nome; bags.set(id, { id, x, z, lv, mesh: m, netBag: id, mine, label: mine ? 'Apanhar a tua mochila' : 'Apanhar a mochila de ' + (name || 'alguém') }); }
-    G.netBags = [...bags.values()];
-  };
-  const clearAll = () => { for (const id of [...R.keys()]) delRemote(id); setSleepers([]); setBags([]); };
+  const clearAll = () => { for (const id of [...R.keys()]) delRemote(id); setSleepers([]); };
+  // deixa de estar ligado: os sacos do servidor saem e as caixas voltam a ser deste aparelho
+  const offline = () => { if (!N.world) return; N.world = false; cur = null; for (const b of [...G.bags]) if (b.nid) world.bags(null, [b.nid]); for (const c of G.W.containers) if (c.wid != null && !c.own) { c.grid = null; c.next = 0; } };
   const onMsg = m => {
     switch (m.t) {
       case 'ok': {
         N.id = m.id; tok = m.tok; try { localStorage.setItem(tokKey(), tok); } catch (e) { } N.on = true; retry = 0;
-        clearAll(); for (const [id, name, look, clan] of m.players) addRemote(id, name, look, clan); setSleepers(m.sleep); setBags(m.bags); N.clan = m.clan ? m.clan.id : null; N.clanInfo = m.clan;
+        clearAll(); for (const [id, name, look, clan] of m.players) addRemote(id, name, look, clan); setSleepers(m.sleep); N.clan = m.clan ? m.clan.id : null; N.clanInfo = m.clan;
+        off = m.w.now - Date.now(); cyc0 = m.w.cyc0; N.world = true; cur = null; world.reset(m.w);
         const n = m.players.length; G.ui.toast(n ? `Online · ${n} ${n === 1 ? 'jogador ligado' : 'jogadores ligados'}` : 'Online · estás sozinho no servidor por agora');
         if (m.killed) { G.ui.toast('Mataram-te enquanto dormias'); die('dormir'); }
         else if (m.resume && G.p && m.resume.hp != null && m.resume.hp < G.p.hp) G.p.hp = Math.max(1, m.resume.hp);
         N.sendInv(); if (N.onClan) N.onClan(); return;
       }
-      case 'erro': want = false; G.ui.toast(m.e === 'nome_em_uso' ? 'Esse nome já é de outro jogador. Muda o nome do perfil para jogar online.' : 'O nome do perfil não serve para o servidor (3 a 16 letras ou números).'); try { ws.close(); } catch (e) { } return;
+      case 'erro': want = false; G.ui.toast(m.e === 'nome_em_uso' ? 'Esse nome já é de outro jogador. Muda o nome do perfil para jogar online.' : m.e === 'versao' ? 'Há uma versão nova do jogo. Recarrega a página para jogar online.' : 'O nome do perfil não serve para o servidor (3 a 16 letras ou números).'); try { ws.close(); } catch (e) { } return;
       case 'join': addRemote(m.id, m.name, m.look, m.clan); G.ui.toast(m.name + ' entrou'); return;
       case 'left': { const r = R.get(m.id); if (r) G.ui.toast(r.name + ' saiu e ficou a dormir'); delRemote(m.id); return; }
       case 's': {
@@ -59,8 +57,11 @@ export function makeNet({ G, scene, mkRemote, bagMesh, audio, Conta, enc, dec, h
       case 'hit': hurt(m.dmg, m.by, m.zone, m.pop); return;
       case 'hitc': { const r = m.on != null ? R.get(m.on) : null; G.ui.hit(!!m.kill, m.zone, false, r ? new THREE.Vector3(r.x, (r.y || 0) + (m.zone === 'head' ? 1.6 : 1.1), r.z) : null); G.buzz && G.buzz(m.kill ? [25, 40, 35] : 14); if (m.kill) G.ui.toast('Abateste ' + (m.name || 'um jogador')); return; }
       case 'sleep': setSleepers(m.list); return;
-      case 'bags': setBags(m.list); return;
-      case 'took': { const L = (m.it || []).map(dec).filter(Boolean); give(L); return; }
+      case 'dr': world.door(m.i, m.o); return;
+      case 'nd': world.node(m.k, m.ms); return;
+      case 'wx': world.wx(m.r); return;
+      case 'bg': world.bags(m.add, m.del); return;
+      case 'opn': { if (!cur || cur.key !== m.c) return; const gen = world.opened(cur.c, m); if (G.box !== cur.c) { cur = null; return; } cur.sig = gen ? '' : sigOf(cur.c); cur.open = true; return; }
       case 'clan': if (m.erro) { if (N.onClan && N.onClan(m.erro)) return; G.ui.toast(m.erro); return; } else { N.clan = m.info ? m.info.id : null; N.clanInfo = m.info; for (const r of R.values()) r.el.classList.toggle('mate', mate(r.clan)); } if (N.onClan) N.onClan(); return;
       case 'pclan': { const r = R.get(m.id); if (r) { r.clan = m.clan; r.el.classList.toggle('mate', mate(m.clan)); } return; }
     }
@@ -69,20 +70,29 @@ export function makeNet({ G, scene, mkRemote, bagMesh, audio, Conta, enc, dec, h
     if (ws || !want) return; const a = Conta.ativo(); if (!a || !a.nome) return;
     try { tok = localStorage.getItem(tokKey()); } catch (e) { }
     let opened = false; try { ws = new WebSocket(url()); } catch (e) { ws = null; G.ui.toast('Sem ligação ao servidor. Continuas sozinho.'); return; }
-    ws.onopen = () => { opened = true; send({ t: 'hi', name: a.nome, look: a.look || {}, tok }); };
+    ws.onopen = () => { opened = true; send({ t: 'hi', name: a.nome, look: a.look || {}, tok, wv: WV, x: G.p ? G.p.x : 0, z: G.p ? G.p.z : 0 }); };
     ws.onmessage = e => { try { onMsg(JSON.parse(e.data)); } catch (er) { console.error(er); } };
     ws.onclose = () => {
-      const was = N.on; ws = null; N.on = false; clearAll();
+      const was = N.on; ws = null; N.on = false; clearAll(); offline();
       if (!want) return;
       if (retry < 6) { retry++; if (was) G.ui.toast('Perdeste a ligação ao servidor. A tentar outra vez…'); else if (!opened && retry === 1) G.ui.toast('O servidor não responde. Continuas sozinho e o jogo tenta outra vez.'); setTimeout(connect, 1500 * retry); }
       else G.ui.toast('Sem servidor. Continuas sozinho.');
     };
   };
   N.start = () => { want = true; retry = 0; connect(); };
-  N.stop = () => { want = false; if (ws) { try { if (N.on) N.sendInv(); ws.close(); } catch (e) { } } ws = null; N.on = false; clearAll(); };
+  N.stop = () => { want = false; if (ws) { try { if (N.on) { closeBox(); N.sendInv(); } ws.close(); } catch (e) { } } ws = null; N.on = false; clearAll(); offline(); };
   N.shot = (O, D, k, n, L, sup) => send({ t: 'shot', o: [+O.x.toFixed(2), +O.y.toFixed(2), +O.z.toFixed(2)], d: [+D.x.toFixed(4), +D.y.toFixed(4), +D.z.toFixed(4)], k, n, L: Math.round(L), sup: !!sup });
   N.died = () => send({ t: 'died', it: G.inv.all().map(enc), force: 1 });
-  N.take = id => send({ t: 'take', id });
+  // mundo partilhado
+  N.cyc = () => (((Date.now() + off - cyc0) / 1000) % 1920 + 1920) % 1920;
+  N.door = (i, o) => send({ t: 'dr', i, o: o ? 1 : 0 });
+  N.node = k => send({ t: 'nd', k });
+  N.bag = (x, z, y, lv, it) => send({ t: 'bag', x: +x.toFixed(2), z: +z.toFixed(2), y: +y.toFixed(2), lv, it });
+  // caixas e sacos: pede ao servidor (só uma pessoa de cada vez); enquanto estiver aberta vai mandando o que tem; ao fechar manda o fim
+  const keyOf = c => c.nid ? 'b' + c.nid : 'w' + c.wid;
+  const sigOf = c => c.grid ? JSON.stringify(world.encG(c.grid)) : '';
+  const closeBox = () => { if (!cur) return; if (cur.open && cur.c.grid) send({ t: 'cl', c: cur.key, it: world.encG(cur.c.grid) }); cur = null; };
+  N.open = c => { closeBox(); cur = { key: keyOf(c), c, open: false, t: performance.now() }; send({ t: 'op', c: cur.key }); };
   N.clanCmd = (a, v) => send({ t: 'clan', a, nome: v, codigo: v });
   N.sendInv = () => send({ t: 'inv', it: G.inv.all().map(enc) });
   N.near = (x, z, r) => { for (const o of R.values()) if (o.s1 && Math.hypot(o.s1[1] - x, o.s1[2] - z) < r) return true; for (const s of sleepers.values()) if (Math.hypot(s.x - x, s.z - z) < r) return true; return false; };
@@ -93,6 +103,7 @@ export function makeNet({ G, scene, mkRemote, bagMesh, audio, Conta, enc, dec, h
     if (!N.on) return; const now = performance.now();
     { const hide = G.mapOpen || G.invOpen || G.paused || !G.playing; if (tags.hidden !== hide) tags.hidden = hide; }
     sendT -= dt; if (sendT <= 0 && me) { sendT = 0.1; send({ t: 'st', ...me }); }
+    if (cur) { if (cur.open && G.box !== cur.c) closeBox(); else if (cur.open) { psT -= dt; if (psT <= 0) { psT = 0.4; const sg = sigOf(cur.c); if (sg !== cur.sig) { cur.sig = sg; send({ t: 'ps', c: cur.key, it: world.encG(cur.c.grid) }); } } } else if (performance.now() - cur.t > 4000) cur = null; }
     invT -= dt; if (invT <= 0) { invT = 15; N.sendInv(); }
     const lv = me ? me.lv : 0;
     for (const r of R.values()) {
@@ -113,6 +124,6 @@ export function makeNet({ G, scene, mkRemote, bagMesh, audio, Conta, enc, dec, h
     }
   };
   N.mates = () => { const out = []; for (const r of R.values()) if (mate(r.clan) && r.s1) out.push({ x: r.s1[1], z: r.s1[2], name: r.name }); return out; };
-  addEventListener('pagehide', () => { if (N.on) N.sendInv(); });
+  addEventListener('pagehide', () => { if (N.on) { closeBox(); N.sendInv(); } });
   return N;
 }

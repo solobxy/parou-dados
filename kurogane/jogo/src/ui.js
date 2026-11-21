@@ -34,7 +34,7 @@ export function initUI(G) {
   $('sPlay').onclick = () => go(false); $('sCont').onclick = () => go(true); $('sKit').onclick = () => go(false, true);
   // o online só existe no site do jogo (com o servidor ao lado); noutros sítios joga-se sozinho
   let canOnline = !!window.KG_ONLINE; try { if (localStorage.getItem('kg.srv')) canOnline = true; } catch (e) { }
-  if (!canOnline) { G.online = false; $('sOnl').hidden = true; const f = document.querySelector('#start .foot'); if (f) f.textContent = 'Protótipo 0.9.1 · aqui jogas sozinho · o jogo online está no site do Kurogane'; }
+  if (!canOnline) { G.online = false; $('sOnl').hidden = true; const f = document.querySelector('#start .foot'); if (f) f.textContent = 'Protótipo 0.10 · aqui jogas sozinho · o jogo online está no site do Kurogane'; }
   else { let on = true; try { on = localStorage.getItem('kg.online') !== '0'; } catch (e) { } G.online = on;
     const b = $('sOnl'), t = $('sOnT'), paint = () => { b.setAttribute('aria-checked', G.online); b.querySelector('.tog').classList.toggle('on', G.online); };
     const count = () => { if (!G.online) { t.textContent = 'Jogas sozinho, sem outros jogadores'; return; } t.textContent = 'Outros jogadores, PvP e clãs'; let u = '/srv/saude'; try { const o = localStorage.getItem('kg.srv'); if (o) u = o.replace(/^ws/, 'http').replace(/\/ws$/, '/saude'); } catch (e) { }
@@ -539,9 +539,8 @@ export function initUI(G) {
       c.fillStyle = 'rgba(30,48,26,.95)'; for (const t of G.sectors.trees()) { if (Math.abs(t.x - p.x) > R || Math.abs(t.z - p.z) > R || !t.alive) continue; c.beginPath(); c.arc((t.x - p.x) * K, (t.z - p.z) * K, 2.1 * K * t.s, 0, 7); c.fill(); }
       for (const S of G.sectors.loaded.values()) for (const r of S.rocks || []) { if (Math.abs(r.x - p.x) > R || Math.abs(r.z - p.z) > R || !r.alive) continue; c.fillStyle = r.kind === 'sulfur' ? '#d8bc3a' : r.kind === 'metal' ? '#a0603a' : '#9a988f'; c.beginPath(); c.arc((r.x - p.x) * K, (r.z - p.z) * K, 1.4 * K, 0, 7); c.fill(); }
     }
-    for (const b of G.bags) if (b.body) { c.fillStyle = '#F07A68'; c.beginPath(); c.arc((b.x - p.x) * K, (b.z - p.z) * K, 2.2 * K, 0, 7); c.fill(); }
-    if (G.net && G.net.on) { for (const b of G.netBags || []) if (b.mine) { c.fillStyle = '#F07A68'; c.beginPath(); c.arc((b.x - p.x) * K, (b.z - p.z) * K, 2.2 * K, 0, 7); c.fill(); }
-      for (const m of G.net.mates()) { c.fillStyle = '#6FA8FF'; c.strokeStyle = '#0d1520'; c.lineWidth = K * 0.5; c.beginPath(); c.arc((m.x - p.x) * K, (m.z - p.z) * K, 2 * K, 0, 7); c.fill(); c.stroke(); } }
+    for (const b of G.bags) if (b.body && (b.mine || !b.nid)) { c.fillStyle = '#F07A68'; c.beginPath(); c.arc((b.x - p.x) * K, (b.z - p.z) * K, 2.2 * K, 0, 7); c.fill(); }
+    if (G.net && G.net.on) { for (const m of G.net.mates()) { c.fillStyle = '#6FA8FF'; c.strokeStyle = '#0d1520'; c.lineWidth = K * 0.5; c.beginPath(); c.arc((m.x - p.x) * K, (m.z - p.z) * K, 2 * K, 0, 7); c.fill(); c.stroke(); } }
     c.rotate(Math.atan2(Math.cos(p.yaw), Math.sin(p.yaw)));
     c.fillStyle = '#F2A33A'; c.strokeStyle = '#1a1208'; c.lineWidth = K * 0.5; c.beginPath(); c.moveTo(3.4 * K, 0); c.lineTo(-2.2 * K, 2.4 * K); c.lineTo(-1.2 * K, 0); c.lineTo(-2.2 * K, -2.4 * K); c.closePath(); c.fill(); c.stroke();
     c.restore();
@@ -561,10 +560,9 @@ export function initUI(G) {
     const T = v => (v - cx + span / 2) * S, Tz = v => (v - cz + span / 2) * S;
     c.textAlign = 'center';
     for (const zn of G.W.zones) { const X = T(zn.x), Z = Tz(zn.z); if (X < -40 || Z < -40 || X > cv.width + 40 || Z > cv.height + 40) continue; if (zn.kind === 'cabin') { c.fillStyle = '#e8dcc8'; c.beginPath(); c.arc(X, Z, mapNear ? 5 : 3, 0, 7); c.fill(); continue; } const big = zn.kind === 'city'; if (!mapNear && !big && Math.max(Math.abs(zn.x), Math.abs(zn.z)) < CORE) continue; c.font = `700 ${big ? 24 : mapNear ? 19 : 15}px "Barlow Condensed",sans-serif`; const lab = zn.name.toUpperCase() + (big ? ' · PvP' : ''); const w = c.measureText(lab).width; c.fillStyle = 'rgba(12,14,16,.78)'; c.fillRect(X - w / 2 - 6, Z - 13, w + 12, 24); c.fillStyle = zn.kind === 'mil' ? '#ff9a7a' : big ? '#F2A33A' : '#EEE9E0'; c.fillText(lab, X, Z + 5); }
-    for (const b of G.bags) if (b.body) { c.fillStyle = '#F07A68'; c.beginPath(); c.arc(T(b.x), Tz(b.z), 8, 0, 7); c.fill(); }
+    for (const b of G.bags) if (b.body && (b.mine || !b.nid)) { c.fillStyle = '#F07A68'; c.beginPath(); c.arc(T(b.x), Tz(b.z), 8, 0, 7); c.fill(); }
     if (G.base && G.base.spawn) { const s2 = G.base.spawn; c.fillStyle = '#7fd38a'; c.fillRect(T(s2.x) - 5, Tz(s2.z) - 5, 10, 10); }
-    if (G.net && G.net.on) { for (const b of G.netBags || []) if (b.mine) { c.fillStyle = '#F07A68'; c.beginPath(); c.arc(T(b.x), Tz(b.z), 8, 0, 7); c.fill(); }
-      c.font = '700 17px "Barlow Condensed",sans-serif'; for (const m of G.net.mates()) { const X = T(m.x), Z = Tz(m.z); c.fillStyle = '#6FA8FF'; c.strokeStyle = '#0d1520'; c.lineWidth = 3; c.beginPath(); c.arc(X, Z, 7, 0, 7); c.fill(); c.stroke(); c.lineWidth = 4; c.strokeStyle = 'rgba(12,14,16,.85)'; c.strokeText(m.name, X, Z - 13); c.fillStyle = '#CFE0FF'; c.fillText(m.name, X, Z - 13); } }
+    if (G.net && G.net.on) { c.font = '700 17px "Barlow Condensed",sans-serif'; for (const m of G.net.mates()) { const X = T(m.x), Z = Tz(m.z); c.fillStyle = '#6FA8FF'; c.strokeStyle = '#0d1520'; c.lineWidth = 3; c.beginPath(); c.arc(X, Z, 7, 0, 7); c.fill(); c.stroke(); c.lineWidth = 4; c.strokeStyle = 'rgba(12,14,16,.85)'; c.strokeText(m.name, X, Z - 13); c.fillStyle = '#CFE0FF'; c.fillText(m.name, X, Z - 13); } }
     c.save(); c.translate(T(p.x), Tz(p.z)); c.rotate(Math.atan2(Math.cos(p.yaw), Math.sin(p.yaw))); c.fillStyle = '#F2A33A'; c.strokeStyle = '#1a1208'; c.lineWidth = 3; c.beginPath(); c.moveTo(16, 0); c.lineTo(-10, 11); c.lineTo(-5, 0); c.lineTo(-10, -11); c.closePath(); c.fill(); c.stroke(); c.restore();
     $('mScale').textContent = mapNear ? 'Perto de ti · 2 × 2 km' : `Mundo · ${MAP * 2 / 1000} × ${MAP * 2 / 1000} km`; $('mZoom').textContent = mapNear ? 'Ver tudo' : 'Aproximar';
   };

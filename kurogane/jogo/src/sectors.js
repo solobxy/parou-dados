@@ -40,6 +40,7 @@ export function makeSectors({ scene, W, nodes, addCirc, removeCirc, iMesh, geos,
     if (bushes.length) S.meshes.push(...iMesh(geos.bush, mats.tree, bushes, b => mat4(b.x, 0, b.z, b.ry, b.s), true, SECT));
     if (grass.length) S.meshes.push(...iMesh(geos.grass, mats.grass, grass, g => mat4(g.x, 0, g.z, g.ry, g.s), false, SECT));
     S.trees = trees[0].concat(trees[1]); S.rocks = [...rocks.stone, ...rocks.sulfur, ...rocks.metal];
+    S.nodes.forEach((n, i) => n.key = 's' + sx + ',' + sz + ':' + i); if (W.onSector) W.onSector(S); // chave igual em todos os aparelhos (online)
     return S;
   };
   const drop = S => { for (const m of S.meshes) { scene.remove(m); m.dispose && m.dispose(); } for (const c of S.circs) removeCirc(c); const set = new Set(S.nodes); for (let i = nodes.length - 1; i >= 0; i--) if (set.has(nodes[i])) nodes.splice(i, 1); };
