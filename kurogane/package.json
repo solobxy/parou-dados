@@ -1,6 +1,7 @@
 {
   "name": "kurogane",
   "private": true,
+  "type": "module",
   "description": "Kurogane: jogo de sobrevivência com zombies (código do jogo em jogo/, servidor online em server.mjs)",
   "scripts": {
     "build": "node jogo/build.cjs",

@@ -32,7 +32,7 @@ export function makeNet({ G, scene, mkRemote, audio, Conta, enc, dec, hurt, die,
       case 'ok': {
         N.id = m.id; tok = m.tok; try { localStorage.setItem(tokKey(), tok); } catch (e) { } N.on = true; retry = 0;
         clearAll(); for (const [id, name, look, clan] of m.players) addRemote(id, name, look, clan); setSleepers(m.sleep); N.clan = m.clan ? m.clan.id : null; N.clanInfo = m.clan;
-        off = m.w.now - Date.now(); cyc0 = m.w.cyc0; N.uid = m.uid; N.world = true; cur = null; world.reset(m.w);
+        off = m.w.now - Date.now(); cyc0 = m.w.cyc0; N.uid = m.uid; N.world = true; cur = null; world.reset(m.w); if (m.inv && !m.killed && G.loadInv) G.loadInv(m.inv); invSig = '';
         const n = m.players.length; G.ui.toast(n ? `Online · ${n} ${n === 1 ? 'jogador ligado' : 'jogadores ligados'}` : 'Online · estás sozinho no servidor por agora');
         if (m.killed) { G.ui.toast('Mataram-te enquanto dormias'); die('dormir'); }
         else if (m.resume && G.p && m.resume.hp != null && m.resume.hp < G.p.hp) G.p.hp = Math.max(1, m.resume.hp);
@@ -65,6 +65,9 @@ export function makeNet({ G, scene, mkRemote, audio, Conta, enc, dec, hurt, die,
       case 'zh': world.z.hit(m.i, m.dx, m.dz); return;
       case 'zat': hurt(m.dmg, null, 'body', null, 'zombie'); return;
       case 'cin': { const c = G.cars.list.find(q => q.id === m.id); if (m.ok && c) G.cars.seated(c, m.seat); else G.ui.toast('Esse lugar já está ocupado'); return; }
+      case 'fix': if (G.fixInv) G.fixInv(m.T); invSig = ''; return;
+      case 'pos': if (G.p) { G.p.x = m.x; G.p.z = m.z; G.p.vx = G.p.vz = 0; } return;
+      case 'boxfix': if (cur && cur.key === m.c && cur.c.grid) { const g = cur.c.grid; for (const e of [...g.list]) g.remove(e.it); for (const o of m.it || []) { const it = world.dec(o); if (it) { if (g.fits(it, o.x, o.y)) g.add(it, o.x, o.y); else g.insert(it); } } cur.sig = sigOf(cur.c); G.ui.refresh(true); } return;
       case 'zseed': if (N.world) N.zseed(world.z.seed()); return;
       case 'bb': world.base(m); return;
       case 'bno': G.ui.toast(m.e || 'Não deu'); G.base.refused(m.a, m.k); return;
@@ -83,7 +86,7 @@ export function makeNet({ G, scene, mkRemote, audio, Conta, enc, dec, hurt, die,
     if (ws || !want) return; const a = Conta.ativo(); if (!a || !a.nome) return;
     try { tok = localStorage.getItem(tokKey()); } catch (e) { }
     let opened = false; try { ws = new WebSocket(url()); } catch (e) { ws = null; G.ui.toast('Sem ligação ao servidor. Continuas sozinho.'); return; }
-    ws.onopen = () => { opened = true; send({ t: 'hi', name: a.nome, look: a.look || {}, tok, wv: WV, x: G.p ? G.p.x : 0, z: G.p ? G.p.z : 0, cars: G.cars.spawnPoints() }); };
+    ws.onopen = () => { opened = true; send({ t: 'hi', pv: 2, name: a.nome, look: a.look || {}, tok, wv: WV, x: G.p ? G.p.x : 0, z: G.p ? G.p.z : 0, cars: G.cars.spawnPoints(), ctab: G.W.containers.filter(c => c.wid != null).sort((a, b) => a.wid - b.wid).map(c => [c.table, c.slots[0], c.slots[1]]), fresh: !!G.freshStart, test: (() => { try { return localStorage.getItem('kg.test') === '1'; } catch (e) { return false; } })() }); G.freshStart = false; };
     ws.onmessage = e => { try { onMsg(JSON.parse(e.data)); } catch (er) { console.error(er); } };
     ws.onclose = () => {
       const was = N.on; ws = null; N.on = false; clearAll(); offline();
@@ -116,7 +119,8 @@ export function makeNet({ G, scene, mkRemote, audio, Conta, enc, dec, hurt, die,
   const closeBox = () => { if (!cur) return; if (cur.open && cur.c.grid) { const d = cur.c.dep, o = { t: 'cl', c: cur.key, it: world.encG(cur.c.grid) }; if (d && d.k === 'fornalha') o.fu = { on: d.on ? 1 : 0, until: G.base.furnUntil(d) }; send(o); } cur = null; };
   N.open = c => { closeBox(); cur = { key: keyOf(c), c, open: false, t: performance.now() }; send({ t: 'op', c: cur.key }); };
   N.clanCmd = (a, v) => send({ t: 'clan', a, nome: v, codigo: v });
-  N.sendInv = () => send({ t: 'inv', it: G.inv.all().map(enc) });
+  // com uma caixa aberta, o que mudou nela vai primeiro: assim o servidor já sabe que tiraste de lá quando vê o teu inventário (e não o corrige por engano)
+  let invSig = ''; N.sendInv = () => { if (!G.invLayout || !G.inv) return; if (cur && cur.open && cur.c && cur.c.grid) { const s0 = sigOf(cur.c); if (s0 !== cur.sig) { cur.sig = s0; send({ t: 'ps', c: cur.key, it: world.encG(cur.c.grid) }); } } const L = G.invLayout(), sg = JSON.stringify(L); if (sg === invSig) return; invSig = sg; send({ t: 'inv', ...L }); };
   N.near = (x, z, r) => { for (const o of R.values()) if (o.s1 && Math.hypot(o.s1[1] - x, o.s1[2] - z) < r) return true; for (const s of sleepers.values()) if (Math.hypot(s.x - x, s.z - z) < r) return true; return false; };
   // cada imagem: o teu estado para o servidor (10 por segundo) e os outros no sítio certo, 100 ms atrás (para andarem suaves)
   const _v = new THREE.Vector3();
@@ -128,7 +132,7 @@ export function makeNet({ G, scene, mkRemote, audio, Conta, enc, dec, hurt, die,
     if (zdQ.length) { send({ t: 'zd', L: zdQ.splice(0, 40) }); }
     zT -= dt; if (zT <= 0 && N.world) { zT = 0.1; const L = world.z.up(); if (L.length) send({ t: 'zu', L }); const ca = G.cars.up(); if (ca) send({ t: 'cu', L: [ca] }); }
     if (cur) { if (cur.open && G.box !== cur.c) closeBox(); else if (cur.open) { psT -= dt; if (psT <= 0) { psT = 0.4; const sg = sigOf(cur.c); if (sg !== cur.sig) { cur.sig = sg; send({ t: 'ps', c: cur.key, it: world.encG(cur.c.grid) }); } } } else if (performance.now() - cur.t > 4000) cur = null; }
-    invT -= dt; if (invT <= 0) { invT = 15; N.sendInv(); }
+    invT -= dt; if (invT <= 0) { invT = 3; N.sendInv(); }
     const lv = me ? me.lv : 0;
     for (const r of R.values()) {
       const a = r.s0, b = r.s1; if (!b) continue;

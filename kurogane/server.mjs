@@ -5,6 +5,8 @@ import http from 'node:http';
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
+import { ITEMS, LOOT, RECIPES, ammoOf } from './jogo/src/items.js';
+import { Grid, mkItem, rollLoot } from './jogo/src/bag.js';
 
 const PORT = +process.env.PORT || 3190, DIR = process.env.STATE_DIRECTORY || path.join(process.cwd(), 'dados');
 const FILE = path.join(DIR, 'estado.json'), SLEEP_MS = 72 * 3600e3, BAG_MS = 45 * 60e3, MAXP = 60;
@@ -14,11 +16,13 @@ const NAME = /^[A-Za-z0-9_À-ÖØ-öø-ÿ-]{3,16}$/;
 
 // ---------- estado (gravado em disco)
 const W0 = () => ({ wv: null, cyc0: Date.now() - 900e3, wx: { r: 0, next: Date.now() + 300e3 }, doors: {}, nodes: {}, ct: {}, zs: [], base: { p: {}, d: {} }, locks: {}, cars: {} });
-let S = { sleepers: {}, bags: {}, clans: {}, tokens: {}, w: W0() };
+let S = { sleepers: {}, bags: {}, clans: {}, tokens: {}, w: W0(), led: {} };
 try { S = { ...S, ...JSON.parse(fs.readFileSync(FILE, 'utf8')) }; } catch (e) { }
 S.w = { ...W0(), ...(S.w || {}) }; for (const z of S.w.zs) z.o = 0; for (const c of Object.values(S.w.cars)) { c.s = [0, 0, 0, 0]; c.v = 0; }
 // mochilas antigas (só de mortes): passam ao formato novo
 for (const b of Object.values(S.bags)) if (b.items && !b.it) { b.it = b.items; delete b.items; b.body = 1; b.y = b.y ?? 0; }
+// contas (anti-batota): quem já jogava antes fica com o que tinha na primeira vez que se liga
+S.led = S.led || {}; if (!S.ledSince) { S.ledSince = Date.now(); for (const t of Object.values(S.tokens)) t.g = 1; }
 let dirty = false; const save = () => { if (!dirty) return; dirty = false; try { fs.mkdirSync(DIR, { recursive: true }); fs.writeFileSync(FILE + '.tmp', JSON.stringify(S)); fs.renameSync(FILE + '.tmp', FILE); } catch (e) { console.error('gravar', e.message); } };
 setInterval(save, 15000);
 const rid = n => crypto.randomBytes(n).toString('base64url');
@@ -78,6 +82,53 @@ const cleanIt = L => !Array.isArray(L) ? [] : L.slice(0, 80).filter(o => o && ty
   if (o.r) r.r = 1; if (typeof o.x === 'number') r.x = num(o.x, 0, 30) | 0; if (typeof o.y === 'number') r.y = num(o.y, 0, 30) | 0;
   return r; });
 
+// ---------- contas de cada jogador (anti-batota): o servidor sabe quanto tem cada um de cada coisa e só deixa
+// ter, guardar ou largar o que viu chegar: caixas e sacos, recursos apanhados, o que fabricou, o kit ao nascer.
+// Conta pilhas, acessórios metidos nas armas, carregadores metidos e as balas lá dentro (carregar e descarregar não muda nada).
+const KIT = { pedra: 1, ligadura: 2, onigiri: 1, lanterna: 1 };
+const tally = (list, T = {}) => { for (const o of list || []) { if (!o || !ITEMS[o.k]) continue; const d = ITEMS[o.k]; T[o.k] = (T[o.k] || 0) + Math.max(1, o.n | 0);
+    if (o.att) for (const v of Object.values(o.att)) if (ITEMS[v]) T[v] = (T[v] || 0) + 1;
+    if (d.gun && o.mg && ITEMS[o.mg]) T[o.mg] = (T[o.mg] || 0) + 1;
+    const am = (d.gun ? o.ammo | 0 : 0) + (d.clip ? o.am | 0 : 0); if (am > 0 && o.ak && ITEMS[o.ak]) T[o.ak] = (T[o.ak] || 0) + am; }
+  return T; };
+const flat = inv => !inv ? [] : [...(inv.bag || []), ...(inv.belt || []).filter(Boolean), ...Object.values(inv.eq || {}).filter(Boolean)];
+const diffT = (A, B) => { const out = {}; for (const k of new Set([...Object.keys(A), ...Object.keys(B)])) { const d = (A[k] || 0) - (B[k] || 0); if (d > 0) out[k] = d; } return out; }; // o que A tem a mais que B
+const fits = (need, T) => Object.entries(need).every(([k, n]) => (T[k] || 0) >= n);
+const addT = (T, X, s = 1) => { for (const [k, n] of Object.entries(X)) { T[k] = (T[k] || 0) + s * n; if (T[k] <= 0) delete T[k]; } };
+const ledOf = p => { let L = S.led[p.tok]; if (!L) { L = S.led[p.tok] = { T: { ...KIT }, inv: null, g: !!(S.tokens[p.tok] && S.tokens[p.tok].g) }; dirty = true; } return L; };
+const cleanInv = m => ({ bag: cleanIt(m.bag), belt: (Array.isArray(m.belt) ? m.belt.slice(0, 6) : []).map(o => o ? cleanIt([o])[0] || null : null), eq: Object.fromEntries(['head', 'vest', 'back'].map(s => [s, m.eq && m.eq[s] ? cleanIt([m.eq[s]])[0] || null : null])) });
+const strike = (c, p, what) => { p.strikes = (p.strikes || 0) + 1; if (p.strikes <= 5 || p.strikes % 20 === 0) console.log('batota?', p.name, what, p.strikes); };
+// o inventário do jogo: se tiver coisas que o servidor não viu chegar, manda corrigir
+const invMsg = (c, p, m) => { const L = ledOf(p), inv = cleanInv(m), C = tally(flat(inv));
+  if (L.g) { L.T = C; L.inv = inv; L.g = false; if (S.tokens[p.tok]) delete S.tokens[p.tok].g; dirty = true; return; } // personagens de antes das contas: aceita-se o que tinham
+  const extra = diffT(C, L.T); if (Object.keys(extra).length) { strike(c, p, 'inv ' + JSON.stringify(extra)); send(c, { t: 'fix', T: L.T }); return; }
+  L.T = C; L.inv = inv; p.inv = flat(inv).map(({ x, y, ...r }) => r); dirty = true; };
+// juntar recursos (árvores e rochas): no máximo o que dá para apanhar a bater sem parar
+const GATHER = { madeira: 1, pedraR: 1, metal: 1, enxofre: 1 };
+const NODEY = new Map(); // quanto já saiu de cada árvore ou rocha (volta a crescer em 3 min)
+const gather = (c, p, m) => { const k = String(m.k || ''), n = num(m.n, 0, 200) | 0, nk = String(m.nk || ''); if (!GATHER[k] || !n) return; const now = Date.now(), b = p.gb || (p.gb = { v: 3000, t: now }); b.v = Math.min(3000, b.v + (now - b.t) / 60000 * 3000); b.t = now;
+  if (!/^[cs][0-9,:-]{1,24}$/.test(nk)) { strike(c, p, 'recursos sem árvore'); return; }
+  let y = NODEY.get(nk); if (!y || now - y.t > 180e3) { y = { v: 0, t: now }; NODEY.set(nk, y); } if (NODEY.size > 50000) NODEY.clear();
+  if (b.v < n || y.v + n > 520) { strike(c, p, 'recursos ' + k + ' ' + n); return; } b.v -= n; y.v += n; addT(ledOf(p).T, { [k]: n }); dirty = true; };
+// fabricar: receita do jogo, com material e (se for preciso) bancada a menos de 4 m
+const craft = (c, p, m) => { const r = RECIPES[m.i | 0]; if (!r) return; const L = ledOf(p);
+  if (r.b) { let lv = 0; for (const d of Object.values(S.w.base.d)) { const b = /^bancada([123])$/.exec(d.k); if (b && Math.hypot(d.x - p.x, d.z - p.z) < 5) lv = Math.max(lv, +b[1]); } if (lv < r.b) { strike(c, p, 'bancada ' + r.k); send(c, { t: 'fix', T: L.T }); return; } }
+  if (!fits(r.need, L.T)) { strike(c, p, 'material ' + r.k); send(c, { t: 'fix', T: L.T }); return; }
+  addT(L.T, r.need, -1); addT(L.T, { [r.k]: r.n || 1 }); dirty = true; };
+// caixas: o que sai vai para quem a tem aberta; o que entra tem de ser dele. Na fornalha, a madeira vira carvão e o minério metal.
+const boxDelta = (c, p, k, oldIt, newIt) => { const O = tally(oldIt), N = tally(newIt); const out = diffT(O, N), inn = diffT(N, O);
+  if (k[0] === 'd') { const d = S.w.base.d[k.slice(1)]; if (d && d.k === 'fornalha') for (const [a, b] of [['carvao', 'madeira'], ['metalR', 'metal']]) { const q = Math.min(inn[a] || 0, out[b] || 0); if (q) { inn[a] -= q; out[b] -= q; if (!inn[a]) delete inn[a]; if (!out[b]) delete out[b]; } } }
+  const L = ledOf(p); if (!fits(inn, L.T)) { strike(c, p, 'caixa ' + JSON.stringify(diffT(inn, L.T))); return false; }
+  addT(L.T, inn, -1); addT(L.T, out); dirty = true; return true; };
+// loot das caixas do mundo: gerado aqui (com as tabelas do jogo), não no telemóvel
+const genLoot = (k, prev) => { const t = S.w.ctab && S.w.ctab[+k.slice(1)]; if (!t || !LOOT[t[0]]) return prev || []; const g = new Grid(t[1], t[2]); for (const o of prev || []) { const it = mkItem(o.k, o.n); Object.assign(it, o); g.insert(it); } rollLoot(t[0], g); return g.list.map(e => encSrv(e.it, e.x, e.y)); };
+const encSrv = (it, x, y) => { const o = { k: it.k, n: it.n }; for (const f of ['ammo', 'am', 'ak', 'mg']) if (it[f] !== undefined && it[f] !== null) o[f] = it[f]; if (it.att && Object.keys(it.att).length) o.att = it.att; if (it.r) o.r = 1; if (x !== undefined) { o.x = x; o.y = y; } return o; };
+// tiros: só com uma arma que dispare essa munição
+const canShoot = (p, k) => { const T = ledOf(p).T; for (const g of Object.keys(T)) { const G2 = ITEMS[g] && ITEMS[g].gun; if (G2 && ammoOf(G2).includes(k)) return true; } return false; };
+// custos das peças da base (os mesmos do jogo)
+const PCOST = { fund: { madeira: 60 }, parede: { madeira: 60 }, porta: { madeira: 90 }, janela: { madeira: 60 }, teto: { madeira: 60 } };
+const PUP = { fund: [{ pedraR: 150 }, { metalR: 90 }], parede: [{ pedraR: 150 }, { metalR: 90 }], porta: [{ pedraR: 150 }, { metalR: 120 }], janela: [{ pedraR: 120 }, { metalR: 80 }], teto: [{ pedraR: 150 }, { metalR: 90 }] };
+
 // ---------- caixas e mochilas: só uma pessoa de cada vez mexe em cada uma (não há objetos duplicados)
 const LK = new Map(); // chave → { c: id de quem a tem aberta, t }
 const KEY = /^(w\d{1,5}|[bd][A-Za-z0-9_-]{4,12})$/;
@@ -125,23 +176,26 @@ const baseMsg = (c, p, m, now) => {
     if (ty === 'f') { for (const [a, b] of [[i + 1, j], [i - 1, j], [i, j + 1], [i, j - 1]]) { const F = fundAt(a, b); if (F && !ally(F.tok, tok)) return no(c, 'bp', k, 'Está colado à base de outro jogador'); } }
     else if (ty === 't') { const F = fundAt(i, j); if (!F) return no(c, 'bp', k, 'Precisa de fundação'); if (!ally(F.tok, tok)) return no(c, 'bp', k, 'Esta base não é tua'); }
     else { const fs2 = edgeCells(ty, i, j).map(([a, b]) => fundAt(a, b)).filter(Boolean); if (!fs2.length) return no(c, 'bp', k, 'Precisa de fundação'); if (fs2.some(F => !ally(F.tok, tok))) return no(c, 'bp', k, 'Esta base não é tua'); }
+    { const L = ledOf(p); if (!fits(PCOST[t], L.T)) return no(c, 'bp', k, 'Não tens material'); addT(L.T, PCOST[t], -1); }
     B.p[k] = { t, tier: 0, hp: TIER_HP[0], o: 0, u: p.uid, tok }; bb({ p: [pRow(k, B.p[k])] }); return; }
   if (m.t === 'bu') { const k = String(m.k || ''), P = B.p[k]; if (!P) return no(c, 'bu', k, 'Essa peça já não existe'); if (!ally(P.tok, tok)) return no(c, 'bu', k, 'Esta base não é tua'); if (P.tier >= 2) return no(c, 'bu', k, 'Já é de metal');
+    { const L = ledOf(p), need = PUP[P.t][P.tier]; if (!fits(need, L.T)) return no(c, 'bu', k, 'Não tens material'); addT(L.T, need, -1); }
     P.tier++; P.hp = TIER_HP[P.tier]; bb({ p: [pRow(k, P)] }); return; }
-  if (m.t === 'bx') { const k = String(m.k || ''), P = B.p[k]; if (!P) return; if (!ally(P.tok, tok)) return no(c, 'bx', k, 'Esta base não é tua'); const out = []; pDel(k, out); bb({ rp: out }); send(c, { t: 'bxok', k, tt: P.t }); return; }
+  if (m.t === 'bx') { const k = String(m.k || ''), P = B.p[k]; if (!P) return; if (!ally(P.tok, tok)) return no(c, 'bx', k, 'Esta base não é tua'); const out = []; pDel(k, out); bb({ rp: out }); addT(ledOf(p).T, Object.fromEntries(Object.entries(PCOST[P.t]).map(([a, n]) => [a, Math.floor(n / 2)]))); send(c, { t: 'bxok', k, tt: P.t }); return; }
   if (m.t === 'bdo') { const k = String(m.k || ''), P = B.p[k]; if (!P || P.t !== 'porta') return; if (!ally(P.tok, tok)) return no(c, 'bdo', k, 'Trancada'); P.o = m.o ? 1 : 0; bb({ p: [pRow(k, P)] }); return; }
   if (m.t === 'bd') { const k = String(m.k || ''); if (!DEP[k]) return; const x = num(m.x, -4100, 4100), z = num(m.z, -4100, 4100); if (Math.hypot(x - p.x, z - p.z) > 6) return no(c, 'bd', k, 'Estás longe demais');
     const F = fundAt(Math.floor(x / CELL), Math.floor(z / CELL)); if (F && !ally(F.tok, tok)) return no(c, 'bd', k, 'Esta base não é tua');
+    { const L = ledOf(p); if ((L.T[k] || 0) < 1) return no(c, 'bd', k, 'Não tens isso'); addT(L.T, { [k]: 1 }, -1); }
     const id = rid(6); B.d[id] = { k, x, z, yaw: num(m.yaw, -10, 10), y: num(m.y, 0, 5), hp: DEP[k], on: 0, u: p.uid, tok, name: typeof m.name === 'string' ? m.name.replace(/[<>]/g, '').slice(0, 24) : null, cd: 0 };
     bb({ d: [dRow(id, B.d[id])] }); send(c, { t: 'bdok', id, k }); return; }
   const d = B.d[String(m.id || '')], id = String(m.id || '');
-  if (m.t === 'bdr') { if (!d) return; if (d.tok !== tok && !(ally(d.tok, tok) && !BED_CD[d.k])) return no(c, 'bdr', id, 'Não é teu'); if (m.pick && Math.hypot(d.x - p.x, d.z - p.z) > 5) return no(c, 'bdr', id, 'Chega-te mais perto'); const out = []; dDel(id, out); bb({ rd: out }); if (m.pick) send(c, { t: 'bdok', pick: d.k, id }); return; }
+  if (m.t === 'bdr') { if (!d) return; if (d.tok !== tok && !(ally(d.tok, tok) && !BED_CD[d.k])) return no(c, 'bdr', id, 'Não é teu'); if (m.pick && Math.hypot(d.x - p.x, d.z - p.z) > 5) return no(c, 'bdr', id, 'Chega-te mais perto'); const out = []; dDel(id, out); bb({ rd: out }); if (m.pick) { addT(ledOf(p).T, { [d.k]: 1 }); send(c, { t: 'bdok', pick: d.k, id }); } return; }
   if (m.t === 'bdn') { if (!d || d.tok !== tok) return; d.name = String(m.name || '').replace(/[<>]/g, '').replace(/\s+/g, ' ').trim().slice(0, 24) || d.name; bb({ d: [dRow(id, d)] }); return; }
   if (m.t === 'bdc') { if (!d || d.tok !== tok || !BED_CD[d.k]) return; d.cd = now + BED_CD[d.k]; bb({ d: [dRow(id, d)] }); return; }
   if (m.t === 'fu') { if (!d || d.k !== 'fornalha' || Math.hypot(d.x - p.x, d.z - p.z) > 6) return; d.on = m.on ? 1 : 0; d.last = now; d.until = num(m.until, 0, 1e15, 0); bb({ d: [dRow(id, d)] }); return; }
 };
 // explosão: quem a fez manda onde foi; aqui partem-se as peças e os objetos, e os outros veem e ouvem
-const boom = (c, p, m) => { const X = EXB[m.k]; if (!X) return; const x = num(m.x, -4100, 4100), z = num(m.z, -4100, 4100), y = num(m.y, -5, 40), lv = num(m.lv, 0, 6) | 0; if (Math.hypot(x - p.x, z - p.z) > 60) return;
+const boom = (c, p, m) => { const X = EXB[m.k]; if (!X) return; const ti = (p.thr || []).findIndex(q => q.k === m.k && Date.now() - q.t < 120000); if (ti < 0) { strike(c, p, 'explosão sem lançar'); return; } p.thr.splice(ti, 1); const x = num(m.x, -4100, 4100), z = num(m.z, -4100, 4100), y = num(m.y, -5, 40), lv = num(m.lv, 0, 6) | 0; if (Math.hypot(x - p.x, z - p.z) > 60) return;
   bcast({ t: 'boom', k: m.k, x, y, z, lv }, o => o !== c && Math.hypot(o.p.x - x, o.p.z - z) < 300);
   if (Array.isArray(m.lk)) for (const [w, hp] of m.lk.slice(0, 4)) { const i = num(w, 0, 20000, -1) | 0; if (i < 0) continue; const L = S.w.locks[i] || {}; L.hp = Math.min(L.hp ?? 1e9, num(hp, 0, 5000)); if (L.hp <= 0) { L.hp = 0; L.broke = Date.now(); S.w.doors[i] = 1; } S.w.locks[i] = L; dirty = true; bcast({ t: 'lk', i, hp: L.hp, broke: L.broke || 0 }); }
   if (lv !== 0) return; for (const car of Object.values(S.w.cars)) { const q = Math.hypot(car.x - x, car.z - z); if (q > 5 || car.hp <= 0) continue; car.hp = Math.max(0, car.hp - (m.k === 'c4' ? 700 : 160) * (1 - q / 5)); if (car.hp <= 0) { car.dead = Date.now(); car.s = [0, 0, 0, 0]; car.v = 0; } dirty = true; }
@@ -165,7 +219,7 @@ const carMsg = (c, p, m, now) => {
   if (m.t === 'cu') { if (!Array.isArray(m.L)) return; for (const a of m.L.slice(0, 2)) { const o = S.w.cars[a[0]]; if (!o || o.s[0] !== c.id || o.hp <= 0) continue;
       o.x = num(a[1], -41000, 41000) / 10; o.z = num(a[2], -41000, 41000) / 10; o.yaw = num(a[3], -100000, 100000) / 100; o.v = num(a[4], -300, 300) / 10; o.fuel = Math.min(o.fuel, num(a[5], 0, 40)); o.hp = Math.min(o.hp, num(a[6], 0, 400));
       if (o.hp <= 0) { o.dead = now; o.s = [0, 0, 0, 0]; o.v = 0; } dirty = true; } return; }
-  if (m.t === 'cf') { if (!car || Math.hypot(car.x - p.x, car.z - p.z) > 6) return; car.fuel = Math.min(40, car.fuel + num(m.add, 0, 20)); dirty = true; return; }
+  if (m.t === 'cf') { if (!car || Math.hypot(car.x - p.x, car.z - p.z) > 6) return; { const L = ledOf(p); if ((L.T.gasolina || 0) < 1) { send(c, { t: 'fix', T: L.T }); return; } addT(L.T, { gasolina: 1 }, -1); } car.fuel = Math.min(40, car.fuel + num(m.add, 0, 20)); dirty = true; return; }
   // atropelar outro jogador: quem conduz diz quem; o servidor confirma que o carro estava mesmo ao lado
   if (m.t === 'ck') { const o = players.get(m.to | 0), mine = Object.values(S.w.cars).find(q => q.s[0] === c.id); if (!o || !o.p || !o.p.alive || !mine || Math.hypot(mine.x - o.p.x, mine.z - o.p.z) > 5) return;
     if (p.clan && o.p.clan === p.clan) return; const v = o.p, dmg = num(m.dmg, 0, 120); v.hp = Math.max(0, v.hp - dmg); const kill = v.hp <= 0; if (kill) v.alive = false;
@@ -183,7 +237,7 @@ const zNear = (x, z, r) => { let n = 0; for (const c of players.values()) if (c.
 const zHit = (c, p, m, now) => { const z = S.w.zs[m.i | 0]; if (!z || z.st === 3 || Math.hypot(z.x - p.x, z.z - p.z) > 900) return;
   z.hp -= num(m.dmg, 0, 2000); if (typeof m.h === 'number') z.h = num(m.h, 0, 4) | 0; if (typeof m.v === 'number') z.v = num(m.v, 0, 4) | 0; if (typeof m.hd === 'number') z.hd = m.hd; if (typeof m.vd === 'number') z.vd = m.vd;
   if (m.limp) z.limp = Math.min(2, (z.limp || 0) + num(m.limp, 0, 2));
-  if (z.hp <= 0) { z.hp = 0; z.st = 3; z.dt = now; z.mv = 0; dirty = true; bcast({ t: 'zk', i: m.i | 0, by: c.id, head: m.zone === 'head' ? 1 : 0 }, o => o.p && Math.hypot(o.p.x - z.x, o.p.z - z.z) < 200); return; }
+  if (z.hp <= 0) { z.hp = 0; z.st = 3; z.dt = now; z.mv = 0; dirty = true; if (Math.random() < 0.32) { const g = new Grid(6, 4); rollLoot(z.k === 1 ? 'militar' : 'zombie', g); mkBag(z.x, z.z, 0, z.lv || 0, g.list.map(e => encSrv(e.it, e.x, e.y))); } bcast({ t: 'zk', i: m.i | 0, by: c.id, head: m.zone === 'head' ? 1 : 0 }, o => o.p && Math.hypot(o.p.x - z.x, o.p.z - z.z) < 200); return; }
   if (z.o && z.o !== c.id) { const o = players.get(z.o); if (o) send(o, { t: 'zh', i: m.i | 0, dx: num(m.dx, -1, 1), dz: num(m.dz, -1, 1), by: c.id }); } };
 
 // ---------- mensagens
@@ -191,6 +245,8 @@ const onMsg = (c, m) => {
   if (!m || typeof m.t !== 'string') return;
   if (m.t === 'hi') {
     if (c.p) return; const name = String(m.name || ''); if (!NAME.test(name)) return send(c, { t: 'erro', e: 'nome' });
+    // jogo antigo (antes da 0.15, sem o servidor a contar o inventário): tem de recarregar, senão apagava o inventário guardado
+    if ((m.pv | 0) < 2) return send(c, { t: 'erro', e: 'versao' });
     if ([...players.values()].some(o => o.p && o.p.name.toLowerCase() === name.toLowerCase())) return send(c, { t: 'erro', e: 'nome_em_uso' });
     // versão do mundo (casas, caixas, portas): se mudou e não está ninguém ligado, recomeça o mundo partilhado
     const wv = typeof m.wv === 'string' ? m.wv.slice(0, 40) : '';
@@ -204,26 +260,38 @@ const onMsg = (c, m) => {
     const sl = S.sleepers[tok]; let killed = false, resume = null;
     if (sl) { delete S.sleepers[tok]; dirty = true; resume = { x: sl.x, z: sl.z, lv: sl.lv, hp: sl.hp }; bcast({ t: 'sleep', list: sleepList() }); }
     if (S.tokens[tok].killed) { killed = true; delete S.tokens[tok].killed; dirty = true; }
+    if (!S.w.ctab && Array.isArray(m.ctab) && m.ctab.length < 5000) { S.w.ctab = m.ctab.map(a => Array.isArray(a) && typeof a[0] === 'string' && LOOT[a[0]] ? [a[0], num(a[1], 1, 8, 4) | 0, num(a[2], 1, 8, 4) | 0] : null); dirty = true; }
+    const tst = process.env.KG_TEST === '1' && !!m.test; // só nos testes automáticos (que teletransportam e dão coisas)
+    if (tst) S.led[tok] = { T: {}, inv: null, g: true };
+    else if (m.fresh || killed) { S.led[tok] = { T: { ...KIT }, inv: null, g: false }; if (S.tokens[tok]) delete S.tokens[tok].g; dirty = true; }
     const look = m.look && typeof m.look === 'object' ? Object.fromEntries(Object.entries(m.look).filter(([k, v]) => ['skin', 'hair', 'top', 'legs', 'hairS', 'beardS'].includes(k) && typeof v === 'number')) : {};
     const tc = S.tokens[tok].clan, clan = tc && S.clans[tc] ? tc : null;
-    c.p = { name, tok, look, x: num(m.x, -4100, 4100), z: num(m.z, -4100, 4100), y: 0, lv: 0, yaw: 0, mv: 0, an: 0, w: '', hp: resume ? resume.hp ?? 100 : 100, alive: true, ar: [0, 0], inv: [], clan, lastShot: 0, hd: null, vd: null };
-    c.zc = new Map(); c.cc = new Map(); c.p.uid = uidOf(tok);
+    c.p = { name, tok, look, x: sl ? sl.x : num(m.x, -4100, 4100), z: sl ? sl.z : num(m.z, -4100, 4100), lastSt: sl ? now : 0, y: 0, lv: 0, yaw: 0, mv: 0, an: 0, w: '', hp: resume ? resume.hp ?? 100 : 100, alive: true, ar: [0, 0], inv: [], clan, lastShot: 0, hd: null, vd: null };
+    c.zc = new Map(); c.cc = new Map(); c.p.uid = uidOf(tok); c.p.test = tst;
     if (!Object.keys(S.w.cars).length && Array.isArray(m.cars)) { m.cars.slice(0, 60).forEach((a, i) => { const x = num(a[0], -4100, 4100), z = num(a[1], -4100, 4100), yaw = num(a[2], -10, 10); S.w.cars['c' + i] = { x, z, yaw, v: 0, fuel: +(10 + Math.random() * 20).toFixed(1), hp: 400, sx: x, sz: z, syaw: yaw, s: [0, 0, 0, 0], dead: 0 }; }); dirty = true; }
     const zseed = !S.w.zs.length && ![...players.values()].some(o => o !== c && o.zseed && now - (o.zseedT || 0) < 15000); if (zseed) { c.zseed = true; c.zseedT = now; }
     send(c, { t: 'ok', id: c.id, tok, killed, resume, players: [...players.values()].filter(o => o.p && o !== c).map(o => [o.id, o.p.name, o.p.look, o.p.clan]), sleep: sleepList(), clan: clanInfo(clan),
-      uid: c.p.uid, w: { cyc0: S.w.cyc0, now, wx: S.w.wx.r, base: baseRows(), locks: Object.entries(S.w.locks).map(([i, L]) => [+i, L.hp, L.broke || 0]), doors: Object.entries(S.w.doors).map(([i, o]) => [+i, o]), nodes: Object.entries(S.w.nodes).map(([k, u]) => [k, u - now]).filter(a => a[1] > 0), bags: bagRows(), zseed } });
+      uid: c.p.uid, inv: !m.fresh && !killed && S.led[tok] && !S.led[tok].g ? S.led[tok].inv : null, w: { cyc0: S.w.cyc0, now, wx: S.w.wx.r, base: baseRows(), locks: Object.entries(S.w.locks).map(([i, L]) => [+i, L.hp, L.broke || 0]), doors: Object.entries(S.w.doors).map(([i, o]) => [+i, o]), nodes: Object.entries(S.w.nodes).map(([k, u]) => [k, u - now]).filter(a => a[1] > 0), bags: bagRows(), zseed } });
     bcast({ t: 'join', id: c.id, name, look, clan }, o => o !== c);
     return;
   }
   const p = c.p; if (!p) return; const now = Date.now();
-  if (m.t === 'st') { p.x = num(m.x, -4100, 4100); p.z = num(m.z, -4100, 4100); p.y = num(m.y, -5, 40); p.lv = num(m.lv, 0, 6) | 0; p.yaw = num(m.yaw, -10, 10); p.mv = num(m.mv, 0, 3); p.an = num(m.an, 0, 15) | 0; p.w = typeof m.w === 'string' ? m.w.slice(0, 12) : '';
-    { const now = Date.now(), H = p.hist || (p.hist = []); H.push([now, p.x, p.y, p.z]); while (H.length > 2 && now - H[0][0] > 500) H.shift(); } // onde esteve nos últimos 0,5 s (para o tiro de quem o via um pouco atrás)
+  if (m.t === 'st') { const nx = num(m.x, -4100, 4100), nz = num(m.z, -4100, 4100), al0 = !!m.al;
+    if (al0 && !p.alive) { const L = ledOf(p); L.T = { ...KIT }; L.inv = null; dirty = true; p.lastSt = 0; } // renasceu
+    else if (p.lastSt && al0 && p.alive && !p.test) { const dt = (now - p.lastSt) / 1000, inCar = Object.values(S.w.cars).some(o => o.s.includes(c.id)), d = Math.hypot(nx - p.x, nz - p.z);
+      if (d > (inCar ? 25 : 8) * dt + 4) { strike(c, p, 'salto ' + d.toFixed(1) + ' m em ' + dt.toFixed(2) + ' s'); send(c, { t: 'pos', x: p.x, z: p.z, lv: p.lv }); p.lastSt = now; return; } }
+    p.lastSt = now; p.x = nx; p.z = nz; p.y = num(m.y, -5, 40); p.lv = num(m.lv, 0, 6) | 0;
+    { const H = p.hist || (p.hist = []); H.push([now, p.x, p.y, p.z]); while (H.length > 2 && now - H[0][0] > 500) H.shift(); } // onde esteve nos últimos 0,5 s (para o tiro de quem o via um pouco atrás) p.yaw = num(m.yaw, -10, 10); p.mv = num(m.mv, 0, 3); p.an = num(m.an, 0, 15) | 0; p.w = typeof m.w === 'string' ? m.w.slice(0, 12) : '';
     const al = !!m.al, hp = num(m.hp, 0, 100, p.hp); if (al && !p.alive) { p.hp = hp; p.hd = p.vd = null; } else p.hp = Math.min(hp, p.hp + 3); p.alive = al; // a vida que o servidor tirou não volta de repente
     if (Array.isArray(m.ar)) { const a = [num(m.ar[0], 0, 4) | 0, num(m.ar[1], 0, 4) | 0]; if (a[0] !== p.ar[0]) p.hd = null; if (a[1] !== p.ar[1]) p.vd = null; p.ar = a; } return; }
-  if (m.t === 'inv') { p.inv = cleanIt(m.it).map(({ x, y, ...r }) => r); return; }
+  if (m.t === 'inv') { if (m.bag || m.belt) invMsg(c, p, m); return; }
+  if (m.t === 'gt') { gather(c, p, m); return; }
+  if (m.t === 'cr') { craft(c, p, m); return; }
   if (m.t === 'shot') { shot(c, m); return; }
   if (m.t === 'died') { // morreu (zombies, queda, outro jogador): o que tinha fica no corpo, que todos veem
-    if (!p.alive && !m.force) return; p.alive = false; p.hp = 0; const it = Array.isArray(m.it) ? m.it : p.inv; mkBag(p.x, p.z, num(m.y, -5, 40, p.y), p.lv, it, { body: 1, name: p.name }); p.inv = []; return; }
+    if (!p.alive && !m.force) return; p.alive = false; p.hp = 0; const L = ledOf(p), rest = { ...L.T }, it = [];
+    for (const o of cleanIt(Array.isArray(m.it) ? m.it : p.inv)) { const t = tally([o]); if (fits(t, rest)) { addT(rest, t, -1); it.push(o); } }
+    mkBag(p.x, p.z, num(m.y, -5, 40, p.y), p.lv, it, { body: 1, name: p.name }); p.inv = []; L.T = {}; L.inv = null; dirty = true; return; }
   if (m.t === 'clan') { clan(c, m); return; }
   if (m.t === 'ping') { send(c, { t: 'pong', k: m.k }); return; }
   // portas do mundo
@@ -236,19 +304,22 @@ const onMsg = (c, m) => {
     const L = lockOf(k); if (L && L.c !== c.id) { const o = players.get(L.c); return send(c, { t: 'opn', c: k, busy: o && o.p ? o.p.name : 'alguém' }); }
     if (k[0] === 'd') { const d = S.w.base.d[k.slice(1)]; if (!d || !DEP[d.k]) return send(c, { t: 'opn', c: k, gone: 1 }); if (Math.hypot(d.x - p.x, d.z - p.z) > 8) return send(c, { t: 'opn', c: k, far: 1 }); LK.set(k, { c: c.id, t: now }); const r = S.w.ct[k]; return send(c, { t: 'opn', c: k, it: r ? r.it : [], on: d.on ? 1 : 0, el: d.on && d.last ? now - d.last : 0 }); }
     if (k[0] === 'b') { const b = S.bags[k.slice(1)]; if (!b) return send(c, { t: 'opn', c: k, gone: 1 }); if (Math.hypot(b.x - p.x, b.z - p.z) > 8) return send(c, { t: 'opn', c: k, far: 1 }); LK.set(k, { c: c.id, t: now }); return send(c, { t: 'opn', c: k, it: b.it, body: b.body }); }
-    const r = S.w.ct[k]; LK.set(k, { c: c.id, t: now });
-    if (!r) return send(c, { t: 'opn', c: k, gen: 1 });
-    let roll = 0; if (now > r.next && r.it.length < 2) { roll = 1; r.next = now + 300e3; dirty = true; } // a caixa volta a ter loot passados 5 min (se estiver quase vazia)
-    return send(c, { t: 'opn', c: k, it: r.it, roll }); }
-  if (m.t === 'ps' || m.t === 'cl') { const k = String(m.c || ''); if (!KEY.test(k)) return; const L = lockOf(k); if (!L || L.c !== c.id) return; const it = cleanIt(m.it); store(k, it); L.t = now;
+    let r = S.w.ct[k]; LK.set(k, { c: c.id, t: now });
+    if (!r) { r = S.w.ct[k] = { it: genLoot(k, []), next: now + 300e3 }; dirty = true; }
+    else if (now > r.next && r.it.length < 2) { r.it = genLoot(k, r.it); r.next = now + 300e3; dirty = true; } // a caixa volta a ter loot passados 5 min (se estiver quase vazia)
+    return send(c, { t: 'opn', c: k, it: r.it }); }
+  if (m.t === 'ps' || m.t === 'cl') { const k = String(m.c || ''); if (!KEY.test(k)) return; const L = lockOf(k); if (!L || L.c !== c.id) return; const it = cleanIt(m.it);
+    const old = k[0] === 'b' ? (S.bags[k.slice(1)] || {}).it || [] : (S.w.ct[k] || {}).it || [];
+    if (!boxDelta(c, p, k, old, it)) { send(c, { t: 'fix', T: ledOf(p).T }); send(c, { t: 'boxfix', c: k, it: old }); if (m.t === 'cl') LK.delete(k); return; }
+    store(k, it); L.t = now;
     if (k[0] === 'd') { const d = S.w.base.d[k.slice(1)]; if (d && d.k === 'fornalha') { d.last = now; if (m.fu && typeof m.fu === 'object') { const on = m.fu.on ? 1 : 0, ch = on !== d.on; d.on = on; d.until = num(m.fu.until, 0, 1e15, 0); if (ch) bb({ d: [dRow(k.slice(1), d)] }); } } }
     if (m.t === 'cl') { LK.delete(k); if (k[0] === 'b' && !it.length) bagDel(k.slice(1)); } return; }
-  if (m.t === 'bag') { const x = num(m.x, -4100, 4100), z = num(m.z, -4100, 4100); if (Math.hypot(x - p.x, z - p.z) > 450) return; mkBag(x, z, num(m.y, -5, 40), num(m.lv, 0, 6) | 0, m.it); return; }
+  if (m.t === 'bag') { const x = num(m.x, -4100, 4100), z = num(m.z, -4100, 4100); if (Math.hypot(x - p.x, z - p.z) > 12) return; const it = cleanIt(m.it), t = tally(it), L = ledOf(p); if (!fits(t, L.T)) { strike(c, p, 'largar'); send(c, { t: 'fix', T: L.T }); return; } addT(L.T, t, -1); dirty = true; mkBag(x, z, num(m.y, -5, 40), num(m.lv, 0, 6) | 0, it); return; }
   if (['bp', 'bu', 'bx', 'bdo', 'bd', 'bdr', 'bdn', 'bdc', 'fu'].includes(m.t)) { baseMsg(c, p, m, now); return; }
   if (m.t === 'boom') { boom(c, p, m); return; }
   if (['cin', 'cout', 'cu', 'cf', 'ck'].includes(m.t)) { carMsg(c, p, m, now); return; }
   // granada lançada ou C4 colado: os outros por perto veem-nos (a explosão vem depois, de quem os lançou)
-  if (m.t === 'thr') { if (m.k !== 'gran' && m.k !== 'c4') return; const P = Array.isArray(m.P) ? m.P.slice(0, 3).map(v => num(v, -4100, 4100)) : null; if (!P || P.length !== 3 || Math.hypot(P[0] - p.x, P[2] - p.z) > 6) return;
+  if (m.t === 'thr') { if (m.k !== 'gran' && m.k !== 'c4') return; { const L = ledOf(p), ik = m.k === 'gran' ? 'granada' : 'c4'; if ((L.T[ik] || 0) < 1) { strike(c, p, 'explosivo ' + ik); send(c, { t: 'fix', T: L.T }); return; } addT(L.T, { [ik]: 1 }, -1); (p.thr || (p.thr = [])).push({ k: m.k, t: now }); dirty = true; } const P = Array.isArray(m.P) ? m.P.slice(0, 3).map(v => num(v, -4100, 4100)) : null; if (!P || P.length !== 3 || Math.hypot(P[0] - p.x, P[2] - p.z) > 6) return;
     const o = { t: 'thr', k: m.k, P, lv: num(m.lv, 0, 6) | 0 }; if (m.k === 'gran') { o.V = Array.isArray(m.V) ? m.V.slice(0, 3).map(v => num(v, -60, 60)) : [0, 0, 0]; o.base = num(m.base, 0, 30); } else { o.yaw = num(m.yaw, -10, 10); o.st = m.st ? 1 : 0; }
     bcast(o, x => x !== c && Math.hypot(x.p.x - P[0], x.p.z - P[2]) < 300); return; }
   // zombies: a primeira pessoa num mundo novo espalha-os (com as zonas do jogo) e manda a lista
@@ -280,7 +351,7 @@ const hitTest = (O, D, k, L, tgt) => {
   return null;
 };
 const shot = (c, m) => {
-  const p = c.p, now = Date.now(); if (!p.alive || now - p.lastShot < 60) return; p.lastShot = now;
+  const p = c.p, now = Date.now(); if (!p.alive || now - p.lastShot < 60) return; p.lastShot = now; if (!canShoot(p, String(m.k || ''))) { strike(c, p, 'tiro sem arma ' + m.k); return; }
   const O = Array.isArray(m.o) ? m.o.map(v => num(v, -4100, 4100)) : null, D = Array.isArray(m.d) ? m.d.map(v => num(v, -1, 1)) : null; if (!O || !D || O.length !== 3 || D.length !== 3) return;
   if (Math.hypot(O[0] - p.x, O[2] - p.z) > 3) return; // a bala tem de sair de perto de ti
   const dl = Math.hypot(D[0], D[1], D[2]) || 1; D[0] /= dl; D[1] /= dl; D[2] /= dl;
@@ -304,7 +375,7 @@ const shot = (c, m) => {
     const h = hitTest(O, d, k, Li, tgt); if (!h) continue; const T = h.T;
     // chumbo perde força com a distância (como no jogo, até 35 m); balas pela velocidade que ainda levam
     let dmg = h.dmg * (n > 1 ? Math.min(1, Math.max(0.25, 1 - h.dist / 35)) : Math.max(0.3, Math.pow(h.v, 1.5))) * (0.9 + Math.random() * 0.2);
-    if (T.sl) { const s = S.sleepers[T.sl]; if (!s) continue; s.hp = (s.hp ?? 100) - dmg; if (s.hp <= 0) { delete S.sleepers[T.sl]; if (S.tokens[T.sl]) S.tokens[T.sl].killed = true; mkBag(s.x, s.z, s.y || 0, s.lv || 0, s.inv, { body: 1, name: s.name }); bcast({ t: 'sleep', list: sleepList() }); send(c, { t: 'hitc', zone: h.zone, kill: true, name: s.name }); } else send(c, { t: 'hitc', zone: h.zone }); dirty = true; continue; }
+    if (T.sl) { const s = S.sleepers[T.sl]; if (!s) continue; s.hp = (s.hp ?? 100) - dmg; if (s.hp <= 0) { delete S.sleepers[T.sl]; if (S.tokens[T.sl]) S.tokens[T.sl].killed = true; if (S.led[T.sl]) { S.led[T.sl].T = {}; S.led[T.sl].inv = null; } mkBag(s.x, s.z, s.y || 0, s.lv || 0, s.inv, { body: 1, name: s.name }); bcast({ t: 'sleep', list: sleepList() }); send(c, { t: 'hitc', zone: h.zone, kill: true, name: s.name }); } else send(c, { t: 'hitc', zone: h.zone }); dirty = true; continue; }
     // como nos zombies: a proteção trava a bala (ainda magoa) e gasta-se até partir. Pistola: 1–2 tiros na cabeça, 3 no peito (4 com colete)
     const v = T.c.p, [helm, vest] = v.ar || [0, 0]; let pop = null;
     if (h.zone === 'head') { if (helm && h.pen <= helm) { v.hd = (v.hd ?? 20) - dmg; dmg *= 0.8; if (v.hd <= 0) { pop = 'head'; v.ar[0] = 0; v.hd = null; } } else dmg = n > 1 ? dmg * 2.5 : 999; }

@@ -3,7 +3,7 @@ const { chromium } = require('playwright');
 const http = require('http'), fs = require('fs'), path = require('path'), { spawn } = require('child_process');
 const root = path.join(__dirname, 'dist'), outDir = path.join(__dirname, 'shots');
 const ST = '/tmp/kgsrv-test2'; fs.rmSync(ST, { recursive: true, force: true });
-const gs = spawn('node', [process.env.KG_SERVER || path.join(__dirname, '../server.mjs')], { env: { ...process.env, PORT: '3191', STATE_DIRECTORY: ST }, stdio: 'inherit' });
+const gs = spawn('node', [process.env.KG_SERVER || path.join(__dirname, '../server.mjs')], { env: { ...process.env, PORT: '3191', STATE_DIRECTORY: ST, KG_TEST: '1' }, stdio: 'inherit' });
 const server = http.createServer((req, res) => { const u = req.url.split('?')[0]; const f = path.join(root, u === '/' ? 'index.html' : u); fs.readFile(f, (e, d) => { if (e) { res.writeHead(404); return res.end(); } res.writeHead(200, { 'Content-Type': f.endsWith('.html') ? 'text/html' : 'application/octet-stream' }); res.end(d); }); });
 const W = ms => new Promise(r => setTimeout(r, ms));
 let fails = 0; const ok = (c, m) => { console.log((c ? 'OK   ' : 'FALHA') + ' ' + m); if (!c) fails++; };
@@ -12,7 +12,7 @@ server.listen(0, async () => {
   const browser = await chromium.launch({ channel: 'chrome', headless: true, args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist', '--enable-webgl', '--autoplay-policy=no-user-gesture-required'] });
   const mk = async (nome, id) => {
     const ctx = await browser.newContext({ viewport: { width: 844, height: 390 }, deviceScaleFactor: 1, isMobile: true, hasTouch: true });
-    await ctx.addInitScript(([nome, id]) => { try { localStorage.setItem('kg.perfis', JSON.stringify({ ativo: id, lista: [{ id, nome, criado: 1 }] })); localStorage.setItem('kg.srv', 'ws://127.0.0.1:3191/ws'); sessionStorage.setItem('kgIntro', '1'); } catch (e) { } }, [nome, id]);
+    await ctx.addInitScript(([nome, id]) => { try { localStorage.setItem('kg.perfis', JSON.stringify({ ativo: id, lista: [{ id, nome, criado: 1 }] })); localStorage.setItem('kg.srv', 'ws://127.0.0.1:3191/ws'); localStorage.setItem('kg.test', '1'); sessionStorage.setItem('kgIntro', '1'); } catch (e) { } }, [nome, id]);
     const page = await ctx.newPage(); const errs = [];
     page.on('pageerror', e => { errs.push(String(e)); console.log('[' + nome + ' pageerror]', String(e.stack || e).slice(0, 700)); });
     page.on('console', m => { if (m.type() === 'error' && !/GPU|WebGL|swiftshader|CORS|ERR_FAILED|404/.test(m.text())) { errs.push(m.text()); console.log('[' + nome + ']', m.text().slice(0, 300)); } });
@@ -51,7 +51,8 @@ server.listen(0, async () => {
     console.log('a mesma caixa para o Bruno:', JSON.stringify(b1)); ok(b1 && JSON.stringify(b1.slice().sort()) === JSON.stringify(a1.slice(1).sort()), 'o Bruno vê o mesmo que ficou na caixa (sem o que a Ana tirou)');
     await B.ev(() => G.ui.closeInv()); await W(600);
     // saco: a Ana larga uma coisa; o Bruno vê o saco, abre e leva tudo; o saco desaparece para os dois
-    await A.ev(s => { G.p.x = s[0]; G.p.z = s[1]; G.p.lv = 0; const it = G.inv.belt.find(Boolean); const w = G.inv.where(it); if (w.t === 'belt') G.inv.belt[w.i] = null; G.dropItem(it); }, spot); await W(1500);
+    await A.ev(s => { G.p.x = s[0]; G.p.z = s[1]; G.p.lv = 0; }, spot); await W(900); // o servidor tem de saber que chegaste antes de largares
+    await A.ev(s => { const it = G.inv.belt.find(Boolean); const w = G.inv.where(it); if (w.t === 'belt') G.inv.belt[w.i] = null; G.dropItem(it); }, spot); await W(1500);
     const sb = await B.ev(() => G.bags.map(b => b.label + '@' + b.x.toFixed(1)));
     console.log('sacos que o Bruno vê:', JSON.stringify(sb)); ok(sb.length === 1, 'o saco que a Ana largou aparece ao Bruno');
     await B.ev(() => { const b = G.bags[0]; G.p.x = b.x + 0.6; G.p.z = b.z; G.p.lv = 0; }); await W(600); await B.ev(() => { const b = G.bags[0]; G.prompt = b; G.interact(); }); await W(1500);

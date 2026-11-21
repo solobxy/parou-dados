@@ -184,7 +184,7 @@ export function initUI(G) {
       const row = document.createElement('div'); row.className = 'recipe' + (near ? '' : ' lock');
       row.innerHTML = `<img src="${G.ICONS[r.k]}" alt=""><div class="rn"><b>${d.n}${r.n > 1 ? ' × ' + r.n : ''}</b><div class="need">${Object.entries(r.need).map(([k, n]) => { const h = G.inv.count(k); return `<span class="${h >= n ? 'ok' : 'no'}">${ITEMS[k].s} ${Math.min(h, n)}/${n}</span>`; }).join('')}</div></div>`;
       const b = document.createElement('button'); b.className = 'btn sm' + (ok ? ' pri' : ''); b.textContent = near ? 'Fabricar' : 'Bancada ' + lv; b.disabled = !ok;
-      b.onclick = () => { if (!Object.entries(r.need).every(([k, n]) => G.inv.count(k) >= n) || (G.base ? G.base.benchNear() : 0) < lv) return; for (const [k, n] of Object.entries(r.need)) G.inv.take(k, n); G.gain(r.k, r.n); audio.play('apanhar'); render(); };
+      b.onclick = () => { if (!Object.entries(r.need).every(([k, n]) => G.inv.count(k) >= n) || (G.base ? G.base.benchNear() : 0) < lv) return; for (const [k, n] of Object.entries(r.need)) G.inv.take(k, n); G.gain(r.k, r.n); if (G.net && G.net.world) G.net.raw({ t: 'cr', i: RECIPES.indexOf(r) }); audio.play('apanhar'); render(); };
       row.appendChild(b); el.appendChild(row);
     }
   };

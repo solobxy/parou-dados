@@ -469,7 +469,7 @@ if [ -f "$SERV/kurogane-srv.service" ] && [ -f "$BASE/servidor/kurogane/server.m
     cp "$SERV/kurogane-srv.service" /etc/systemd/system/kurogane-srv.service && systemctl daemon-reload
   fi
   systemctl is-enabled --quiet kurogane-srv.service 2>/dev/null || systemctl enable --now kurogane-srv.service >/dev/null 2>&1
-  V=$( { cat "$BASE"/servidor/kurogane/*.mjs "$SERV/kurogane-srv.service" 2>/dev/null; } | sha256sum | cut -c1-16)
+  V=$( { cat "$BASE"/servidor/kurogane/*.mjs "$BASE"/servidor/kurogane/jogo/src/items.js "$BASE"/servidor/kurogane/jogo/src/bag.js "$SERV/kurogane-srv.service" 2>/dev/null; } | sha256sum | cut -c1-16)
   if [ "$(cat /var/lib/parou-estado/kurogane-srv.versao 2>/dev/null)" != "$V" ]; then
     systemctl restart kurogane-srv.service && echo "$V" > /var/lib/parou-estado/kurogane-srv.versao
   fi

@@ -680,12 +680,12 @@ async function boot() {
     if (kind === 'tree') { k = 'madeira'; n = g.wood; } else if (kind === 'stone') { k = 'pedraR'; n = g.stone; } else { k = kind === 'sulfur' ? 'enxofre' : 'metal'; n = g.ore; extra = Math.round(g.stone * 0.4); }
     n = Math.max(1, Math.min(n, best.hp)); best.hp -= n; best.shake = 0.25; { const f = n * 0.5 * sk('rec'); n += Math.floor(f) + (Math.random() < f % 1 ? 1 : 0); } skUp('rec', 0.0077);
     if (best.hp <= 0) { n += Math.round(best.max * 0.15); best.alive = false; best.col.on = false; best.respawn = G.t + 180; hideNode(best); if (G.net && G.net.on && best.key) G.net.node(best.key); }
-    gain(k, n); if (extra) gain('pedraR', extra);
+    gain(k, n, best.key); if (extra) gain('pedraR', extra, best.key);
     const hx = best.x - Math.sin(p.yaw) * best.r * 0.6, hz = best.z - Math.cos(p.yaw) * best.r * 0.6;
     burst(hx, 1.0, hz, 6, kind === 'tree' ? 0xc9a877 : kind === 'sulfur' ? 0xe0c43a : kind === 'metal' ? 0x9a5a32 : 0x9a988f, 2.6, 0.5);
     audio.play(kind === 'tree' ? 'madeira' : 'rocha'); noise(p.x, p.z, 9);
   };
-  const gain = (k, n) => { const it = mkItem(k, n); const left = G.inv.give(it); if (left) { const g = new Grid(6, 4); g.insert(mkItem(k, left)); dropBag(G.p.x, G.p.z, g); G.ui.toast('Inventário cheio: ficou no chão'); } G.ui.feed(k, n - left); G.ui.refresh(); };
+  const gain = (k, n, nk) => { if (nk && G.net.world) G.net.raw({ t: 'gt', k, n, nk }); const it = mkItem(k, n); const left = G.inv.give(it); if (left) { const g = new Grid(6, 4); g.insert(mkItem(k, left)); dropBag(G.p.x, G.p.z, g); G.ui.toast('Inventário cheio: ficou no chão'); } G.ui.feed(k, n - left); G.ui.refresh(); };
   G.gain = gain;
   const _hm = new THREE.Matrix4(), _zero = new THREE.Matrix4().makeScale(0, 0, 0);
   const hideNode = n => { n.mesh.setMatrixAt(n.idx, _zero); n.mesh.instanceMatrix.needsUpdate = true; };
@@ -849,6 +849,17 @@ async function boot() {
   const enc = it => it && { k: it.k, n: it.n, r: it.r ? 1 : undefined, mg: it.mg === undefined ? undefined : it.mg, am: it.am, ammo: it.ammo, ak: it.ak, att: it.att, pref: it.pref, zero: it.zero };
   const dec = o => { if (!o || !ITEMS[o.k]) return null; const it = mkItem(o.k, o.n); if (o.r) it.r = true; if (o.ammo !== undefined) it.ammo = o.ammo; if (o.mg !== undefined && it.att) it.mg = o.mg; if (ITEMS[o.k].clip) { it.am = o.am || 0; if (o.ak && ITEMS[o.ak]) it.ak = o.ak; } if (it.att) { if (o.ak && ITEMS[o.ak]) it.ak = o.ak; if (o.att) it.att = o.att; if (o.pref) it.pref = o.pref; if (o.zero) it.zero = o.zero; } return it; };
   const encG = g => g.list.map(e => ({ ...enc(e.it), x: e.x, y: e.y }));
+  G.invLayout = () => ({ bag: encG(G.inv.bag), belt: G.inv.belt.map(o => o ? enc(o) : null), eq: Object.fromEntries(Object.entries(G.inv.eq).map(([k, v]) => [k, v ? enc(v) : null])) });
+  G.loadInv = L => { const inv = new Inv(); for (const k in L.eq || {}) inv.eq[k] = L.eq[k] ? dec(L.eq[k]) : null; (L.belt || []).forEach((o, i) => { if (i < 6) inv.belt[i] = o ? dec(o) : null; }); for (const o of L.bag || []) { const it = dec(o); if (it) { if (inv.bag.fits(it, o.x, o.y, inv.rows())) inv.bag.add(it, o.x, o.y); else inv.bag.insert(it, inv.rows()); } } G.inv = inv; refresh(); G.ui.refresh(true); };
+  // o servidor diz quanto tens de cada coisa: tira o que estiver a mais (pilhas, depois acessórios, carregadores e balas)
+  G.fixInv = T => { const all = () => [...G.inv.bag.list.map(e => e.it), ...G.inv.belt.filter(Boolean), ...Object.values(G.inv.eq).filter(Boolean)];
+    const tally = () => { const C = {}; for (const o of all()) { const d = ITEMS[o.k]; if (!d) continue; C[o.k] = (C[o.k] || 0) + Math.max(1, o.n | 0); if (o.att) for (const v of Object.values(o.att)) if (ITEMS[v]) C[v] = (C[v] || 0) + 1; if (d.gun && o.mg && ITEMS[o.mg]) C[o.mg] = (C[o.mg] || 0) + 1; const am = (d.gun ? o.ammo | 0 : 0) + (d.clip ? o.am | 0 : 0); if (am > 0 && o.ak) C[o.ak] = (C[o.ak] || 0) + am; } return C; };
+    const C = tally(); let changed = false;
+    for (const k in C) { let ex = C[k] - (T[k] || 0); if (ex <= 0) continue; changed = true;
+      for (const o of all()) { if (ex <= 0) break; if (o.k !== k) continue; const q = Math.min(ex, Math.max(1, o.n | 0)); o.n = (o.n || 1) - q; ex -= q; if (o.n <= 0) { const w = G.inv.where(o); if (w) { if (w.t === 'bag') G.inv.bag.remove(o); else if (w.t === 'belt') G.inv.belt[w.i] = null; else if (w.t === 'eq') G.inv.eq[w.s] = null; } } }
+      for (const o of all()) { if (ex <= 0) break; if (o.att) for (const s in o.att) if (o.att[s] === k && ex > 0) { delete o.att[s]; ex--; } if (ex > 0 && o.mg === k && ITEMS[o.k].gun) { o.mg = null; o.ammo = 0; ex--; } }
+      for (const o of all()) { if (ex <= 0) break; if (o.ak !== k) continue; if (ITEMS[o.k].gun && o.ammo > 0) { const q = Math.min(ex, o.ammo); o.ammo -= q; ex -= q; } if (ITEMS[o.k].clip && o.am > 0) { const q = Math.min(ex, o.am); o.am -= q; ex -= q; } } }
+    if (changed) { refresh(); G.ui.refresh(true); G.ui.toast('O servidor corrigiu o teu inventário'); } return changed; };
   // ---------- online (servidor de jogo): outros jogadores, PvP, quem dorme, mochilas partilhadas e clãs
   const _wa = new THREE.Vector3(), _wb = new THREE.Vector3();
   // ---------- carros
@@ -884,7 +895,7 @@ async function boot() {
     gone: ids => { for (const i of ids) { const z = zById.get(i); if (!z) continue; zById.delete(i); zSent.delete(i); const j = G.zs.indexOf(z); if (j >= 0) G.zs.splice(j, 1); } },
     // morte confirmada pelo servidor; se foste tu, conta e pode largar loot
     killed: (i, by, head) => { const z = zById.get(i); if (z) { if (z.state !== 'dead') zDie(z, head); z.hp = 0; z.predDead = 0; }
-      if (by === G.net.id && G.p) { G.p.kills++; if (z && Math.random() < 0.32) { const g = new Grid(6, 4); rollLoot(z.kind === 'mil' ? 'militar' : 'zombie', g); dropBag(z.x, z.z, g, { lv: z.lv || 0, y: (z.base || 0) + groundY(z.x, z.z, z.lv || 0) }); } } },
+      if (by === G.net.id && G.p) G.p.kills++; },
     // outro jogador acertou num zombie que tu simulas: empurrão e vira-se
     hit: (i, dx, dz) => { const z = zById.get(i); if (!z || z.remote || z.state === 'dead') return; z.x += dx * 0.12; z.z += dz * 0.12; z.hitT = 0.15; if (z.state !== 'chase') { z.state = 'chase'; z.lost = 0; } },
     // os teus zombies que mudaram (10 vezes por segundo)
@@ -926,7 +937,7 @@ async function boot() {
       else { g = new Grid(c.slots[0], c.slots[1]); if (m.gen) rollLoot(c.table, g); else { decG(m.it, g); if (m.roll) rollLoot(c.table, g); } }
       c.grid = g; G.box = c; G.ui.openInv(c); return !!(m.gen || m.roll);
     },
-    encG,
+    encG, dec,
   };
   G.net = makeNet({ G, scene, mkRemote, bagMesh: bagM, audio, Conta, enc, dec, die, world: netWorld, WV,
     hurt: (dmg, by, zone, pop, cause) => {
@@ -978,6 +989,7 @@ async function boot() {
   setInterval(save, 12000); addEventListener('pagehide', () => { save(); Conta.enviar(true, true); }); document.addEventListener('visibilitychange', () => { if (document.hidden) { save(); Conta.enviar(true, true); } });
   G.hasSave = !!Conta.lerPersonagem();
   G.start = (cont, kit) => {
+    G.freshStart = !cont;
     { const L = (Conta.ativo() || {}).look; if (JSON.stringify(L || {}) !== JSON.stringify(G.lookNow || {})) { G.lookNow = L; G.setLook(L); } }
     audio.start();
     const ch = cont ? Conta.lerPersonagem() : null, wd = cont ? Conta.lerMundo() : null;
