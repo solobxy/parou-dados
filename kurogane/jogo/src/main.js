@@ -767,8 +767,8 @@ async function boot() {
       let p = me; if (tgts.length > 1) { let bq = 1e9; for (const t of tgts) { if (!t.alive) continue; const q = Math.hypot(t.x - z.x, t.z - z.z) + ((t.lv || 0) !== (z.lv || 0) ? 25 : 0); if (q < bq) { bq = q; p = t; } } }
       const dMe = me ? Math.hypot(me.x - z.x, me.z - z.z) : 99;
       const dx = p.x - z.x, dz = p.z - z.z, d = Math.hypot(dx, dz), zl = z.lv || 0, same = zl === p.lv;
-      // longe de ti pensa menos vezes (mais leve), mas fica no mapa onde estava
-      let dt = dt0; if (d > 90 && z.state !== 'chase') { z.acc = (z.acc || 0) + dt0; if (z.acc < 0.5) continue; dt = z.acc; z.acc = 0; }
+      // longe de ti e fora da vista pensa menos vezes (mais leve); à vista (por exemplo na luneta) anda a cada imagem, sem saltos
+      let dt = dt0; if (d > 90 && z.state !== 'chase' && z.hide) { z.acc = (z.acc || 0) + dt0; if (z.acc < 0.5) continue; dt = z.acc; z.acc = 0; } else z.acc = 0;
       z.think -= dt;
       if (z.think <= 0) {
         z.think = 0.22 + Math.random() * 0.12;

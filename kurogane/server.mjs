@@ -327,7 +327,7 @@ const clan = (c, m) => {
 const leave = p => { if (!p.clan) return; const C = S.clans[p.clan]; if (C) { C.membros = C.membros.filter(n => n !== p.name); if (!C.membros.length) delete S.clans[p.clan]; } if (S.tokens[p.tok]) delete S.tokens[p.tok].clan; p.clan = null; dirty = true; };
 
 // ---------- imagens do mundo: 10 por segundo, só o que está perto (o clã sempre, para o mapa)
-const ZR = 130; // zombies que cada um recebe (metros)
+const ZR = 300; // zombies que cada um recebe (metros): até onde a luneta deixa ver bem
 setInterval(() => {
   const L = [...players.values()].filter(c => c.p);
   for (const c of L) {
