@@ -1123,13 +1123,16 @@ Disallow: /
 		Cache-Control "no-cache"
 		-Server
 	}
-	root * /var/www/kurogane
 	@escondidos path_regexp /\.
 	handle @escondidos {
 		respond 404
 	}
-	try_files {path} /index.html
-	file_server
+	# dentro de um handle, para não tapar o /_e.js e o /_e das estatísticas
+	handle {
+		root * /var/www/kurogane
+		try_files {path} /index.html
+		file_server
+	}
 }
 
 # Endereço de testes (fica fora do Google)
