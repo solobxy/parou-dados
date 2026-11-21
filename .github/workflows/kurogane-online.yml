@@ -30,7 +30,7 @@ jobs:
           import fs from 'node:fs';
           const ws = new WebSocket(process.env.URL); const log = []; const t0 = Date.now(); let ok = false, snaps = 0;
           const end = c => { log.push((c ? 'OK' : 'FALHOU') + ' em ' + (Date.now() - t0) + ' ms'); console.log(log.join('\n')); fs.writeFileSync('resultado.txt', log.join('\n') + '\n'); process.exit(c ? 0 : 1); };
-          ws.onopen = () => { log.push('ligado'); ws.send(JSON.stringify({ t: 'hi', name: 'Sonda', look: {} })); };
+          ws.onopen = () => { log.push('ligado'); ws.send(JSON.stringify({ t: 'hi', name: 'Sonda' + Math.floor(Math.random() * 1e4), look: {} })); };
           ws.onmessage = e => { const m = JSON.parse(e.data); if (m.t === 'ok') { ok = true; log.push('entrou: id ' + m.id + ', jogadores ' + m.players.length + ', a dormir ' + m.sleep.length + ', sacos ' + (m.w ? m.w.bags.length : 0) + ', hora ' + (m.w ? Math.round(((m.w.now - m.w.cyc0) / 1000) % 1920) : '?') + ' s do ciclo'); const iv = setInterval(() => ws.send(JSON.stringify({ t: 'st', x: 0, z: 0, y: 0, lv: 0, yaw: 0, mv: 0, an: 0, w: '', hp: 100, al: 1, ar: [0, 0] })), 100); setTimeout(() => { log.push('imagens do mundo recebidas: ' + snaps); clearInterval(iv); ws.send(JSON.stringify({ t: 'died', it: [], force: 1 })); setTimeout(() => { ws.close(); end(snaps > 10); }, 300); }, 3000); } else if (m.t === 's') snaps++; else if (m.t === 'erro') { log.push('erro: ' + m.e); end(false); } };
           ws.onerror = e => { log.push('erro de ligação: ' + (e.message || 'sem detalhe')); end(false); };
           setTimeout(() => end(false), 15000);
