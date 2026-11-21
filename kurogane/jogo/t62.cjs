@@ -1,7 +1,7 @@
 // mira em primeira pessoa: W anda para onde olhas, D para a direita da vista
 module.exports = async (page, shot) => {
   const ev = (f, a) => page.evaluate(f, a), W = ms => page.waitForTimeout(ms);
-  await page.click('#sKit'); await W(2500);
+  await page.evaluate(() => G.dbgKit()); await W(2500);
   const g = await ev(() => { for (let i = 0; i < 6; i++) { const it = G.inv.belt[i]; if (it && it.att && it.att.scope) { G.sel = i; return it.k + ' ' + it.att.scope; } } return null; });
   console.log('arma com mira:', g);
   await ev(() => { G.p.x = 1500; G.p.z = 900; G.aimStart(true); }); await W(2500);

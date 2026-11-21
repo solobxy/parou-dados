@@ -223,6 +223,10 @@ const onMsg = (c, m) => {
   if (m.t === 'bag') { const x = num(m.x, -4100, 4100), z = num(m.z, -4100, 4100); if (Math.hypot(x - p.x, z - p.z) > 450) return; mkBag(x, z, num(m.y, -5, 40), num(m.lv, 0, 6) | 0, m.it); return; }
   if (['bp', 'bu', 'bx', 'bdo', 'bd', 'bdr', 'bdn', 'bdc', 'fu'].includes(m.t)) { baseMsg(c, p, m, now); return; }
   if (m.t === 'boom') { boom(c, p, m); return; }
+  // granada lançada ou C4 colado: os outros por perto veem-nos (a explosão vem depois, de quem os lançou)
+  if (m.t === 'thr') { if (m.k !== 'gran' && m.k !== 'c4') return; const P = Array.isArray(m.P) ? m.P.slice(0, 3).map(v => num(v, -4100, 4100)) : null; if (!P || P.length !== 3 || Math.hypot(P[0] - p.x, P[2] - p.z) > 6) return;
+    const o = { t: 'thr', k: m.k, P, lv: num(m.lv, 0, 6) | 0 }; if (m.k === 'gran') { o.V = Array.isArray(m.V) ? m.V.slice(0, 3).map(v => num(v, -60, 60)) : [0, 0, 0]; o.base = num(m.base, 0, 30); } else { o.yaw = num(m.yaw, -10, 10); o.st = m.st ? 1 : 0; }
+    bcast(o, x => x !== c && Math.hypot(x.p.x - P[0], x.p.z - P[2]) < 300); return; }
   // zombies: a primeira pessoa num mundo novo espalha-os (com as zonas do jogo) e manda a lista
   if (m.t === 'zs') { if (!c.zseed || S.w.zs.length || !Array.isArray(m.L)) return; c.zseed = false;
     S.w.zs = m.L.slice(0, 3000).map(a => { const x = num(a[0], -4100, 4100), z = num(a[1], -4100, 4100), h = num(a[3], 0, 4) | 0, v = num(a[4], 0, 4) | 0, hp = num(a[5], 1, 300, 80);

@@ -22,7 +22,7 @@ server.listen(0, async () => {
   };
   try {
     const A = await mk('Ana', 'pa'), B = await mk('Bruno', 'pb');
-    for (const P of [A, B]) await P.page.click('#sKit');
+    for (const P of [A, B]) await P.ev(() => G.dbgKit());
     await W(3000);
     // os dois na vila Kitamura (com zombies)
     const spot = [-170, 12];

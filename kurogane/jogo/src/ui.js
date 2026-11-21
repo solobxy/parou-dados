@@ -31,16 +31,16 @@ export function initUI(G) {
     if (G.TOUCH) { try { const r = document.documentElement.requestFullscreen && document.documentElement.requestFullscreen({ navigationUI: 'hide' }); if (r && r.catch) r.catch(() => { }); } catch (e) { } }
     $('start').hidden = true; G.start(cont, kit);
   };
-  $('sPlay').onclick = () => go(false); $('sCont').onclick = () => go(true); $('sKit').onclick = () => go(false, true);
-  // o online só existe no site do jogo (com o servidor ao lado); noutros sítios joga-se sozinho
+  $('sPlay').onclick = () => go(false); $('sCont').onclick = () => go(true);
+  G.dbgKit = () => go(false, true); // só para os testes automáticos (joga sempre sem servidor)
+  // um só servidor para todos: no site joga-se sempre online (se o servidor não responder, joga-se sozinho até voltar)
   let canOnline = !!window.KG_ONLINE; try { if (localStorage.getItem('kg.srv')) canOnline = true; } catch (e) { }
-  if (!canOnline) { G.online = false; $('sOnl').hidden = true; const f = document.querySelector('#start .foot'); if (f) f.textContent = 'Protótipo 0.12.1 · aqui jogas sozinho · o jogo online está no site do Kurogane'; }
-  else { let on = true; try { on = localStorage.getItem('kg.online') !== '0'; } catch (e) { } G.online = on;
-    const b = $('sOnl'), t = $('sOnT'), paint = () => { b.setAttribute('aria-checked', G.online); b.querySelector('.tog').classList.toggle('on', G.online); };
-    const count = () => { if (!G.online) { t.textContent = 'Jogas sozinho, sem outros jogadores'; return; } t.textContent = 'Outros jogadores, PvP e clãs'; let u = '/srv/saude'; try { const o = localStorage.getItem('kg.srv'); if (o) u = o.replace(/^ws/, 'http').replace(/\/ws$/, '/saude'); } catch (e) { }
-      fetch(u, { cache: 'no-store' }).then(r => r.ok ? r.json() : null).then(j => { if (!G.online) return; t.textContent = j && j.ok ? (j.jogadores ? `${j.jogadores} a jogar agora · PvP e clãs` : 'Ninguém online agora · PvP e clãs') : 'Servidor indisponível: jogas sozinho'; }).catch(() => { if (G.online) t.textContent = 'Servidor indisponível: jogas sozinho'; }); };
-    b.onclick = () => { G.online = !G.online; try { localStorage.setItem('kg.online', G.online ? '1' : '0'); } catch (e) { } audio.play('ui'); paint(); count(); };
-    paint(); count(); G.ui_count = count; }
+  G.online = canOnline;
+  if (!canOnline) { $('sOnl').hidden = true; const f = document.querySelector('#start .foot'); if (f) f.textContent = 'Protótipo 0.13 · aqui jogas sozinho · o jogo online está no site do Kurogane'; }
+  else { const b = $('sOnl'), t = $('sOnT');
+    const count = () => { let u = '/srv/saude'; try { const o = localStorage.getItem('kg.srv'); if (o) u = o.replace(/^ws/, 'http').replace(/\/ws$/, '/saude'); } catch (e) { }
+      fetch(u, { cache: 'no-store' }).then(r => r.ok ? r.json() : null).then(j => { const up = !!(j && j.ok); b.classList.toggle('up', up); b.classList.toggle('down', !up); t.textContent = up ? (j.jogadores ? `${j.jogadores} a jogar agora · PvP e clãs` : 'Ninguém a jogar agora · PvP e clãs') : 'Servidor em baixo: jogas sozinho até voltar'; }).catch(() => { b.classList.add('down'); t.textContent = 'Servidor em baixo: jogas sozinho até voltar'; }); };
+    count(); G.ui_count = count; }
   // os toques no jogo não contam como cliques nas estatísticas (só os botões dos menus)
   for (const id of ['touch', 'c']) $(id).addEventListener('click', e => e.stopPropagation());
   // zona livre do ecrã para o círculo de visão (sem HUD por cima), por orientação

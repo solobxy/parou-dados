@@ -324,7 +324,7 @@ h1 small{display:block;font:900 clamp(16px,3vw,22px)/1.2 "KJP",sans-serif;letter
 @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}}
 .onl{display:flex;align-items:center;gap:14px;width:min(360px,100%);padding:10px 16px;text-align:left;background:rgba(13,15,17,.62)}
 .onl>span{display:flex;flex-direction:column;gap:1px;flex:1;min-width:0}.onl b{font:700 17px/1.1 "Barlow Condensed",sans-serif;letter-spacing:.08em;text-transform:uppercase}.onl em{font-style:normal;font-size:13px;color:var(--tx2)}
-.onl:focus-visible{outline:2px solid var(--amb);outline-offset:2px}
+.onl .dot{width:10px;height:10px;border-radius:50%;background:#6b6f73;flex:none}.onl.up .dot{background:#7fd38a;box-shadow:0 0 0 4px rgba(127,211,138,.18)}.onl.down .dot{background:#F07A68}
 #tags{position:fixed;inset:0;pointer-events:none;overflow:hidden}
 .ntag{position:absolute;left:0;top:0;padding:2px 7px 3px;background:rgba(13,15,17,.62);color:#EEE9E0;font:600 13px/1.2 Barlow,sans-serif;white-space:nowrap;border-radius:2px;will-change:transform}
 .ntag.mate{color:#CFE0FF;box-shadow:inset 0 -2px 0 #6FA8FF}.ntag.sleep{color:var(--tx2);font-size:12px}
@@ -563,10 +563,10 @@ input[type=range]{width:160px;accent-color:#F2A33A;height:30px}
   <div class="prof" id="prof"></div>
   <div class="mnote" id="mnote" hidden></div>
   <p class="lead">Um bairro de Tóquio tomado por zombies, rodeado de floresta, vilas e um templo nas montanhas. Revista, treina o corpo, foge ou luta. O melhor loot está no centro.</p>
-  <nav class="menu"><button class="mi pri" id="sCont" hidden><b>Continuar</b><em>Voltas onde ficaste</em></button><button class="mi pri" id="sPlay"><b>Jogar</b><em>Acordas perto de uma vila ou monumento</em></button><button class="mi" id="sKit"><b>Kit de teste</b><em>Armas com mira, proteção e muitas balas</em></button><button class="mi" id="sSet"><b>Definições</b><em>Controlos, imagem e som</em></button></nav>
-  <button class="onl" id="sOnl" role="switch" aria-checked="true"><span><b>Online</b><em id="sOnT">Outros jogadores, PvP e clãs</em></span><i class="tog on" aria-hidden="true"></i></button>
+  <nav class="menu"><button class="mi pri" id="sCont" hidden><b>Continuar</b><em>Voltas onde ficaste</em></button><button class="mi pri" id="sPlay"><b>Jogar</b><em>Acordas perto de uma vila ou monumento</em></button><button class="mi" id="sSet"><b>Definições</b><em>Controlos, imagem e som</em></button></nav>
+  <div class="onl" id="sOnl" role="status"><i class="dot" aria-hidden="true"></i><span><b>Servidor</b><em id="sOnT">A ver quem está a jogar…</em></span></div>
   <div class="keys" id="sKeys"></div>
-  <div class="foot">Protótipo 0.12.1 · online: quem sai fica a dormir no mundo · o kit de teste joga sempre sozinho</div>
+  <div class="foot">Protótipo 0.13 · um servidor para todos · quem sai fica a dormir no mundo</div>
 </div><button id="sMus" aria-label="Música do menu"><span class="on">{{volume-2}}</span><span class="off">{{volume-x}}</span></button><a class="credit" href="https://dinissousa.pt" target="_blank" rel="noopener">feito por dinissousa.pt</a></div>
 <div id="pfm" class="ov" hidden><div class="pfbox"><div class="pfh"><b id="pfT"></b><button class="close" id="pfX" aria-label="Fechar">{{x}}</button></div><div id="pfB" class="pfb"></div></div></div>
 <div id="set" class="ov" hidden><div class="sp2"><div class="ihead"><b class="cond" style="font-size:20px;letter-spacing:.06em;text-transform:uppercase">Definições</b><button class="close" id="setClose" aria-label="Fechar" style="margin-left:auto">{{x}}</button></div><div class="sbody" id="setBody"></div></div></div>

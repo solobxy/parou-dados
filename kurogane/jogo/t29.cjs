@@ -1,7 +1,7 @@
 // avisos e botões: nada por cima de nada, em todos os ecrãs
 module.exports = async (page, shot, mode) => {
   const ev = (f, a) => page.evaluate(f, a), W = ms => page.waitForTimeout(ms);
-  await page.click('#sKit'); await W(1200);
+  await page.evaluate(() => G.dbgKit()); await W(1200);
   await ev(() => { for (const z of G.zs) { z.x = z.hx = 440; z.z = z.hz = 440; } let b = null, bd = 1e9; for (const c of G.W.containers) { if (c.lv) continue; const d = Math.hypot(c.x - G.p.x, c.z - G.p.z); if (d < bd) { bd = d; b = c; } } G.p.x = b.x + 0.9; G.p.z = b.z; });
   await W(1500);
   await ev(() => { G.ui.toast('Inventário cheio: ficou no chão. Mais um aviso comprido para testar.'); G.gain('madeira', 5); G.gain('pedraR', 3); G.gain('a556', 10); G.aimStart(); });

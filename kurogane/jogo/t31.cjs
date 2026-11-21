@@ -1,7 +1,7 @@
 // fuzz do inventário: arrastar ao calhas entre mochila, cinto, equipamento, caixa e chão; nada pode aparecer nem desaparecer
 module.exports = async (page, shot) => {
   const ev = (f, a) => page.evaluate(f, a), W = ms => page.waitForTimeout(ms);
-  await page.click('#sKit'); await W(600); if (await page.$('#pfN')) { await page.fill('#pfN', 'Teste'); await page.click('#pfOk'); } await W(1500);
+  await page.evaluate(() => G.dbgKit()); await W(600); if (await page.$('#pfN')) { await page.fill('#pfN', 'Teste'); await page.click('#pfOk'); } await W(1500);
   await ev(() => { for (const z of G.zs) { z.x = z.hx = 440; z.z = z.hz = 440; } let b = null, bd = 1e9; for (const c of G.W.containers) { if (c.lv) continue; const d = Math.hypot(c.x - G.p.x, c.z - G.p.z); if (d < bd) { bd = d; b = c; } } G.p.x = b.x + 0.9; G.p.z = b.z; G.prompt = b; G.interact(); });
   await W(800);
   const count = () => ev(() => { const m = {}; const add = it => { if (!it) return; m[it.k] = (m[it.k] || 0) + (it.n || 1); if (it.ammo) m['@' + (it.ak || 'x')] = (m['@' + (it.ak || 'x')] || 0) + it.ammo; if (it.att) for (const v of Object.values(it.att)) if (v) m[v] = (m[v] || 0) + 1; };

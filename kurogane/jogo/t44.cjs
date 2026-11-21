@@ -1,7 +1,7 @@
 module.exports = async (page, shot) => {
   const ev = (f, a) => page.evaluate(f, a), W = ms => page.waitForTimeout(ms);
   page.on('console', m => { if (m.type() === 'error') console.log('CONSOLE', m.text().slice(0, 300)); });
-  await page.click('#sKit'); await W(1500);
+  await page.evaluate(() => G.dbgKit()); await W(1500);
   // ir para a floresta, longe de tudo, e dar materiais
   const spot = await ev(() => { for (let k = 0; k < 4000; k++) { const x = -420 + Math.random() * 840, z = -420 + Math.random() * 840; let ok = true; for (let i = -1; i <= 2 && ok; i++) for (let j = -1; j <= 2 && ok; j++) if (G.base.B && false) ok = false; if (!ok) continue; const gi = Math.floor(x / 3), gj = Math.floor(z / 3); const W0 = G.W; let fine = true; for (let a = -1; a <= 1 && fine; a++) for (let b = -1; b <= 1 && fine; b++) { const x0 = (gi + a) * 3, z0 = (gj + b) * 3; if (W0.paved(x0 + 1.5, z0 + 1.5)) fine = false; for (const c of W0.circles) if (Math.abs(c.x - x0 - 1.5) < 3.5 && Math.abs(c.z - z0 - 1.5) < 3.5) { fine = false; break; } for (const zn of W0.zones) if (Math.hypot(x0 - zn.x, z0 - zn.z) < zn.r + 30) fine = false; for (const r of W0.roads) if (x0 > r.x0 - 8 && x0 < r.x1 + 8 && z0 > r.z0 - 8 && z0 < r.z1 + 8) fine = false; } if (fine) return [gi * 3 + 1.5, gj * 3 - 1.2]; } return null; });
   console.log('sítio:', JSON.stringify(spot));

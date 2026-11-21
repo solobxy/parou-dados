@@ -21,7 +21,7 @@ server.listen(0, async () => {
   };
   try {
     const A = await mk('Ana', 'pa'), B = await mk('Bruno', 'pb');
-    for (const P of [A, B]) await P.page.click('#sKit');
+    for (const P of [A, B]) await P.ev(() => G.dbgKit());
     await W(3000);
     const spot = await A.ev(() => [G.p.x, G.p.z]);
     await A.ev(s => { G.p.x = s[0]; G.p.z = s[1]; G.net.start(); }, spot); await W(1500);

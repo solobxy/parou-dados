@@ -1,0 +1,1 @@
+module.exports = async (page) => { const t = await page.evaluate(() => performance.now()); console.log('boot até ao menu:', Math.round(t), 'ms', await page.evaluate(() => 'mundo ' + G.W.buildMs + ' ms (fora ' + G.W.outerMs + ' ms) rects ' + G.W.rects.length + ' casas ' + G.W.cuts.length + ' contentores ' + G.W.containers.length)); };

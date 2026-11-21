@@ -22,7 +22,7 @@ server.listen(0, async () => {
   const pk = (P, k) => P.ev(k => { const Q = G.base.pieces.get(k); return Q ? [Q.t, Q.tier, Math.round(Q.hp), Q.door ? Q.door.target : null] : null; }, k);
   try {
     const A = await mk('Ana', 'pa'), B = await mk('Bruno', 'pb');
-    for (const P of [A, B]) await P.page.click('#sKit');
+    for (const P of [A, B]) await P.ev(() => G.dbgKit());
     await W(3000);
     const X = 1000.5, Z = 600.5, I = 333, J = 200; // célula da base da Ana
     await A.ev(s => { G.p.x = s[0]; G.p.z = s[1]; G.gain('madeira', 900); G.gain('pedraR', 400); G.net.start(); }, [X, Z]); await W(2000);
@@ -82,6 +82,11 @@ server.listen(0, async () => {
     await B.ev(k => G.net.raw({ t: 'bdo', k, o: 1 }), d2); await B.ev(k => G.net.raw({ t: 'bp', k, tt: 'parede' }), w2); await W(1000);
     const cl = await Promise.all([pk(A, d2), pk(A, w2)]); console.log('no clã: porta', JSON.stringify(cl[0]), '· parede do Bruno', JSON.stringify(cl[1]));
     ok(cl[0] && cl[0][3] === 1 && cl[1] && cl[1][0] === 'parede', 'no mesmo clã, o Bruno abre a porta e constrói na base da Ana');
+    // granada: o Bruno lança; a Ana vê-a a voar, e depois só a explosão
+    await A.ev(s => { G.p.x = s[0]; G.p.z = s[1]; }, [X, Z]); await B.ev(s => { G.p.x = s[0] + 8; G.p.z = s[1]; G.inv.belt[0] = G.dbg.item('granada', 1); G.sel = 0; G.p.cd = 0; }, [X, Z]); await W(800);
+    await B.ev(() => { G.fireDown(); G.fireUp && G.fireUp(); }); await W(500);
+    const gh = await A.ev(() => G.booms.filter(b => b.ghost).map(b => b.k)); console.log('a Ana vê no ar:', JSON.stringify(gh)); ok(gh.includes('gran'), 'a Ana vê a granada do Bruno a voar');
+    await W(14000); const gh2 = await A.ev(() => G.booms.filter(b => b.ghost).length); ok(gh2 === 0, 'depois da explosão a granada desaparece');
     console.log('erros A:', A.errs.length, 'B:', B.errs.length);
   } catch (e) { console.log('ERRO', e.stack || e); fails++; }
   console.log(fails ? fails + ' falhas' : 'tudo bem');

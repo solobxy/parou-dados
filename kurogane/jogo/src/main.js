@@ -566,18 +566,25 @@ async function boot() {
   const BOOMS = []; G.booms = BOOMS;
   const useOne = it => { it.n = (it.n || 1) - 1; if (it.n <= 0) { const i = G.inv.belt.indexOf(it); if (i >= 0) G.inv.belt[i] = null; else G.inv.bag.remove(it); } refresh(); };
   const gGeo = new THREE.SphereGeometry(0.07, 10, 8), gMat = new THREE.MeshStandardMaterial({ color: 0x4a5236, roughness: 0.6 }), c4Geo = new THREE.BoxGeometry(0.28, 0.08, 0.16), c4Mat = new THREE.MeshStandardMaterial({ color: 0xb6a37a, roughness: 0.8 }), ledMat = new THREE.MeshBasicMaterial({ color: 0xff2a1a });
+  const ghostBoom = m => { const P = new THREE.Vector3(m.P[0], m.P[1], m.P[2]);
+    if (m.k === 'gran') { const g = new THREE.Mesh(gGeo, gMat); g.castShadow = true; g.position.copy(P); scene.add(g); BOOMS.push({ k: 'gran', P, V: new THREE.Vector3(m.V[0], m.V[1], m.V[2]), t: 3.6, m: g, lv: m.lv || 0, base: m.base || 0, ghost: true }); return; }
+    const g = new THREE.Group(); const b = new THREE.Mesh(c4Geo, c4Mat); b.castShadow = true; g.add(b); const led = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.02, 0.03), ledMat); led.position.set(0.06, 0.05, 0); g.add(led); g.position.copy(P); g.rotation.y = m.yaw || 0; if (m.st) g.rotation.x = Math.PI / 2; scene.add(g);
+    BOOMS.push({ k: 'c4', P, V: null, t: 11, m: g, led, lv: m.lv || 0, beep: 0, ghost: true }); };
+  // a explosão de outro jogador: tira a granada ou o C4 que se estava a ver
+  const ghostGone = (k, x, z) => { let bi = -1, bd = 5; BOOMS.forEach((B, i) => { if (!B.ghost || B.k !== k) return; const d = Math.hypot(B.P.x - x, B.P.z - z); if (d < bd) { bd = d; bi = i; } }); if (bi >= 0) { scene.remove(BOOMS[bi].m); BOOMS.splice(bi, 1); } };
   const throwGrenade = it => { const p = G.p; if (p.cd > 0) return; p.cd = 0.8; const lv = p.lv || 0;
     const tx = AIM.on && AIM.Aw ? AIM.Aw.x : p.x + Math.sin(p.yaw) * 10, tz = AIM.on && AIM.Aw ? AIM.Aw.z : p.z + Math.cos(p.yaw) * 10;
     let dx = tx - p.x, dz = tz - p.z; const d = Math.min(22, Math.max(3, Math.hypot(dx, dz))); const l = Math.hypot(dx, dz) || 1; dx /= l; dz /= l;
     const T = 0.55 + d / 22 * 0.75, h0 = 1.5 - 0.07, vy = (4.9 * T * T - h0) / T, dd = d * 0.88; const m = new THREE.Mesh(gGeo, gMat); m.castShadow = true; scene.add(m);
-    BOOMS.push({ k: 'gran', P: new THREE.Vector3(p.x + dx * 0.5, p.y + 1.5, p.z + dx * 0 + dz * 0.5), V: new THREE.Vector3(dx * dd / T, vy, dz * dd / T), t: 3.0, m, lv, base: p.base || 0 });
+    const B1 = { k: 'gran', P: new THREE.Vector3(p.x + dx * 0.5, p.y + 1.5, p.z + dx * 0 + dz * 0.5), V: new THREE.Vector3(dx * dd / T, vy, dz * dd / T), t: 3.0, m, lv, base: p.base || 0 }; BOOMS.push(B1);
+    if (G.net.world) G.net.raw({ t: 'thr', k: 'gran', P: [B1.P.x, B1.P.y, B1.P.z].map(v => +v.toFixed(2)), V: [B1.V.x, B1.V.y, B1.V.z].map(v => +v.toFixed(2)), lv, base: B1.base });
     useOne(it); audio.play('swing', 0.7); G.ui.toast('Granada! Afasta-te'); };
   const plantC4 = it => { const p = G.p; if (p.cd > 0) return; p.cd = 0.6; const lv = p.lv || 0, fx = p.x + Math.sin(p.yaw) * 0.9, fz = p.z + Math.cos(p.yaw) * 0.9;
     // cola na parede ou porta à frente (se houver)
     let x = p.x + Math.sin(p.yaw) * 0.7, z = p.z + Math.cos(p.yaw) * 0.7, y = (p.base || 0) + 1.0, stuck = false;
     const dist = ray(p.x, p.z, Math.sin(p.yaw), Math.cos(p.yaw), 1.6, null, 's', lv, 0.5); if (dist < 1.6) { x = p.x + Math.sin(p.yaw) * (dist - 0.12); z = p.z + Math.cos(p.yaw) * (dist - 0.12); stuck = true; } else y = (p.base || 0) + groundY(x, z, lv) + 0.04;
     const m = new THREE.Group(); const b = new THREE.Mesh(c4Geo, c4Mat); b.castShadow = true; m.add(b); const led = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.02, 0.03), ledMat); led.position.set(0.06, 0.05, 0); m.add(led); m.position.set(x, y, z); m.rotation.y = p.yaw; if (stuck) { m.rotation.x = Math.PI / 2; } scene.add(m);
-    BOOMS.push({ k: 'c4', P: new THREE.Vector3(x, y, z), V: null, t: 10, m, led, lv, beep: 0 }); useOne(it); audio.play('bip'); G.ui.toast('C4 colado: rebenta em 10 s'); };
+    BOOMS.push({ k: 'c4', P: new THREE.Vector3(x, y, z), V: null, t: 10, m, led, lv, beep: 0 }); if (G.net.world) G.net.raw({ t: 'thr', k: 'c4', P: [x, y, z].map(v => +v.toFixed(2)), yaw: +p.yaw.toFixed(2), st: stuck ? 1 : 0, lv }); useOne(it); audio.play('bip'); G.ui.toast('C4 colado: rebenta em 10 s'); };
   const EX = { gran: { r: 6.5, dmg: 140, br: 1.8, bdmg: 40, door: 60 }, c4: { r: 7.5, dmg: 260, br: 1.7, bdmg: 560, door: 560 } };
   const scorchGeo = new THREE.CircleGeometry(1, 20); scorchGeo.rotateX(-Math.PI / 2); const scorchMat = new THREE.MeshBasicMaterial({ color: 0x0c0b0a, transparent: true, opacity: 0.55, depthWrite: false });
   const explode = (B0) => { const X = EX[B0.k], P = B0.P, lv = B0.lv || 0, onl = G.net.world;
@@ -596,7 +603,7 @@ async function boot() {
   const updBooms = dt => { for (let i = BOOMS.length - 1; i >= 0; i--) { const B0 = BOOMS[i]; B0.t -= dt;
       if (B0.V) { B0.V.y -= 9.8 * dt; const Q = B0.P.clone().addScaledVector(B0.V, dt); const h = wallHit(B0.P, Q); if (h < 1) { B0.V.x *= -0.35; B0.V.z *= -0.35; Q.copy(B0.P); } const gy = (B0.base || 0) + groundY(Q.x, Q.z, B0.lv) + 0.07; if (Q.y < gy) { Q.y = gy; B0.V.y = Math.abs(B0.V.y) * 0.3; B0.V.x *= 0.55; B0.V.z *= 0.55; if (Math.abs(B0.V.y) < 0.6) B0.V.y = 0; } B0.P.copy(Q); B0.m.position.copy(B0.P); B0.m.rotation.x += dt * 8; }
       else if (B0.led) { B0.beep -= dt; const fast = B0.t < 3; if (B0.beep <= 0) { B0.beep = fast ? 0.25 : 1; const p = G.p; audio.play('bip', p ? clamp(1 - Math.hypot(p.x - B0.P.x, p.z - B0.P.z) / 30, 0, 1) : 0.5); B0.led.visible = true; } else if (B0.beep < (fast ? 0.15 : 0.8)) B0.led.visible = false; }
-      if (B0.t <= 0) { scene.remove(B0.m); BOOMS.splice(i, 1); explode(B0); } } };
+      if (B0.t <= 0) { scene.remove(B0.m); BOOMS.splice(i, 1); if (!B0.ghost) explode(B0); } } };
   // ---------- tempo: céu limpo quase sempre; chuvadas de 3 a 7 min de vez em quando, com trovoada quando é forte
   const WX = { t: 420 + Math.random() * 600, bolt: 30 }, wetBase = {};
   for (const k of ['asph', 'conc', 'tile', 'grass', 'dirt']) if (mats[k]) wetBase[k] = { c: mats[k].color.clone(), r: mats[k].roughness };
@@ -854,7 +861,8 @@ async function boot() {
     leave: () => { G.base.online(null); G.base.clear(); const wd = Conta.lerMundo(); if (wd && wd.base) G.base.load(wd.base, decG); },
     base: m => G.base.applyNet(m),
     lock: (i, hp, broke) => { const D = doorById.get(i); if (!D || !D.lock) return; D.lock.hp = hp; D.lock.broke = broke; if (hp <= 0) { D.target = D.t = 1; } },
-    boom: m => explode({ k: m.k, P: new THREE.Vector3(m.x, m.y, m.z), lv: m.lv, remote: true }),
+    boom: m => { ghostGone(m.k, m.x, m.z); explode({ k: m.k, P: new THREE.Vector3(m.x, m.y, m.z), lv: m.lv, remote: true }); },
+    thr: m => ghostBoom(m),
     z: zNet,
     door: (i, o) => { const D = doorById.get(i); if (D) setDoor(D, o, false, true); },
     node: (k, ms) => { nodeWait.set(k, Date.now() + ms); const n = nodes.find(q => q.key === k); if (n) nodeOff(n, ms); },
