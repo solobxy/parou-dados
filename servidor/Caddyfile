@@ -1119,13 +1119,17 @@ Disallow: /
 		X-Frame-Options "DENY"
 		Referrer-Policy "strict-origin-when-cross-origin"
 		Permissions-Policy "geolocation=(), camera=(), microphone=(), payment=(), usb=()"
-		Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://hvvvswhwcpavucwrvlsf.supabase.co; media-src 'self' data: blob:; form-action 'self'; frame-ancestors 'none'; base-uri 'none'; object-src 'none'"
+		Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' wss://{host} https://hvvvswhwcpavucwrvlsf.supabase.co; media-src 'self' data: blob:; form-action 'self'; frame-ancestors 'none'; base-uri 'none'; object-src 'none'"
 		Cache-Control "no-cache"
 		-Server
 	}
 	@escondidos path_regexp /\.
 	handle @escondidos {
 		respond 404
+	}
+	# jogo online: WebSocket (/srv/ws) e quantos estão a jogar (/srv/saude), no servidor de jogo em 127.0.0.1:3190
+	handle_path /srv/* {
+		reverse_proxy 127.0.0.1:3190
 	}
 	# dentro de um handle, para não tapar o /_e.js e o /_e das estatísticas
 	handle {

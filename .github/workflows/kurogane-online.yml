@@ -1,0 +1,44 @@
+name: Kurogane online
+
+# Liga-se ao servidor de jogo do Kurogane como se fosse um jogador (WebSocket pelo Caddy), confirma que entra
+# e que vê o estado do mundo, e sai sem deixar ninguém a dormir. Resultado no ramo "testar-urls".
+
+on:
+  workflow_dispatch:
+    inputs:
+      url:
+        description: "Endereço do WebSocket"
+        required: true
+        default: "wss://kurogane.2-31-13-85.sslip.io/srv/ws"
+
+permissions:
+  contents: write
+
+jobs:
+  testar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Ligar e jogar 3 segundos
+        env:
+          URL: ${{ inputs.url }}
+        run: |
+          cat > t.mjs <<'JS'
+          import fs from 'node:fs';
+          const ws = new WebSocket(process.env.URL); const log = []; const t0 = Date.now(); let ok = false, snaps = 0;
+          const end = c => { log.push((c ? 'OK' : 'FALHOU') + ' em ' + (Date.now() - t0) + ' ms'); console.log(log.join('\n')); fs.writeFileSync('resultado.txt', log.join('\n') + '\n'); process.exit(c ? 0 : 1); };
+          ws.onopen = () => { log.push('ligado'); ws.send(JSON.stringify({ t: 'hi', name: 'Sonda', look: {} })); };
+          ws.onmessage = e => { const m = JSON.parse(e.data); if (m.t === 'ok') { ok = true; log.push('entrou: id ' + m.id + ', jogadores ' + m.players.length + ', a dormir ' + m.sleep.length + ', mochilas ' + m.bags.length); const iv = setInterval(() => ws.send(JSON.stringify({ t: 'st', x: 0, z: 0, y: 0, lv: 0, yaw: 0, mv: 0, an: 0, w: '', hp: 100, al: 1, ar: [0, 0] })), 100); setTimeout(() => { log.push('imagens do mundo recebidas: ' + snaps); clearInterval(iv); ws.send(JSON.stringify({ t: 'died', it: [], force: 1 })); setTimeout(() => { ws.close(); end(snaps > 10); }, 300); }, 3000); } else if (m.t === 's') snaps++; else if (m.t === 'erro') { log.push('erro: ' + m.e); end(false); } };
+          ws.onerror = e => { log.push('erro de ligação: ' + (e.message || 'sem detalhe')); end(false); };
+          setTimeout(() => end(false), 15000);
+          JS
+          node t.mjs
+      - name: Guardar
+        if: always()
+        run: |
+          mkdir pub && cp resultado.txt pub/ 2>/dev/null || echo "sem resultado" > pub/resultado.txt; cd pub && git init -q -b testar-urls
+          git config user.name "parou-dados"; git config user.email "actions@users.noreply.github.com"
+          git add -A && git commit -q -m "Teste online" && git push -q -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" testar-urls

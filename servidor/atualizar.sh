@@ -37,6 +37,7 @@ escrever_estado() {
     echo "ganhas.pt API: $(systemctl is-active ganhas-api 2>/dev/null) $(curl -s -m 3 http://127.0.0.1:3140/api/estado 2>/dev/null | cut -c1-80)"
     echo "webase API: $(systemctl is-active webase-api 2>/dev/null) $(curl -s -m 3 http://127.0.0.1:3160/api/publico/estado 2>/dev/null | cut -c1-70)"
     echo "crime API: $(systemctl is-active crime-api 2>/dev/null) $(curl -s -m 3 http://127.0.0.1:3170/api/saude 2>/dev/null | cut -c1-80)"
+    echo "kurogane online: $(systemctl is-active kurogane-srv 2>/dev/null) $(curl -s -m 3 http://127.0.0.1:3190/saude 2>/dev/null | cut -c1-100)"
     echo "ganhas.pt páginas: $(systemctl show ganhas-paginas.service -p Result -p ExecMainStatus 2>/dev/null | tr '\n' ' ') $(journalctl -u ganhas-paginas -n 12 --no-pager -o cat 2>/dev/null | grep -v -E '^(Starting|Started|Finished|Failed to start|ganhas-paginas)' | tail -3 | cut -c1-200 | tr '\n' ';')"
     cat /var/lib/parou-estado/vigia-projetos.txt 2>/dev/null | sed -E 's/([0-9]{1,3}\.){3}[0-9]{1,3}/<ip>/g' | cut -c1-300
     echo
@@ -459,6 +460,20 @@ if [ -f "$SERV/crime-api.service" ] && [ -f "$BASE/servidor/crime/server.mjs" ];
     systemctl restart crime-api.service && echo "$V" > /var/lib/parou-estado/crime-api.versao
   fi
   systemctl is-active --quiet crime-api.service || systemctl start crime-api.service
+fi
+
+# kurogane online: servidor de jogo (kurogane-srv.service, Node sem dependências, 127.0.0.1:3190, estado em
+# /var/lib/kurogane-srv). O Caddy passa /srv/* do site do jogo para aqui (WebSocket em /srv/ws).
+if [ -f "$SERV/kurogane-srv.service" ] && [ -f "$BASE/servidor/kurogane/server.mjs" ]; then
+  if ! cmp -s "$SERV/kurogane-srv.service" /etc/systemd/system/kurogane-srv.service; then
+    cp "$SERV/kurogane-srv.service" /etc/systemd/system/kurogane-srv.service && systemctl daemon-reload
+  fi
+  systemctl is-enabled --quiet kurogane-srv.service 2>/dev/null || systemctl enable --now kurogane-srv.service >/dev/null 2>&1
+  V=$( { cat "$BASE"/servidor/kurogane/*.mjs "$SERV/kurogane-srv.service" 2>/dev/null; } | sha256sum | cut -c1-16)
+  if [ "$(cat /var/lib/parou-estado/kurogane-srv.versao 2>/dev/null)" != "$V" ]; then
+    systemctl restart kurogane-srv.service && echo "$V" > /var/lib/parou-estado/kurogane-srv.versao
+  fi
+  systemctl is-active --quiet kurogane-srv.service || systemctl start kurogane-srv.service
 fi
 
 # Dayla Araújo Body Piercing: site estático em sites/dayla (trocado de uma vez quando muda) e agenda/painel em
