@@ -236,7 +236,7 @@ async function boot() {
     }
   };
   const doorBlocked = D => { const r = D.rc, m = 0.34, inR = o => (o.lv || 0) === D.lv && o.x > r.x0 - m && o.x < r.x1 + m && o.z > r.z0 - m && o.z < r.z1 + m; if (G.p && G.p.alive && inR(G.p)) return true; for (const z of G.zs) if (z.state !== 'dead' && inR(z)) return true; if (G.net && G.net.on) for (const o of G.net.R.values()) if (o.s1 && o.s1[10] && inR({ x: o.x, z: o.z, lv: o.s1[4] })) return true; return false; };
-  const setDoor = (D, open, auto = false, remote = false) => { if (D.target === open) return true; if (D.lock && D.lock.hp > 0) return false; if (!open && doorBlocked(D)) { if (remote && G.net.on && D.wid != null) G.net.door(D.wid, 1); return false; } D.target = open; D.auto = auto && open === 1; D.autoT = 0; if (!remote && G.net && G.net.on && D.wid != null && !D.base) G.net.door(D.wid, open); audio.play(open ? 'porta' : 'portaF', G.p ? clamp(1 - Math.hypot(D.x - G.p.x, D.z - G.p.z) / 30, 0, 1) : 0.5); if (G.p) noise(D.x, D.z, 4); return true; };
+  const setDoor = (D, open, auto = false, remote = false) => { if (D.target === open) return true; if (D.lock && D.lock.hp > 0) return false; if (D.base && G.net && G.net.world && !remote) { G.net.raw({ t: 'bdo', k: D.base.k, o: open ? 1 : 0 }); return true; } if (!open && doorBlocked(D)) { if (remote && G.net.on && D.wid != null) G.net.door(D.wid, 1); return false; } D.target = open; D.auto = auto && open === 1; D.autoT = 0; if (!remote && G.net && G.net.on && D.wid != null && !D.base) G.net.door(D.wid, open); audio.play(open ? 'porta' : 'portaF', G.p ? clamp(1 - Math.hypot(D.x - G.p.x, D.z - G.p.z) / 30, 0, 1) : 0.5); if (G.p) noise(D.x, D.z, 4); return true; };
   const updDoors = dt => {
     for (const D of W.doors) {
       if (D.t !== D.target) D.t = D.target > D.t ? Math.min(D.target, D.t + dt / 0.55) : Math.max(D.target, D.t - dt / 0.5);
@@ -248,7 +248,7 @@ async function boot() {
     const p = G.p; if (!p || !p.alive || !G.cfg.autoDoor) return;
     const sp = Math.hypot(p.vx, p.vz);
     for (const D of W.doors) {
-      if (D.lv !== p.lv) continue; const dx = D.x - p.x, dz = D.z - p.z, d = Math.hypot(dx, dz); if (d > 6) continue;
+      if (D.lv !== p.lv) continue; if (D.base && G.net.world && D.base.u !== G.net.uid) continue; const dx = D.x - p.x, dz = D.z - p.z, d = Math.hypot(dx, dz); if (d > 6) continue;
       if (D.target === 0 && d < 1.3 && sp > 0.6 && !(D.lock && D.lock.hp > 0) && (p.vx * dx + p.vz * dz) / (d * sp) > 0.55) setDoor(D, 1, true);
       else if (D.auto && D.target === 1 && d > 2.3) { D.autoT += dt; if (D.autoT > 0.6) setDoor(D, 0); } else if (D.auto) D.autoT = 0;
     }
@@ -580,13 +580,14 @@ async function boot() {
     BOOMS.push({ k: 'c4', P: new THREE.Vector3(x, y, z), V: null, t: 10, m, led, lv, beep: 0 }); useOne(it); audio.play('bip'); G.ui.toast('C4 colado: rebenta em 10 s'); };
   const EX = { gran: { r: 6.5, dmg: 140, br: 1.8, bdmg: 40, door: 60 }, c4: { r: 7.5, dmg: 260, br: 1.7, bdmg: 560, door: 560 } };
   const scorchGeo = new THREE.CircleGeometry(1, 20); scorchGeo.rotateX(-Math.PI / 2); const scorchMat = new THREE.MeshBasicMaterial({ color: 0x0c0b0a, transparent: true, opacity: 0.55, depthWrite: false });
-  const explode = (B0) => { const X = EX[B0.k], P = B0.P, lv = B0.lv || 0;
+  const explode = (B0) => { const X = EX[B0.k], P = B0.P, lv = B0.lv || 0, onl = G.net.world;
     // zombies e tu: menos se houver parede pelo meio
-    for (const z of G.zs) { if (z.state === 'dead' || (z.lv || 0) !== lv) continue; const d = Math.hypot(z.x - P.x, z.z - P.z); if (d > X.r) continue; const f = (1 - d / X.r) * (los(P.x, P.z, z.x, z.z, null, 's', lv) ? 1 : 0.3); const l = d || 1; hurtZombie(z, X.dmg * f, (z.x - P.x) / l * 3, (z.z - P.z) / l * 3, { zone: 'body', at: new THREE.Vector3(z.x, 1.1, z.z) }); }
+    if (!B0.remote) for (const z of G.zs) { if (z.state === 'dead' || (z.lv || 0) !== lv) continue; const d = Math.hypot(z.x - P.x, z.z - P.z); if (d > X.r) continue; const f = (1 - d / X.r) * (los(P.x, P.z, z.x, z.z, null, 's', lv) ? 1 : 0.3); const l = d || 1; hurtZombie(z, X.dmg * f, (z.x - P.x) / l * 3, (z.z - P.z) / l * 3, { zone: 'body', at: new THREE.Vector3(z.x, 1.1, z.z) }); }
     const p = G.p; if (p && p.alive && (p.lv || 0) === lv) { const d = Math.hypot(p.x - P.x, p.z - P.z); if (d < X.r) { const f = (1 - d / X.r) * (los(P.x, P.z, p.x, p.z, null, 's', lv) ? 1 : 0.3); hurtPlayer(X.dmg * 0.8 * f, 'explosao'); } G.shakeT = Math.max(G.shakeT || 0, 0.9 * (1 - Math.min(1, d / 40))); }
     // bases e portas trancadas
-    if (lv === 0) G.base.damage(P.x, P.z, X.br, X.bdmg);
-    for (const D of W.doors) { if (!D.lock || D.lock.hp <= 0 || D.lv !== lv) continue; const d = Math.hypot(D.x - P.x, D.z - P.z); if (d > 2.6) continue; D.lock.hp -= X.door * (1 - d / 2.6 * 0.6); if (D.lock.hp <= 0) { D.lock.hp = 0; D.lock.broke = Date.now(); setDoor(D, 1); G.ui.toast('A porta cedeu'); } }
+    if (lv === 0 && !onl && !B0.remote) G.base.damage(P.x, P.z, X.br, X.bdmg);
+    const lk = []; if (!B0.remote) for (const D of W.doors) { if (!D.lock || D.lock.hp <= 0 || D.lv !== lv) continue; const d = Math.hypot(D.x - P.x, D.z - P.z); if (d > 2.6) continue; D.lock.hp -= X.door * (1 - d / 2.6 * 0.6); if (D.wid != null) lk.push([D.wid, Math.max(0, Math.round(D.lock.hp))]); if (D.lock.hp <= 0) { D.lock.hp = 0; D.lock.broke = Date.now(); setDoor(D, 1, false, true); G.ui.toast('A porta cedeu'); } }
+    if (onl && !B0.remote) G.net.raw({ t: 'boom', k: B0.k, x: +P.x.toFixed(2), y: +P.y.toFixed(2), z: +P.z.toFixed(2), lv, lk });
     // efeito: clarão, fogo, fumo, marca no chão e muito barulho
     flash.position.set(P.x, P.y + 1, P.z); flash.intensity = 60; G.flashT = 0.18; burst(P.x, P.y + 0.3, P.z, 50, 0xffb040, 9, 0.5); burst(P.x, P.y + 0.3, P.z, 40, 0x3a3632, 5, 1.6); burst(P.x, P.y, P.z, 30, 0x6a5a44, 7, 0.9);
     const sc = new THREE.Mesh(scorchGeo, scorchMat.clone()); sc.scale.setScalar(B0.k === 'c4' ? 1.8 : 1.3); sc.position.set(P.x, (B0.base || 0) + groundY(P.x, P.z, lv) + 0.03, P.z); sc.renderOrder = 2; scene.add(sc); setTimeout(() => scene.remove(sc), 90000);
@@ -658,7 +659,7 @@ async function boot() {
   G.dropGrid = (x, z, g) => dropBag(x, z, g);
   G.dropItem = it => { const g = new Grid(6, 4); g.insert(it); const p = G.p; dropBag(p.x + Math.sin(p.yaw) * 0.6, p.z + Math.cos(p.yaw) * 0.6, g, { lv: p.lv, y: p.base + groundY(p.x, p.z, p.lv) }); };
   const openBox = c => {
-    if (G.net && G.net.world && (c.nid || (c.wid != null && !c.own))) { G.net.open(c); return; } // online: a caixa vem do servidor (só uma pessoa de cada vez)
+    if (G.net && G.net.world && (c.nid || c.did || (c.wid != null && !c.own))) { G.net.open(c); return; } // online: a caixa vem do servidor (só uma pessoa de cada vez)
     if (!c.bag && !c.own) { if (!c.grid) { c.grid = new Grid(c.slots[0], c.slots[1]); rollLoot(c.table, c.grid); c.next = G.t + 300; } else if (G.t > c.next && c.grid.list.length < 2) { rollLoot(c.table, c.grid); c.next = G.t + 300; } }
     G.box = c; G.ui.openInv(c);
   };
@@ -847,7 +848,13 @@ async function boot() {
       nodeWait.clear(); const now = Date.now(); for (const [k, ms] of w.nodes) { nodeWait.set(k, now + ms); const n = nodes.find(q => q.key === k); if (n) nodeOff(n, ms); }
       G.rainT = G.rain = w.wx; bagRows(w.bags);
       zClear(); if (w.zseed) G.net.zseed(zNet.seed());
+      G.base.clear(); G.base.online({ send: G.net.raw, uid: G.net.uid }); G.base.applyNet(w.base);
+      for (const [i, hp, broke] of w.locks || []) netWorld.lock(i, hp, broke);
     },
+    leave: () => { G.base.online(null); G.base.clear(); const wd = Conta.lerMundo(); if (wd && wd.base) G.base.load(wd.base, decG); },
+    base: m => G.base.applyNet(m),
+    lock: (i, hp, broke) => { const D = doorById.get(i); if (!D || !D.lock) return; D.lock.hp = hp; D.lock.broke = broke; if (hp <= 0) { D.target = D.t = 1; } },
+    boom: m => explode({ k: m.k, P: new THREE.Vector3(m.x, m.y, m.z), lv: m.lv, remote: true }),
     z: zNet,
     door: (i, o) => { const D = doorById.get(i); if (D) setDoor(D, o, false, true); },
     node: (k, ms) => { nodeWait.set(k, Date.now() + ms); const n = nodes.find(q => q.key === k); if (n) nodeOff(n, ms); },
@@ -857,6 +864,7 @@ async function boot() {
     opened: (c, m) => {
       if (m.busy) { G.ui.toast(m.busy + ' está a revistar isto'); return false; } if (m.gone) { bagGone(c.nid); return false; } if (m.far) { G.ui.toast('Chega-te mais perto'); return false; }
       let g;
+      if (c.did) { g = decG(m.it || [], new Grid(c.slots[0], c.slots[1])); c.grid = g; if (c.dep && c.dep.k === 'fornalha') { c.dep.on = !!m.on; c.dep.burn = 0; if (m.el) G.base.catchUp(c.dep, m.el / 1000); } G.box = c; G.ui.openInv(c); return false; }
       if (c.nid) { let rows = m.body ? 10 : 4; for (;;) { g = decG(m.it, new Grid(6, rows)); if (g.list.length >= m.it.length || rows >= 16) break; rows += 2; } }
       else { g = new Grid(c.slots[0], c.slots[1]); if (m.gen) rollLoot(c.table, g); else { decG(m.it, g); if (m.roll) rollLoot(c.table, g); } }
       c.grid = g; G.box = c; G.ui.openInv(c); return !!(m.gen || m.roll);
@@ -872,7 +880,8 @@ async function boot() {
     give: L => { let n = 0, chao = 0; for (const it of L) { const left = G.inv.give(it); n++; if (left) { it.n = left; G.dropItem(it); chao++; } } audio.play('apanhar'); refresh(); G.ui.toast(!n ? 'Já alguém levou esta mochila' : chao ? 'Apanhaste a mochila (o que não coube ficou no chão)' : 'Apanhaste a mochila'); },
     wallEnd: (o, d) => { _wa.set(o[0], o[1], o[2]); _wb.copy(_wa).addScaledVector(_wb.set(d[0], d[1], d[2]), 300); const t = wallHit(_wa, _wb); const E = _wb.sub(_wa).multiplyScalar(t).add(_wa); tracer(o[0], o[1], o[2], E.x, E.y, E.z); if (G.p && Math.hypot(o[0] - G.p.x, o[2] - G.p.z) < 60) { flash.position.set(o[0], o[1], o[2]); flash.intensity = 5 + 12 * (1 - (G.day ?? 1)); G.flashT = 0.06; } } });
   const decG = (L, g, rows) => { for (const o of L || []) { const it = dec(o); if (!it) continue; if (g.fits(it, o.x, o.y, rows)) g.add(it, o.x, o.y); else g.insert(it, rows); } return g; };
-  const saveWorld = () => { if (G.net && G.net.world) { Conta.gravarMundo({ v: 1, when: Date.now(), base: G.base.save(encG) }); return; } if (!G.zs.length) return; Conta.gravarMundo({ v: 1, when: Date.now(), cyc: Math.round(G.cyc || 0),
+  // online o mundo (e as bases) é do servidor: aqui não se grava
+  const saveWorld = () => { if (G.net && G.net.world) return; if (!G.zs.length) return; Conta.gravarMundo({ v: 1, when: Date.now(), cyc: Math.round(G.cyc || 0),
     zs: G.zs.map(z => [Math.round(z.x * 10) / 10, Math.round(z.z * 10) / 10, Math.round((z.hx ?? z.x) * 10) / 10, Math.round((z.hz ?? z.z) * 10) / 10, Math.round(z.hp), z.kind || '', z.helm || 0, z.vest || 0, z.limp || 0, z.state === 'dead' ? Math.round(z.deadT) : -1, z.lv || 0, z.state === 'chase' ? 1 : 0]),
     bags: G.bags.filter(b => b.grid && !b.grid.empty).map(b => ({ x: b.x, z: b.z, lv: b.lv || 0, y: +b.mesh.position.y.toFixed(2), body: b.body, age: Math.round(G.t - b.t), c: [b.grid.cols, b.grid.rows], g: encG(b.grid) })),
     wx: [+(G.rain || 0).toFixed(2), G.rainT || 0, Math.round(WX.t)], base: G.base.save(encG), locks: W.doors.filter(D => D.lock).map(D => [W.doors.indexOf(D), Math.round(D.lock.hp), D.lock.broke || 0]),
@@ -924,7 +933,7 @@ async function boot() {
     G.wasCombat = !!(ch && ch.combat); G.combatT = -99; G.quit = null;
     // o mundo do perfil volta como estava: zombies, sacos no chão, o que já tiraste das caixas e a hora (quem saiu a meio de uma luta volta a meio dela)
     if (wd) restoreWorld(wd); else if (ch && ch.zs) restoreZs(ch.zs); else popWorld();
-    if (!G.zs.length) popWorld(); // mundo gravado online (só com a base): os zombies deste aparelho voltam a nascer
+    if (!G.zs.length) popWorld();
     SECTORS.fill(G.p.x, G.p.z);
     refresh(); save(); G.ui.showHUD(cont ? 'Acordaste onde adormeceste.' : kit ? 'Kit de teste: começas à beira do mapa do centro.' : whereMsg(G.p.x, G.p.z));
     G.killer = null; if (G.online && !kit) G.net.start(); else G.net.stop();
@@ -969,7 +978,7 @@ async function boot() {
   const _sa = new THREE.Vector3(), _sb = new THREE.Vector3();
   const clearShot = z => { const p = G.p, lo = (G.aimS.lean || 0) * 0.45; _sa.set(p.x + Math.cos(p.yaw) * lo, p.y + 1.35, p.z - Math.sin(p.yaw) * lo); for (const h of [1.25, 1.62]) { _sb.set(z.x, (z.y || 0) + h, z.z); if (wallHit(_sa, _sb) > 0.995) return true; } return false; };
   G.dbgSpawn = () => spawnPoint(false);
-  G.dbg = { deplete: n => { n.hp = 0; n.alive = false; n.col.on = false; n.respawn = G.t + 180; hideNode(n); if (G.net.on && n.key) G.net.node(n.key); }, nodes: () => nodes, fire: () => { const it = held(), g = it && ITEMS[it.k].gun; return g ? fire(it, g) : false; }, canSee: (a, b) => canSee(a, b), clearShot: z => clearShot(z), zoneHit: (z, P, Q, k) => zoneHit(z, P, Q, k), horde: () => horde, hurt: (d, c) => hurtPlayer(d, c || 'zombie'), hitZ: (z, zone, k) => { const B = ITEMS[k].bal; hitZombie(z, zone, { dmg: B.dmg, pen: B.pen, pel: B.pel, v: new THREE.Vector3(B.v, 0, 0), v0: B.v, dist: 10, fall: B.fall || 1 }, { x: z.x, y: 1.3, z: z.z }); } }; G.V3 = THREE.Vector3; G.M4 = THREE.Matrix4; G.RC = new THREE.Raycaster();
+  G.dbg = { item: (k, n) => mkItem(k, n), deplete: n => { n.hp = 0; n.alive = false; n.col.on = false; n.respawn = G.t + 180; hideNode(n); if (G.net.on && n.key) G.net.node(n.key); }, nodes: () => nodes, fire: () => { const it = held(), g = it && ITEMS[it.k].gun; return g ? fire(it, g) : false; }, canSee: (a, b) => canSee(a, b), clearShot: z => clearShot(z), zoneHit: (z, P, Q, k) => zoneHit(z, P, Q, k), horde: () => horde, hurt: (d, c) => hurtPlayer(d, c || 'zombie'), hitZ: (z, zone, k) => { const B = ITEMS[k].bal; hitZombie(z, zone, { dmg: B.dmg, pen: B.pen, pel: B.pel, v: new THREE.Vector3(B.v, 0, 0), v0: B.v, dist: 10, fall: B.fall || 1 }, { x: z.x, y: 1.3, z: z.z }); } }; G.V3 = THREE.Vector3; G.M4 = THREE.Matrix4; G.RC = new THREE.Raycaster();
   const lockable = z => { if (!inView(z) || !G.p) return false; if (z._lkT > G.t) return z._lk; z._lkT = G.t + 0.12; return (z._lk = canSee(G.p, z) && clearShot(z)); };
   const bestTarget = () => { const p = G.p, d = heldDef(), range = d.gun ? Math.min(d.gun.rng, 40) : 3; let best = null, bs = 1e9; for (const z of G.zs) { if (!inView(z)) continue; const dd = Math.hypot(z.x - p.x, z.z - p.z); if (dd > range) continue; const a = Math.abs(angDiff(Math.atan2(z.x - p.x, z.z - p.z), p.yaw)); if (dd > 3 && a > 1.25) continue; if (!lockable(z)) continue; const sc = dd + a * 3; if (sc < bs) { bs = sc; best = z; } } return best; };
   const _pv = new THREE.Vector3();

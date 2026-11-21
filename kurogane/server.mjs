@@ -13,7 +13,7 @@ const AM = { a9: [360, 30, 1.5, 0.0018], a9s: [300, 27, 1.3, 0.002], a556: [940,
 const NAME = /^[A-Za-z0-9_À-ÖØ-öø-ÿ-]{3,16}$/;
 
 // ---------- estado (gravado em disco)
-const W0 = () => ({ wv: null, cyc0: Date.now() - 900e3, wx: { r: 0, next: Date.now() + 300e3 }, doors: {}, nodes: {}, ct: {}, zs: [] });
+const W0 = () => ({ wv: null, cyc0: Date.now() - 900e3, wx: { r: 0, next: Date.now() + 300e3 }, doors: {}, nodes: {}, ct: {}, zs: [], base: { p: {}, d: {} }, locks: {} });
 let S = { sleepers: {}, bags: {}, clans: {}, tokens: {}, w: W0() };
 try { S = { ...S, ...JSON.parse(fs.readFileSync(FILE, 'utf8')) }; } catch (e) { }
 S.w = { ...W0(), ...(S.w || {}) }; for (const z of S.w.zs) z.o = 0;
@@ -79,7 +79,7 @@ const cleanIt = L => !Array.isArray(L) ? [] : L.slice(0, 80).filter(o => o && ty
 
 // ---------- caixas e mochilas: só uma pessoa de cada vez mexe em cada uma (não há objetos duplicados)
 const LK = new Map(); // chave → { c: id de quem a tem aberta, t }
-const KEY = /^(w\d{1,5}|b[A-Za-z0-9_-]{4,12})$/;
+const KEY = /^(w\d{1,5}|[bd][A-Za-z0-9_-]{4,12})$/;
 const lockOf = k => { const L = LK.get(k); if (!L) return null; const o = players.get(L.c); if (!o || o.dead || Date.now() - L.t > 120e3) { LK.delete(k); return null; } return L; };
 const bagDel = id => { if (!S.bags[id]) return; delete S.bags[id]; LK.delete('b' + id); dirty = true; bcast({ t: 'bg', del: [id] }); };
 const store = (k, it) => {
@@ -92,6 +92,64 @@ const mkBag = (x, z, y, lv, it, o = {}) => {
   const id = rid(6); S.bags[id] = { x, z, y, lv, it, body: o.body ? 1 : 0, name: o.name || '', t: Date.now() }; dirty = true;
   bcast({ t: 'bg', add: [bagRow(id, S.bags[id])] }); return id;
 };
+
+// ---------- bases partilhadas: peças (fundação, paredes, portas, janelas, tetos) e objetos (baús, fornalha, bancadas, camas)
+// Só o dono e o clã dele mexem numa base (construir ao lado, melhorar, demolir, abrir as portas); os explosivos partem tudo.
+const CELL = 3, TIER_HP = [250, 600, 1200], BED_CD = { cama: 120e3, saco: 300e3 };
+const DEP = { bau: 300, bauG: 500, fornalha: 500, bancada1: 400, bancada2: 600, bancada3: 900, cama: 200, saco: 80 };
+const EXB = { gran: { br: 1.8, bdmg: 40 }, c4: { br: 1.7, bdmg: 560 } };
+const uidOf = tok => 'u' + crypto.createHash('sha1').update(tok).digest('hex').slice(0, 10);
+const ally = (a, b) => a === b || !!(S.tokens[a] && S.tokens[a].clan && S.tokens[b] && S.tokens[a].clan === S.tokens[b].clan);
+const BK = /^(f|t|h|v):(-?\d{1,4}):(-?\d{1,4})$/;
+const pRow = (k, P) => [k, P.t, P.tier, Math.round(P.hp), P.o ? 1 : 0, P.u];
+const dRow = (id, d) => [id, d.k, +d.x.toFixed(2), +d.z.toFixed(2), +d.yaw.toFixed(3), +d.y.toFixed(2), Math.round(d.hp), d.on ? 1 : 0, d.u, d.name || null, d.cd || 0];
+const baseRows = () => ({ p: Object.entries(S.w.base.p).map(([k, P]) => pRow(k, P)), d: Object.entries(S.w.base.d).map(([id, d]) => dRow(id, d)) });
+const bb = o => { dirty = true; bcast({ t: 'bb', ...o }); };
+const no = (c, a, k, e) => send(c, { t: 'bno', a, k, e });
+const fundAt = (i, j) => S.w.base.p['f:' + i + ':' + j];
+const edgeCells = (t, i, j) => t === 'h' ? [[i, j - 1], [i, j]] : [[i - 1, j], [i, j]];
+// remover uma peça; se for fundação, saem as paredes que ficavam só nela e o teto
+const pDel = (k, out) => { const P = S.w.base.p[k]; if (!P) return; delete S.w.base.p[k]; out.push(k);
+  const m = BK.exec(k); if (!m || m[1] !== 'f') return; const i = +m[2], j = +m[3];
+  for (const [ek, oi, oj] of [['h:' + i + ':' + j, i, j - 1], ['h:' + i + ':' + (j + 1), i, j + 1], ['v:' + i + ':' + j, i - 1, j], ['v:' + (i + 1) + ':' + j, i + 1, j]]) if (S.w.base.p[ek] && !fundAt(oi, oj)) { delete S.w.base.p[ek]; out.push(ek); }
+  if (S.w.base.p['t:' + i + ':' + j]) { delete S.w.base.p['t:' + i + ':' + j]; out.push('t:' + i + ':' + j); } };
+// tirar um objeto: o que tinha dentro fica num saco no chão
+const dDel = (id, out) => { const d = S.w.base.d[id]; if (!d) return; delete S.w.base.d[id]; out.push(id); const r = S.w.ct['d' + id]; if (r) { if (r.it && r.it.length) mkBag(d.x, d.z, d.y || 0, 0, r.it); delete S.w.ct['d' + id]; } LK.delete('d' + id); };
+const baseMsg = (c, p, m, now) => {
+  const B = S.w.base, tok = p.tok;
+  if (m.t === 'bp') { const k = String(m.k || ''), mm = BK.exec(k); if (!mm) return; const ty = mm[1], i = +mm[2], j = +mm[3], t = String(m.tt || '');
+    if (!(ty === 'f' ? t === 'fund' : ty === 't' ? t === 'teto' : ['parede', 'porta', 'janela'].includes(t))) return;
+    if (Math.hypot(i * CELL + 1.5 - p.x, j * CELL + 1.5 - p.z) > 14) return no(c, 'bp', k, 'Estás longe demais');
+    if (B.p[k]) return no(c, 'bp', k, 'Já há aí uma peça');
+    if (ty === 'f') { for (const [a, b] of [[i + 1, j], [i - 1, j], [i, j + 1], [i, j - 1]]) { const F = fundAt(a, b); if (F && !ally(F.tok, tok)) return no(c, 'bp', k, 'Está colado à base de outro jogador'); } }
+    else if (ty === 't') { const F = fundAt(i, j); if (!F) return no(c, 'bp', k, 'Precisa de fundação'); if (!ally(F.tok, tok)) return no(c, 'bp', k, 'Esta base não é tua'); }
+    else { const fs2 = edgeCells(ty, i, j).map(([a, b]) => fundAt(a, b)).filter(Boolean); if (!fs2.length) return no(c, 'bp', k, 'Precisa de fundação'); if (fs2.some(F => !ally(F.tok, tok))) return no(c, 'bp', k, 'Esta base não é tua'); }
+    B.p[k] = { t, tier: 0, hp: TIER_HP[0], o: 0, u: p.uid, tok }; bb({ p: [pRow(k, B.p[k])] }); return; }
+  if (m.t === 'bu') { const k = String(m.k || ''), P = B.p[k]; if (!P) return no(c, 'bu', k, 'Essa peça já não existe'); if (!ally(P.tok, tok)) return no(c, 'bu', k, 'Esta base não é tua'); if (P.tier >= 2) return no(c, 'bu', k, 'Já é de metal');
+    P.tier++; P.hp = TIER_HP[P.tier]; bb({ p: [pRow(k, P)] }); return; }
+  if (m.t === 'bx') { const k = String(m.k || ''), P = B.p[k]; if (!P) return; if (!ally(P.tok, tok)) return no(c, 'bx', k, 'Esta base não é tua'); const out = []; pDel(k, out); bb({ rp: out }); send(c, { t: 'bxok', k, tt: P.t }); return; }
+  if (m.t === 'bdo') { const k = String(m.k || ''), P = B.p[k]; if (!P || P.t !== 'porta') return; if (!ally(P.tok, tok)) return no(c, 'bdo', k, 'Trancada'); P.o = m.o ? 1 : 0; bb({ p: [pRow(k, P)] }); return; }
+  if (m.t === 'bd') { const k = String(m.k || ''); if (!DEP[k]) return; const x = num(m.x, -4100, 4100), z = num(m.z, -4100, 4100); if (Math.hypot(x - p.x, z - p.z) > 6) return no(c, 'bd', k, 'Estás longe demais');
+    const F = fundAt(Math.floor(x / CELL), Math.floor(z / CELL)); if (F && !ally(F.tok, tok)) return no(c, 'bd', k, 'Esta base não é tua');
+    const id = rid(6); B.d[id] = { k, x, z, yaw: num(m.yaw, -10, 10), y: num(m.y, 0, 5), hp: DEP[k], on: 0, u: p.uid, tok, name: typeof m.name === 'string' ? m.name.replace(/[<>]/g, '').slice(0, 24) : null, cd: 0 };
+    bb({ d: [dRow(id, B.d[id])] }); send(c, { t: 'bdok', id, k }); return; }
+  const d = B.d[String(m.id || '')], id = String(m.id || '');
+  if (m.t === 'bdr') { if (!d) return; if (d.tok !== tok && !(ally(d.tok, tok) && !BED_CD[d.k])) return no(c, 'bdr', id, 'Não é teu'); if (m.pick && Math.hypot(d.x - p.x, d.z - p.z) > 5) return no(c, 'bdr', id, 'Chega-te mais perto'); const out = []; dDel(id, out); bb({ rd: out }); if (m.pick) send(c, { t: 'bdok', pick: d.k, id }); return; }
+  if (m.t === 'bdn') { if (!d || d.tok !== tok) return; d.name = String(m.name || '').replace(/[<>]/g, '').replace(/\s+/g, ' ').trim().slice(0, 24) || d.name; bb({ d: [dRow(id, d)] }); return; }
+  if (m.t === 'bdc') { if (!d || d.tok !== tok || !BED_CD[d.k]) return; d.cd = now + BED_CD[d.k]; bb({ d: [dRow(id, d)] }); return; }
+  if (m.t === 'fu') { if (!d || d.k !== 'fornalha' || Math.hypot(d.x - p.x, d.z - p.z) > 6) return; d.on = m.on ? 1 : 0; d.last = now; d.until = num(m.until, 0, 1e15, 0); bb({ d: [dRow(id, d)] }); return; }
+};
+// explosão: quem a fez manda onde foi; aqui partem-se as peças e os objetos, e os outros veem e ouvem
+const boom = (c, p, m) => { const X = EXB[m.k]; if (!X) return; const x = num(m.x, -4100, 4100), z = num(m.z, -4100, 4100), y = num(m.y, -5, 40), lv = num(m.lv, 0, 6) | 0; if (Math.hypot(x - p.x, z - p.z) > 60) return;
+  bcast({ t: 'boom', k: m.k, x, y, z, lv }, o => o !== c && Math.hypot(o.p.x - x, o.p.z - z) < 300);
+  if (Array.isArray(m.lk)) for (const [w, hp] of m.lk.slice(0, 4)) { const i = num(w, 0, 20000, -1) | 0; if (i < 0) continue; const L = S.w.locks[i] || {}; L.hp = Math.min(L.hp ?? 1e9, num(hp, 0, 5000)); if (L.hp <= 0) { L.hp = 0; L.broke = Date.now(); S.w.doors[i] = 1; } S.w.locks[i] = L; dirty = true; bcast({ t: 'lk', i, hp: L.hp, broke: L.broke || 0 }); }
+  if (lv !== 0) return; const B = S.w.base, upd = [], rp = [], dd = [], rd = [];
+  for (const [k, P] of Object.entries(B.p)) { if (!B.p[k]) continue; const mm = BK.exec(k); if (!mm) continue; const i = +mm[2], j = +mm[3]; let mx, mz;
+    if (mm[1] === 'f' || mm[1] === 't') { mx = i * CELL + CELL / 2; mz = j * CELL + CELL / 2; } else if (mm[1] === 'h') { mx = i * CELL + CELL / 2; mz = j * CELL; } else { mx = i * CELL; mz = j * CELL + CELL / 2; }
+    const d = Math.hypot(mx - x, mz - z) - (mm[1] === 'f' || mm[1] === 't' ? 1.2 : 0.9); if (d > X.br) continue; const f = d <= 0 ? 1 : (1 - d / X.br) * (1 - d / X.br);
+    P.hp -= X.bdmg * f * (P.t === 'fund' ? 0.5 : 1); if (P.hp <= 0) { delete B.p[k]; rp.push(k); } else upd.push(pRow(k, P)); }
+  for (const [id, d] of Object.entries(B.d)) { const q = Math.hypot(d.x - x, d.z - z); if (q > X.br) continue; d.hp -= X.bdmg * (1 - q / X.br); if (d.hp <= 0) dDel(id, rd); else dd.push(dRow(id, d)); }
+  if (upd.length || rp.length || dd.length || rd.length) bb({ p: upd, rp, d: dd, rd }); };
 
 // ---------- zombies: o servidor guarda todos (posição, vida, proteção); quem está mais perto simula os que tem à volta
 // e manda para aqui; os outros veem o mesmo. Dano e mortes passam sempre por aqui.
@@ -128,10 +186,10 @@ const onMsg = (c, m) => {
     const look = m.look && typeof m.look === 'object' ? Object.fromEntries(Object.entries(m.look).filter(([k, v]) => ['skin', 'hair', 'top', 'legs', 'hairS', 'beardS'].includes(k) && typeof v === 'number')) : {};
     const tc = S.tokens[tok].clan, clan = tc && S.clans[tc] ? tc : null;
     c.p = { name, tok, look, x: num(m.x, -4100, 4100), z: num(m.z, -4100, 4100), y: 0, lv: 0, yaw: 0, mv: 0, an: 0, w: '', hp: resume ? resume.hp ?? 100 : 100, alive: true, ar: [0, 0], inv: [], clan, lastShot: 0, hd: null, vd: null };
-    c.zc = new Map();
+    c.zc = new Map(); c.p.uid = uidOf(tok);
     const zseed = !S.w.zs.length && ![...players.values()].some(o => o !== c && o.zseed); if (zseed) c.zseed = true;
     send(c, { t: 'ok', id: c.id, tok, killed, resume, players: [...players.values()].filter(o => o.p && o !== c).map(o => [o.id, o.p.name, o.p.look, o.p.clan]), sleep: sleepList(), clan: clanInfo(clan),
-      w: { cyc0: S.w.cyc0, now, wx: S.w.wx.r, doors: Object.entries(S.w.doors).map(([i, o]) => [+i, o]), nodes: Object.entries(S.w.nodes).map(([k, u]) => [k, u - now]).filter(a => a[1] > 0), bags: bagRows(), zseed } });
+      uid: c.p.uid, w: { cyc0: S.w.cyc0, now, wx: S.w.wx.r, base: baseRows(), locks: Object.entries(S.w.locks).map(([i, L]) => [+i, L.hp, L.broke || 0]), doors: Object.entries(S.w.doors).map(([i, o]) => [+i, o]), nodes: Object.entries(S.w.nodes).map(([k, u]) => [k, u - now]).filter(a => a[1] > 0), bags: bagRows(), zseed } });
     bcast({ t: 'join', id: c.id, name, look, clan }, o => o !== c);
     return;
   }
@@ -153,14 +211,18 @@ const onMsg = (c, m) => {
   if (m.t === 'op') { const k = String(m.c || ''); if (!KEY.test(k)) return;
     for (const [k2, L] of LK) if (L.c === c.id && k2 !== k) LK.delete(k2); // só uma aberta de cada vez
     const L = lockOf(k); if (L && L.c !== c.id) { const o = players.get(L.c); return send(c, { t: 'opn', c: k, busy: o && o.p ? o.p.name : 'alguém' }); }
+    if (k[0] === 'd') { const d = S.w.base.d[k.slice(1)]; if (!d || !DEP[d.k]) return send(c, { t: 'opn', c: k, gone: 1 }); if (Math.hypot(d.x - p.x, d.z - p.z) > 8) return send(c, { t: 'opn', c: k, far: 1 }); LK.set(k, { c: c.id, t: now }); const r = S.w.ct[k]; return send(c, { t: 'opn', c: k, it: r ? r.it : [], on: d.on ? 1 : 0, el: d.on && d.last ? now - d.last : 0 }); }
     if (k[0] === 'b') { const b = S.bags[k.slice(1)]; if (!b) return send(c, { t: 'opn', c: k, gone: 1 }); if (Math.hypot(b.x - p.x, b.z - p.z) > 8) return send(c, { t: 'opn', c: k, far: 1 }); LK.set(k, { c: c.id, t: now }); return send(c, { t: 'opn', c: k, it: b.it, body: b.body }); }
     const r = S.w.ct[k]; LK.set(k, { c: c.id, t: now });
     if (!r) return send(c, { t: 'opn', c: k, gen: 1 });
     let roll = 0; if (now > r.next && r.it.length < 2) { roll = 1; r.next = now + 300e3; dirty = true; } // a caixa volta a ter loot passados 5 min (se estiver quase vazia)
     return send(c, { t: 'opn', c: k, it: r.it, roll }); }
   if (m.t === 'ps' || m.t === 'cl') { const k = String(m.c || ''); if (!KEY.test(k)) return; const L = lockOf(k); if (!L || L.c !== c.id) return; const it = cleanIt(m.it); store(k, it); L.t = now;
+    if (k[0] === 'd') { const d = S.w.base.d[k.slice(1)]; if (d && d.k === 'fornalha') { d.last = now; if (m.fu && typeof m.fu === 'object') { const on = m.fu.on ? 1 : 0, ch = on !== d.on; d.on = on; d.until = num(m.fu.until, 0, 1e15, 0); if (ch) bb({ d: [dRow(k.slice(1), d)] }); } } }
     if (m.t === 'cl') { LK.delete(k); if (k[0] === 'b' && !it.length) bagDel(k.slice(1)); } return; }
   if (m.t === 'bag') { const x = num(m.x, -4100, 4100), z = num(m.z, -4100, 4100); if (Math.hypot(x - p.x, z - p.z) > 450) return; mkBag(x, z, num(m.y, -5, 40), num(m.lv, 0, 6) | 0, m.it); return; }
+  if (['bp', 'bu', 'bx', 'bdo', 'bd', 'bdr', 'bdn', 'bdc', 'fu'].includes(m.t)) { baseMsg(c, p, m, now); return; }
+  if (m.t === 'boom') { boom(c, p, m); return; }
   // zombies: a primeira pessoa num mundo novo espalha-os (com as zonas do jogo) e manda a lista
   if (m.t === 'zs') { if (!c.zseed || S.w.zs.length || !Array.isArray(m.L)) return; c.zseed = false;
     S.w.zs = m.L.slice(0, 3000).map(a => { const x = num(a[0], -4100, 4100), z = num(a[1], -4100, 4100), h = num(a[3], 0, 4) | 0, v = num(a[4], 0, 4) | 0, hp = num(a[5], 1, 300, 80);
@@ -255,6 +317,8 @@ setInterval(() => {
     if (z.o) { z.o = 0; if (z.st) z.st = 0; z.mv = 0; } // longe de todos: fica parado onde está
   }
 }, 500);
+// fornalhas: apagam-se quando acaba a madeira (quem a fechou disse até quando dava)
+setInterval(() => { const now = Date.now(), up = []; for (const [id, d] of Object.entries(S.w.base.d)) if (d.on && d.until && now > d.until && !lockOf('d' + id)) { d.on = 0; up.push(dRow(id, d)); } if (up.length) bb({ d: up }); }, 5000);
 // tempo: chuva de 3 a 7 min, a cada 10 a 25 min (igual para todos)
 setInterval(() => { const now = Date.now(), X = S.w.wx; if (now < X.next) return;
   if (X.r > 0) { X.r = 0; X.next = now + (600 + Math.random() * 900) * 1000; } else { X.r = +(0.5 + Math.random() * 0.5).toFixed(2); X.next = now + (180 + Math.random() * 240) * 1000; }

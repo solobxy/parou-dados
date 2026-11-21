@@ -51,6 +51,9 @@ export function makeBase({ scene, W, G, audio, addRect, removeRect, visDirty, in
   const deps = []; // objetos colocados
   // camas e sacos-cama: quando morres escolhes em qual renasces (cada um com o seu nome e uma espera entre usos, como no Rust)
   const BED_CD = { cama: 120e3, saco: 300e3 };
+  // online: a base é do servidor (todos veem a mesma); aqui só se pede e se mostra o que ele disser
+  let NET = null; const pend = new Map(); // custo pago à espera de resposta (devolve-se se o servidor recusar)
+  const giveBack = need => { for (const [k, n] of Object.entries(need)) { if (n <= 0) continue; const it = mkItem(k, n); const left = G.inv.give(it); if (left) { it.n = left; G.dropItem(it); } } G.ui && G.ui.refresh(true); };
   const bedLabel = d => DEPLOY[d.k].n + ' · ' + d.name;
 
   const box = (w, h, d, x, y, z, mat, g) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat); m.position.set(x, y, z); m.castShadow = true; m.receiveShadow = true; g.add(m); return m; };
@@ -179,12 +182,12 @@ export function makeBase({ scene, W, G, audio, addRect, removeRect, visDirty, in
   };
   const placeDep = (k, x, z, yaw, o = {}) => {
     const D = DEPLOY[k], y = o.y ?? 0;
-    const d = { k, x, z, yaw, y, hp: o.hp ?? D.hp, g: depMesh(k), on: !!o.on, burn: o.burn || 0 };
+    const d = { k, x, z, yaw, y, hp: o.hp ?? D.hp, g: depMesh(k), on: !!o.on, burn: o.burn || 0, nid: o.nid, u: o.u };
     if (D.bed) { d.name = o.name || DEPLOY[k].n + ' ' + (deps.filter(e => e.k === k).length + 1); d.cd = o.cd || 0; }
     d.g.position.set(x, y, z); d.g.rotation.y = yaw; root.add(d.g);
     const [w, l] = D.r, c = Math.abs(Math.cos(yaw)), s = Math.abs(Math.sin(yaw)), hw = (w * c + l * s) / 2, hl2 = (w * s + l * c) / 2;
     if (D.h > 0.3) { d.rc = { x0: x - hw, x1: x + hw, z0: z - hl2, z1: z + hl2, k: 's', h: y + D.h, lv: 0, base: d, dep: 1 }; addRect(d.rc); }
-    if (D.slots) { d.c = { id: 'b' + Math.random().toString(36).slice(2, 8), x, z, y: y + 0.6, lv: 0, own: true, dep: d, label: (k === 'fornalha' ? 'Abrir ' : 'Abrir ') + D.n.toLowerCase(), slots: D.slots, grid: o.grid || new Grid(D.slots[0], D.slots[1]) }; W.containers.push(d.c); }
+    if (D.slots) { d.c = { id: 'b' + Math.random().toString(36).slice(2, 8), did: o.nid, x, z, y: y + 0.6, lv: 0, own: true, dep: d, label: (k === 'fornalha' ? 'Abrir ' : 'Abrir ') + D.n.toLowerCase(), slots: D.slots, grid: o.grid || new Grid(D.slots[0], D.slots[1]) }; W.containers.push(d.c); }
     else if (D.lvl) { d.c = { id: 'b' + Math.random().toString(36).slice(2, 8), x, z, y: y + 0.9, lv: 0, own: true, dep: d, bench: D.lvl, label: 'Usar ' + D.n.toLowerCase(), slots: [0, 0], grid: null }; W.containers.push(d.c); }
     else if (D.bed) { d.c = { id: 'b' + Math.random().toString(36).slice(2, 8), x, z, y: y + 0.3, lv: 0, own: true, dep: d, bed: 1, label: bedLabel(d), slots: [0, 0], grid: null }; W.containers.push(d.c); }
     deps.push(d); visDirty(); return d;
@@ -195,12 +198,12 @@ export function makeBase({ scene, W, G, audio, addRect, removeRect, visDirty, in
   const Base = {
     B, pieces, deps,
     // camas: lista, renascer (com espera), mudar o nome, apanhar e remover
-    beds() { return deps.filter(d => DEPLOY[d.k].bed); },
+    beds() { return deps.filter(d => DEPLOY[d.k].bed && (!NET || d.u === NET.uid)); },
     bedReady(d) { return Math.max(0, (d.cd || 0) - Date.now()); },
-    respawnAt(d) { if (!d || !deps.includes(d) || (d.cd || 0) > Date.now()) return null; d.cd = Date.now() + BED_CD[d.k]; G.save && G.save(); return [d.x + Math.cos(d.yaw) * 0.9, d.z - Math.sin(d.yaw) * 0.9, d.y]; },
-    renameBed(d, name) { name = String(name || '').replace(/\s+/g, ' ').trim().slice(0, 24); if (!name) return false; d.name = name; if (d.c) d.c.label = bedLabel(d); G.save && G.save(); return true; },
-    pickBed(d) { if (!deps.includes(d)) return false; const ik = Object.keys(ITEMS).find(k => ITEMS[k].deploy === d.k); removeDep(d); if (ik) { const it = mkItem(ik, 1); const left = G.inv.give(it); if (left) G.dropItem(it); } audio.play('apanhar'); G.save && G.save(); return true; },
-    removeBed(d) { if (!deps.includes(d)) return false; removeDep(d); G.save && G.save(); return true; },
+    respawnAt(d) { if (!d || !deps.includes(d) || (d.cd || 0) > Date.now()) return null; d.cd = Date.now() + BED_CD[d.k]; if (NET && d.nid) NET.send({ t: 'bdc', id: d.nid }); G.save && G.save(); return [d.x + Math.cos(d.yaw) * 0.9, d.z - Math.sin(d.yaw) * 0.9, d.y]; },
+    renameBed(d, name) { name = String(name || '').replace(/\s+/g, ' ').trim().slice(0, 24); if (!name) return false; d.name = name; if (d.c) d.c.label = bedLabel(d); if (NET && d.nid) NET.send({ t: 'bdn', id: d.nid, name }); G.save && G.save(); return true; },
+    pickBed(d) { if (!deps.includes(d)) return false; if (NET) { if (d.nid) NET.send({ t: 'bdr', id: d.nid, pick: 1 }); return true; } const ik = Object.keys(ITEMS).find(k => ITEMS[k].deploy === d.k); removeDep(d); if (ik) { const it = mkItem(ik, 1); const left = G.inv.give(it); if (left) G.dropItem(it); } audio.play('apanhar'); G.save && G.save(); return true; },
+    removeBed(d) { if (!deps.includes(d)) return false; if (NET) { if (d.nid) NET.send({ t: 'bdr', id: d.nid }); removeDep(d); return true; } removeDep(d); G.save && G.save(); return true; },
     modes: MODES, costOf: m => PIECES[m].cost, costTxt, can,
     setMode(m) { if (PIECES[m]) B.mode = m; },
     // chamado em cada imagem: mostra o fantasma ou o realce conforme o que tens na mão
@@ -222,6 +225,7 @@ export function makeBase({ scene, W, G, audio, addRect, removeRect, visDirty, in
       if (tg.bad) { toast(tg.bad); return false; }
       if (!can(P0.cost)) { toast('Precisas de ' + costTxt(P0.cost)); return false; }
       pay(P0.cost);
+      if (NET) { const key = m === 'fund' ? 'f:' + cellKey(tg.i, tg.j) : m === 'teto' ? 't:' + cellKey(tg.i, tg.j) : tg.k; pend.set('bp:' + key, P0.cost); NET.send({ t: 'bp', k: key, tt: m }); audio.play('construir'); G.buzz && G.buzz(12); return true; }
       if (m === 'fund') add('fund', 'f:' + cellKey(tg.i, tg.j), { i: tg.i, j: tg.j });
       else if (m === 'teto') add('teto', 't:' + cellKey(tg.i, tg.j), { i: tg.i, j: tg.j });
       else add(m, tg.k, {});
@@ -232,12 +236,13 @@ export function makeBase({ scene, W, G, audio, addRect, removeRect, visDirty, in
       const P = aimPiece(); if (!P) { toast('Vira-te para uma peça da tua base'); return false; }
       if (P.tier >= 2) { toast(PIECES[P.t].n + ' já é de metal'); return false; }
       const need = PIECES[P.t].up[P.tier]; if (!can(need)) { toast('Para ' + TIERS[P.tier + 1].n.toLowerCase() + ': ' + costTxt(need)); return false; }
-      pay(need); P.tier++; P.hp = TIERS[P.tier].hp; buildMesh(P); if (P.door) { P.door.mesh.material = MAT[P.tier]; }
+      pay(need); if (NET) { pend.set('bu:' + P.k, need); NET.send({ t: 'bu', k: P.k }); audio.play('construir'); G.buzz && G.buzz(16); return true; }
+      P.tier++; P.hp = TIERS[P.tier].hp; buildMesh(P); if (P.door) { P.door.mesh.material = MAT[P.tier]; }
       audio.play('construir'); G.buzz && G.buzz(16); toast(PIECES[P.t].n + ' de ' + TIERS[P.tier].n.toLowerCase()); G.save && G.save(); return true;
     },
     upgradeInfo() { const P = aimPiece(); if (!P) return null; return { n: PIECES[P.t].n, tier: TIERS[P.tier].n, hp: Math.round(P.hp), max: TIERS[P.tier].hp, next: P.tier < 2 ? TIERS[P.tier + 1].n : null, need: P.tier < 2 ? costTxt(PIECES[P.t].up[P.tier]) : null }; },
     // demolir com o martelo: devolve metade do custo de madeira
-    demolish() { const P = aimPiece(); if (!P) return false;
+    demolish() { const P = aimPiece(); if (!P) return false; if (NET) { NET.send({ t: 'bx', k: P.k }); return true; }
       if (P.t === 'fund') { const i = P.i, j = P.j; for (let s = 0; s < 4; s++) { const k = edgeKey(i, j, s), Q = pieces.get(k); if (!Q) continue; const E = edgeGeom(k), other = E.c.find(([a, b]) => !(a === i && b === j)); if (!hasFund(other[0], other[1])) remove(Q); } const T = pieces.get('t:' + cellKey(i, j)); if (T) remove(T); }
       remove(P); for (const [k, n] of Object.entries(PIECES[P.t].cost)) { const it = mkItem(k, Math.floor(n / 2)); const left = G.inv.give(it); if (left) { it.n = left; G.dropItem(it); } }
       audio.play('partir'); G.save && G.save(); return true; },
@@ -256,6 +261,7 @@ export function makeBase({ scene, W, G, audio, addRect, removeRect, visDirty, in
         for (const q of W.circles) if (q.on !== false && (q.lv || 0) === 0 && q.x + q.r > x - hw && q.x - q.r < x + hw && q.z + q.r > z - hl2 && q.z - q.r < z + hl2) { hit = true; break; } if (hit) continue;
         // não pode ficar por cima de ti
         if (Math.abs(p.x - x) < hw + 0.15 && Math.abs(p.z - z) < hl2 + 0.15) continue;
+        if (NET) { const name = D.bed ? D.n + ' ' + (deps.filter(e => e.k === k && e.u === NET.uid).length + 1) : null; pend.set('bd:' + k, { [Object.keys(ITEMS).find(q => ITEMS[q].deploy === k)]: 1 }); NET.send({ t: 'bd', k, x: +x.toFixed(2), z: +z.toFixed(2), yaw: +yaw.toFixed(3), y, name }); audio.play('construir'); return true; }
         const d = placeDep(k, x, z, yaw, { y }); if (D.bed) toast(d.name + ': quando morreres, podes renascer aqui'); audio.play('construir'); G.save && G.save(); return true;
       }
       toast(why); return false; },
@@ -264,12 +270,16 @@ export function makeBase({ scene, W, G, audio, addRect, removeRect, visDirty, in
     // bancada mais alta a menos de 4 m
     benchNear() { const p = G.p; let lv = 0; if (!p) return 0; for (const d of deps) { const D = DEPLOY[d.k]; if (D.lvl && Math.hypot(d.x - p.x, d.z - p.z) < 4 && (p.lv || 0) === 0) lv = Math.max(lv, D.lvl); } return lv; },
     // fornalha: com madeira acesa, cada 2,5 s queima 1 de madeira (dá carvão) e refina 1 de minério de metal
-    tick(dt) { for (const d of deps) { if (d.k !== 'fornalha' || !d.c) continue; const g = d.c.grid, mouth = d.g.userData.mouth;
+    tick(dt) { for (const d of deps) { if (d.k !== 'fornalha' || !d.c) continue; const mouth0 = d.g.userData.mouth; if (NET && G.box !== d.c) { if (mouth0) mouth0.material.emissiveIntensity = d.on ? 1.6 + Math.sin(G.t * 9) * 0.3 : 0; continue; } const g = d.c.grid, mouth = mouth0; if (!g) continue;
       if (d.on && g.count('madeira') <= 0) { d.on = false; }
       if (mouth) mouth.material.emissiveIntensity = d.on ? 1.6 + Math.sin(G.t * 9) * 0.3 : 0;
       if (!d.on) continue; d.burn += dt; while (d.burn >= 2.5) { d.burn -= 2.5; g.take('madeira', 1); const out = [['carvao', 1]]; if (g.count('metal') > 0) { g.take('metal', 1); out.push(['metalR', 1]); }
         for (const [k, n] of out) { const it = mkItem(k, n); const left = g.insert(it); if (left) { d.on = false; toast('A fornalha está cheia'); } } if (g.count('madeira') <= 0) { d.on = false; } } } },
-    toggleFurnace(c) { const d = c.dep; if (!d || d.k !== 'fornalha') return; if (!d.on && c.grid.count('madeira') <= 0) { toast('Põe madeira na fornalha'); return; } d.on = !d.on; audio.play(d.on ? 'fogo' : 'ui'); },
+    toggleFurnace(c) { const d = c.dep; if (!d || d.k !== 'fornalha') return; if (!d.on && c.grid.count('madeira') <= 0) { toast('Põe madeira na fornalha'); return; } d.on = !d.on; audio.play(d.on ? 'fogo' : 'ui'); if (NET && d.nid) NET.send({ t: 'fu', id: d.nid, on: d.on ? 1 : 0, until: Base.furnUntil(d) }); },
+    // até quando a fornalha arde com a madeira que tem (para os outros a verem acesa)
+    furnUntil(d) { return d.on && d.c && d.c.grid ? Date.now() + (d.c.grid.count('madeira') * 2.5 - (d.burn || 0)) * 1000 : 0; },
+    // a fornalha ardeu enquanto ninguém a tinha aberta: faz agora o que fez nesse tempo
+    catchUp(d, sec) { if (!d || d.k !== 'fornalha' || !d.on || sec <= 0) return; const box = G.box; G.box = d.c; Base.tick(Math.min(sec, 3600)); G.box = box; },
     // dano (explosivos): a peça perde vida e cai quando chega a zero
     damage(x, z, r, dmg) { let n = 0; for (const P of [...pieces.values()]) { let mx, mz; if (P.t === 'fund' || P.t === 'teto') { mx = P.i * CELL + CELL / 2; mz = P.j * CELL + CELL / 2; } else { const E = edgeGeom(P.k); mx = E.horiz ? (E.x0 + E.x1) / 2 : E.x; mz = E.horiz ? E.z : (E.z0 + E.z1) / 2; }
         const d = Math.hypot(mx - x, mz - z) - (P.t === 'fund' || P.t === 'teto' ? 1.2 : 0.9); if (d > r) continue; const f = d <= 0 ? 1 : (1 - d / r) * (1 - d / r); P.hp -= dmg * f * (P.t === 'fund' ? 0.5 : 1); n++; if (P.hp <= 0) remove(P); }
@@ -285,6 +295,25 @@ export function makeBase({ scene, W, G, audio, addRect, removeRect, visDirty, in
       for (const [t, k, i, j, tier, hp, open] of s.p || []) { const P = add(t, k, t === 'fund' || t === 'teto' ? { i, j } : {}); P.tier = tier; P.hp = hp; buildMesh(P); if (P.door) { P.door.mesh.material = MAT[P.tier]; P.door.t = P.door.target = open ? 1 : 0; } }
       for (const [k, x, z, yaw, y, hp, gl, on, sp, name, cd] of s.d || []) { const D = DEPLOY[k]; if (!D) continue; const grid = gl && D.slots ? decG(gl, new Grid(D.slots[0], D.slots[1])) : null; placeDep(k, x, z, yaw, { y, hp, grid, on, name, cd }); } },
     clear() { for (const P of [...pieces.values()]) remove(P); for (const d of [...deps]) removeDep(d); },
+    online(net) { NET = net; pend.clear(); },
+    // do servidor: peças e objetos novos ou mudados, e os que saíram
+    applyNet(m) {
+      for (const [k, t, tier, hp, open, u] of m.p || []) { let P = pieces.get(k);
+        if (!P) { const [ty, a, b] = k.split(':'); P = add(t, k, ty === 'f' || ty === 't' ? { i: +a, j: +b } : {}); }
+        if (P.tier !== tier) { P.tier = tier; buildMesh(P); if (P.door) P.door.mesh.material = MAT[P.tier]; }
+        P.hp = hp; P.u = u; if (P.door && P.door.target !== open) { P.door.target = open; audio.play(open ? 'porta' : 'portaF', G.p ? Math.max(0, 1 - Math.hypot(P.door.x - G.p.x, P.door.z - G.p.z) / 30) : 0.5); }
+        const c = pend.get('bp:' + k) || pend.get('bu:' + k); if (c) { pend.delete('bp:' + k); pend.delete('bu:' + k); } }
+      for (const k of m.rp || []) { const P = pieces.get(k); if (P) remove(P); }
+      for (const [id, k, x, z, yaw, y, hp, on, u, name, cd] of m.d || []) { let d = deps.find(e => e.nid === id);
+        if (!d) d = placeDep(k, x, z, yaw, { y, hp, on, nid: id, u, name, cd, grid: null });
+        d.hp = hp; d.u = u; d.cd = cd; if (G.box !== d.c) d.on = !!on; if (name && d.name !== name) { d.name = name; if (d.c) d.c.label = bedLabel(d); } }
+      for (const id of m.rd || []) { const d = deps.find(e => e.nid === id); if (d) { if (G.box === d.c) { G.box = null; G.ui.closeInv(); } removeDep(d); } }
+    },
+    // o servidor recusou: devolve o que pagaste
+    refused(a, k) { const key = a + ':' + k, c = pend.get(key); if (c) { pend.delete(key); giveBack(c); } },
+    demolished(tt) { giveBack(Object.fromEntries(Object.entries(PIECES[tt].cost).map(([k, n]) => [k, Math.floor(n / 2)]))); audio.play('partir'); },
+    deployed(k) { pend.delete('bd:' + k); },
+    picked(k) { const ik = Object.keys(ITEMS).find(q => ITEMS[q].deploy === k); if (ik) giveBack({ [ik]: 1 }); audio.play('apanhar'); },
   };
   return Base;
 }

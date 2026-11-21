@@ -26,13 +26,13 @@ export function makeNet({ G, scene, mkRemote, audio, Conta, enc, dec, hurt, die,
   };
   const clearAll = () => { for (const id of [...R.keys()]) delRemote(id); setSleepers([]); };
   // deixa de estar ligado: os sacos do servidor saem e as caixas voltam a ser deste aparelho
-  const offline = () => { if (!N.world) return; N.world = false; cur = null; for (const b of [...G.bags]) if (b.nid) world.bags(null, [b.nid]); for (const c of G.W.containers) if (c.wid != null && !c.own) { c.grid = null; c.next = 0; } zdQ.length = 0; world.z.offline(); };
+  const offline = () => { if (!N.world) return; N.world = false; cur = null; for (const b of [...G.bags]) if (b.nid) world.bags(null, [b.nid]); for (const c of G.W.containers) if (c.wid != null && !c.own) { c.grid = null; c.next = 0; } zdQ.length = 0; world.z.offline(); world.leave(); };
   const onMsg = m => {
     switch (m.t) {
       case 'ok': {
         N.id = m.id; tok = m.tok; try { localStorage.setItem(tokKey(), tok); } catch (e) { } N.on = true; retry = 0;
         clearAll(); for (const [id, name, look, clan] of m.players) addRemote(id, name, look, clan); setSleepers(m.sleep); N.clan = m.clan ? m.clan.id : null; N.clanInfo = m.clan;
-        off = m.w.now - Date.now(); cyc0 = m.w.cyc0; N.world = true; cur = null; world.reset(m.w);
+        off = m.w.now - Date.now(); cyc0 = m.w.cyc0; N.uid = m.uid; N.world = true; cur = null; world.reset(m.w);
         const n = m.players.length; G.ui.toast(n ? `Online · ${n} ${n === 1 ? 'jogador ligado' : 'jogadores ligados'}` : 'Online · estás sozinho no servidor por agora');
         if (m.killed) { G.ui.toast('Mataram-te enquanto dormias'); die('dormir'); }
         else if (m.resume && G.p && m.resume.hp != null && m.resume.hp < G.p.hp) G.p.hp = Math.max(1, m.resume.hp);
@@ -64,6 +64,12 @@ export function makeNet({ G, scene, mkRemote, audio, Conta, enc, dec, hurt, die,
       case 'zk': world.z.killed(m.i, m.by, m.head); return;
       case 'zh': world.z.hit(m.i, m.dx, m.dz); return;
       case 'zat': hurt(m.dmg, null, 'body', null, 'zombie'); return;
+      case 'bb': world.base(m); return;
+      case 'bno': G.ui.toast(m.e || 'Não deu'); G.base.refused(m.a, m.k); return;
+      case 'bxok': G.base.demolished(m.tt); return;
+      case 'bdok': if (m.pick) G.base.picked(m.pick); else G.base.deployed(m.k); return;
+      case 'boom': world.boom(m); return;
+      case 'lk': world.lock(m.i, m.hp, m.broke); return;
       case 'bg': world.bags(m.add, m.del); return;
       case 'opn': { if (!cur || cur.key !== m.c) return; const gen = world.opened(cur.c, m); if (G.box !== cur.c) { cur = null; return; } cur.sig = gen ? '' : sigOf(cur.c); cur.open = true; return; }
       case 'clan': if (m.erro) { if (N.onClan && N.onClan(m.erro)) return; G.ui.toast(m.erro); return; } else { N.clan = m.info ? m.info.id : null; N.clanInfo = m.info; for (const r of R.values()) r.el.classList.toggle('mate', mate(r.clan)); } if (N.onClan) N.onClan(); return;
@@ -89,6 +95,7 @@ export function makeNet({ G, scene, mkRemote, audio, Conta, enc, dec, hurt, die,
   N.died = () => send({ t: 'died', it: G.inv.all().map(enc), force: 1 });
   // mundo partilhado
   N.cyc = () => (((Date.now() + off - cyc0) / 1000) % 1920 + 1920) % 1920;
+  N.raw = o => send(o);
   N.door = (i, o) => send({ t: 'dr', i, o: o ? 1 : 0 });
   // zombies: lista inicial (mundo novo), dano (junto num só envio por imagem) e ataques a outros jogadores
   N.zseed = L => send({ t: 'zs', L });
@@ -97,9 +104,9 @@ export function makeNet({ G, scene, mkRemote, audio, Conta, enc, dec, hurt, die,
   N.node = k => send({ t: 'nd', k });
   N.bag = (x, z, y, lv, it) => send({ t: 'bag', x: +x.toFixed(2), z: +z.toFixed(2), y: +y.toFixed(2), lv, it });
   // caixas e sacos: pede ao servidor (só uma pessoa de cada vez); enquanto estiver aberta vai mandando o que tem; ao fechar manda o fim
-  const keyOf = c => c.nid ? 'b' + c.nid : 'w' + c.wid;
+  const keyOf = c => c.nid ? 'b' + c.nid : c.did ? 'd' + c.did : 'w' + c.wid;
   const sigOf = c => c.grid ? JSON.stringify(world.encG(c.grid)) : '';
-  const closeBox = () => { if (!cur) return; if (cur.open && cur.c.grid) send({ t: 'cl', c: cur.key, it: world.encG(cur.c.grid) }); cur = null; };
+  const closeBox = () => { if (!cur) return; if (cur.open && cur.c.grid) { const d = cur.c.dep, o = { t: 'cl', c: cur.key, it: world.encG(cur.c.grid) }; if (d && d.k === 'fornalha') o.fu = { on: d.on ? 1 : 0, until: G.base.furnUntil(d) }; send(o); } cur = null; };
   N.open = c => { closeBox(); cur = { key: keyOf(c), c, open: false, t: performance.now() }; send({ t: 'op', c: cur.key }); };
   N.clanCmd = (a, v) => send({ t: 'clan', a, nome: v, codigo: v });
   N.sendInv = () => send({ t: 'inv', it: G.inv.all().map(enc) });
