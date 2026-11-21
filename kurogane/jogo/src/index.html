@@ -377,6 +377,18 @@ h1 small{display:block;font:900 clamp(16px,3vw,22px)/1.2 "KJP",sans-serif;letter
 #sMus .off{display:none}#sMus.mute .on{display:none}#sMus.mute .off{display:grid;color:var(--tx2)}#sMus svg{width:20px;height:20px}
 #dead{background:rgba(20,6,5,.8)}
 .dp{text-align:center;display:flex;flex-direction:column;gap:12px;align-items:center;padding:24px}
+.dbeds{display:flex;gap:10px;align-items:stretch;width:min(560px,92vw);text-align:left}
+#dMap{width:180px;height:180px;flex:none;background:#2a2c28;border-radius:2px;cursor:pointer}
+.dlist{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;max-height:180px;overflow:auto}
+.dbed{display:flex;align-items:stretch;background:rgba(13,15,17,.72);flex:none}
+.dbed .dgo{flex:1;min-width:0;display:flex;align-items:center;gap:10px;padding:6px 10px;min-height:48px;text-align:left}
+.dbed .dgo>b{width:24px;height:24px;flex:none;display:grid;place-items:center;background:#7fd38a;color:#0f1a10;font:700 14px "Barlow Condensed",sans-serif;border-radius:50%}
+.dbed.wait .dgo>b{background:#4a4f53;color:#d0ccc4}
+.dbed .dgo>span{min-width:0;display:flex;flex-direction:column;gap:1px}.dbed strong{font:600 15px/1.2 Barlow,sans-serif;color:var(--tx);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.dbed em{font-style:normal;font-size:12px;color:var(--tx2);font-variant-numeric:tabular-nums}
+.dbed .dx{width:44px;flex:none;color:var(--tx2);font-size:20px}.dbed .dx.sure{width:auto;padding:0 10px;background:#7a2018;color:#fff;font:600 13px "Barlow Condensed",sans-serif;letter-spacing:.04em;text-transform:uppercase}
+.dbed .dgo:focus-visible,.dbed .dx:focus-visible{outline:2px solid var(--amb);outline-offset:-2px}
+@media (orientation:landscape) and (max-height:520px){.dp.has-beds{display:grid;grid-template-columns:minmax(200px,280px) auto;column-gap:22px;row-gap:8px;align-items:center;justify-items:center;padding:10px}.dp.has-beds>*{grid-column:1}.dp.has-beds .dbeds{grid-column:2;grid-row:1/span 5;width:auto}.dp.has-beds h2{font-size:42px}#dMap{width:170px;height:170px}.dlist{max-height:240px;width:230px}}
+@media (orientation:portrait){.dbeds{flex-direction:column;align-items:center}.dlist{width:100%;max-height:30vh}#dMap{width:min(220px,60vw);height:min(220px,60vw)}}
 .dp h2{margin:0;font:700 56px/1 "Barlow Condensed",sans-serif;letter-spacing:.04em;color:#F07A68}
 .dp p{margin:0;color:#E0D8CC;font-size:16px}
 .dp .stat{font:600 14px "Barlow Condensed",sans-serif;letter-spacing:.06em;text-transform:uppercase;color:var(--tx2)}
@@ -545,7 +557,7 @@ input[type=range]{width:160px;accent-color:#F2A33A;height:30px}
 </div>
 <div id="map" class="ov" hidden><div class="mh"><span><i style="background:#F2A33A"></i>Tu</span><span><i style="background:#8e8a82"></i>Bairro · PvP</span><span><i style="background:#c8402e"></i>Loot militar</span><span><i style="background:#3f5531"></i>Floresta</span><span id="mScale"></span><button class="btn sm" id="mClan" hidden>Clã</button><button class="btn sm" id="mZoom">Aproximar</button><button class="btn sm" id="mClose">Fechar</button></div><canvas id="mapc" width="1024" height="1024"></canvas></div>
 <div id="quit" hidden><div class="qr"><b id="qN">5</b></div><div class="qt"><span>A sair do jogo</span><em>Estás em combate. Fica parado: mexer-te ou levar dano cancela.</em></div><button class="btn sm" id="qX">Cancelar</button></div>
-<div id="dead" class="ov" hidden><div class="dp"><h2>Morreste</h2><p id="dCause"></p><div class="stat" id="dStat"></div><button class="btn pri big" id="dBed" hidden>Renascer na cama</button><button class="btn pri big" id="dGo">Acordar noutro sítio</button><div class="note">As tuas coisas ficaram num saco onde caíste.</div></div></div>
+<div id="dead" class="ov" hidden><div class="dp" id="dp"><h2>Morreste</h2><p id="dCause"></p><div class="stat" id="dStat"></div><div class="dbeds" id="dBeds" hidden><canvas id="dMap" width="400" height="400" aria-label="Mapa: onde morreste e as tuas camas"></canvas><div class="dlist" id="dList" role="list"></div></div><button class="btn pri big" id="dGo">Acordar noutro sítio</button><div class="note" id="dNote">As tuas coisas ficaram num saco onde caíste.</div></div></div>
 <div id="start" class="ov" hidden><div class="sp">
   <div class="logo"><svg class="seal" viewBox="0 0 100 100" aria-hidden="true"><defs><filter id="ink" x="-5%" y="-5%" width="110%" height="110%"><feTurbulence type="fractalNoise" baseFrequency="1.6" numOctaves="2" seed="7" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="2.6"/></filter></defs><g filter="url(#ink)"><rect x="4" y="4" width="92" height="92" rx="9" fill="#b42418"/><rect x="11" y="11" width="78" height="78" rx="5" fill="none" stroke="#f3e6d2" stroke-width="2.6"/><text x="50" y="46" text-anchor="middle" font-family="KJP" font-weight="900" font-size="33" fill="#f3e6d2">黒</text><text x="50" y="80" text-anchor="middle" font-family="KJP" font-weight="900" font-size="33" fill="#f3e6d2">鉄</text></g></svg><div class="wm"><h1>KUROGANE</h1><div class="sub"><span>新黒鉄区</span><i></i><span>Sobrevivência</span></div></div></div>
   <div class="prof" id="prof"></div>
@@ -554,7 +566,7 @@ input[type=range]{width:160px;accent-color:#F2A33A;height:30px}
   <nav class="menu"><button class="mi pri" id="sCont" hidden><b>Continuar</b><em>Voltas onde ficaste</em></button><button class="mi pri" id="sPlay"><b>Jogar</b><em>Acordas perto de uma vila ou monumento</em></button><button class="mi" id="sKit"><b>Kit de teste</b><em>Armas com mira, proteção e muitas balas</em></button><button class="mi" id="sSet"><b>Definições</b><em>Controlos, imagem e som</em></button></nav>
   <button class="onl" id="sOnl" role="switch" aria-checked="true"><span><b>Online</b><em id="sOnT">Outros jogadores, PvP e clãs</em></span><i class="tog on" aria-hidden="true"></i></button>
   <div class="keys" id="sKeys"></div>
-  <div class="foot">Protótipo 0.10 · online: quem sai fica a dormir no mundo · o kit de teste joga sempre sozinho</div>
+  <div class="foot">Protótipo 0.10.1 · online: quem sai fica a dormir no mundo · o kit de teste joga sempre sozinho</div>
 </div><button id="sMus" aria-label="Música do menu"><span class="on">{{volume-2}}</span><span class="off">{{volume-x}}</span></button><a class="credit" href="https://dinissousa.pt" target="_blank" rel="noopener">feito por dinissousa.pt</a></div>
 <div id="pfm" class="ov" hidden><div class="pfbox"><div class="pfh"><b id="pfT"></b><button class="close" id="pfX" aria-label="Fechar">{{x}}</button></div><div id="pfB" class="pfb"></div></div></div>
 <div id="set" class="ov" hidden><div class="sp2"><div class="ihead"><b class="cond" style="font-size:20px;letter-spacing:.06em;text-transform:uppercase">Definições</b><button class="close" id="setClose" aria-label="Fechar" style="margin-left:auto">{{x}}</button></div><div class="sbody" id="setBody"></div></div></div>

@@ -34,7 +34,7 @@ export function initUI(G) {
   $('sPlay').onclick = () => go(false); $('sCont').onclick = () => go(true); $('sKit').onclick = () => go(false, true);
   // o online só existe no site do jogo (com o servidor ao lado); noutros sítios joga-se sozinho
   let canOnline = !!window.KG_ONLINE; try { if (localStorage.getItem('kg.srv')) canOnline = true; } catch (e) { }
-  if (!canOnline) { G.online = false; $('sOnl').hidden = true; const f = document.querySelector('#start .foot'); if (f) f.textContent = 'Protótipo 0.10 · aqui jogas sozinho · o jogo online está no site do Kurogane'; }
+  if (!canOnline) { G.online = false; $('sOnl').hidden = true; const f = document.querySelector('#start .foot'); if (f) f.textContent = 'Protótipo 0.10.1 · aqui jogas sozinho · o jogo online está no site do Kurogane'; }
   else { let on = true; try { on = localStorage.getItem('kg.online') !== '0'; } catch (e) { } G.online = on;
     const b = $('sOnl'), t = $('sOnT'), paint = () => { b.setAttribute('aria-checked', G.online); b.querySelector('.tog').classList.toggle('on', G.online); };
     const count = () => { if (!G.online) { t.textContent = 'Jogas sozinho, sem outros jogadores'; return; } t.textContent = 'Outros jogadores, PvP e clãs'; let u = '/srv/saude'; try { const o = localStorage.getItem('kg.srv'); if (o) u = o.replace(/^ws/, 'http').replace(/\/ws$/, '/saude'); } catch (e) { }
@@ -61,8 +61,7 @@ export function initUI(G) {
   $('tReload').addEventListener('pointerdown', e => { e.stopPropagation(); G.reload(); });
   $('tUse').addEventListener('pointerdown', e => { e.stopPropagation(); G.interact(); });
   $('iClose').onclick = () => closeInv(); $('mClose').onclick = () => toggleMap(false); $('map').onclick = e => { if (e.target.id === 'map') toggleMap(false); };
-  $('dGo').onclick = () => { audio.play('ui'); G.respawn(false); };
-  $('dBed').onclick = () => { audio.play('ui'); G.respawn(true); };
+  $('dGo').onclick = () => { audio.play('ui'); G.respawn(null); };
   $('furn').onclick = () => { if (G.box) { G.base.toggleFurnace(G.box); render(); } };
 
   // ---------- sticks tácteis
@@ -561,7 +560,7 @@ export function initUI(G) {
     c.textAlign = 'center';
     for (const zn of G.W.zones) { const X = T(zn.x), Z = Tz(zn.z); if (X < -40 || Z < -40 || X > cv.width + 40 || Z > cv.height + 40) continue; if (zn.kind === 'cabin') { c.fillStyle = '#e8dcc8'; c.beginPath(); c.arc(X, Z, mapNear ? 5 : 3, 0, 7); c.fill(); continue; } const big = zn.kind === 'city'; if (!mapNear && !big && Math.max(Math.abs(zn.x), Math.abs(zn.z)) < CORE) continue; c.font = `700 ${big ? 24 : mapNear ? 19 : 15}px "Barlow Condensed",sans-serif`; const lab = zn.name.toUpperCase() + (big ? ' · PvP' : ''); const w = c.measureText(lab).width; c.fillStyle = 'rgba(12,14,16,.78)'; c.fillRect(X - w / 2 - 6, Z - 13, w + 12, 24); c.fillStyle = zn.kind === 'mil' ? '#ff9a7a' : big ? '#F2A33A' : '#EEE9E0'; c.fillText(lab, X, Z + 5); }
     for (const b of G.bags) if (b.body && (b.mine || !b.nid)) { c.fillStyle = '#F07A68'; c.beginPath(); c.arc(T(b.x), Tz(b.z), 8, 0, 7); c.fill(); }
-    if (G.base && G.base.spawn) { const s2 = G.base.spawn; c.fillStyle = '#7fd38a'; c.fillRect(T(s2.x) - 5, Tz(s2.z) - 5, 10, 10); }
+    if (G.base) { c.font = '600 15px Barlow,sans-serif'; for (const d of G.base.beds()) { const X = T(d.x), Z = Tz(d.z); c.fillStyle = '#7fd38a'; c.strokeStyle = '#0f1a10'; c.lineWidth = 2; c.fillRect(X - 5, Z - 5, 10, 10); c.strokeRect(X - 5, Z - 5, 10, 10); if (mapNear) { c.lineWidth = 4; c.strokeStyle = 'rgba(12,14,16,.85)'; c.strokeText(d.name, X, Z - 12); c.fillStyle = '#DDF3E0'; c.fillText(d.name, X, Z - 12); } } }
     if (G.net && G.net.on) { c.font = '700 17px "Barlow Condensed",sans-serif'; for (const m of G.net.mates()) { const X = T(m.x), Z = Tz(m.z); c.fillStyle = '#6FA8FF'; c.strokeStyle = '#0d1520'; c.lineWidth = 3; c.beginPath(); c.arc(X, Z, 7, 0, 7); c.fill(); c.stroke(); c.lineWidth = 4; c.strokeStyle = 'rgba(12,14,16,.85)'; c.strokeText(m.name, X, Z - 13); c.fillStyle = '#CFE0FF'; c.fillText(m.name, X, Z - 13); } }
     c.save(); c.translate(T(p.x), Tz(p.z)); c.rotate(Math.atan2(Math.cos(p.yaw), Math.sin(p.yaw))); c.fillStyle = '#F2A33A'; c.strokeStyle = '#1a1208'; c.lineWidth = 3; c.beginPath(); c.moveTo(16, 0); c.lineTo(-10, 11); c.lineTo(-5, 0); c.lineTo(-10, -11); c.closePath(); c.fill(); c.stroke(); c.restore();
     $('mScale').textContent = mapNear ? 'Perto de ti · 2 × 2 km' : `Mundo · ${MAP * 2 / 1000} × ${MAP * 2 / 1000} km`; $('mZoom').textContent = mapNear ? 'Ver tudo' : 'Aproximar';
@@ -589,7 +588,60 @@ export function initUI(G) {
   const hit = (kill, zone, stop, at) => { hitAt = at || null; hm.className = (kill ? 'kill ' : '') + (zone === 'head' && !stop ? 'head ' : '') + (stop ? 'stop' : ''); hm.hidden = false; hitT = zone === 'head' && kill ? 0.4 : 0.22; if (zone === 'head' && kill && !stop) feedTxt('Na cabeça'); else if (stop) feedTxt(zone === 'head' ? 'O capacete travou' : 'O colete travou'); };
   let ftT = 0; const feedTxt = m => { if (ftT > 0 && toastEl.textContent === m) return; toast(m); toastT = 1.1; ftT = 1; };
   const damage = () => { const d = $('dmg'); d.classList.add('on'); requestAnimationFrame(() => requestAnimationFrame(() => d.classList.remove('on'))); };
-  const death = o => { const sp = G.base && G.base.spawn; $('dBed').hidden = !sp; if (sp) $('dBed').textContent = sp.k === 'saco' ? 'Renascer no saco-cama' : 'Renascer na cama'; $('dGo').classList.toggle('pri', !sp); const C = { queda: 'Caíste de muito alto.', zombie: 'Os zombies apanharam-te.', sangue: 'Sangraste até ao fim. Uma ligadura tinha chegado.', fome: 'Morreste de fome.', sede: 'Morreste de sede.', explosao: 'Uma explosão apanhou-te.', dormir: 'Mataram-te enquanto dormias e levaram o que tinhas.' }; $('dCause').textContent = o.cause === 'pvp' ? (o.by ? o.by + ' matou-te.' : 'Outro jogador matou-te.') + (G.net && G.net.on ? ' O que tinhas ficou numa mochila onde caíste.' : '') : C[o.cause] || 'Morreste.'; const m = Math.floor(o.time / 60), s = Math.floor(o.time % 60); $('dStat').textContent = `Sobreviveste ${m} min ${s} s · ${o.kills} zombie${o.kills === 1 ? '' : 's'} abatido${o.kills === 1 ? '' : 's'}`; $('dead').hidden = false; };
+  // morte: onde morreste, as tuas camas no mapa e escolher em qual renasces (como no Rust)
+  let dTick = null, dSure = null;
+  const mmss = ms => { const t = Math.ceil(ms / 1000); return Math.floor(t / 60) + ':' + String(t % 60).padStart(2, '0'); };
+  const dMap = () => {
+    const cv = $('dMap'), c = cv.getContext('2d'), L = G.base.beds(), P = G.deadAt || { x: 0, z: 0 }, pts = L.map(d => [d.x, d.z]).concat([[P.x, P.z]]);
+    let x0 = Math.min(...pts.map(q => q[0])), x1 = Math.max(...pts.map(q => q[0])), z0 = Math.min(...pts.map(q => q[1])), z1 = Math.max(...pts.map(q => q[1]));
+    const span = Math.min(MAP * 2, Math.max(240, Math.max(x1 - x0, z1 - z0) * 1.35)), cx = clamp((x0 + x1) / 2, -MAP + span / 2, MAP - span / 2), cz = clamp((z0 + z1) / 2, -MAP + span / 2, MAP - span / 2), S = cv.width / span;
+    c.setTransform(1, 0, 0, 1, 0, 0); c.imageSmoothingEnabled = true; c.fillStyle = '#4a6338'; c.fillRect(0, 0, cv.width, cv.height);
+    // longe: o mapa do mundo; perto: fundo liso com uma grelha de 50 m (o mapa do mundo ficava aos quadrados)
+    if (span >= 1200) c.drawImage(offW, (cx - span / 2 + MAP) * KW, (cz - span / 2 + MAP) * KW, span * KW, span * KW, 0, 0, cv.width, cv.height);
+    else { const st = span > 600 ? 100 : 50; c.strokeStyle = 'rgba(15,22,12,.22)'; c.lineWidth = 1; for (let g = Math.ceil((cx - span / 2) / st) * st; g < cx + span / 2; g += st) { const X = (g - cx + span / 2) * S; c.beginPath(); c.moveTo(X, 0); c.lineTo(X, cv.height); c.stroke(); } for (let g = Math.ceil((cz - span / 2) / st) * st; g < cz + span / 2; g += st) { const Z = (g - cz + span / 2) * S; c.beginPath(); c.moveTo(0, Z); c.lineTo(cv.width, Z); c.stroke(); }
+      c.fillStyle = 'rgba(12,14,16,.72)'; c.fillRect(8, cv.height - 26, 74, 18); c.fillStyle = '#EEE9E0'; c.font = '600 13px Barlow,sans-serif'; c.textAlign = 'left'; c.textBaseline = 'middle'; c.fillText('grelha ' + st + ' m', 14, cv.height - 17); }
+    { const a = Math.max(-CORE, cx - span / 2), b = Math.min(CORE, cx + span / 2), a2 = Math.max(-CORE, cz - span / 2), b2 = Math.min(CORE, cz + span / 2); if (b > a && b2 > a2) c.drawImage(off, (a + CORE) * K, (a2 + CORE) * K, (b - a) * K, (b2 - a2) * K, (a - cx + span / 2) * S, (a2 - cz + span / 2) * S, (b - a) * S, (b2 - a2) * S); }
+    const T = v => (v - cx + span / 2) * S, Tz = v => (v - cz + span / 2) * S;
+    // estradas e nomes das zonas por perto, para saberes onde fica cada cama
+    const vx0 = cx - span / 2, vx1 = cx + span / 2, vz0 = cz - span / 2, vz1 = cz + span / 2;
+    for (const r of G.W.roads) { if (r.x1 < vx0 || r.x0 > vx1 || r.z1 < vz0 || r.z0 > vz1) continue; c.fillStyle = r.x1 - r.x0 > 8 && r.z1 - r.z0 > 8 ? '#6b5b44' : '#7a6f60'; c.fillRect(T(r.x0), Tz(r.z0), Math.max(2, (r.x1 - r.x0) * S), Math.max(2, (r.z1 - r.z0) * S)); }
+    c.textAlign = 'center'; c.textBaseline = 'middle'; c.font = '700 15px "Barlow Condensed",sans-serif';
+    for (const zn of G.W.zones) { if (zn.kind === 'cabin' || zn.x < vx0 - 30 || zn.x > vx1 + 30 || zn.z < vz0 - 30 || zn.z > vz1 + 30) continue; const lab = zn.name.toUpperCase(), w = c.measureText(lab).width, X = clamp(T(zn.x), w / 2 + 4, cv.width - w / 2 - 4), Z = clamp(Tz(zn.z), 12, cv.height - 12); c.fillStyle = 'rgba(12,14,16,.72)'; c.fillRect(X - w / 2 - 5, Z - 10, w + 10, 20); c.fillStyle = zn.kind === 'city' ? '#F2A33A' : '#EEE9E0'; c.fillText(lab, X, Z + 1); }
+    // onde morreste: uma cruz
+    c.strokeStyle = '#1a0806'; c.lineWidth = 7; c.lineCap = 'round'; const X = T(P.x), Z = Tz(P.z); for (const w of [7, 3.5]) { c.lineWidth = w; c.strokeStyle = w > 5 ? '#1a0806' : '#F07A68'; c.beginPath(); c.moveTo(X - 9, Z - 9); c.lineTo(X + 9, Z + 9); c.moveTo(X + 9, Z - 9); c.lineTo(X - 9, Z + 9); c.stroke(); }
+    c.textAlign = 'center'; c.textBaseline = 'middle'; c.font = '700 17px "Barlow Condensed",sans-serif';
+    const placed = [];
+    L.forEach((d, i) => { const ox = T(d.x), oz = Tz(d.z); let x = ox, z = oz, k = 0; while (k < 12 && placed.some(q => Math.hypot(q[0] - x, q[1] - z) < 30)) { k++; const a = -Math.PI / 2 + (k - 1) * 0.9; x = ox + Math.cos(a) * 32; z = oz + Math.sin(a) * 32; } placed.push([x, z]); const ok = !G.base.bedReady(d);
+      if (k) { c.strokeStyle = '#0f1a10'; c.lineWidth = 2; c.beginPath(); c.moveTo(ox, oz); c.lineTo(x, z); c.stroke(); c.fillStyle = '#0f1a10'; c.beginPath(); c.arc(ox, oz, 3, 0, 7); c.fill(); }
+      c.font = '700 17px "Barlow Condensed",sans-serif'; c.fillStyle = '#0f1a10'; c.beginPath(); c.arc(x, z, 15, 0, 7); c.fill(); c.fillStyle = ok ? '#7fd38a' : '#5a5f63'; c.beginPath(); c.arc(x, z, 12.5, 0, 7); c.fill(); c.fillStyle = ok ? '#0f1a10' : '#e0dbd2'; c.fillText(String(i + 1), x, z + 1); d._mx = x; d._mz = z; });
+  };
+  const dInfo = (d, P) => { const w = G.base.bedReady(d), dist = Math.hypot(d.x - P.x, d.z - P.z), dd = dist >= 1000 ? (dist / 1000).toFixed(1).replace('.', ',') + ' km' : Math.round(dist) + ' m'; return [w, (d.k === 'saco' ? 'Saco-cama' : 'Cama') + ' · ' + dd + ' · ' + (w ? 'pronta daqui a ' + mmss(w) : 'pronta')]; };
+  // a lista só se refaz quando muda (camas ou «Remover?»); a cada segundo só mudam os textos, para os toques nunca se perderem
+  let dKey = '';
+  const dRows = () => {
+    const L = G.base.beds(), P = G.deadAt || { x: 0, z: 0 }, key = L.map(d => d.name).join('|') + '#' + (dSure ? L.indexOf(dSure) : -1);
+    if (key !== dKey) { dKey = key;
+      $('dList').innerHTML = L.map((d, i) => `<div class="dbed" role="listitem"><button class="dgo" data-i="${i}"><b>${i + 1}</b><span><strong>${esc(d.name)}</strong><em></em></span></button><button class="dx${dSure === d ? ' sure' : ''}" data-x="${i}" aria-label="Remover ${esc(d.name)}">${dSure === d ? 'Remover?' : '×'}</button></div>`).join('');
+      $('dBeds').hidden = !L.length; $('dp').classList.toggle('has-beds', !!L.length); $('dGo').classList.toggle('pri', !L.length); }
+    $('dList').querySelectorAll('.dbed').forEach((el, i) => { const d = L[i]; if (!d) return; const [w, t] = dInfo(d, P); el.classList.toggle('wait', !!w); const em = el.querySelector('em'); if (em.textContent !== t) em.textContent = t; el.querySelector('.dgo').setAttribute('aria-disabled', w ? 'true' : 'false'); });
+  };
+  $('dList').onclick = e => { const L = G.base.beds(), g = e.target.closest('.dgo'), x = e.target.closest('.dx');
+    if (g) { const d = L[+g.dataset.i]; if (!d) return; const w = G.base.bedReady(d); if (w) { audio.play('vazio'); toast(d.name + ': pronta daqui a ' + mmss(w)); return; } audio.play('ui'); G.respawn(d); return; }
+    if (x) { const d = L[+x.dataset.x]; if (!d) return; audio.play('ui'); if (dSure === d) { G.base.removeBed(d); dSure = null; toast(d.name + ' foi removida'); } else { dSure = d; setTimeout(() => { if (dSure === d) { dSure = null; if (!$('dead').hidden) dRows(); } }, 3000); } dRows(); dMap(); } };
+  $('dMap').onclick = e => { const cv = $('dMap'), r = cv.getBoundingClientRect(), x = (e.clientX - r.left) * cv.width / r.width, z = (e.clientY - r.top) * cv.height / r.height; let best = null, bd = 30; for (const d of G.base.beds()) { const q = Math.hypot((d._mx ?? -99) - x, (d._mz ?? -99) - z); if (q < bd) { bd = q; best = d; } } if (!best) return; const w = G.base.bedReady(best); if (w) { audio.play('vazio'); toast(best.name + ': pronta daqui a ' + mmss(w)); return; } audio.play('ui'); G.respawn(best); };
+  const death = o => { const C = { queda: 'Caíste de muito alto.', zombie: 'Os zombies apanharam-te.', sangue: 'Sangraste até ao fim. Uma ligadura tinha chegado.', fome: 'Morreste de fome.', sede: 'Morreste de sede.', explosao: 'Uma explosão apanhou-te.', dormir: 'Mataram-te enquanto dormias e levaram o que tinhas.' }; $('dCause').textContent = o.cause === 'pvp' ? (o.by ? o.by + ' matou-te.' : 'Outro jogador matou-te.') : C[o.cause] || 'Morreste.'; const m = Math.floor(o.time / 60), s = Math.floor(o.time % 60); $('dStat').textContent = `Sobreviveste ${m} min ${s} s · ${o.kills} zombie${o.kills === 1 ? '' : 's'} abatido${o.kills === 1 ? '' : 's'}`;
+    $('dNote').textContent = o.cause === 'dormir' ? 'Tens de começar com o que trouxeres.' : 'As tuas coisas ficaram no teu corpo, onde caíste.';
+    dSure = null; dKey = ''; dRows(); $('dead').hidden = false; toastEl.hidden = true; requestAnimationFrame(dMap); clearInterval(dTick); dTick = setInterval(() => { if ($('dead').hidden) { clearInterval(dTick); return; } dRows(); dMap(); }, 1000); };
+  // cama ou saco-cama: mudar o nome ou apanhar
+  const bedMenu = d => {
+    const nm = d.k === 'saco' ? 'Saco-cama' : 'Cama'; $('pfT').textContent = nm; pfm.classList.remove('wide');
+    pfB.innerHTML = `<p>Quando morres, escolhes no mapa em que cama ou saco-cama queres renascer. Depois de usares ${d.k === 'saco' ? 'este saco-cama esperas 5 min' : 'esta cama esperas 2 min'} até dar outra vez.</p>${field('bdN', 'Nome', 'text', d.name, 'off')}<div class="pmsg" id="bdM"></div><button class="btn pri big" id="bdOk">Guardar nome</button><button class="btn big" id="bdPick">Apanhar ${d.k === 'saco' ? 'o saco-cama' : 'a cama'}</button>`;
+    $('bdN').maxLength = 24;
+    $('bdOk').onclick = e => { e.stopPropagation(); if (!G.base.renameBed(d, $('bdN').value)) { $('bdM').textContent = 'Escreve um nome'; $('bdM').className = 'pmsg err'; return; } audio.play('ui'); pfClose(); toast('Agora chama-se ' + d.name); };
+    $('bdPick').onclick = e => { e.stopPropagation(); G.base.pickBed(d); pfClose(); toast(nm + ' apanhad' + (d.k === 'saco' ? 'o' : 'a')); };
+    $('bdN').onkeydown = e => { if (e.key === 'Enter') $('bdOk').click(); };
+    pfm.hidden = false;
+  };
 
   // ---------- HUD por frame
   const vals = {}; const setV = (id, v) => { if (vals[id] === v) return; vals[id] = v; $(id).textContent = v; };
@@ -686,7 +738,7 @@ export function initUI(G) {
 
   return {
     refresh, openInv, closeInv, toast, feed, hit, damage, death, toggleMap, frame, resize, safe, scopeR, scopeC,
-    closeDeath: () => { $('dead').hidden = true; }, sound,
+    closeDeath: () => { $('dead').hidden = true; clearInterval(dTick); }, sound, bedMenu,
     showHUD: msg => { $('hud').hidden = false; refresh(); toast(msg); },
     // sair para o menu (com 5 s parado se estiveres em combate)
     toMenu: () => { setTimeout(() => { pfRender(); if (G.ui_count) G.ui_count(); }, 50); if (!pfm.hidden && $('pfT').textContent === 'Clã') pfClose(); $('quit').hidden = true; $('hud').hidden = true; setEl.hidden = true; G.paused = false; closeInv(); $('map').hidden = true; G.hasSave = true; $('sCont').hidden = false; $('sPlay').querySelector('b').textContent = 'Começar de novo'; $('sPlay').querySelector('em').textContent = 'Perdes o que tens e começas do zero'; $('sPlay').classList.remove('pri'); $('start').hidden = false; },

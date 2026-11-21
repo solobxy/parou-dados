@@ -49,7 +49,9 @@ export function makeBase({ scene, W, G, audio, addRect, removeRect, visDirty, in
   const root = new THREE.Group(); scene.add(root);
   const pieces = new Map(); // chave → peça
   const deps = []; // objetos colocados
-  let spawn = null; // cama ou saco-cama onde renasces
+  // camas e sacos-cama: quando morres escolhes em qual renasces (cada um com o seu nome e uma espera entre usos, como no Rust)
+  const BED_CD = { cama: 120e3, saco: 300e3 };
+  const bedLabel = d => DEPLOY[d.k].n + ' · ' + d.name;
 
   const box = (w, h, d, x, y, z, mat, g) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat); m.position.set(x, y, z); m.castShadow = true; m.receiveShadow = true; g.add(m); return m; };
   const uvScale = (m, w, h) => { const uv = m.geometry.attributes.uv; for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * w / 3, uv.getY(i) * h / 3); };
@@ -178,21 +180,27 @@ export function makeBase({ scene, W, G, audio, addRect, removeRect, visDirty, in
   const placeDep = (k, x, z, yaw, o = {}) => {
     const D = DEPLOY[k], y = o.y ?? 0;
     const d = { k, x, z, yaw, y, hp: o.hp ?? D.hp, g: depMesh(k), on: !!o.on, burn: o.burn || 0 };
+    if (D.bed) { d.name = o.name || DEPLOY[k].n + ' ' + (deps.filter(e => e.k === k).length + 1); d.cd = o.cd || 0; }
     d.g.position.set(x, y, z); d.g.rotation.y = yaw; root.add(d.g);
     const [w, l] = D.r, c = Math.abs(Math.cos(yaw)), s = Math.abs(Math.sin(yaw)), hw = (w * c + l * s) / 2, hl2 = (w * s + l * c) / 2;
     if (D.h > 0.3) { d.rc = { x0: x - hw, x1: x + hw, z0: z - hl2, z1: z + hl2, k: 's', h: y + D.h, lv: 0, base: d, dep: 1 }; addRect(d.rc); }
     if (D.slots) { d.c = { id: 'b' + Math.random().toString(36).slice(2, 8), x, z, y: y + 0.6, lv: 0, own: true, dep: d, label: (k === 'fornalha' ? 'Abrir ' : 'Abrir ') + D.n.toLowerCase(), slots: D.slots, grid: o.grid || new Grid(D.slots[0], D.slots[1]) }; W.containers.push(d.c); }
     else if (D.lvl) { d.c = { id: 'b' + Math.random().toString(36).slice(2, 8), x, z, y: y + 0.9, lv: 0, own: true, dep: d, bench: D.lvl, label: 'Usar ' + D.n.toLowerCase(), slots: [0, 0], grid: null }; W.containers.push(d.c); }
-    else if (D.bed) { d.c = { id: 'b' + Math.random().toString(36).slice(2, 8), x, z, y: y + 0.3, lv: 0, own: true, dep: d, bed: 1, label: spawn === d ? D.n + ': renasces aqui' : 'Renascer neste ' + (k === 'cama' ? 'cama' : 'saco-cama'), slots: [0, 0], grid: null }; W.containers.push(d.c); }
+    else if (D.bed) { d.c = { id: 'b' + Math.random().toString(36).slice(2, 8), x, z, y: y + 0.3, lv: 0, own: true, dep: d, bed: 1, label: bedLabel(d), slots: [0, 0], grid: null }; W.containers.push(d.c); }
     deps.push(d); visDirty(); return d;
   };
-  const removeDep = d => { const i = deps.indexOf(d); if (i >= 0) deps.splice(i, 1); root.remove(d.g); if (d.rc) removeRect(d.rc); if (d.c) { const j = W.containers.indexOf(d.c); if (j >= 0) W.containers.splice(j, 1); } if (spawn === d) spawn = null; visDirty(); };
-  const setSpawn = d => { spawn = d; for (const e of deps) if (e.c && e.c.bed) e.c.label = e === d ? DEPLOY[e.k].n + ': renasces aqui' : 'Renascer neste ' + (e.k === 'cama' ? 'cama' : 'saco-cama'); };
+  const removeDep = d => { const i = deps.indexOf(d); if (i >= 0) deps.splice(i, 1); root.remove(d.g); if (d.rc) removeRect(d.rc); if (d.c) { const j = W.containers.indexOf(d.c); if (j >= 0) W.containers.splice(j, 1); } visDirty(); };
 
   // ---------- API
   const Base = {
     B, pieces, deps,
-    get spawn() { return spawn; },
+    // camas: lista, renascer (com espera), mudar o nome, apanhar e remover
+    beds() { return deps.filter(d => DEPLOY[d.k].bed); },
+    bedReady(d) { return Math.max(0, (d.cd || 0) - Date.now()); },
+    respawnAt(d) { if (!d || !deps.includes(d) || (d.cd || 0) > Date.now()) return null; d.cd = Date.now() + BED_CD[d.k]; G.save && G.save(); return [d.x + Math.cos(d.yaw) * 0.9, d.z - Math.sin(d.yaw) * 0.9, d.y]; },
+    renameBed(d, name) { name = String(name || '').replace(/\s+/g, ' ').trim().slice(0, 24); if (!name) return false; d.name = name; if (d.c) d.c.label = bedLabel(d); G.save && G.save(); return true; },
+    pickBed(d) { if (!deps.includes(d)) return false; const ik = Object.keys(ITEMS).find(k => ITEMS[k].deploy === d.k); removeDep(d); if (ik) { const it = mkItem(ik, 1); const left = G.inv.give(it); if (left) G.dropItem(it); } audio.play('apanhar'); G.save && G.save(); return true; },
+    removeBed(d) { if (!deps.includes(d)) return false; removeDep(d); G.save && G.save(); return true; },
     modes: MODES, costOf: m => PIECES[m].cost, costTxt, can,
     setMode(m) { if (PIECES[m]) B.mode = m; },
     // chamado em cada imagem: mostra o fantasma ou o realce conforme o que tens na mão
@@ -248,11 +256,11 @@ export function makeBase({ scene, W, G, audio, addRect, removeRect, visDirty, in
         for (const q of W.circles) if (q.on !== false && (q.lv || 0) === 0 && q.x + q.r > x - hw && q.x - q.r < x + hw && q.z + q.r > z - hl2 && q.z - q.r < z + hl2) { hit = true; break; } if (hit) continue;
         // não pode ficar por cima de ti
         if (Math.abs(p.x - x) < hw + 0.15 && Math.abs(p.z - z) < hl2 + 0.15) continue;
-        const d = placeDep(k, x, z, yaw, { y }); if (D.bed) { setSpawn(d); toast(D.n + ': vais renascer aqui'); } audio.play('construir'); G.save && G.save(); return true;
+        const d = placeDep(k, x, z, yaw, { y }); if (D.bed) toast(d.name + ': quando morreres, podes renascer aqui'); audio.play('construir'); G.save && G.save(); return true;
       }
       toast(why); return false; },
     // interagir com o que foi colocado
-    use(c) { const d = c.dep; if (c.bed) { setSpawn(d); toast(DEPLOY[d.k].n + ': vais renascer aqui'); return true; } return false; },
+    use(c) { const d = c.dep; if (c.bed) { G.ui.bedMenu(d); return true; } return false; },
     // bancada mais alta a menos de 4 m
     benchNear() { const p = G.p; let lv = 0; if (!p) return 0; for (const d of deps) { const D = DEPLOY[d.k]; if (D.lvl && Math.hypot(d.x - p.x, d.z - p.z) < 4 && (p.lv || 0) === 0) lv = Math.max(lv, D.lvl); } return lv; },
     // fornalha: com madeira acesa, cada 2,5 s queima 1 de madeira (dá carvão) e refina 1 de minério de metal
@@ -262,7 +270,6 @@ export function makeBase({ scene, W, G, audio, addRect, removeRect, visDirty, in
       if (!d.on) continue; d.burn += dt; while (d.burn >= 2.5) { d.burn -= 2.5; g.take('madeira', 1); const out = [['carvao', 1]]; if (g.count('metal') > 0) { g.take('metal', 1); out.push(['metalR', 1]); }
         for (const [k, n] of out) { const it = mkItem(k, n); const left = g.insert(it); if (left) { d.on = false; toast('A fornalha está cheia'); } } if (g.count('madeira') <= 0) { d.on = false; } } } },
     toggleFurnace(c) { const d = c.dep; if (!d || d.k !== 'fornalha') return; if (!d.on && c.grid.count('madeira') <= 0) { toast('Põe madeira na fornalha'); return; } d.on = !d.on; audio.play(d.on ? 'fogo' : 'ui'); },
-    respawnAt() { if (!spawn) return null; return [spawn.x + Math.sin(spawn.yaw) * 0.0, spawn.z, spawn.y]; },
     // dano (explosivos): a peça perde vida e cai quando chega a zero
     damage(x, z, r, dmg) { let n = 0; for (const P of [...pieces.values()]) { let mx, mz; if (P.t === 'fund' || P.t === 'teto') { mx = P.i * CELL + CELL / 2; mz = P.j * CELL + CELL / 2; } else { const E = edgeGeom(P.k); mx = E.horiz ? (E.x0 + E.x1) / 2 : E.x; mz = E.horiz ? E.z : (E.z0 + E.z1) / 2; }
         const d = Math.hypot(mx - x, mz - z) - (P.t === 'fund' || P.t === 'teto' ? 1.2 : 0.9); if (d > r) continue; const f = d <= 0 ? 1 : (1 - d / r) * (1 - d / r); P.hp -= dmg * f * (P.t === 'fund' ? 0.5 : 1); n++; if (P.hp <= 0) remove(P); }
@@ -273,11 +280,11 @@ export function makeBase({ scene, W, G, audio, addRect, removeRect, visDirty, in
       return [a * CELL, b * CELL, (c + 1) * CELL, (d + 1) * CELL]; },
     pieceAt(x, z, r) { for (const P of pieces.values()) for (const q of P.rects || []) if (x > q.x0 - r && x < q.x1 + r && z > q.z0 - r && z < q.z1 + r) return P; return null; },
     // gravar e repor
-    save(encG) { return { p: [...pieces.values()].map(P => [P.t, P.k, P.i ?? null, P.j ?? null, P.tier, Math.round(P.hp), P.door ? P.door.target : 0]), d: deps.map(d => [d.k, +d.x.toFixed(2), +d.z.toFixed(2), +d.yaw.toFixed(3), d.y, Math.round(d.hp), d.c && d.c.grid ? encG(d.c.grid) : null, d.on ? 1 : 0, spawn === d ? 1 : 0]) }; },
+    save(encG) { return { p: [...pieces.values()].map(P => [P.t, P.k, P.i ?? null, P.j ?? null, P.tier, Math.round(P.hp), P.door ? P.door.target : 0]), d: deps.map(d => [d.k, +d.x.toFixed(2), +d.z.toFixed(2), +d.yaw.toFixed(3), d.y, Math.round(d.hp), d.c && d.c.grid ? encG(d.c.grid) : null, d.on ? 1 : 0, 0, d.name || null, d.cd || 0]) }; },
     load(s, decG) { Base.clear(); if (!s) return;
       for (const [t, k, i, j, tier, hp, open] of s.p || []) { const P = add(t, k, t === 'fund' || t === 'teto' ? { i, j } : {}); P.tier = tier; P.hp = hp; buildMesh(P); if (P.door) { P.door.mesh.material = MAT[P.tier]; P.door.t = P.door.target = open ? 1 : 0; } }
-      for (const [k, x, z, yaw, y, hp, gl, on, sp] of s.d || []) { const D = DEPLOY[k]; if (!D) continue; const grid = gl && D.slots ? decG(gl, new Grid(D.slots[0], D.slots[1])) : null; const d = placeDep(k, x, z, yaw, { y, hp, grid, on }); if (sp) setSpawn(d); } },
-    clear() { for (const P of [...pieces.values()]) remove(P); for (const d of [...deps]) removeDep(d); spawn = null; },
+      for (const [k, x, z, yaw, y, hp, gl, on, sp, name, cd] of s.d || []) { const D = DEPLOY[k]; if (!D) continue; const grid = gl && D.slots ? decG(gl, new Grid(D.slots[0], D.slots[1])) : null; placeDep(k, x, z, yaw, { y, hp, grid, on, name, cd }); } },
+    clear() { for (const P of [...pieces.values()]) remove(P); for (const d of [...deps]) removeDep(d); },
   };
   return Base;
 }

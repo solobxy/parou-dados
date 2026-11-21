@@ -754,7 +754,7 @@ async function boot() {
     if (p.hp <= 0) die(cause);
   };
   const die = cause => {
-    const p = G.p; if (!p.alive) return; p.alive = false; p.hp = 0; p.cause = cause; audio.play('morte'); if (G.aimEnd) G.aimEnd(); try { window.estat && window.estat('morte', cause); } catch (e) { }
+    const p = G.p; if (!p.alive) return; p.alive = false; p.hp = 0; p.cause = cause; G.deadAt = { x: p.x, z: p.z }; audio.play('morte'); if (G.aimEnd) G.aimEnd(); try { window.estat && window.estat('morte', cause); } catch (e) { }
     if (G.net && G.net.on) { if (cause !== 'dormir') G.net.died(); }
     else { const g = new Grid(6, 10); for (const it of G.inv.all()) g.insert(it); if (!g.empty) dropBag(p.x, p.z, g, { body: true, lv: p.lv, y: p.base + groundY(p.x, p.z, p.lv) }); }
     G.inv = new Inv(); G.ui.refresh(true);
@@ -762,10 +762,11 @@ async function boot() {
     setTimeout(() => G.ui.death({ cause, by: G.killer, time: G.t - p.born, kills: p.kills }), 1400);
     Conta.apagarPersonagem(); try { saveWorld(); Conta.enviar(true); } catch (e) { }
   };
-  G.respawn = atBed => {
+  G.respawn = d => {
+    let bed = null; if (d) { bed = G.base.respawnAt(d); if (!bed) { G.ui.toast('Ainda não dá para renascer em ' + d.name); return; } }
     setTimeout(save, 50);
-    const bed = atBed && G.base.respawnAt(); const [x, z] = bed ? [bed[0], bed[1]] : spawnPoint(); G.p = newPlayer(x, z); G.inv = freshKit(); G.sel = 0; body.root.rotation.set(0, 0, 0); body.root.position.set(x, 0, z); body.root.visible = true;
-    refresh(); G.ui.closeDeath(); camT.set(x, 0, z); G.killer = null; if (!bed) setTimeout(() => G.ui.toast(whereMsg(x, z)), 400);
+    const [x, z] = bed ? [bed[0], bed[1]] : spawnPoint(); G.p = newPlayer(x, z); G.inv = freshKit(); G.sel = 0; body.root.rotation.set(0, 0, 0); body.root.position.set(x, 0, z); body.root.visible = true;
+    refresh(); G.ui.closeDeath(); camT.set(x, 0, z); G.killer = null; if (!bed) setTimeout(() => G.ui.toast(whereMsg(x, z)), 400); else setTimeout(() => G.ui.toast('Acordaste em ' + d.name), 400);
   };
 
   // ---------- guardar: personagem e mundo do perfil ativo, neste aparelho (e na nuvem, se o perfil tiver conta)
