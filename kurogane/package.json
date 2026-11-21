@@ -1,0 +1,17 @@
+{
+  "name": "kurogane",
+  "private": true,
+  "description": "Kurogane: jogo de sobrevivência com zombies (código do jogo em jogo/, servidor online em server.mjs)",
+  "scripts": {
+    "build": "node jogo/build.cjs",
+    "servidor": "node server.mjs"
+  },
+  "devDependencies": {
+    "three": "0.187.0",
+    "lucide-static": "1.77.0",
+    "esbuild": "0.25.12",
+    "@expo-google-fonts/noto-sans-jp": "0.4.4",
+    "@fontsource/barlow": "5.3.0",
+    "@fontsource/barlow-condensed": "5.3.0"
+  }
+}
