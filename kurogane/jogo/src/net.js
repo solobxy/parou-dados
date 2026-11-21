@@ -64,6 +64,7 @@ export function makeNet({ G, scene, mkRemote, audio, Conta, enc, dec, hurt, die,
       case 'zk': world.z.killed(m.i, m.by, m.head); return;
       case 'zh': world.z.hit(m.i, m.dx, m.dz); return;
       case 'zat': hurt(m.dmg, null, 'body', null, 'zombie'); return;
+      case 'zseed': if (N.world) N.zseed(world.z.seed()); return;
       case 'bb': world.base(m); return;
       case 'bno': G.ui.toast(m.e || 'Não deu'); G.base.refused(m.a, m.k); return;
       case 'bxok': G.base.demolished(m.tt); return;

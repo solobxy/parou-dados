@@ -187,7 +187,7 @@ const onMsg = (c, m) => {
     const tc = S.tokens[tok].clan, clan = tc && S.clans[tc] ? tc : null;
     c.p = { name, tok, look, x: num(m.x, -4100, 4100), z: num(m.z, -4100, 4100), y: 0, lv: 0, yaw: 0, mv: 0, an: 0, w: '', hp: resume ? resume.hp ?? 100 : 100, alive: true, ar: [0, 0], inv: [], clan, lastShot: 0, hd: null, vd: null };
     c.zc = new Map(); c.p.uid = uidOf(tok);
-    const zseed = !S.w.zs.length && ![...players.values()].some(o => o !== c && o.zseed); if (zseed) c.zseed = true;
+    const zseed = !S.w.zs.length && ![...players.values()].some(o => o !== c && o.zseed && now - (o.zseedT || 0) < 15000); if (zseed) { c.zseed = true; c.zseedT = now; }
     send(c, { t: 'ok', id: c.id, tok, killed, resume, players: [...players.values()].filter(o => o.p && o !== c).map(o => [o.id, o.p.name, o.p.look, o.p.clan]), sleep: sleepList(), clan: clanInfo(clan),
       uid: c.p.uid, w: { cyc0: S.w.cyc0, now, wx: S.w.wx.r, base: baseRows(), locks: Object.entries(S.w.locks).map(([i, L]) => [+i, L.hp, L.broke || 0]), doors: Object.entries(S.w.doors).map(([i, o]) => [+i, o]), nodes: Object.entries(S.w.nodes).map(([k, u]) => [k, u - now]).filter(a => a[1] > 0), bags: bagRows(), zseed } });
     bcast({ t: 'join', id: c.id, name, look, clan }, o => o !== c);
@@ -319,6 +319,9 @@ setInterval(() => {
 }, 500);
 // fornalhas: apagam-se quando acaba a madeira (quem a fechou disse até quando dava)
 setInterval(() => { const now = Date.now(), up = []; for (const [id, d] of Object.entries(S.w.base.d)) if (d.on && d.until && now > d.until && !lockOf('d' + id)) { d.on = 0; up.push(dRow(id, d)); } if (up.length) bb({ d: up }); }, 5000);
+// mundo sem zombies (por exemplo, quem os devia espalhar tinha o jogo antigo): pede a outro jogador ligado
+setInterval(() => { if (S.w.zs.length) return; const now = Date.now(), L = [...players.values()].filter(c => c.p); if (!L.length || L.some(c => c.zseed && now - (c.zseedT || 0) < 15000)) return;
+  for (const c of L) c.zseed = false; const c = L[Math.floor(Math.random() * L.length)]; c.zseed = true; c.zseedT = now; send(c, { t: 'zseed' }); }, 5000);
 // tempo: chuva de 3 a 7 min, a cada 10 a 25 min (igual para todos)
 setInterval(() => { const now = Date.now(), X = S.w.wx; if (now < X.next) return;
   if (X.r > 0) { X.r = 0; X.next = now + (600 + Math.random() * 900) * 1000; } else { X.r = +(0.5 + Math.random() * 0.5).toFixed(2); X.next = now + (180 + Math.random() * 240) * 1000; }
