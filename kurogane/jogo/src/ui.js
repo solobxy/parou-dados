@@ -36,7 +36,7 @@ export function initUI(G) {
   // um só servidor para todos: no site joga-se sempre online (se o servidor não responder, joga-se sozinho até voltar)
   let canOnline = !!window.KG_ONLINE; try { if (localStorage.getItem('kg.srv')) canOnline = true; } catch (e) { }
   G.online = canOnline;
-  if (!canOnline) { $('sOnl').hidden = true; const f = document.querySelector('#start .foot'); if (f) f.textContent = 'Protótipo 0.14 · aqui jogas sozinho · o jogo online está no site do Kurogane'; }
+  if (!canOnline) { $('sOnl').hidden = true; const f = document.querySelector('#start .foot'); if (f) f.textContent = ((f.textContent.match(/Protótipo [\d.]+/) || ['Protótipo'])[0]) + ' · aqui jogas sozinho · o jogo online está no site do Kurogane'; }
   else { const b = $('sOnl'), t = $('sOnT');
     const count = () => { let u = '/srv/saude'; try { const o = localStorage.getItem('kg.srv'); if (o) u = o.replace(/^ws/, 'http').replace(/\/ws$/, '/saude'); } catch (e) { }
       fetch(u, { cache: 'no-store' }).then(r => r.ok ? r.json() : null).then(j => { const up = !!(j && j.ok); b.classList.toggle('up', up); b.classList.toggle('down', !up); t.textContent = up ? (j.jogadores ? `${j.jogadores} a jogar agora · PvP e clãs` : 'Ninguém a jogar agora · PvP e clãs') : 'Servidor em baixo: jogas sozinho até voltar'; }).catch(() => { b.classList.add('down'); t.textContent = 'Servidor em baixo: jogas sozinho até voltar'; }); };
@@ -359,7 +359,7 @@ export function initUI(G) {
   const showClan = () => {
     const N = G.net; $('pfT').textContent = 'Clã'; pfm.classList.remove('wide');
     const draw = () => {
-      if (!N.on) { pfB.innerHTML = '<p>Só há clãs a jogar online. Liga «Online» no menu e entra outra vez.</p>'; return; }
+      if (!N.on) { pfB.innerHTML = '<p>Os clãs só funcionam ligado ao servidor. Abre o jogo no site do Kurogane, com internet, e volta aqui: o botão «Clã» fica no mapa.</p>'; return; }
       const C = N.clanInfo;
       if (C) {
         const on = new Set([...N.R.values()].map(r => r.name)), me = (Conta.ativo() || {}).nome;
@@ -445,6 +445,11 @@ export function initUI(G) {
     const lean = row('Espreitar nas esquinas', 'Ao apontar encostado a uma parede, esquina ou poste, o boneco inclina-se para o lado livre para conseguires disparar.', tog(() => cfg.autoLean, v => cfg.autoLean = v));
     const quick = row('Disparo rápido', 'O primeiro toque já dispara (assim que a arma sobe). Desligado, o primeiro toque só levanta a arma e mostra a mira.', tog(() => cfg.quick, v => cfg.quick = v));
     const sens = row('Sensibilidade da mira', 'Quanto a mira anda ao arrastar o dedo ou o rato na mira 4x/8x.', range(0.5, 3, 0.05, () => cfg.sens, v => cfg.sens = v));
+    // ecrã inteiro: esconde as barras do browser (o iPhone só deixa pela app no ecrã principal)
+    { const D = document.documentElement, can = !!(document.fullscreenEnabled || document.webkitFullscreenEnabled) && !!(D.requestFullscreen || D.webkitRequestFullscreen), on = () => !!(document.fullscreenElement || document.webkitFullscreenElement);
+      const b = document.createElement('button'); b.className = 'btn sm' + (on() ? '' : ' pri'); b.textContent = on() ? 'Sair' : 'Ecrã inteiro';
+      b.onclick = () => { audio.play('ui'); try { const r = on() ? (document.exitFullscreen || document.webkitExitFullscreen).call(document) : (D.requestFullscreen ? D.requestFullscreen({ navigationUI: 'hide' }) : D.webkitRequestFullscreen()); if (r && r.catch) r.catch(() => toast('Este browser não deixou pôr em ecrã inteiro')); } catch (e) { toast('Este browser não deixou pôr em ecrã inteiro'); } };
+      grp('Ecrã inteiro', [row(on() ? 'Estás em ecrã inteiro' : 'Jogar em ecrã inteiro', can ? 'Esconde as barras do browser. Para sair, toca aqui outra vez ou faz o gesto de voltar.' : 'Este browser não deixa. No iPhone: Partilhar e «Adicionar ao ecrã principal», e abre o jogo a partir daí.', can ? b : document.createElement('span'))]); }
     if (G.TOUCH) {
       grp('Controlos', [quick,
         row('Mira assistida', 'Ao levantar a arma, a mira vai para o zombie mais perto que estiver à vista e com tiro livre, e segue-o. Nunca prende a jogadores. Arrasta para a cabeça ou para as pernas.', tog(() => cfg.assist, v => cfg.assist = v)),
@@ -469,6 +474,7 @@ export function initUI(G) {
     grp('Som', [row('Volume geral', '', range(0, 1, 0.05, () => cfg.vol, v => cfg.vol = v)), row('Música do menu', '', range(0, 1, 0.05, () => cfg.musMenu, v => { cfg.musMenu = v; if (v > 0 && cfg.music === false) { cfg.music = true; musBtn(); } })), row('Música em jogo', 'Baixa no dia a dia; sobe quando há perigo.', range(0, 1, 0.05, () => cfg.musGame, v => { cfg.musGame = v; if (v > 0 && cfg.music === false) { cfg.music = true; musBtn(); } })), row('Ver os sons à volta do ecrã', 'Setas na borda mostram de onde vêm grunhidos, passos e tiros.', tog(() => cfg.soundViz, v => cfg.soundViz = v))]);
   };
   const EYE = `{{eye}}`, EYEOFF = `{{eye-off}}`;
+  for (const ev of ['fullscreenchange', 'webkitfullscreenchange']) document.addEventListener(ev, () => { if (!setEl.hidden) renderSet(); });
   const openSet = () => { G.paused = G.playing; renderSet(); setEl.hidden = false; audio.play('ui'); };
   const closeSet = () => { setEl.hidden = true; G.paused = false; saveCfg(); };
   $('zUp').onclick = () => G.zeroAdj(1); $('zDn').onclick = () => G.zeroAdj(-1);
@@ -548,7 +554,7 @@ export function initUI(G) {
   // mapa grande: o mundo todo ou perto de ti (2 km)
   let mapNear = false;
   const toggleMap = force => {
-    G.mapOpen = force ?? !G.mapOpen; $('map').hidden = !G.mapOpen; if (!G.mapOpen) return; $('mClan').hidden = !(G.net && G.net.on); drawBig();
+    G.mapOpen = force ?? !G.mapOpen; $('map').hidden = !G.mapOpen; if (!G.mapOpen) return; drawBig();
   };
   const drawBig = () => {
     const cv = $('mapc'), c = cv.getContext('2d'), p = G.p, span = mapNear ? 2000 : MAP * 2, cx = mapNear ? clamp(p.x, -MAP + span / 2, MAP - span / 2) : 0, cz = mapNear ? clamp(p.z, -MAP + span / 2, MAP - span / 2) : 0, S = cv.width / span;
