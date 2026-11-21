@@ -4456,3 +4456,6 @@ body:has(.sheet) .toasts { bottom: auto; top: calc(12px + env(safe-area-inset-to
   .vrow.hkr .vth, .vrow.fxr .vth { width: 52px; height: 52px; }
   .cont.rdy .open { padding: 9px 12px; }
 }
+/* v125: a imagem da morte mostra o contorno de giz e o marcador (estão na metade de baixo) */
+.pimg.im-morte { background-position: center 74%; }
+.pimg.im-morte img, .hlink .hthumb[src*="/cenas/morte"] { object-position: center 74%; }

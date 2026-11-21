@@ -26,7 +26,7 @@ ESCOPO = {'afinada', 'caca', 'espingarda22', 'espingarda300', 'espingarda3030', 
           'ligeira', 'precisao', 'sniper', 'sniper308', 'sniper338', 'sniperanti', 'snipercompeticao', 'sniperlonga', 'sniperpolicia', 'snipersemi'}   # a luneta tem de ficar por cima
 # escolhidas a olho, as quatro hipóteses lado a lado (dev: var4)
 VIRA_H = {'micro', 'smg45', 'artesanal', 'batalhapesada', 'cacadeiracarregador', 'metralhadoraligeira', 'compacta', 'smg9', 'smgpdw'}
-VIRA_V = {'carabinacurta', 'ar762', 'calibre50', 'cacadeiratatica', 'espingardaassalto', 'cacadeiratambor', 'smgtambor',
+VIRA_V = {'carabinacurta', 'ar762', 'calibre50', 'cacadeiratatica', 'espingardaassalto', 'smgtambor',   # v125: a cacadeiratambor (fotografia nova) já sai direita
           'cacadeiraauto', 'carabinapolicia', 'bullpup', 'carabinaprototipo', 'sniperbullpup', 'sniperartico',
           'cacadeiradupla', 'espingardaexpress', 'espingardaalavanca', 'compacta', 'smg9', 'smgpdw'} | ESCOPO
 def _sem_tripe(m):   # v107: a de tripé — tira o tripé (mais acima no meio, onde está a cabeça do tripé) e as caixas de munição
@@ -41,7 +41,8 @@ CURTA = {**{i: 'hg_a' for i in ('pistola22', 'pistolacompacta', 'pistola', 'pist
          **{i: 'hg_c' for i in ('pistola380', 'pistolamilitar')},   # corrediça cor de areia e mira
          'pistolapolicia': 'hg_d',   # corrediça prateada e mira
          # v108: fotografias novas (z_image no Higgsfield) e desenhos a condizer
-         'pistolaouro': 'hg_h', 'pistola50ae': 'hg_j', 'pistolaaco': 'hg_d', 'pistolaauto': 'hg_a',   # os desenhos de inox e da Glock 18 saíram com dois punhos
+         'pistolaouro': 'hg_h', 'pistola50ae': 'hg_j',
+         'pistolaaco': 'hg_i', 'pistolaauto': 'hg_k',   # v125: desenhos próprios (inox; Glock 18 de carregador comprido), cada um com um só punho e o cano à direita
          'pistolaafinada': 'hg_e',   # corrediça de bronze
          **{i: 'hg_f' for i in ('revolver22', 'revolver357', 'magnum', 'revolvercaca', 'revolver500')},   # inox, cabo de borracha
          **{i: 'hg_g' for i in ('revolver', 'snubnose', 'revolver44', 'revolver454', 'revolvercolecao')}}   # aço escuro, cabo de madeira
