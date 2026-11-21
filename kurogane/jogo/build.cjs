@@ -28,7 +28,7 @@ let html = fs.readFileSync(path.join(SRC, 'index.html'), 'utf8');
 html = html.replace(/\{\{([a-z0-9-]+)\}\}/g, (m, n) => fs.readFileSync(path.join(NM, 'lucide-static/icons', n + '.svg'), 'utf8').replace(/<!--.*?-->/s, '').replace(/\s*class="[^"]*"/, '').replace(/\s+/g, ' ').trim());
 html = html.replace('/*FONTS*/', () => fonts).replace('<script>/*JS*/</script>', () => `<script>${code}</script>`);
 fs.writeFileSync(path.join(OUT, 'index.html'), html);
-// versão para o servidor: com as estatísticas próprias (no Claude a página não pode enviar dados)
+// versão para o servidor: com as estatísticas próprias (no artefacto a página não pode enviar dados)
 fs.mkdirSync(path.join(OUT, 'web'), { recursive: true });
 fs.writeFileSync(path.join(OUT, 'web', 'index.html'), html.replace('</head>', '<script>window.KG_ONLINE = 1</script>\n<script defer src="/_e.js" data-site="kurogane"></script>\n</head>'));
 console.log('index.html', (fs.statSync(path.join(OUT, 'index.html')).size / 1024).toFixed(0) + ' KB', 'jp glyphs', cjk.size, 'jp font', (fs.statSync(jpOut).size / 1024).toFixed(1) + ' KB');

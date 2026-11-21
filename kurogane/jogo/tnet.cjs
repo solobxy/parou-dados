@@ -3,7 +3,7 @@ const { chromium } = require('playwright');
 const http = require('http'), fs = require('fs'), path = require('path'), { spawn } = require('child_process');
 const root = path.join(__dirname, 'dist'), outDir = path.join(__dirname, 'shots');
 const ST = '/tmp/kgsrv-test'; fs.rmSync(ST, { recursive: true, force: true });
-const gs = spawn('node', ['/home/claude/parou-dados/kurogane/server.mjs'], { env: { ...process.env, PORT: '3191', STATE_DIRECTORY: ST }, stdio: 'inherit' });
+const gs = spawn('node', [process.env.KG_SERVER || path.join(__dirname, '../server.mjs')], { env: { ...process.env, PORT: '3191', STATE_DIRECTORY: ST }, stdio: 'inherit' });
 const server = http.createServer((req, res) => { const u = req.url.split('?')[0]; const f = path.join(root, u === '/' ? 'index.html' : u); fs.readFile(f, (e, d) => { if (e) { res.writeHead(404); return res.end(); } res.writeHead(200, { 'Content-Type': f.endsWith('.html') ? 'text/html' : 'application/octet-stream' }); res.end(d); }); });
 const W = ms => new Promise(r => setTimeout(r, ms));
 let fails = 0; const ok = (c, m) => { console.log((c ? 'OK   ' : 'FALHA') + ' ' + m); if (!c) fails++; };
