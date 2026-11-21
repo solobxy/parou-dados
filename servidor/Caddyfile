@@ -1108,6 +1108,41 @@ Disallow: /
 	import crime
 }
 
+# KUROGANE - jogo de sobrevivência com zombies (protótipo; estático em /var/www/kurogane, vindo de sites/kurogane).
+# O jogo é um só ficheiro com o código, as letras e os ícones lá dentro (por isso 'unsafe-inline' e data:).
+(kurogane) {
+	import estatisticas
+	encode zstd gzip
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Permissions-Policy "geolocation=(), camera=(), microphone=(), payment=(), usb=()"
+		Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; media-src 'self' data: blob:; form-action 'self'; frame-ancestors 'none'; base-uri 'none'; object-src 'none'"
+		Cache-Control "no-cache"
+		-Server
+	}
+	root * /var/www/kurogane
+	@escondidos path_regexp /\.
+	handle @escondidos {
+		respond 404
+	}
+	try_files {path} /index.html
+	file_server
+}
+
+# Endereço de testes (fica fora do Google)
+kurogane.{HOST_TESTE} {
+	header X-Robots-Tag "noindex, nofollow"
+	handle /robots.txt {
+		respond "User-agent: *
+Disallow: /
+" 200
+	}
+	import kurogane
+}
+
 # DAYLA - site da Dayla Araújo Body Piercing (estático em /var/www/dayla, vindo de sites/dayla, construído por
 # dayla/construir.py) e agenda/painel em 127.0.0.1:3180 (dayla-agenda.service, código em dayla/agenda.py).
 (dayla) {

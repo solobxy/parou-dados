@@ -430,6 +430,16 @@ if [ -f "$SERV/webase-api.service" ] && [ -f "$BASE/servidor/webase/api.py" ]; t
   systemctl is-active --quiet webase-api.service || systemctl start webase-api.service
 fi
 
+# Kurogane: jogo de sobrevivência com zombies (protótipo). Site estático em sites/kurogane, feito a partir do
+# código do jogo (um só ficheiro index.html). Trocado de uma vez quando muda.
+KG=$BASE/servidor/sites/kurogane
+if [ -f "$KG/index.html" ] && ! diff -rq "$KG" /var/www/kurogane >/dev/null 2>&1; then
+  rm -rf /var/www/kurogane.novo && mkdir -p /var/www && cp -r "$KG" /var/www/kurogane.novo \
+    && chmod -R a+rX /var/www/kurogane.novo \
+    && rm -rf /var/www/kurogane.velho && { [ ! -d /var/www/kurogane ] || mv /var/www/kurogane /var/www/kurogane.velho; } \
+    && mv /var/www/kurogane.novo /var/www/kurogane && rm -rf /var/www/kurogane.velho
+fi
+
 # crime: jogo de rondas de 2 semanas. Site estático em sites/crime (trocado de uma vez quando muda); API em crime/
 # (crime-api.service, Node, 127.0.0.1:3170, dados SQLite em /var/lib/crime-api, fora do repositório).
 CRS=$BASE/servidor/sites/crime
