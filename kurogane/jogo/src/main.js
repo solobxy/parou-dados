@@ -1118,14 +1118,16 @@ async function boot() {
       if (keys.has('KeyW') || keys.has('ArrowUp')) iy += 1; if (keys.has('KeyS') || keys.has('ArrowDown')) iy -= 1; if (keys.has('KeyD') || keys.has('ArrowRight')) ix += 1; if (keys.has('KeyA') || keys.has('ArrowLeft')) ix -= 1;
       if (sticks.L) { ix = sticks.L.x; iy = -sticks.L.y; }
       let il = Math.hypot(ix, iy); if (il > 1) { ix /= il; iy /= il; il = 1; }
+      // eixos do movimento: na vista de cima, os do ecrã; na mira (primeira pessoa), para a frente é para onde estás a olhar
+      let Fx = FWD.x, Fz = FWD.y, Rx = RGT.x, Rz = RGT.y; if (G.fp && AIM.fy != null) { Fx = Math.sin(AIM.fy); Fz = Math.cos(AIM.fy); Rx = -Fz; Rz = Fx; }
       // correr sempre: segue em frente sem tocar no polegar; o polegar vira; puxar para trás, mirar ou abrir o inventário para
       if (G.autoRun) {
         if (!p.alive || G.invOpen || G.mapOpen || AIM.on || p.use) G.setAuto(false);
-        else if (il > 0.15) { const yw = Math.atan2(RGT.x * ix + FWD.x * iy, RGT.y * ix + FWD.y * iy); if (il > 0.5 && Math.abs(angDiff(yw, G.autoYaw)) > 2.5) G.setAuto(false); else G.autoYaw = yw; }
-        else { const dx = Math.sin(G.autoYaw), dz = Math.cos(G.autoYaw); ix = dx * RGT.x + dz * RGT.y; iy = dx * FWD.x + dz * FWD.y; il = 1; }
+        else if (il > 0.15) { const yw = Math.atan2(Rx * ix + Fx * iy, Rz * ix + Fz * iy); if (il > 0.5 && Math.abs(angDiff(yw, G.autoYaw)) > 2.5) G.setAuto(false); else G.autoYaw = yw; }
+        else { const dx = Math.sin(G.autoYaw), dz = Math.cos(G.autoYaw); ix = dx * Rx + dz * Rz; iy = dx * Fx + dz * Fz; il = 1; }
       }
       const moving = il > 0.15 && p.alive && !p.climb;
-      const wx = RGT.x * ix + FWD.x * iy, wz = RGT.y * ix + FWD.y * iy, moveYaw = moving ? Math.atan2(wx, wz) : null;
+      const wx = Rx * ix + Fx * iy, wz = Rz * ix + Fz * iy, moveYaw = moving ? Math.atan2(wx, wz) : null;
       // ---- mira
       const gunH = heldDef().gun;
       if (AIM.on && (!gunH || !p.alive || p.climb || p.use || G.invOpen)) aimEnd();

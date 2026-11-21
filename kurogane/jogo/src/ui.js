@@ -34,7 +34,7 @@ export function initUI(G) {
   $('sPlay').onclick = () => go(false); $('sCont').onclick = () => go(true); $('sKit').onclick = () => go(false, true);
   // o online só existe no site do jogo (com o servidor ao lado); noutros sítios joga-se sozinho
   let canOnline = !!window.KG_ONLINE; try { if (localStorage.getItem('kg.srv')) canOnline = true; } catch (e) { }
-  if (!canOnline) { G.online = false; $('sOnl').hidden = true; const f = document.querySelector('#start .foot'); if (f) f.textContent = 'Protótipo 0.12 · aqui jogas sozinho · o jogo online está no site do Kurogane'; }
+  if (!canOnline) { G.online = false; $('sOnl').hidden = true; const f = document.querySelector('#start .foot'); if (f) f.textContent = 'Protótipo 0.12.1 · aqui jogas sozinho · o jogo online está no site do Kurogane'; }
   else { let on = true; try { on = localStorage.getItem('kg.online') !== '0'; } catch (e) { } G.online = on;
     const b = $('sOnl'), t = $('sOnT'), paint = () => { b.setAttribute('aria-checked', G.online); b.querySelector('.tog').classList.toggle('on', G.online); };
     const count = () => { if (!G.online) { t.textContent = 'Jogas sozinho, sem outros jogadores'; return; } t.textContent = 'Outros jogadores, PvP e clãs'; let u = '/srv/saude'; try { const o = localStorage.getItem('kg.srv'); if (o) u = o.replace(/^ws/, 'http').replace(/\/ws$/, '/saude'); } catch (e) { }
