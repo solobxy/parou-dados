@@ -1,7 +1,7 @@
 {
-  "built_at": "2026-11-22T11:58:01.289863+00:00",
-  "db_bytes": 810733568,
-  "gz_bytes": 214357707,
+  "built_at": "2026-11-22T21:09:48.499582+00:00",
+  "db_bytes": 810741760,
+  "gz_bytes": 214357855,
   "totals": {
     "lines": 2834,
     "stops": 50528,
@@ -641,7 +641,7 @@
     }
   ],
   "desenhos": {
-    "bytes": 9845653,
+    "bytes": 9849252,
     "por_operador": {
       "cam_madeira": {
         "viagens": 1425,
@@ -660,8 +660,8 @@
       },
       "cp": {
         "viagens": 1661,
-        "com_desenho": 1659,
-        "desenhos": 239
+        "com_desenho": 1661,
+        "desenhos": 241
       },
       "fertagus": {
         "viagens": 260,
@@ -987,12 +987,12 @@
           "total": 390
         },
         "servicos_com_data_hoje": [
+          "FDF",
+          "EDF",
+          "DDF",
           "ADF",
           "BDF",
-          "FDF",
-          "DDF",
-          "CDF",
-          "EDF"
+          "CDF"
         ],
         "viagens_por_servico": [
           {
@@ -1047,5 +1047,5 @@
       }
     }
   },
-  "duration_s": 292
+  "duration_s": 312
 }
