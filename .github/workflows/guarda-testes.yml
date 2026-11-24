@@ -107,6 +107,21 @@ jobs:
         working-directory: app
         run: APP=$PWD node --import tsx ../auditoria/convite-instalar.mjs 2>&1 | grep -v "Experimental\|trace-warnings" | tail -30; exit ${PIPESTATUS[0]}
 
+      - name: Pesquisa (código postal com hífen dá o código exato primeiro)
+        working-directory: app
+        run: APP=$PWD node --import tsx ../auditoria/pesquisa-locais.mjs 2>&1 | grep -v "Experimental\|trace-warnings" | tail -30; exit ${PIPESTATUS[0]}
+
+      - name: Greves (avisos da CP, plenários à parte, datas sem «amanhã» no HTML, descrições inteiras)
+        working-directory: app
+        run: APP=$PWD node --import tsx ../auditoria/greves-avisos.mjs 2>&1 | grep -v "Experimental\|trace-warnings" | tail -50; exit ${PIPESTATUS[0]}
+
+      - name: Fonte da Transtejo Soflusa e cidades à volta do Tejo
+        working-directory: app
+        run: |
+          APP=$PWD node --import tsx ../auditoria/ttsl-fonte.mjs 2>&1 | grep -v "Experimental\|trace-warnings" | tail -20; a=${PIPESTATUS[0]}
+          APP=$PWD node --import tsx ../auditoria/cidades-margens.mjs 2>&1 | grep -v "Experimental\|trace-warnings" | tail -20; b=${PIPESTATUS[0]}
+          exit $(( a || b ))
+
       - name: Memória (linhas perto de um ponto com limite; raio entre 100 e 2000 m)
         working-directory: app
         run: APP=$PWD node --import tsx ../auditoria/cache-linhas-perto.mjs 2>&1 | grep -v "Experimental\|trace-warnings" | tail -20; exit ${PIPESTATUS[0]}
