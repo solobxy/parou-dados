@@ -16,8 +16,9 @@ const NAME = /^[A-Za-z0-9_À-ÖØ-öø-ÿ-]{3,16}$/;
 
 // ---------- estado (gravado em disco)
 const W0 = () => ({ wv: null, cyc0: Date.now() - 900e3, wx: { r: 0, next: Date.now() + 300e3 }, doors: {}, nodes: {}, ct: {}, zs: [], base: { p: {}, d: {} }, locks: {}, cars: {} });
-let S = { sleepers: {}, bags: {}, clans: {}, tokens: {}, w: W0(), led: {} };
+let S = { sleepers: {}, bags: {}, clans: {}, tokens: {}, w: W0(), led: {}, roles: {}, bans: {}, stats: {}, admLog: [] };
 try { S = { ...S, ...JSON.parse(fs.readFileSync(FILE, 'utf8')) }; } catch (e) { }
+S.roles = S.roles || {}; S.bans = S.bans || {}; S.stats = S.stats || {}; S.admLog = S.admLog || [];
 S.w = { ...W0(), ...(S.w || {}) }; for (const z of S.w.zs) z.o = 0; for (const c of Object.values(S.w.cars)) { c.s = [0, 0, 0, 0]; c.v = 0; }
 if (!S.lkMig) { S.lkMig = Date.now(); for (const P of Object.values(S.w.base.p || {})) if (P.t === 'porta' && !P.cl) P.cl = { h: null, a: [] }; for (const d of Object.values(S.w.base.d || {})) if ((d.k === 'bau' || d.k === 'bauG') && !d.cl) d.cl = { h: null, a: [] }; }
 // mochilas antigas (só de mortes): passam ao formato novo
@@ -33,7 +34,7 @@ const players = new Map(); let nextId = 1;
 const send = (c, o) => { if (c.dead) return; const b = Buffer.from(JSON.stringify(o)); let h; if (b.length < 126) h = Buffer.from([0x81, b.length]); else if (b.length < 65536) { h = Buffer.alloc(4); h[0] = 0x81; h[1] = 126; h.writeUInt16BE(b.length, 2); } else { h = Buffer.alloc(10); h[0] = 0x81; h[1] = 127; h.writeBigUInt64BE(BigInt(b.length), 2); } try { c.sock.write(Buffer.concat([h, b])); } catch (e) { } };
 const bcast = (o, pred = () => true) => { for (const c of players.values()) if (c.p && pred(c)) send(c, o); };
 const srv = http.createServer((req, res) => {
-  if (req.url === '/saude') { res.writeHead(200, { 'content-type': 'application/json', 'access-control-allow-origin': '*', 'cache-control': 'no-store' }); res.end(JSON.stringify({ ok: true, jogadores: [...players.values()].filter(c => c.p).length, a_dormir: Object.keys(S.sleepers).length, mochilas: Object.keys(S.bags).length, clas: Object.keys(S.clans).length, zombies: S.w.zs.filter(z => z.st !== 3).length, caixas: Object.keys(S.w.ct).length, carros: Object.keys(S.w.cars).length })); return; }
+  if (req.url === '/saude') { res.writeHead(200, { 'content-type': 'application/json', 'access-control-allow-origin': '*', 'cache-control': 'no-store' }); res.end(JSON.stringify({ ok: true, jogadores: [...players.values()].filter(c => c.p).length, a_dormir: Object.keys(S.sleepers).length, mochilas: Object.keys(S.bags).length, clas: Object.keys(S.clans).length, zombies: S.w.zs.filter(z => z.st !== 3).length, caixas: Object.keys(S.w.ct).length, carros: Object.keys(S.w.cars).length, mapa: mapOk(), equipa: Object.keys(S.roles).length, admin_cod: !!ADMH })); return; }
   res.writeHead(404); res.end();
 });
 srv.on('upgrade', (req, sock) => {
@@ -42,7 +43,7 @@ srv.on('upgrade', (req, sock) => {
   const acc = crypto.createHash('sha1').update(key + '258EAFA5-E914-47DA-95CA-C5AB0DC85B11').digest('base64');
   sock.write(`HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Accept: ${acc}\r\n\r\n`);
   sock.setNoDelay(true);
-  const c = { id: nextId++, sock, buf: Buffer.alloc(0), p: null, rate: 0, rt: Date.now(), dead: false };
+  const c = { id: nextId++, sock, buf: Buffer.alloc(0), p: null, rate: 0, rt: Date.now(), dead: false, ip: String(req.headers['x-forwarded-for'] || req.socket.remoteAddress || '').split(',')[0].trim().slice(0, 64) };
   players.set(c.id, c);
   sock.on('data', d => { c.buf = Buffer.concat([c.buf, d]); if (c.buf.length > 1 << 17) return drop(c); for (;;) { const m = frame(c); if (m === null) break; if (m === false) return drop(c); } });
   sock.on('close', () => drop(c)); sock.on('error', () => drop(c));
@@ -63,10 +64,10 @@ const drop = c => {
   for (const car of Object.values(S.w.cars)) { const i = car.s.indexOf(c.id); if (i >= 0) { car.s[i] = 0; if (i === 0) car.v = 0; } }
   const p = c.p; if (!p) return; if (S.tokens[p.tok]) S.tokens[p.tok].t = Date.now();
   // quem sai fica a dormir onde estava (com o que tinha), a não ser que já estivesse morto
-  if (p.alive && p.tok) { S.sleepers[p.tok] = { x: p.x, z: p.z, y: p.y, lv: p.lv, yaw: p.yaw, name: p.name, look: p.look, inv: p.inv || [], hp: p.hp, ar: p.ar, clan: p.clan || null, t: Date.now() }; dirty = true; bcast({ t: 'sleep', list: sleepList() }); }
-  bcast({ t: 'left', id: c.id });
+  if (p.alive && p.tok) { S.sleepers[p.tok] = { x: p.x, z: p.z, y: p.y, lv: p.lv, yaw: p.yaw, name: p.name, look: p.look, inv: p.inv || [], hp: p.hp, ar: p.ar, clan: p.clan || null, t: Date.now(), hid: p.invis ? 1 : 0 }; dirty = true; bcast({ t: 'sleep', list: sleepList() }); }
+  if (!p.invis) bcast({ t: 'left', id: c.id });
 };
-const sleepList = () => Object.entries(S.sleepers).map(([k, s]) => [k.slice(0, 8), +s.x.toFixed(1), +s.z.toFixed(1), s.lv || 0, +(s.yaw || 0).toFixed(2), s.name, s.look || {}, s.clan || null]);
+const sleepList = () => Object.entries(S.sleepers).filter(([, s]) => !s.hid).map(([k, s]) => [k.slice(0, 8), +s.x.toFixed(1), +s.z.toFixed(1), s.lv || 0, +(s.yaw || 0).toFixed(2), s.name, s.look || {}, s.clan || null]);
 const bagRow = (id, b) => [id, +b.x.toFixed(2), +b.z.toFixed(2), +(b.y || 0).toFixed(2), b.lv || 0, b.body ? 1 : 0, b.name || ''];
 const bagRows = () => Object.entries(S.bags).map(([id, b]) => bagRow(id, b));
 const clanOf = id => S.clans[id] || null;
@@ -276,7 +277,7 @@ const zNear = (x, z, r) => { let n = 0; for (const c of players.values()) if (c.
 const zHit = (c, p, m, now) => { const z = S.w.zs[m.i | 0]; if (!z || z.st === 3 || Math.hypot(z.x - p.x, z.z - p.z) > 900) return;
   z.hp -= num(m.dmg, 0, 2000); if (typeof m.h === 'number') z.h = num(m.h, 0, 4) | 0; if (typeof m.v === 'number') z.v = num(m.v, 0, 4) | 0; if (typeof m.hd === 'number') z.hd = m.hd; if (typeof m.vd === 'number') z.vd = m.vd;
   if (m.limp) z.limp = Math.min(2, (z.limp || 0) + num(m.limp, 0, 2));
-  if (z.hp <= 0) { z.hp = 0; z.st = 3; z.dt = now; z.mv = 0; dirty = true; if (Math.random() < 0.32) { const g = new Grid(6, 4); rollLoot(z.k === 1 ? 'militar' : 'zombie', g); mkBag(z.x, z.z, 0, z.lv || 0, g.list.map(e => encSrv(e.it, e.x, e.y))); } bcast({ t: 'zk', i: m.i | 0, by: c.id, head: m.zone === 'head' ? 1 : 0 }, o => o.p && Math.hypot(o.p.x - z.x, o.p.z - z.z) < 200); return; }
+  if (z.hp <= 0) { z.hp = 0; z.st = 3; z.dt = now; z.mv = 0; dirty = true; stat(p, 'z'); if (Math.random() < 0.32) { const g = new Grid(6, 4); rollLoot(z.k === 1 ? 'militar' : 'zombie', g); mkBag(z.x, z.z, 0, z.lv || 0, g.list.map(e => encSrv(e.it, e.x, e.y))); } bcast({ t: 'zk', i: m.i | 0, by: c.id, head: m.zone === 'head' ? 1 : 0 }, o => o.p && Math.hypot(o.p.x - z.x, o.p.z - z.z) < 200); return; }
   if (z.o && z.o !== c.id) { const o = players.get(z.o); if (o) send(o, { t: 'zh', i: m.i | 0, dx: num(m.dx, -1, 1), dz: num(m.dz, -1, 1), by: c.id }); } };
 
 // ---------- mensagens
@@ -295,6 +296,7 @@ const onMsg = (c, m) => {
     const lo = name.toLowerCase(), now = Date.now();
     const dono = Object.keys(S.tokens).find(k => (S.tokens[k].name || '').toLowerCase() === lo && (S.sleepers[k] || now - S.tokens[k].t < 3 * 24 * 3600e3));
     if (dono && dono !== tok) return send(c, { t: 'erro', e: 'nome_em_uso' });
+    { const u0 = tok ? uidOf(tok) : null, B = (u0 && S.bans[u0]) || (c.ip && Object.values(S.bans).find(b => b.ip && b.ip === c.ip)); if (B && (!B.until || B.until > now)) return send(c, { t: 'erro', e: 'banido', until: B.until || 0, why: B.why || '' }); }
     if (!tok) { tok = rid(24); S.tokens[tok] = { name, t: now }; } S.tokens[tok].name = name; S.tokens[tok].t = now; dirty = true;
     const sl = S.sleepers[tok]; let killed = false, resume = null;
     if (sl) { delete S.sleepers[tok]; dirty = true; resume = { x: sl.x, z: sl.z, lv: sl.lv, hp: sl.hp }; bcast({ t: 'sleep', list: sleepList() }); }
@@ -309,13 +311,14 @@ const onMsg = (c, m) => {
     c.zc = new Map(); c.cc = new Map(); c.p.uid = uidOf(tok); c.p.test = tst;
     if (!Object.keys(S.w.cars).length && Array.isArray(m.cars)) { m.cars.slice(0, 60).forEach((a, i) => { const x = num(a[0], -4100, 4100), z = num(a[1], -4100, 4100), yaw = num(a[2], -10, 10); S.w.cars['c' + i] = { x, z, yaw, v: 0, fuel: +(10 + Math.random() * 20).toFixed(1), hp: 400, sx: x, sz: z, syaw: yaw, s: [0, 0, 0, 0], dead: 0 }; }); dirty = true; }
     const zseed = !S.w.zs.length && ![...players.values()].some(o => o !== c && o.zseed && now - (o.zseedT || 0) < 15000); if (zseed) { c.zseed = true; c.zseedT = now; }
-    send(c, { t: 'ok', id: c.id, tok, killed, resume, players: [...players.values()].filter(o => o.p && o !== c).map(o => [o.id, o.p.name, o.p.look, o.p.clan]), sleep: sleepList(), clan: clanInfo(clan),
+    send(c, { t: 'ok', id: c.id, tok, killed, resume, role: S.roles[c.p.uid] || null, players: [...players.values()].filter(o => o.p && o !== c).map(o => [o.id, o.p.name, o.p.look, o.p.clan]), sleep: sleepList(), clan: clanInfo(clan),
       uid: c.p.uid, inv: !m.fresh && !killed && S.led[tok] && !S.led[tok].g ? S.led[tok].inv : null, w: { cyc0: S.w.cyc0, now, wx: S.w.wx.r, base: baseRows(), locks: Object.entries(S.w.locks).map(([i, L]) => [+i, L.hp, L.broke || 0]), doors: Object.entries(S.w.doors).map(([i, o]) => [+i, o]), nodes: Object.entries(S.w.nodes).map(([k, u]) => [k, u - now]).filter(a => a[1] > 0), bags: bagRows(), zseed } });
     bcast({ t: 'join', id: c.id, name, look, clan }, o => o !== c);
     return;
   }
   const p = c.p; if (!p) return; const now = Date.now();
   if (m.t === 'st') { const nx = num(m.x, -4100, 4100), nz = num(m.z, -4100, 4100), al0 = !!m.al;
+    if (p.frozen && Math.hypot(nx - p.x, nz - p.z) > 0.3) { send(c, { t: 'pos', x: p.x, z: p.z, lv: p.lv }); return; } // congelado pela equipa
     if (al0 && !p.alive) { const L = ledOf(p); L.T = { ...KIT }; L.inv = null; dirty = true; p.lastSt = 0; } // renasceu
     else if (p.lastSt && al0 && p.alive && !p.test) { const dt = (now - p.lastSt) / 1000, inCar = Object.values(S.w.cars).some(o => o.s.includes(c.id)), d = Math.hypot(nx - p.x, nz - p.z);
       if (d > (inCar ? 25 : 8) * dt + 4) { strike(c, p, 'salto ' + d.toFixed(1) + ' m em ' + dt.toFixed(2) + ' s'); send(c, { t: 'pos', x: p.x, z: p.z, lv: p.lv }); p.lastSt = now; return; } }
@@ -334,6 +337,8 @@ const onMsg = (c, m) => {
     for (const o of cleanIt(Array.isArray(m.it) ? m.it : p.inv)) { const t = tally([o]); if (fits(t, rest)) { addT(rest, t, -1); it.push(o); } }
     mkBag(p.x, p.z, num(m.y, -5, 40, p.y), p.lv, it, { body: 1, name: p.name }); p.inv = []; L.T = {}; L.inv = null; dirty = true; return; }
   if (m.t === 'clan') { clan(c, m); return; }
+  if (m.t === 'adm' || m.t === 'admclaim') { adm(c, m); return; }
+  if (m.t === 'lb') { lboard(c); return; }
   if (m.t === 'ping') { send(c, { t: 'pong', k: m.k }); return; }
   // portas do mundo
   if (m.t === 'dr') { const i = num(m.i, 0, 20000, -1) | 0, o = m.o ? 1 : 0; if (i < 0) return; if (o) S.w.doors[i] = 1; else delete S.w.doors[i]; dirty = true; bcast({ t: 'dr', i, o }, x => x !== c); return; }
@@ -374,7 +379,7 @@ const onMsg = (c, m) => {
   // dano a um zombie (de quem disparou ou bateu): a vida conta aqui
   if (m.t === 'zd') { for (const d of (Array.isArray(m.L) ? m.L : [m]).slice(0, 40)) zHit(c, p, d, now); return; }
   // ataque de um zombie a outro jogador (decidido por quem o simula)
-  if (m.t === 'za') { const z = S.w.zs[m.i | 0], o = players.get(m.to | 0); if (!z || z.o !== c.id || !o || !o.p || Math.hypot(o.p.x - z.x, o.p.z - z.z) > 3) return; send(o, { t: 'zat', dmg: num(m.dmg, 0, 30) }); return; }
+  if (m.t === 'za') { const z = S.w.zs[m.i | 0], o = players.get(m.to | 0); if (!z || z.o !== c.id || !o || !o.p || o.p.god || Math.hypot(o.p.x - z.x, o.p.z - z.z) > 3) return; send(o, { t: 'zat', dmg: num(m.dmg, 0, 30) }); return; }
 };
 
 // ---------- tiros entre jogadores: trajetória com gravidade e arrasto, até à parede que o cliente viu
@@ -401,11 +406,11 @@ const shot = (c, m) => {
   bcast({ t: 'fx', id: c.id, o: O, d: D, sup }, o => o !== c && Math.hypot(o.p.x - O[0], o.p.z - O[2]) < (sup ? 60 : 400));
   const myClan = p.clan; const tgt = [];
   // quem dispara vê os outros cerca de 0,1–0,3 s atrás (o caminho da rede e a suavização): conta onde o alvo está e onde esteve nesse tempo
-  for (const o of players.values()) if (o !== c && o.p && o.p.alive && (o.p.lv || 0) === (p.lv || 0) && !(myClan && o.p.clan === myClan) && Math.hypot(o.p.x - O[0], o.p.z - O[2]) < L + 3) {
+  for (const o of players.values()) if (o !== c && o.p && o.p.alive && !o.p.invis && (o.p.lv || 0) === (p.lv || 0) && !(myClan && o.p.clan === myClan) && Math.hypot(o.p.x - O[0], o.p.z - O[2]) < L + 3) {
     // o caminho que fez nos últimos 0,45 s, com pontos a cada ~0,25 m (quem dispara vê-o algures nesse caminho)
     const P = (o.p.hist || []).filter(h => now - h[0] <= 450).map(h => [h[1], h[2], h[3]]); P.push([o.p.x, o.p.y, o.p.z]); tgt.push({ x: o.p.x, y: o.p.y, z: o.p.z, c: o });
     for (let i = P.length - 1; i > 0; i--) { const a = P[i], b = P[i - 1], dd = Math.hypot(b[0] - a[0], b[2] - a[2]); if (dd < 0.15 || dd > 6) continue; const n = Math.min(8, Math.ceil(dd / 0.25)); for (let k = 1; k <= n; k++) { const f = k / n; tgt.push({ x: a[0] + (b[0] - a[0]) * f, y: a[1] + (b[1] - a[1]) * f, z: a[2] + (b[2] - a[2]) * f, c: o }); } } }
-  for (const [tok, s] of Object.entries(S.sleepers)) if ((s.lv || 0) === (p.lv || 0) && !(myClan && s.clan === myClan) && Math.hypot(s.x - O[0], s.z - O[2]) < L + 3) tgt.push({ x: s.x, y: s.y || 0, z: s.z, sl: tok, lying: true });
+  for (const [tok, s] of Object.entries(S.sleepers)) if (!s.hid && (s.lv || 0) === (p.lv || 0) && !(myClan && s.clan === myClan) && Math.hypot(s.x - O[0], s.z - O[2]) < L + 3) tgt.push({ x: s.x, y: s.y || 0, z: s.z, sl: tok, lying: true });
   if (!tgt.length) return;
   // cada bala segue a direção que o jogador viu no rasto (com o desvio da arma), se não fugir mais do que 0,3 rad da mira; e para onde o cliente a viu parar (parede ou zombie)
   const ds = Array.isArray(m.ds) ? m.ds.slice(0, n) : null, Ls = Array.isArray(m.Ls) ? m.Ls : null;
@@ -416,13 +421,13 @@ const shot = (c, m) => {
     const h = hitTest(O, d, k, Li, tgt); if (!h) continue; const T = h.T;
     // chumbo perde força com a distância (como no jogo, até 35 m); balas pela velocidade que ainda levam
     let dmg = h.dmg * (n > 1 ? Math.min(1, Math.max(0.25, 1 - h.dist / 35)) : Math.max(0.3, Math.pow(h.v, 1.5))) * (0.9 + Math.random() * 0.2);
-    if (T.sl) { const s = S.sleepers[T.sl]; if (!s) continue; s.hp = (s.hp ?? 100) - dmg; if (s.hp <= 0) { delete S.sleepers[T.sl]; if (S.tokens[T.sl]) S.tokens[T.sl].killed = true; if (S.led[T.sl]) { S.led[T.sl].T = {}; S.led[T.sl].inv = null; } mkBag(s.x, s.z, s.y || 0, s.lv || 0, s.inv, { body: 1, name: s.name }); bcast({ t: 'sleep', list: sleepList() }); send(c, { t: 'hitc', zone: h.zone, kill: true, name: s.name }); } else send(c, { t: 'hitc', zone: h.zone }); dirty = true; continue; }
+    if (T.sl) { const s = S.sleepers[T.sl]; if (!s) continue; s.hp = (s.hp ?? 100) - dmg; if (s.hp <= 0) { stat(p, 'k'); const vu = uidOf(T.sl); S.stats[vu] = S.stats[vu] || { n: s.name, k: 0, d: 0, z: 0 }; S.stats[vu].d++; delete S.sleepers[T.sl]; if (S.tokens[T.sl]) S.tokens[T.sl].killed = true; if (S.led[T.sl]) { S.led[T.sl].T = {}; S.led[T.sl].inv = null; } mkBag(s.x, s.z, s.y || 0, s.lv || 0, s.inv, { body: 1, name: s.name }); bcast({ t: 'sleep', list: sleepList() }); send(c, { t: 'hitc', zone: h.zone, kill: true, name: s.name }); } else send(c, { t: 'hitc', zone: h.zone }); dirty = true; continue; }
     // como nos zombies: a proteção trava a bala (ainda magoa) e gasta-se até partir. Pistola: 1–2 tiros na cabeça, 3 no peito (4 com colete)
     const v = T.c.p, [helm, vest] = v.ar || [0, 0]; let pop = null;
     if (h.zone === 'head') { if (helm && h.pen <= helm) { v.hd = (v.hd ?? 20) - dmg; dmg *= 0.8; if (v.hd <= 0) { pop = 'head'; v.ar[0] = 0; v.hd = null; } } else dmg = n > 1 ? dmg * 2.5 : 999; }
     else if (h.zone === 'body') { dmg *= 1.2; if (vest && h.pen <= vest) { v.vd = (v.vd ?? (vest >= 3 ? 50 : 25)) - dmg; dmg *= 0.8; if (v.vd <= 0) { pop = 'vest'; v.ar[1] = 0; v.vd = null; } } else if (vest) dmg *= 0.85; }
     else dmg *= 0.6;
-    v.hp = Math.max(0, v.hp - dmg); const kill = v.hp <= 0; if (kill) v.alive = false;
+    if (v.god) dmg = 0; v.hp = Math.max(0, v.hp - dmg); const kill = v.hp <= 0; if (kill) { v.alive = false; stat(p, 'k'); stat(v, 'd'); }
     send(T.c, { t: 'hit', by: p.name, dmg: +dmg.toFixed(1), zone: h.zone, hp: v.hp, pop });
     send(c, { t: 'hitc', on: T.c.id, zone: h.zone, kill, name: v.name });
   }
@@ -436,6 +441,54 @@ const clan = (c, m) => {
   else if (m.a === 'leave') { leave(p); }
   send(c, { t: 'clan', info: clanInfo(p.clan) }); bcast({ t: 'pclan', id: c.id, clan: p.clan });
 };
+// ---------- estatísticas (classificações)
+const stat = (p, k) => { if (!p || !p.uid) return; const s = S.stats[p.uid] || (S.stats[p.uid] = { n: p.name, k: 0, d: 0, z: 0 }); s.n = p.name; s[k] = (s[k] || 0) + 1; dirty = true; };
+const lboard = c => { const now = Date.now(); if (now - (c.lbT || 0) < 1500) return; c.lbT = now; const L = Object.entries(S.stats), me = S.stats[c.p.uid] || { k: 0, d: 0, z: 0 };
+  const byName = new Map(L.map(([, s]) => [s.n.toLowerCase(), s]));
+  const clans = Object.values(S.clans).map(C => { let k = 0, d = 0; for (const n of C.membros) { const s = byName.get(n.toLowerCase()); if (s) { k += s.k || 0; d += s.d || 0; } } return [C.nome, k, d, C.membros.length]; }).filter(x => x[1] + x[2] > 0).sort((a, b) => b[1] / Math.max(1, b[2]) - a[1] / Math.max(1, a[2]) || b[1] - a[1]).slice(0, 20);
+  send(c, { t: 'lb', pvp: L.filter(([, s]) => s.k || s.d).sort((a, b) => b[1].k - a[1].k || a[1].d - b[1].d).slice(0, 20).map(([, s]) => [s.n, s.k || 0, s.d || 0]), z: L.filter(([, s]) => s.z).sort((a, b) => b[1].z - a[1].z).slice(0, 20).map(([, s]) => [s.n, s.z]), clans, me: [me.k || 0, me.d || 0, me.z || 0], name: c.p.name }); };
+// ---------- administração: o Dinis (admin) e moderadores. Tudo confirmado aqui; o cliente só pede
+let ADMH = null; try { ADMH = JSON.parse(fs.readFileSync(new URL('./admin.json', import.meta.url), 'utf8')).h; } catch (e) { }
+const MODA = new Set(['list', 'goto', 'gopt', 'spec', 'inv', 'kick', 'ban', 'unban', 'freeze']);
+const CLAIM = new Map(); // tentativas do código de administrador por IP
+const onlineBy = uid => [...players.values()].find(o => o.p && o.p.uid === uid) || null;
+const tokOf = uid => Object.keys(S.tokens).find(t => uidOf(t) === uid) || null;
+const baseOf = () => { const B = {}; for (const [k, P] of Object.entries(S.w.base.p)) if (k[0] === 'f' && P.u && !B[P.u]) { const [, i, j] = k.split(':'); B[P.u] = [+i * CELL + 1.5, +j * CELL + 1.5]; } return B; };
+const tp = (c, x, z) => { const p = c.p; p.x = num(x, -3990, 3990); p.z = num(z, -3990, 3990); p.lv = 0; p.lastSt = Date.now(); p.hist = []; send(c, { t: 'pos', x: p.x, z: p.z, lv: 0, tp: 1 }); };
+const admList = c => { const now = Date.now(), B = baseOf(), on = new Set(), cn = id => (S.clans[id] || {}).nome || null;
+  const online = [...players.values()].filter(o => o.p).map(o => { on.add(o.p.uid); return { uid: o.p.uid, n: o.p.name, on: 1, x: Math.round(o.p.x), z: Math.round(o.p.z), hp: Math.round(o.p.hp), al: o.p.alive ? 1 : 0, cl: cn(o.p.clan), r: S.roles[o.p.uid] || null, f: o.p.frozen ? 1 : 0, i: o.p.invis ? 1 : 0, g: o.p.god ? 1 : 0, b: B[o.p.uid] || null }; });
+  const off = Object.entries(S.tokens).map(([t, T]) => [uidOf(t), t, T]).filter(([u]) => !on.has(u)).sort((a, b) => (b[2].t || 0) - (a[2].t || 0)).slice(0, 150).map(([u, t, T]) => { const sl = S.sleepers[t]; return { uid: u, n: T.name, on: 0, t: T.t || 0, sl: sl ? [Math.round(sl.x), Math.round(sl.z)] : null, cl: cn(T.clan), r: S.roles[u] || null, b: B[u] || null, ban: S.bans[u] ? (S.bans[u].until || 0) : null }; });
+  send(c, { t: 'adm', list: { online, off, bans: Object.entries(S.bans).map(([u, b]) => ({ uid: u, n: b.n, until: b.until || 0, why: b.why || '', by: b.by || '', t: b.t || 0 })), clans: Object.entries(S.clans).map(([id, C]) => ({ id, n: C.nome, cod: C.codigo, m: C.membros })), now } }); };
+const admFlags = c => send(c, { t: 'admf', r: S.roles[c.p.uid] || null, inv: c.p.invis ? 1 : 0, god: c.p.god ? 1 : 0, spec: c.p.spec ? 1 : 0 });
+const setInv = (c, on) => { const p = c.p;  if (!!p.invis === on) return; p.invis = on ? 1 : 0; if (on) bcast({ t: 'left', id: c.id, quiet: 1 }, o => o !== c && !S.roles[o.p.uid]); else bcast({ t: 'join', id: c.id, name: p.name, look: p.look, clan: p.clan, quiet: 1 }, o => o !== c && !S.roles[o.p.uid]); };
+const wipeBase = uid => { const out = [], outd = []; for (const [k, P] of Object.entries(S.w.base.p)) if (P.u === uid) pDel(k, out); for (const [id, d] of Object.entries(S.w.base.d)) if (d.u === uid) dDel(id, outd); if (out.length || outd.length) bb({ rp: out, rd: outd }); return out.length + outd.length; };
+const adm = (c, m) => { const p = c.p, now = Date.now();
+  if (m.t === 'admclaim') { const k = c.ip || 'x', A = CLAIM.get(k) || { n: 0, t: now }; if (now - A.t > 3600e3) { A.n = 0; A.t = now; } if (++A.n > 6) return send(c, { t: 'admno', e: 'Tentaste vezes demais. Espera uma hora.' }); CLAIM.set(k, A);
+    const raw = String(m.code || '').toUpperCase().replace(/[^A-Z0-9]/g, ''); if (!ADMH || raw.length !== 20 || crypto.createHash('sha256').update(raw).digest('hex') !== ADMH) return send(c, { t: 'admno', e: 'Código errado' });
+    S.roles[p.uid] = 'admin'; dirty = true; S.admLog.push([now, p.name, 'claim']); console.log('admin:', p.name); return admFlags(c); }
+  const r = S.roles[p.uid], a = String(m.a || ''); if (!r || !(r === 'admin' || MODA.has(a))) return send(c, { t: 'admno', e: 'Sem permissão' });
+  const uid = typeof m.uid === 'string' ? m.uid.slice(0, 16) : '', o = uid ? onlineBy(uid) : null, tok = uid ? tokOf(uid) : null, tn = (o && o.p.name) || (tok && S.tokens[tok].name) || '?';
+  if (a !== 'list') { S.admLog.push([now, p.name, a, tn]); if (S.admLog.length > 300) S.admLog.splice(0, 100); dirty = true; }
+  if (a === 'list') return admList(c);
+  if (a === 'goto') { const B = baseOf(); const P = m.w === 'b' ? B[uid] : o ? [o.p.x, o.p.z] : tok && S.sleepers[tok] ? [S.sleepers[tok].x, S.sleepers[tok].z] : B[uid]; if (!P) return send(c, { t: 'admno', e: 'Não sei onde está' }); tp(c, P[0] + 1.2, P[1] + 1.2); return; }
+  if (a === 'gopt') { tp(c, m.x, m.z); return; }
+  if (a === 'bring') { if (!o) return send(c, { t: 'admno', e: 'Não está ligado' }); tp(o, p.x + 1.2, p.z + 1.2); send(o, { t: 'admmsg', e: 'Um administrador trouxe-te' }); return; }
+  if (a === 'spec' || a === 'inv' || a === 'god') { const on = !!m.on; if (a === 'god') p.god = on ? 1 : 0; else if (a === 'inv') setInv(c, on); else { p.spec = on ? 1 : 0; setInv(c, on); p.god = on ? 1 : p.god && !on ? 0 : p.god; } return admFlags(c); }
+  if (a === 'kick') { if (!o) return send(c, { t: 'admno', e: 'Não está ligado' }); if (S.roles[uid] === 'admin' && r !== 'admin') return send(c, { t: 'admno', e: 'Sem permissão' }); send(o, { t: 'erro', e: 'expulso', why: String(m.why || '').slice(0, 120) }); setTimeout(() => drop(o), 300); return admList(c); }
+  if (a === 'ban') { if (!uid || uid === p.uid || S.roles[uid] === 'admin') return send(c, { t: 'admno', e: 'Não podes banir este jogador' }); const h = num(m.h, 0, 24 * 3650, 0); S.bans[uid] = { n: tn, until: h ? now + h * 3600e3 : 0, why: String(m.why || '').slice(0, 120), by: p.name, t: now, ip: o ? o.ip : (S.bans[uid] || {}).ip || null }; dirty = true;
+    if (m.wipe && r === 'admin') { wipeBase(uid); if (tok) { if (S.sleepers[tok]) { delete S.sleepers[tok]; bcast({ t: 'sleep', list: sleepList() }); } S.led[tok] = { T: {}, inv: null, g: false }; } }
+    if (o) { send(o, { t: 'erro', e: 'banido', until: S.bans[uid].until, why: S.bans[uid].why }); setTimeout(() => drop(o), 300); } return admList(c); }
+  if (a === 'unban') { delete S.bans[uid]; dirty = true; return admList(c); }
+  if (a === 'freeze') { if (!o) return send(c, { t: 'admno', e: 'Não está ligado' }); o.p.frozen = m.on ? 1 : 0; send(o, { t: 'frz', on: o.p.frozen }); return admList(c); }
+  if (a === 'kill') { if (!o) return send(c, { t: 'admno', e: 'Não está ligado' }); send(o, { t: 'akill' }); return admList(c); }
+  if (a === 'give') { const k = String(m.k || ''), D = ITEMS[k]; if (!D) return; const n = num(m.n, 1, Math.max(1, (D.st || 1) * 10), 1) | 0; addT(ledOf(p).T, { [k]: n }); return send(c, { t: 'adgive', k, n }); }
+  if (a === 'car') { const id = 'a' + rid(4), yaw = num(p.yaw, -10, 10), x = p.x + Math.sin(yaw) * 4, z = p.z + Math.cos(yaw) * 4; S.w.cars[id] = { x, z, yaw, v: 0, fuel: 60, hp: 400, sx: x, sz: z, syaw: yaw, s: [0, 0, 0, 0], dead: 0 }; dirty = true; return send(c, { t: 'admmsg', e: 'Carro criado à tua frente' }); }
+  if (a === 'delbase') { const n = uid ? wipeBase(uid) : 0; send(c, { t: 'admmsg', e: n ? 'Base apagada (' + n + ' peças)' : 'Não tem base' }); return admList(c); }
+  if (a === 'role') { if (!uid || uid === p.uid) return send(c, { t: 'admno', e: 'Não podes mudar o teu cargo' }); const nr = m.r === 'admin' || m.r === 'mod' ? m.r : null; if (nr) S.roles[uid] = nr; else delete S.roles[uid]; dirty = true; if (o) { if (!nr) { if (o.p.invis) setInv(o, false); o.p.god = 0; o.p.spec = 0; } admFlags(o); } return admList(c); }
+  if (a === 'clanDel' || a === 'clanKick') { const id = String(m.id || ''), C = S.clans[id]; if (!C) return; const gone = a === 'clanDel' ? [...C.membros] : C.membros.filter(n => n === String(m.n || ''));
+    for (const n of gone) { for (const T of Object.values(S.tokens)) if (T.clan === id && (T.name || '') === n) delete T.clan; for (const q of players.values()) if (q.p && q.p.clan === id && q.p.name === n) { q.p.clan = null; send(q, { t: 'clan', info: null }); bcast({ t: 'pclan', id: q.id, clan: null }); } }
+    C.membros = C.membros.filter(n => !gone.includes(n)); if (a === 'clanDel' || !C.membros.length) delete S.clans[id]; dirty = true; return admList(c); }
+};
 const leave = p => { if (!p.clan) return; const C = S.clans[p.clan]; if (C) { C.membros = C.membros.filter(n => n !== p.name); if (!C.membros.length) delete S.clans[p.clan]; } if (S.tokens[p.tok]) delete S.tokens[p.tok].clan; p.clan = null; dirty = true; };
 
 // ---------- imagens do mundo: jogadores 20 por segundo, zombies e carros 10 (só o que está perto; o clã sempre, para o mapa)
@@ -444,7 +497,7 @@ const ZR = 300; // zombies que cada um recebe (metros): até onde a luneta deixa
 setInterval(() => {
   const L = [...players.values()].filter(c => c.p), full = (++tickN & 1) === 0;
   for (const c of L) {
-    const out = []; for (const o of L) { if (o === c) continue; const d = Math.hypot(o.p.x - c.p.x, o.p.z - c.p.z), mate = c.p.clan && o.p.clan === c.p.clan; if (d > 320 && !mate) continue; out.push([o.id, +o.p.x.toFixed(2), +o.p.z.toFixed(2), +o.p.y.toFixed(2), o.p.lv, +o.p.yaw.toFixed(2), +o.p.mv.toFixed(2), o.p.an, o.p.w, Math.round(o.p.hp), o.p.alive ? 1 : 0, d > 320 ? 1 : 0, o.p.ar, Math.round(o.p.ts || 0)]); }
+    const out = [], staff = !!S.roles[c.p.uid]; for (const o of L) { if (o === c || (o.p.invis && !staff)) continue; const d = Math.hypot(o.p.x - c.p.x, o.p.z - c.p.z), mate = c.p.clan && o.p.clan === c.p.clan; if (d > 320 && !mate) continue; out.push([o.id, +o.p.x.toFixed(2), +o.p.z.toFixed(2), +o.p.y.toFixed(2), o.p.lv, +o.p.yaw.toFixed(2), +o.p.mv.toFixed(2), o.p.an, o.p.w, Math.round(o.p.hp), o.p.alive ? 1 : 0, d > 320 ? 1 : 0, o.p.ar, Math.round(o.p.ts || 0)]); }
     const msg = { t: 's', ps: out };
     // zombies: só os que mudaram desde a última vez (e os que saíram de perto)
     if (full && c.zc) { const u = [], seen = new Set(); const zs = S.w.zs;

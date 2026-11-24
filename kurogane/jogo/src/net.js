@@ -33,15 +33,24 @@ export function makeNet({ G, scene, mkRemote, audio, Conta, enc, dec, hurt, die,
       case 'ok': {
         N.id = m.id; tok = m.tok; try { localStorage.setItem(tokKey(), tok); } catch (e) { } N.on = true; retry = 0;
         clearAll(); for (const [id, name, look, clan] of m.players) addRemote(id, name, look, clan); setSleepers(m.sleep); N.clan = m.clan ? m.clan.id : null; N.clanInfo = m.clan;
+        N.role = m.role || null; G.admF = { r: N.role, inv: 0, god: 0, spec: 0 }; G.frozen = false; G.ui.admRole && G.ui.admRole(N.role);
         off = m.w.now - Date.now(); cyc0 = m.w.cyc0; N.uid = m.uid; N.world = true; cur = null; world.reset(m.w); if (m.inv && !m.killed && G.loadInv) G.loadInv(m.inv); invSig = '';
         const n = m.players.length; G.ui.toast(n ? `Online · ${n} ${n === 1 ? 'jogador ligado' : 'jogadores ligados'}` : 'Online · estás sozinho no servidor por agora');
         if (m.killed) { G.ui.toast('Mataram-te enquanto dormias'); die('dormir'); }
         else if (m.resume && G.p && m.resume.hp != null && m.resume.hp < G.p.hp) G.p.hp = Math.max(1, m.resume.hp);
         N.sendInv(); if (N.onClan) N.onClan(); return;
       }
-      case 'erro': want = false; G.ui.toast(m.e === 'nome_em_uso' ? 'Esse nome já é de outro jogador. Muda o nome do perfil para jogar online.' : m.e === 'versao' ? 'Há uma versão nova do jogo. Recarrega a página para jogar online.' : 'O nome do perfil não serve para o servidor (3 a 16 letras ou números).'); try { ws.close(); } catch (e) { } return;
-      case 'join': addRemote(m.id, m.name, m.look, m.clan); G.ui.toast(m.name + ' entrou'); return;
-      case 'left': { const r = R.get(m.id); if (r) G.ui.toast(r.name + ' saiu e ficou a dormir'); delRemote(m.id); return; }
+      case 'erro': want = false; G.ui.toast(m.e === 'expulso' ? 'Foste expulso do servidor' + (m.why ? ': ' + m.why : '') : m.e === 'banido' ? 'Estás banido do servidor' + (m.until ? ' até ' + new Date(m.until).toLocaleString('pt-PT', { day: 'numeric', month: 'numeric', hour: '2-digit', minute: '2-digit' }) : '') + (m.why ? ' · ' + m.why : '') : m.e === 'nome_em_uso' ? 'Esse nome já é de outro jogador. Muda o nome do perfil para jogar online.' : m.e === 'versao' ? 'Há uma versão nova do jogo. Recarrega a página para jogar online.' : 'O nome do perfil não serve para o servidor (3 a 16 letras ou números).'); try { ws.close(); } catch (e) { } return;
+      case 'join': addRemote(m.id, m.name, m.look, m.clan); if (!m.quiet) G.ui.toast(m.name + ' entrou'); return;
+      case 'left': { const r = R.get(m.id); if (r && !m.quiet) G.ui.toast(r.name + ' saiu e ficou a dormir'); delRemote(m.id); return; }
+      case 'adm': G.ui.admList && G.ui.admList(m.list); return;
+      case 'admf': N.role = m.r; G.admF = { r: m.r, inv: m.inv, god: m.god, spec: m.spec }; G.ui.admRole && G.ui.admRole(m.r, true); return;
+      case 'admno': G.ui.toast(m.e || 'Não deu'); G.ui.admErr && G.ui.admErr(m.e); return;
+      case 'admmsg': G.ui.toast(m.e); return;
+      case 'frz': G.frozen = !!m.on; G.ui.toast(m.on ? 'Foste congelado por um administrador' : 'Já te podes mexer'); return;
+      case 'akill': if (G.p && G.p.alive) die('admin'); return;
+      case 'adgive': G.gain(m.k, m.n); G.ui.toast('Recebeste ' + m.n + ' × ' + m.k); return;
+      case 'lb': G.ui.lbShow && G.ui.lbShow(m); return;
       case 's': {
         const now = performance.now(), seen = new Set();
         for (const a of m.ps) { const r = R.get(a[0]); if (!r) continue; seen.add(r.id); if (r.s1 && (Math.hypot(a[1] - r.s1[1], a[2] - r.s1[2]) > 25 || a[4] !== r.s1[4])) r.T = track(); r.s1 = a; push(r.T, a[13] || now, now, { x: a[1], z: a[2], y: a[3], yaw: a[5], a });
@@ -121,6 +130,7 @@ export function makeNet({ G, scene, mkRemote, audio, Conta, enc, dec, hurt, die,
   const closeBox = () => { if (!cur) return; if (cur.open && cur.c.grid) { const d = cur.c.dep, o = { t: 'cl', c: cur.key, it: world.encG(cur.c.grid) }; if (d && d.k === 'fornalha') o.fu = { on: d.on ? 1 : 0, until: G.base.furnUntil(d) }; send(o); } cur = null; };
   N.open = c => { closeBox(); cur = { key: keyOf(c), c, open: false, t: performance.now() }; send({ t: 'op', c: cur.key }); };
   N.clanCmd = (a, v) => send({ t: 'clan', a, nome: v, codigo: v });
+  N.adm = (a, o = {}) => send({ ...o, t: 'adm', a }); N.admClaim = code => send({ t: 'admclaim', code }); N.lb = () => send({ t: 'lb' });
   // com uma caixa aberta, o que mudou nela vai primeiro: assim o servidor já sabe que tiraste de lá quando vê o teu inventário (e não o corrige por engano)
   let invSig = ''; N.sendInv = () => { if (!G.invLayout || !G.inv) return; if (cur && cur.open && cur.c && cur.c.grid) { const s0 = sigOf(cur.c); if (s0 !== cur.sig) { cur.sig = s0; send({ t: 'ps', c: cur.key, it: world.encG(cur.c.grid) }); } } const L = G.invLayout(), sg = JSON.stringify(L); if (sg === invSig) return; invSig = sg; send({ t: 'inv', ...L }); };
   N.near = (x, z, r) => { for (const o of R.values()) if (o.s1 && Math.hypot(o.s1[1] - x, o.s1[2] - z) < r) return true; for (const s of sleepers.values()) if (Math.hypot(s.x - x, s.z - z) < r) return true; return false; };

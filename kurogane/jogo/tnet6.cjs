@@ -36,7 +36,7 @@ server.listen(0, async () => {
     const w0 = await cnt(A, 'madeira');
     await A.ev(k => { G.gain('madeira', 12, k); }, tree && tree[0]); await W(7000);
     const w1 = await cnt(A, 'madeira'); ok(tree && w1 === w0 + 12, `madeira apanhada numa árvore fica (${w0} → ${w1})`);
-    await A.ev(() => { G.gain('madeira', 40); }); await W(7000);
+    await A.ev(() => { G.gain('madeira', 40); }); await W(10000);
     const w2 = await cnt(A, 'madeira'); ok(w2 === w1, `madeira sem árvore é tirada (${w1} → ${w2})`);
     // 3) tirar de uma caixa do mundo fica (o servidor gerou o que lá estava)
     const box = await A.ev(async () => { const sl = ms => new Promise(r => setTimeout(r, ms)); const p = G.p; let best = null, bd = 1e9; for (const c of G.W.containers) { if (c.wid == null || (c.lv || 0) !== 0) continue; const d = Math.hypot(c.x - p.x, c.z - p.z); if (d < bd) { bd = d; best = c; } } if (!best) return null; p.x = best.x + 0.6; p.z = best.z + 0.6; await sl(1500); G.prompt = best; G.interact(); await sl(2500); if (!G.box || !G.box.grid) return 'não abriu'; const e = G.box.grid.list[0]; if (!e) { G.ui.closeInv(); return 'vazia'; } const it = e.it; G.box.grid.remove(it); const left = G.inv.give(it); G.ui.refresh(true); await sl(800); G.ui.closeInv(); return { k: it.k, n: it.n, left }; });

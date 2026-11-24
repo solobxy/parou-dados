@@ -523,9 +523,73 @@ export function initUI(G) {
       row('Opacidade do ecrã', '', range(0.4, 1, 0.05, () => cfg.op, v => cfg.op = v)),
       vis,
     ]);
+    if (G.net && G.net.on) { if (G.net.role) { const b = document.createElement('button'); b.className = 'btn sm pri'; b.textContent = 'Abrir'; b.onclick = () => { closeSet(); admOpen(); }; grp('Equipa do jogo', [row('Painel de ' + (G.net.role === 'admin' ? 'administrador' : 'moderador'), 'Jogadores, bans, clãs e as tuas ferramentas.', b)]); }
+      else { const w = document.createElement('div'); w.className = 'aq'; w.style.margin = '0'; w.innerHTML = '<input id="admCode" type="password" placeholder="Código" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-label="Código de administrador"><button class="btn sm" id="admGo">Entrar</button>'; w.querySelector('#admGo').onclick = () => { const v = w.querySelector('#admCode').value.trim(); if (!v) return; audio.play('ui'); G.net.admClaim(v); };
+        grp('Equipa do jogo', [row('Código de administrador', 'Só para quem gere o servidor.', w)]); } }
     grp('Gráficos', [row('Sombras', 'Desligar ajuda telemóveis mais fracos.', tog(() => cfg.shadows, v => cfg.shadows = v)), row('Modo poupança', 'Menos resolução, mais fluidez e menos bateria.', tog(() => cfg.lowres, v => cfg.lowres = v)), row('Mostrar FPS', '', tog(() => cfg.fps, v => cfg.fps = v))]);
     grp('Som', [row('Volume geral', '', range(0, 1, 0.05, () => cfg.vol, v => cfg.vol = v)), row('Música do menu', '', range(0, 1, 0.05, () => cfg.musMenu, v => { cfg.musMenu = v; if (v > 0 && cfg.music === false) { cfg.music = true; musBtn(); } })), row('Música em jogo', 'Baixa no dia a dia; sobe quando há perigo.', range(0, 1, 0.05, () => cfg.musGame, v => { cfg.musGame = v; if (v > 0 && cfg.music === false) { cfg.music = true; musBtn(); } })), row('Ver os sons à volta do ecrã', 'Setas na borda mostram de onde vêm grunhidos, passos e tiros.', tog(() => cfg.soundViz, v => cfg.soundViz = v))]);
   };
+  // ---------- painel da equipa (administrador e moderador): tudo é pedido ao servidor, que confirma o cargo
+  const admEl = $('adm'), admB = $('admB'); let admTab = 'p', admData = null, admOpenUid = null, admQ = '', admBan = { h: 24, wipe: false, why: '' };
+  const ago = t => { const s = (Date.now() - t) / 1000; return s < 3600 ? 'há ' + Math.max(1, Math.round(s / 60)) + ' min' : s < 86400 ? 'há ' + Math.round(s / 3600) + ' h' : 'há ' + Math.round(s / 86400) + ' dias'; };
+  const admRole = (r, flags) => { $('bAdm').hidden = !r; if (!r && !admEl.hidden) admEl.hidden = true; if (flags && !setEl.hidden && r) { closeSet(); admOpen(); } if (!admEl.hidden) admRender(); };
+  const admOpen = () => { if (!G.net.role) return; admEl.hidden = false; $('admR').textContent = G.net.role === 'admin' ? 'Admin' : 'Moderador'; $('admR').className = 'admr' + (G.net.role === 'mod' ? ' mod' : ''); $('admTabs').querySelector('[data-t=c]').hidden = G.net.role !== 'admin'; admRender(); G.net.adm('list'); };
+  const admList = L => { admData = L; if (!admEl.hidden) admRender(); };
+  const A = (a, o) => { audio.play('ui'); G.net.adm(a, o); };
+  const admRender = () => {
+    const r = G.net.role, isA = r === 'admin'; admEl.querySelectorAll('#admTabs button').forEach(b => b.classList.toggle('on', b.dataset.t === admTab));
+    if (admTab === 'e') { const F = G.admF || {}; const t = (lbl, sub, key, a) => `<div class="srow"><div class="lab"><b>${lbl}</b><span>${sub}</span></div><button class="tog${F[key] ? ' on' : ''}" data-a="${a}" data-on="${F[key] ? 0 : 1}" role="switch"></button></div>`;
+      admB.innerHTML = t('Ver sem ser visto', 'Ninguém te vê nem te acerta e os zombies ignoram-te.', 'spec', 'spec') + t('Invisível', 'Os outros jogadores deixam de te ver no mapa e no jogo.', 'inv', 'inv') + (isA ? t('Invencível', 'Não perdes vida com tiros, zombies, quedas nem fome.', 'god', 'god') : '')
+        + `<div class="srow"><div class="lab"><b>Ir a um ponto do mapa</b><span>Liga e toca no mapa grande onde queres ir.</span></div><button class="tog${G.admTp ? ' on' : ''}" id="admTp" role="switch"></button></div>`
+        + (isA ? `<div class="srow ae"><div class="lab"><b>Criar objeto</b><span>Vai para o teu inventário.</span></div><div class="aq" style="margin:0"><select id="admK">${Object.keys(ITEMS).sort((a, b) => ITEMS[a].n.localeCompare(ITEMS[b].n, 'pt')).map(k => `<option value="${k}">${esc(ITEMS[k].n)}</option>`).join('')}</select><input id="admN" type="number" min="1" max="999" value="1" style="width:80px"><button class="btn sm pri" id="admGive">Dar</button></div></div>
+        <div class="srow"><div class="lab"><b>Criar carro</b><span>Aparece à tua frente.</span></div><button class="btn sm" id="admCar">Criar</button></div>` : '');
+      admB.querySelectorAll('.tog[data-a]').forEach(b => b.onclick = () => A(b.dataset.a, { on: +b.dataset.on }));
+      $('admTp').onclick = () => { G.admTp = !G.admTp; audio.play('ui'); admRender(); if (G.admTp) toast('Abre o mapa e toca onde queres ir'); };
+      if (isA) { $('admGive').onclick = () => A('give', { k: $('admK').value, n: +$('admN').value || 1 }); $('admCar').onclick = () => A('car'); }
+      return; }
+    if (!admData) { admB.innerHTML = '<p class="empty">A carregar…</p>'; return; }
+    if (admTab === 'b') { admB.innerHTML = admData.bans.length ? admData.bans.map(b => `<div class="ap"><button><span class="nm"><b>${esc(b.n || '?')}</b><span>${b.until ? 'até ' + new Date(b.until).toLocaleString('pt-PT', { day: 'numeric', month: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'para sempre'} · por ${esc(b.by)}${b.why ? ' · ' + esc(b.why) : ''}</span></span></button><div class="aa"><button class="btn sm" data-ub="${b.uid}">Tirar ban</button></div></div>`).join('') : '<p class="empty">Ninguém está banido.</p>';
+      admB.querySelectorAll('[data-ub]').forEach(b => b.onclick = () => A('unban', { uid: b.dataset.ub })); return; }
+    if (admTab === 'c') { admB.innerHTML = admData.clans.length ? admData.clans.map(C => `<div class="ap"><button><span class="nm"><b>${esc(C.n)}</b><span>Código ${esc(C.cod)} · ${C.m.length} ${C.m.length === 1 ? 'membro' : 'membros'}</span></span></button><div class="aa">${C.m.map(n => `<button class="btn sm" data-ck="${C.id}" data-n="${esc(n)}">Tirar ${esc(n)}</button>`).join('')}<button class="btn sm red" data-cd="${C.id}">Apagar clã</button></div></div>`).join('') : '<p class="empty">Não há clãs.</p>';
+      admB.querySelectorAll('[data-ck]').forEach(b => b.onclick = () => A('clanKick', { id: b.dataset.ck, n: b.dataset.n })); admB.querySelectorAll('[data-cd]').forEach(b => b.onclick = () => { if (b.dataset.sure) A('clanDel', { id: b.dataset.cd }); else { b.dataset.sure = 1; b.textContent = 'Confirmar: apagar'; } }); return; }
+    // jogadores: ligados primeiro, depois os outros pela ordem em que saíram
+    const q = admQ.toLowerCase(), all = [...admData.online, ...admData.off].filter(P => !q || P.n.toLowerCase().includes(q));
+    admB.innerHTML = `<div class="aq"><input id="admQ" placeholder="Procurar jogador" value="${esc(admQ)}" autocomplete="off" spellcheck="false"><button class="btn sm" id="admRf">Atualizar</button></div>` + (all.length ? all.map(P => { const me = P.uid === G.net.uid, open = admOpenUid === P.uid;
+      const sub = P.on ? (P.al ? 'Ligado · ' + P.hp + ' de vida' : 'Ligado · morto') + (P.cl ? ' · ' + esc(P.cl) : '') : ago(P.t) + (P.sl ? ' · a dormir em ' + P.sl.join(', ') : '') + (P.cl ? ' · ' + esc(P.cl) : '');
+      const tags = [P.r ? `<i class="${P.r === 'admin' ? 'red' : 'blue'}">${P.r === 'admin' ? 'Admin' : 'Mod'}</i>` : '', P.f ? '<i class="blue">Congelado</i>' : '', P.i ? '<i>Invisível</i>' : '', P.b ? '<i>Base</i>' : '', P.ban != null ? '<i class="red">Banido</i>' : ''].join('');
+      let acts = '';
+      if (open && !me) { const B = (lbl, a, o = {}, cls = '') => `<button class="btn sm ${cls}" data-a="${a}" data-o='${JSON.stringify(o)}'>${lbl}</button>`;
+        acts = '<div class="aa">' + (P.on || P.sl ? B('Ir ter com ele', 'goto', { uid: P.uid, w: 'p' }) : '') + (P.b ? B('Ir à base', 'goto', { uid: P.uid, w: 'b' }) : '') + (isA && P.on ? B('Trazer até mim', 'bring', { uid: P.uid }) : '') + (P.on ? B(P.f ? 'Descongelar' : 'Congelar', 'freeze', { uid: P.uid, on: P.f ? 0 : 1 }) : '')
+          + (isA && P.on && P.al ? B('Matar', 'kill', { uid: P.uid }) : '') + (P.on && P.r !== 'admin' ? B('Expulsar', 'kick', { uid: P.uid }) : '') + (isA && P.b ? B('Apagar base', 'delbase', { uid: P.uid }, 'red') : '')
+          + (isA ? (P.r !== 'admin' ? B('Tornar admin', 'role', { uid: P.uid, r: 'admin' }) : '') + (P.r !== 'mod' ? B('Tornar moderador', 'role', { uid: P.uid, r: 'mod' }) : '') + (P.r ? B('Tirar cargo', 'role', { uid: P.uid, r: null }) : '') : '')
+          + (P.ban != null ? B('Tirar ban', 'unban', { uid: P.uid }) : P.r !== 'admin' ? `<div class="bf"><div class="seg">${[[1, '1 hora'], [24, '1 dia'], [168, '7 dias'], [0, 'Sempre']].map(([h, l]) => `<button class="${admBan.h === h ? 'on' : ''}" data-bh="${h}">${l}</button>`).join('')}</div>${isA ? `<label><input type="checkbox" id="admWipe"${admBan.wipe ? ' checked' : ''}>Apagar a base e o que tem</label>` : ''}<input id="admWhy" class="aqi" placeholder="Motivo (opcional)" value="${esc(admBan.why)}" maxlength="120" style="height:44px;padding:0 12px;background:#24221f;border:1px solid rgba(255,250,240,.1);color:var(--tx);border-radius:2px;font:500 15px 'Roboto Condensed',sans-serif"><button class="btn red" data-ban="${P.uid}">Banir ${esc(P.n)}</button></div>` : '') + '</div>'; }
+      return `<div class="ap${P.on ? ' on' : ''}"><button data-p="${P.uid}"><span class="dot"></span><span class="nm"><b>${esc(P.n)}${me ? ' (tu)' : ''}</b><span>${sub}</span></span><span class="tags">${tags}</span></button>${acts}</div>`; }).join('') : '<p class="empty">Ninguém com esse nome.</p>');
+    const qi = $('admQ'); qi.oninput = () => { admQ = qi.value; const pos = qi.selectionStart; admRender(); const n = $('admQ'); n.focus(); n.setSelectionRange(pos, pos); };
+    $('admRf').onclick = () => A('list');
+    admB.querySelectorAll('[data-p]').forEach(b => b.onclick = () => { admOpenUid = admOpenUid === b.dataset.p ? null : b.dataset.p; audio.play('ui'); admRender(); });
+    admB.querySelectorAll('[data-a]').forEach(b => b.onclick = e => { e.stopPropagation(); const o = JSON.parse(b.dataset.o); if (['kill', 'delbase'].includes(b.dataset.a) && !b.dataset.sure) { b.dataset.sure = 1; b.textContent = 'Confirmar'; return; } A(b.dataset.a, o); if (b.dataset.a === 'goto') admEl.hidden = true; });
+    admB.querySelectorAll('[data-bh]').forEach(b => b.onclick = e => { e.stopPropagation(); admBan.h = +b.dataset.bh; admRender(); });
+    if ($('admWipe')) $('admWipe').onchange = e => { admBan.wipe = e.target.checked; };
+    if ($('admWhy')) $('admWhy').oninput = e => { admBan.why = e.target.value; };
+    admB.querySelectorAll('[data-ban]').forEach(b => b.onclick = e => { e.stopPropagation(); if (!b.dataset.sure) { b.dataset.sure = 1; b.textContent = 'Confirmar ban (' + (admBan.h ? admBan.h >= 24 ? admBan.h / 24 + ' dia' + (admBan.h > 24 ? 's' : '') : '1 hora' : 'para sempre') + ')'; return; } A('ban', { uid: b.dataset.ban, h: admBan.h, wipe: admBan.wipe ? 1 : 0, why: admBan.why }); admOpenUid = null; admBan.why = ''; });
+  };
+  admEl.querySelectorAll('#admTabs button').forEach(b => b.onclick = () => { admTab = b.dataset.t; audio.play('ui'); admRender(); });
+  $('admX').onclick = () => { admEl.hidden = true; audio.play('ui'); };
+  $('bAdm').onclick = e => { e.stopPropagation(); audio.play('ui'); admOpen(); };
+  // ---------- classificações
+  const lbEl = $('lbw'), lbB = $('lbB'); let lbTab = 'pvp', lbData = null;
+  const lbOpen = () => { if (!G.net || !G.net.on) { toast('As classificações só existem online'); return; } lbEl.hidden = false; lbRender(); G.net.lb(); };
+  const lbShow = m => { lbData = m; if (!lbEl.hidden) lbRender(); };
+  const lbRender = () => { lbEl.querySelectorAll('#lbTabs button').forEach(b => b.classList.toggle('on', b.dataset.t === lbTab)); if (!lbData) { lbB.innerHTML = '<p class="empty">A carregar…</p>'; return; }
+    const me = (lbData.name || '').toLowerCase(), kd = (k, d) => (k / Math.max(1, d)).toFixed(2).replace('.', ',');
+    const rows = lbTab === 'pvp' ? lbData.pvp.map(([n, k, d]) => [n, k, d, kd(k, d)]) : lbTab === 'z' ? lbData.z.map(([n, z]) => [n, z]) : lbData.clans.map(([n, k, d, m]) => [n, kd(k, d), k, m]);
+    const head = lbTab === 'pvp' ? ['Abates', 'Mortes', 'K/D'] : lbTab === 'z' ? ['Zombies'] : ['K/D', 'Abates', 'Membros'];
+    const cols = '32px 1fr' + ' auto'.repeat(head.length);
+    lbB.innerHTML = rows.length ? `<div class="lbt" style="grid-template-columns:${cols}"><div class="h"><span>#</span><span>${lbTab === 'clans' ? 'Clã' : 'Jogador'}</span>${head.map(h => `<span style="text-align:right">${h}</span>`).join('')}</div>${rows.map((r, i) => `<div class="${i < 3 ? 'top ' : ''}${lbTab !== 'clans' && r[0].toLowerCase() === me ? 'me' : ''}"><span class="pos">${i + 1}</span><span class="n">${esc(r[0])}</span>${r.slice(1).map(v => `<span class="v">${v}</span>`).join('')}</div>`).join('')}</div>` : '<p class="empty">Ainda não há ninguém aqui.</p>';
+    const [k, d, z] = lbData.me; lbB.insertAdjacentHTML('beforeend', `<div class="lbme">Tu: <b>${k}</b> abates · <b>${d}</b> mortes em PvP · K/D <b>${kd(k, d)}</b> · <b>${z}</b> zombies</div>`); };
+  lbEl.querySelectorAll('#lbTabs button').forEach(b => b.onclick = () => { lbTab = b.dataset.t; audio.play('ui'); lbRender(); });
+  $('lbX').onclick = () => { lbEl.hidden = true; audio.play('ui'); };
+  $('mLb').onclick = e => { e.stopPropagation(); audio.play('ui'); lbOpen(); };
   const EYE = `{{eye}}`, EYEOFF = `{{eye-off}}`;
   for (const ev of ['fullscreenchange', 'webkitfullscreenchange']) document.addEventListener(ev, () => { if (!setEl.hidden) renderSet(); });
   const openSet = () => { G.paused = G.playing; renderSet(); setEl.hidden = false; audio.play('ui'); };
@@ -634,6 +698,9 @@ export function initUI(G) {
     c.save(); c.translate(T(p.x), Tz(p.z)); c.rotate(Math.atan2(Math.cos(p.yaw), Math.sin(p.yaw))); c.fillStyle = '#F4F1EA'; c.strokeStyle = '#111'; c.lineWidth = 1.6 * u; c.beginPath(); c.moveTo(10 * u, 0); c.lineTo(-6 * u, 7 * u); c.lineTo(-3 * u, 0); c.lineTo(-6 * u, -7 * u); c.closePath(); c.fill(); c.stroke(); c.restore();
     $('mScale').textContent = (mapNear ? '' : 'Mundo · ') + (span >= 1000 ? span / 1000 + ' km' : span + ' m'); $('mIn').disabled = mapLv >= SPANS.length - 1; $('mOut').disabled = mapLv <= 0;
   };
+  // administração: tocar no mapa para ir a esse ponto
+  $('mapc').addEventListener('click', e => { if (!G.admTp || !G.net.role) return; const cv = $('mapc'), r = cv.getBoundingClientRect(), p = G.p, span = SPANS[mapLv], near = mapLv > 0, cx = near ? clamp(p.x, -MAP + span / 2, MAP - span / 2) : 0, cz = near ? clamp(p.z, -MAP + span / 2, MAP - span / 2) : 0;
+    const x = cx - span / 2 + (e.clientX - r.left) / r.width * span, z = cz - span / 2 + (e.clientY - r.top) / r.height * span; G.net.adm('gopt', { x: Math.round(x), z: Math.round(z) }); audio.play('ui'); toggleMap(false); });
   const mapStep = d => { const n = clamp(mapLv + d, 0, SPANS.length - 1); if (n === mapLv) return; mapLv = n; audio.play('ui'); drawBig(); };
   $('mIn').onclick = e => { e.stopPropagation(); mapStep(1); }; $('mOut').onclick = e => { e.stopPropagation(); mapStep(-1); };
   $('mapc').addEventListener('wheel', e => { e.preventDefault(); mapStep(e.deltaY < 0 ? 1 : -1); }, { passive: false });
@@ -701,7 +768,7 @@ export function initUI(G) {
     if (g) { const d = L[+g.dataset.i]; if (!d) return; const w = G.base.bedReady(d); if (w) { audio.play('vazio'); toast(d.name + ': pronta daqui a ' + mmss(w)); return; } audio.play('ui'); G.respawn(d); return; }
     if (x) { const d = L[+x.dataset.x]; if (!d) return; audio.play('ui'); if (dSure === d) { G.base.removeBed(d); dSure = null; toast(d.name + ' foi removida'); } else { dSure = d; setTimeout(() => { if (dSure === d) { dSure = null; if (!$('dead').hidden) dRows(); } }, 3000); } dRows(); dMap(); } };
   $('dMap').onclick = e => { const cv = $('dMap'), r = cv.getBoundingClientRect(), x = (e.clientX - r.left) * cv.width / r.width, z = (e.clientY - r.top) * cv.height / r.height; let best = null, bd = 30; for (const d of G.base.beds()) { const q = Math.hypot((d._mx ?? -99) - x, (d._mz ?? -99) - z); if (q < bd) { bd = q; best = d; } } if (!best) return; const w = G.base.bedReady(best); if (w) { audio.play('vazio'); toast(best.name + ': pronta daqui a ' + mmss(w)); return; } audio.play('ui'); G.respawn(best); };
-  const death = o => { const C = { queda: 'Caíste de muito alto.', zombie: 'Os zombies apanharam-te.', sangue: 'Sangraste até ao fim. Uma ligadura tinha chegado.', fome: 'Morreste de fome.', sede: 'Morreste de sede.', explosao: 'Uma explosão apanhou-te.', dormir: 'Mataram-te enquanto dormias e levaram o que tinhas.' }; $('dCause').textContent = o.cause === 'pvp' ? (o.by ? o.by + ' matou-te.' : 'Outro jogador matou-te.') : o.cause === 'carro' ? (o.by ? o.by + ' atropelou-te.' : 'Foste atropelado.') : C[o.cause] || 'Morreste.'; const m = Math.floor(o.time / 60), s = Math.floor(o.time % 60); $('dStat').textContent = `Sobreviveste ${m} min ${s} s · ${o.kills} zombie${o.kills === 1 ? '' : 's'} abatido${o.kills === 1 ? '' : 's'}`;
+  const death = o => { const C = { queda: 'Caíste de muito alto.', admin: 'Um administrador tirou-te do jogo.', zombie: 'Os zombies apanharam-te.', sangue: 'Sangraste até ao fim. Uma ligadura tinha chegado.', fome: 'Morreste de fome.', sede: 'Morreste de sede.', explosao: 'Uma explosão apanhou-te.', dormir: 'Mataram-te enquanto dormias e levaram o que tinhas.' }; $('dCause').textContent = o.cause === 'pvp' ? (o.by ? o.by + ' matou-te.' : 'Outro jogador matou-te.') : o.cause === 'carro' ? (o.by ? o.by + ' atropelou-te.' : 'Foste atropelado.') : C[o.cause] || 'Morreste.'; const m = Math.floor(o.time / 60), s = Math.floor(o.time % 60); $('dStat').textContent = `Sobreviveste ${m} min ${s} s · ${o.kills} zombie${o.kills === 1 ? '' : 's'} abatido${o.kills === 1 ? '' : 's'}`;
     $('dNote').textContent = o.cause === 'dormir' ? 'Tens de começar com o que trouxeres.' : 'As tuas coisas ficaram no teu corpo, onde caíste.';
     dSure = null; dKey = ''; dRows(); $('dead').hidden = false; toastEl.hidden = true; requestAnimationFrame(dMap); clearInterval(dTick); dTick = setInterval(() => { if ($('dead').hidden) { clearInterval(dTick); return; } dRows(); dMap(); }, 1000); };
   // cama ou saco-cama: mudar o nome ou apanhar
@@ -815,7 +882,7 @@ export function initUI(G) {
 
   return {
     refresh, openInv, closeInv, toast, feed, hit, damage, death, toggleMap, frame, resize, safe, scopeR, scopeC,
-    closeDeath: () => { $('dead').hidden = true; clearInterval(dTick); }, sound, bedMenu, codeAsk, codeErr, codeDone, lockMenu,
+    closeDeath: () => { $('dead').hidden = true; clearInterval(dTick); }, sound, bedMenu, codeAsk, codeErr, codeDone, lockMenu, admRole, admList, admOpen, lbShow, lbOpen,
     showHUD: msg => { $('hud').hidden = false; refresh(); toast(msg); },
     // sair para o menu (com 5 s parado se estiveres em combate)
     toMenu: () => { setTimeout(() => { pfRender(); if (G.ui_count) G.ui_count(); }, 50); if (!pfm.hidden && $('pfT').textContent === 'Clã') pfClose(); $('quit').hidden = true; $('hud').hidden = true; setEl.hidden = true; G.paused = false; closeInv(); $('map').hidden = true; G.hasSave = true; $('sCont').hidden = false; $('sPlay').querySelector('b').textContent = 'Começar de novo'; $('sPlay').querySelector('em').textContent = 'Perdes o que tens e começas do zero'; $('sPlay').classList.remove('pri'); $('start').hidden = false; },

@@ -618,6 +618,31 @@ button:focus-visible{outline:2px solid #E6E2DA}
 .dp h2{color:#E6E2DA;font-size:52px;letter-spacing:.14em;text-transform:uppercase;text-shadow:0 2px 24px rgba(160,30,20,.55)}.dp h2::after{content:"";display:block;width:64px;height:2px;margin:14px auto 0;background:#B42418}
 .kp-dots i.on{background:#F4F1EA}
 .ntag{background:rgba(14,13,12,.62)}
+
+/* administração e classificações */
+#adm,#lbw{background:#0e0d0c;align-items:stretch;justify-content:center;padding:calc(8px + var(--st)) calc(12px + var(--sr)) calc(8px + var(--sb)) calc(12px + var(--sl));z-index:56}
+#adm .ihead,#lbw .ihead{gap:14px}#adm .ihead .close,#lbw .ihead .close{margin-left:auto;flex:none}
+.adh{font-size:19px;letter-spacing:.06em;text-transform:uppercase;white-space:nowrap}
+.admr{font:700 11px "Roboto Condensed",sans-serif;letter-spacing:.1em;text-transform:uppercase;padding:3px 7px;background:#7d2519;color:#F3D2CC;border-radius:2px}.admr.mod{background:#33658d;color:#D3E4F3}
+#admB,#lbB{display:flex;flex-direction:column;gap:2px;padding-top:8px}
+.aq{display:flex;gap:8px;align-items:center;margin-bottom:6px}.aq input{flex:1;height:44px;padding:0 12px;background:#1b1a18;border:1px solid rgba(255,250,240,.1);color:var(--tx);font:500 15px "Roboto Condensed",sans-serif;border-radius:2px}
+.ap{display:flex;flex-direction:column;background:#1b1a18;border-radius:2px}
+.ap>button{display:flex;align-items:center;gap:12px;min-height:54px;padding:8px 12px;text-align:left;width:100%}
+.ap .dot{width:9px;height:9px;border-radius:50%;background:#5a5650;flex:none}.ap.on .dot{background:#8DB255}
+.ap .nm{flex:1;min-width:0;display:flex;flex-direction:column}.ap .nm b{font-weight:700;font-size:16px}.ap .nm span{font-size:12.5px;color:var(--tx2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ap .tags{display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end}.ap .tags i{font:700 10.5px "Roboto Condensed",sans-serif;letter-spacing:.08em;text-transform:uppercase;font-style:normal;padding:2px 6px;background:rgba(255,250,240,.08);color:var(--tx2);border-radius:2px}.ap .tags i.red{background:#7d2519;color:#F3D2CC}.ap .tags i.blue{background:#33658d;color:#D3E4F3}
+.aa{display:flex;flex-wrap:wrap;gap:6px;padding:4px 12px 12px}.aa .btn{flex:1 1 auto;min-width:120px}
+.aa .btn.red{background:#7d2519;color:#F3D2CC}.aa .bf{display:flex;flex-direction:column;gap:8px;width:100%}
+.aa .seg{display:flex;flex-wrap:wrap}.aa label{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--tx)}.aa label input{width:20px;height:20px;accent-color:#5E7E2B}
+.ae{display:flex;flex-direction:column;gap:2px}.ae select,.ae input[type=number]{height:44px;padding:0 10px;background:#24221f;border:1px solid rgba(255,250,240,.1);color:var(--tx);font:500 15px "Roboto Condensed",sans-serif;border-radius:2px}
+.lbt{display:grid;grid-template-columns:32px 1fr auto auto auto;gap:0;align-items:center}
+.lbt>div{display:contents}.lbt>div>*{padding:10px 8px;border-bottom:1px solid rgba(255,250,240,.06)}
+.lbt .h>*{font:700 11.5px "Roboto Condensed",sans-serif;letter-spacing:.1em;text-transform:uppercase;color:var(--tx2);padding:4px 8px 8px}
+.lbt .pos{font:700 15px "Roboto Condensed",sans-serif;color:var(--tx2);text-align:right;font-variant-numeric:tabular-nums}.lbt .n{font-weight:600;font-size:15.5px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.lbt .v{font:700 15px "Roboto Condensed",sans-serif;text-align:right;font-variant-numeric:tabular-nums}
+.lbt .me>*{color:#F4F1EA;background:rgba(255,250,240,.06)}.lbt .top .pos{color:#E7C77A}
+#mLb{display:flex;align-items:center;justify-content:center;gap:8px}#mLb svg{width:18px;height:18px}@media (orientation:portrait){#mLb span{display:none}#mLb{width:46px;padding:0}#map .mh{gap:6px;flex-wrap:nowrap}#map .mh #mScale{min-width:0;font-size:13px;white-space:nowrap}#map .mz .btn{width:44px}#mClan{padding:0 12px}}
+.lbme{margin-top:10px;padding:10px 12px;background:#1b1a18;font-size:14px;color:var(--tx2);border-radius:2px}.lbme b{color:var(--tx)}
+@media (orientation:portrait),(max-width:560px){#adm .ihead,#lbw .ihead{flex-wrap:wrap;height:auto;row-gap:4px}#admTabs,#lbTabs{order:3;width:100%}.adh{font-size:17px}}
 </style>
 </head>
 <body>
@@ -625,7 +650,7 @@ button:focus-visible{outline:2px solid #E6E2DA}
 <div id="dmg" aria-hidden="true"></div><div id="lowhp" aria-hidden="true"></div>
 <div id="hud" hidden>
   <div id="tl"><div id="mm" data-h="mm" title="Abrir mapa"><canvas id="mmc"></canvas></div><div id="zone" data-h="zone"><b>—</b><span></span></div></div>
-  <div id="tr" data-h="tr"><button class="hb" id="bSet" aria-label="Definições">{{settings}}</button><button class="hb" id="bMap" aria-label="Mapa">{{map}}<span class="lab">Mapa</span><kbd>M</kbd></button><button class="hb" id="bInv" aria-label="Inventário">{{backpack}}<span class="lab">Inventário</span><kbd>Tab</kbd></button></div>
+  <div id="tr" data-h="tr"><button class="hb" id="bAdm" aria-label="Administração" hidden>{{shield}}</button><button class="hb" id="bSet" aria-label="Definições">{{settings}}</button><button class="hb" id="bMap" aria-label="Mapa">{{map}}<span class="lab">Mapa</span><kbd>M</kbd></button><button class="hb" id="bInv" aria-label="Inventário">{{backpack}}<span class="lab">Inventário</span><kbd>Tab</kbd></button></div>
   <div id="sind"></div><div id="feed" data-h="feed"></div><div id="fps" hidden></div>
   <div id="toast" hidden></div>
   <div id="use" hidden><span></span><i><b></b></i></div>
@@ -673,7 +698,7 @@ button:focus-visible{outline:2px solid #E6E2DA}
     <section class="ipan" id="cBag"><div class="ph"><span>Mochila</span><em id="bagCap"></em></div><div class="grid" id="gBag"></div></section>
   </div>
 </div>
-<div id="map" class="ov" hidden><div class="mh"><span id="mScale"></span><span class="mz"><button class="btn sm" id="mOut" aria-label="Afastar">−</button><button class="btn sm" id="mIn" aria-label="Aproximar">+</button></span><button class="btn sm" id="mClan">Clã</button><button class="close" id="mClose" aria-label="Fechar">{{x}}</button></div><canvas id="mapc" width="1024" height="1024"></canvas><div class="ml"><span><i style="background:#F4F1EA"></i>Tu</span><span><i style="background:#6FA8FF"></i>Clã</span><span><i style="background:#8e8a82"></i>Bairro · PvP</span><span><i style="background:#c8402e"></i>Loot militar</span><span><i style="background:#7fd38a"></i>Cama</span></div></div>
+<div id="map" class="ov" hidden><div class="mh"><span id="mScale"></span><span class="mz"><button class="btn sm" id="mOut" aria-label="Afastar">−</button><button class="btn sm" id="mIn" aria-label="Aproximar">+</button></span><button class="btn sm" id="mClan">Clã</button><button class="btn sm" id="mLb" aria-label="Classificações">{{trophy}}<span>Classificações</span></button><button class="close" id="mClose" aria-label="Fechar">{{x}}</button></div><canvas id="mapc" width="1024" height="1024"></canvas><div class="ml"><span><i style="background:#F4F1EA"></i>Tu</span><span><i style="background:#6FA8FF"></i>Clã</span><span><i style="background:#8e8a82"></i>Bairro · PvP</span><span><i style="background:#c8402e"></i>Loot militar</span><span><i style="background:#7fd38a"></i>Cama</span></div></div>
 <div id="quit" hidden><div class="qr"><b id="qN">5</b></div><div class="qt"><span>A sair do jogo</span><em>Estás em combate. Fica parado: mexer-te ou levar dano cancela.</em></div><button class="btn sm" id="qX">Cancelar</button></div>
 <div id="dead" class="ov" hidden><div class="dp" id="dp"><h2>Morreste</h2><p id="dCause"></p><div class="stat" id="dStat"></div><div class="dbeds" id="dBeds" hidden><canvas id="dMap" width="400" height="400" aria-label="Mapa: onde morreste e as tuas camas"></canvas><div class="dlist" id="dList" role="list"></div></div><button class="btn pri big" id="dGo">Acordar noutro sítio</button><div class="note" id="dNote">As tuas coisas ficaram num saco onde caíste.</div></div></div>
 <div id="start" class="ov" hidden><div class="sp">
@@ -684,9 +709,11 @@ button:focus-visible{outline:2px solid #E6E2DA}
   <nav class="menu"><button class="mi pri" id="sCont" hidden><b>Continuar</b><em>Voltas onde ficaste</em></button><button class="mi pri" id="sPlay"><b>Jogar</b><em>Acordas perto de uma vila ou monumento</em></button><button class="mi" id="sSet"><b>Definições</b><em>Controlos, imagem e som</em></button></nav>
   <div class="onl" id="sOnl" role="status"><i class="dot" aria-hidden="true"></i><span><b>Servidor</b><em id="sOnT">A ver quem está a jogar…</em></span></div>
   <div class="keys" id="sKeys"></div>
-  <div class="foot">Protótipo 0.19 · um servidor para todos · quem sai fica a dormir no mundo</div>
+  <div class="foot">Protótipo 0.20 · um servidor para todos · quem sai fica a dormir no mundo</div>
 </div><button id="sMus" aria-label="Música do menu"><span class="on">{{volume-2}}</span><span class="off">{{volume-x}}</span></button><a class="credit" href="https://dinissousa.pt" target="_blank" rel="noopener">feito por dinissousa.pt</a></div>
 <div id="pfm" class="ov" hidden><div class="pfbox"><div class="pfh"><b id="pfT"></b><button class="close" id="pfX" aria-label="Fechar">{{x}}</button></div><div id="pfB" class="pfb"></div></div></div>
+<div id="adm" class="ov" hidden><div class="sp2"><div class="ihead"><b class="cond adh">Administração</b><span class="admr" id="admR"></span><div class="tabs" id="admTabs"><button data-t="p" class="on">Jogadores</button><button data-t="e">Eu</button><button data-t="b">Banidos</button><button data-t="c">Clãs</button></div><button class="close" id="admX" aria-label="Fechar">{{x}}</button></div><div class="sbody" id="admB"></div></div></div>
+<div id="lbw" class="ov" hidden><div class="sp2"><div class="ihead"><b class="cond adh">Classificações</b><div class="tabs" id="lbTabs"><button data-t="pvp" class="on">PvP</button><button data-t="z">Zombies</button><button data-t="clans">Clãs</button></div><button class="close" id="lbX" aria-label="Fechar">{{x}}</button></div><div class="sbody" id="lbB"></div></div></div>
 <div id="set" class="ov" hidden><div class="sp2"><div class="ihead"><b class="cond" style="font-size:20px;letter-spacing:.06em;text-transform:uppercase">Definições</b><button class="close" id="setClose" aria-label="Fechar" style="margin-left:auto">{{x}}</button></div><div class="sbody" id="setBody"></div></div></div>
 <div id="hedit" hidden><div class="het"><b id="heName">Toca num elemento</b><span>Arrasta para mudar de sítio</span></div><button class="btn sm" id="heMinus" aria-label="Mais pequeno">{{minus}}</button><button class="btn sm" id="hePlus" aria-label="Maior">{{plus}}</button><button class="btn sm" id="heVis">Esconder</button><button class="btn sm" id="heReset">Repor tudo</button><button class="btn sm pri" id="heDone">Concluir</button></div>
 <div id="ins" aria-hidden="true"></div>

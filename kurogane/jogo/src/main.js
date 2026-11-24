@@ -778,7 +778,7 @@ async function boot() {
       if (z.think <= 0) {
         z.think = 0.22 + Math.random() * 0.12;
         const face = Math.abs(angDiff(Math.atan2(dx, dz), z.yaw)) < 1.05;
-        const sr = 6 + 4 * (G.day ?? 1) + (p === me && G.lightOn ? 8 : 0); const sees = p.alive && G.playing && d < sr && (d < 3.5 || face) && canSee(z, p); z.sees = sees;
+        const sr = 6 + 4 * (G.day ?? 1) + (p === me && G.lightOn ? 8 : 0); const sees = p.alive && G.playing && !(p === me && G.admF && G.admF.spec) && d < sr && (d < 3.5 || face) && canSee(z, p); z.sees = sees;
         if (sees) { if (z.state !== 'chase') { audio.play('grunhido', 0.8 * vol(z.x, z.z)); G.ui.sound(z.x, z.z, 'z', dMe); } z.state = 'chase'; z.tx = p.x; z.tz = p.z; z.lost = 0; z.mem = 6; }
         else if (z.state === 'chase') { z.lost += 0.28; if (z.lost > 3.2 || !p.alive) { z.state = 'alert'; } }
         if (p.alive && p.sprint && d < 7 && same && z.state === 'wander') { z.state = 'alert'; z.tx = p.x; z.tz = p.z; }
@@ -830,7 +830,7 @@ async function boot() {
     }
   };
   const hurtPlayer = (dmg, cause, raw) => {
-    const p = G.p; if (!p || !p.alive) return; G.combatT = G.t; let arm = 0; if (!raw) for (const s in G.inv.eq) if (G.inv.eq[s]) arm += ITEMS[G.inv.eq[s].k].armor || 0;
+    const p = G.p; if (!p || !p.alive || (G.admF && G.admF.god)) return; G.combatT = G.t; let arm = 0; if (!raw) for (const s in G.inv.eq) if (G.inv.eq[s]) arm += ITEMS[G.inv.eq[s].k].armor || 0;
     const real = dmg * (1 - Math.min(0.6, arm)); p.hp -= real; p.hurtT = 0.4; p.hitAt = G.t; if (cause !== 'queda') dmgLog.push({ t: G.t, d: dmg }); audio.play('dor'); G.ui.damage(); G.buzz(60);
     if (Math.random() < 0.12 && !p.bleed) { p.bleed = 1; G.ui.toast('Estás a sangrar. Usa uma ligadura.'); }
     burst(p.x, 1.2, p.z, 5, 0x7a0e0a, 2.2);
@@ -1197,6 +1197,7 @@ async function boot() {
       let ix = 0, iy = 0;
       if (keys.has('KeyW') || keys.has('ArrowUp')) iy += 1; if (keys.has('KeyS') || keys.has('ArrowDown')) iy -= 1; if (keys.has('KeyD') || keys.has('ArrowRight')) ix += 1; if (keys.has('KeyA') || keys.has('ArrowLeft')) ix -= 1;
       if (sticks.L) { ix = sticks.L.x; iy = -sticks.L.y; }
+      if (G.frozen) { ix = 0; iy = 0; G.autoRun = false; } // congelado pela equipa do jogo
       let il = Math.hypot(ix, iy); if (il > 1) { ix /= il; iy /= il; il = 1; }
       // eixos do movimento: na vista de cima, os do ecrã; na mira (primeira pessoa), para a frente é para onde estás a olhar
       let Fx = FWD.x, Fz = FWD.y, Rx = RGT.x, Rz = RGT.y; if (G.fp && AIM.fy != null) { Fx = Math.sin(AIM.fy); Fz = Math.cos(AIM.fy); Rx = -Fz; Rz = Fx; }
@@ -1319,6 +1320,7 @@ async function boot() {
         p.regen = 0;
         if (p.food <= 0 || p.water <= 0) p.hp -= dt * 0.55;
         else if (p.hp < 100 && !p.bleed && p.food > 20 && p.water > 20 && G.t - (p.hitAt || -99) > 6) { const r = (p.food > 70 && p.water > 70 ? 0.6 : 0.3) * dt, h = Math.min(r, 100 - p.hp); p.hp += h; p.food = Math.max(0, p.food - h * 0.3); p.water = Math.max(0, p.water - h * 0.25); p.regen = 1; }
+        if (G.admF && G.admF.god) { p.hp = 100; p.bleed = 0; } // invencível (equipa do jogo)
         if (p.hp <= 0) die(p.bleed ? 'sangue' : p.food <= 0 ? 'fome' : 'sede');
         const d = heldDef(), mode = d.gun ? (d.long ? 'rifle' : 'pistol') : (d.melee && held()) ? 'melee' : (p.swing >= 0 ? 'melee' : 'none');
         const uu = p.use && ITEMS[p.use.it.k] && ITEMS[p.use.it.k].use, ukind = uu ? ((uu.water || 0) > (uu.food || 0) ? 'drink' : uu.food ? 'eat' : 'heal') : null;
