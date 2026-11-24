@@ -67,6 +67,7 @@ jobs:
           python auditoria/test_siga_agencias.py
           python auditoria/test_caminhos_a_pe.py
           python auditoria/test_metro_mondego.py
+          python auditoria/test_barraqueiro_oeste.py
 
       # Cópia do último ficheiro oficial da STCP (cache privada do Actions; não é publicada). Usada quando a API
       # responde 429 (quota diária gasta pelo tempo real do servidor), em vez do ficheiro antigo do portal aberto.
@@ -76,6 +77,11 @@ jobs:
           path: fontes/stcp-oficial.zip
           key: stcp-oficial-${{ github.run_id }}
           restore-keys: stcp-oficial-
+
+      # Barraqueiro Oeste: os horários só existem em PDF; o construtor tira-lhes o texto com o pdftotext
+      - name: Ferramenta para ler PDFs
+        continue-on-error: true
+        run: command -v pdftotext >/dev/null 2>&1 || sudo apt-get install -y -qq poppler-utils >/dev/null
 
       - name: Construir a base de dados
         run: python construir_dados.py

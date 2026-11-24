@@ -1,0 +1,2988 @@
+{
+ "700": [
+  {
+   "nome": "700: Lisboa (Campo Grande) -> Torres Vedras (via A8 Catefica)",
+   "paragens": [
+    {
+     "id": "12487407225",
+     "lat": 39.074524,
+     "lon": -9.250656,
+     "nome": "Acral"
+    },
+    {
+     "id": "12476182628",
+     "lat": 39.085225,
+     "lon": -9.256234,
+     "nome": "Hospital"
+    },
+    {
+     "id": "12474429647",
+     "lat": 39.087661,
+     "lon": -9.259197,
+     "nome": "Casa do Benfica"
+    },
+    {
+     "id": "7797410033",
+     "lat": 39.092749,
+     "lon": -9.26576,
+     "nome": "Torres Vedras (Terminal) P1"
+    }
+   ],
+   "relacao": "14369954"
+  },
+  {
+   "nome": "700: Torres Vedras -> Lisboa (Campo Grande) (via A8 Catefica)",
+   "paragens": [
+    {
+     "id": "7797410033",
+     "lat": 39.092749,
+     "lon": -9.26576,
+     "nome": "Torres Vedras (Terminal) P1"
+    },
+    {
+     "id": "9577497734",
+     "lat": 39.087055,
+     "lon": -9.258515,
+     "nome": "Casa do Benfica"
+    },
+    {
+     "id": "9577497735",
+     "lat": 39.085442,
+     "lon": -9.256453,
+     "nome": "Hospital"
+    },
+    {
+     "id": "12487407224",
+     "lat": 39.074796,
+     "lon": -9.251197,
+     "nome": "Acral"
+    }
+   ],
+   "relacao": "20961521"
+  }
+ ],
+ "701": [
+  {
+   "nome": "701: Lisboa (Campo Grande) -> Torres Vedras (via A8 Venda do Pinheiro)",
+   "paragens": [
+    {
+     "id": "10296423142",
+     "lat": 38.958117,
+     "lon": -9.258742,
+     "nome": "EN 8 7"
+    },
+    {
+     "id": "10296423140",
+     "lat": 38.96299,
+     "lon": -9.26086,
+     "nome": "Estrada Nacional 8 Frente (X) Rua Direita"
+    },
+    {
+     "id": "10296423461",
+     "lat": 38.966824,
+     "lon": -9.262583,
+     "nome": "EN 8 (Qta Fonte)"
+    },
+    {
+     "id": "10296423463",
+     "lat": 38.969855,
+     "lon": -9.260299,
+     "nome": "EN 8 30"
+    },
+    {
+     "id": "10296423465",
+     "lat": 38.971757,
+     "lon": -9.256913,
+     "nome": "EN 8 55 (X) Enxara Bispo"
+    },
+    {
+     "id": "10296423485",
+     "lat": 38.975273,
+     "lon": -9.258141,
+     "nome": "Vila Franca Rosário (X) R Cap João Lopes"
+    },
+    {
+     "id": "10296423332",
+     "lat": 38.984883,
+     "lon": -9.274923,
+     "nome": "Rua Movimento das Forças Armadas"
+    },
+    {
+     "id": "9392548764",
+     "lat": 38.982806,
+     "lon": -9.280818,
+     "nome": "R Movimento das Forças Armadas 25"
+    },
+    {
+     "id": "10296423331",
+     "lat": 38.984798,
+     "lon": -9.274908,
+     "nome": "Rua Movimento das Forças Armadas"
+    },
+    {
+     "id": "10296423483",
+     "lat": 38.985574,
+     "lon": -9.273594,
+     "nome": "EN 8 (Gradil)"
+    },
+    {
+     "id": "10296423481",
+     "lat": 38.991916,
+     "lon": -9.27417,
+     "nome": "EN 8 22 (Gradil)"
+    },
+    {
+     "id": "10296423478",
+     "lat": 38.994495,
+     "lon": -9.273695,
+     "nome": "R do Val 35 (Gradil)"
+    },
+    {
+     "id": "10296423477",
+     "lat": 38.999134,
+     "lon": -9.275973,
+     "nome": "R Principal 1 (Gradil)"
+    },
+    {
+     "id": "10296423475",
+     "lat": 39.001186,
+     "lon": -9.276065,
+     "nome": "EN 8 22 (Gradil)"
+    },
+    {
+     "id": "10296423979",
+     "lat": 39.001679,
+     "lon": -9.276859,
+     "nome": "Estr Carrascal 4"
+    },
+    {
+     "id": "10296423977",
+     "lat": 39.002244,
+     "lon": -9.27945,
+     "nome": "Estr Carrascal 20"
+    },
+    {
+     "id": "10296423974",
+     "lat": 39.004117,
+     "lon": -9.283935,
+     "nome": "Estr Carrascal 11"
+    },
+    {
+     "id": "10296423973",
+     "lat": 39.003496,
+     "lon": -9.286681,
+     "nome": "R Principal (X) Centro de Saúde"
+    },
+    {
+     "id": "10296423972",
+     "lat": 39.004898,
+     "lon": -9.287435,
+     "nome": "R Principal 24 (Livramento)"
+    },
+    {
+     "id": "10296423970",
+     "lat": 39.006347,
+     "lon": -9.289894,
+     "nome": "R da Farmácia 4"
+    },
+    {
+     "id": "10296423469",
+     "lat": 39.010448,
+     "lon": -9.285617,
+     "nome": "Lgo Nossa Sra da Luz 3"
+    },
+    {
+     "id": "10296423470",
+     "lat": 39.011315,
+     "lon": -9.280015,
+     "nome": "Quinta Do Arneiro"
+    },
+    {
+     "id": "10296423473",
+     "lat": 39.011013,
+     "lon": -9.275642,
+     "nome": "R Da Azueira 8"
+    },
+    {
+     "id": "13926286428",
+     "lat": 39.012118,
+     "lon": -9.274761,
+     "nome": "EN 8 (X) Caneira Velha"
+    },
+    {
+     "id": "13931570381",
+     "lat": 39.019668,
+     "lon": -9.279661,
+     "nome": "Quinta da Mucharreira"
+    },
+    {
+     "id": "13931570378",
+     "lat": 39.021665,
+     "lon": -9.279743,
+     "nome": "Freixofeira (X) EN 8 3"
+    },
+    {
+     "id": "13931570377",
+     "lat": 39.025049,
+     "lon": -9.279299,
+     "nome": "Freixofeira (X) EN 8 42"
+    },
+    {
+     "id": "13931570375",
+     "lat": 39.034758,
+     "lon": -9.275455,
+     "nome": "Turcifal (Rotunda)"
+    },
+    {
+     "id": "13931570372",
+     "lat": 39.036454,
+     "lon": -9.272047,
+     "nome": "Turcifal (R Perna de Pau 7)"
+    },
+    {
+     "id": "13931570370",
+     "lat": 39.038969,
+     "lon": -9.26767,
+     "nome": "Turcifal (R José Figueiroa Rego 33)"
+    },
+    {
+     "id": "13931570369",
+     "lat": 39.04215,
+     "lon": -9.266271,
+     "nome": "Turcifal (Igreja)"
+    },
+    {
+     "id": "13931570366",
+     "lat": 39.044422,
+     "lon": -9.269347,
+     "nome": "Turcifal (R Vale da Padeira 12)"
+    },
+    {
+     "id": "13931570364",
+     "lat": 39.045881,
+     "lon": -9.271259,
+     "nome": "Turcifal (R Vale da Padeira 32)"
+    },
+    {
+     "id": "13931570363",
+     "lat": 39.049999,
+     "lon": -9.268538,
+     "nome": "Carvalhal (Restaurante)"
+    },
+    {
+     "id": "13931570360",
+     "lat": 39.051873,
+     "lon": -9.262138,
+     "nome": "Carvalhal"
+    },
+    {
+     "id": "13931570359",
+     "lat": 39.055404,
+     "lon": -9.253214,
+     "nome": "EN 8 (X) Ribeiralves"
+    },
+    {
+     "id": "13931570357",
+     "lat": 39.059064,
+     "lon": -9.241296,
+     "nome": "EN 8 (X) Catefica (Rotunda)"
+    },
+    {
+     "id": "13931570355",
+     "lat": 39.070364,
+     "lon": -9.244051,
+     "nome": "Bombas da Galp"
+    },
+    {
+     "id": "12487407225",
+     "lat": 39.074524,
+     "lon": -9.250656,
+     "nome": "Acral"
+    },
+    {
+     "id": "13926286430",
+     "lat": 39.080936,
+     "lon": -9.255251,
+     "nome": "Fundição Dois Portos"
+    },
+    {
+     "id": "12476182628",
+     "lat": 39.085225,
+     "lon": -9.256234,
+     "nome": "Hospital"
+    },
+    {
+     "id": "12474429647",
+     "lat": 39.087661,
+     "lon": -9.259197,
+     "nome": "Casa do Benfica"
+    },
+    {
+     "id": "12532959117",
+     "lat": 39.089075,
+     "lon": -9.261057,
+     "nome": "Tribunal"
+    },
+    {
+     "id": "7797522969",
+     "lat": 39.091618,
+     "lon": -9.263998,
+     "nome": "GNR"
+    },
+    {
+     "id": "7797410034",
+     "lat": 39.09279,
+     "lon": -9.265789,
+     "nome": "Torres Vedras (Terminal) P2"
+    }
+   ],
+   "relacao": "14369870"
+  },
+  {
+   "nome": "701: Torres Vedras -> Lisboa (Campo Grande) (via A8 Venda do Pinheiro)",
+   "paragens": [
+    {
+     "id": "7797410034",
+     "lat": 39.09279,
+     "lon": -9.265789,
+     "nome": "Torres Vedras (Terminal) P2"
+    },
+    {
+     "id": "12474429633",
+     "lat": 39.091633,
+     "lon": -9.263684,
+     "nome": "GNR"
+    },
+    {
+     "id": "9898424876",
+     "lat": 39.088408,
+     "lon": -9.261346,
+     "nome": "Tribunal"
+    },
+    {
+     "id": "9577497734",
+     "lat": 39.087055,
+     "lon": -9.258515,
+     "nome": "Casa do Benfica"
+    },
+    {
+     "id": "9577497735",
+     "lat": 39.085442,
+     "lon": -9.256453,
+     "nome": "Hospital"
+    },
+    {
+     "id": "12476182624",
+     "lat": 39.080321,
+     "lon": -9.255306,
+     "nome": "Fundição Dois Portos"
+    },
+    {
+     "id": "12487407224",
+     "lat": 39.074796,
+     "lon": -9.251197,
+     "nome": "Acral"
+    },
+    {
+     "id": "13931570354",
+     "lat": 39.070289,
+     "lon": -9.244023,
+     "nome": "Bombas da Galp"
+    },
+    {
+     "id": "13931570356",
+     "lat": 39.058991,
+     "lon": -9.241456,
+     "nome": "EN 8 (X) Catefica (Rotunda)"
+    },
+    {
+     "id": "13931570358",
+     "lat": 39.055527,
+     "lon": -9.253473,
+     "nome": "EN 8 (X) Ribeiralves"
+    },
+    {
+     "id": "13931570361",
+     "lat": 39.051996,
+     "lon": -9.262381,
+     "nome": "Carvalhal"
+    },
+    {
+     "id": "13931570362",
+     "lat": 39.050031,
+     "lon": -9.268652,
+     "nome": "Carvalhal (Restaurante)"
+    },
+    {
+     "id": "13931570365",
+     "lat": 39.045892,
+     "lon": -9.271535,
+     "nome": "Turcifal (R Vale da Padeira 32)"
+    },
+    {
+     "id": "13931570367",
+     "lat": 39.044282,
+     "lon": -9.269499,
+     "nome": "Turcifal (R Vale da Padeira 12)"
+    },
+    {
+     "id": "13931570368",
+     "lat": 39.042136,
+     "lon": -9.266388,
+     "nome": "Turcifal (Igreja)"
+    },
+    {
+     "id": "13931570371",
+     "lat": 39.038948,
+     "lon": -9.267754,
+     "nome": "Turcifal (R José Figueiroa Rego 33)"
+    },
+    {
+     "id": "13931570373",
+     "lat": 39.036622,
+     "lon": -9.27199,
+     "nome": "Turcifal (R Perna de Pau 7)"
+    },
+    {
+     "id": "13931570374",
+     "lat": 39.034863,
+     "lon": -9.275281,
+     "nome": "Turcifal (Rotunda)"
+    },
+    {
+     "id": "13931570376",
+     "lat": 39.02523,
+     "lon": -9.279435,
+     "nome": "Freixofeira (X) EN 8 42"
+    },
+    {
+     "id": "13931570379",
+     "lat": 39.021847,
+     "lon": -9.27988,
+     "nome": "Freixofeira (X) EN 8 3"
+    },
+    {
+     "id": "13931570380",
+     "lat": 39.019689,
+     "lon": -9.279793,
+     "nome": "Quinta da Mucharreira"
+    },
+    {
+     "id": "13926286429",
+     "lat": 39.012155,
+     "lon": -9.274894,
+     "nome": "EN 8 (X) Caneira Velha"
+    },
+    {
+     "id": "10296423472",
+     "lat": 39.01105,
+     "lon": -9.275799,
+     "nome": "R Da Azueira 8"
+    },
+    {
+     "id": "10296423471",
+     "lat": 39.011428,
+     "lon": -9.280149,
+     "nome": "Quinta Do Arneiro"
+    },
+    {
+     "id": "10296423468",
+     "lat": 39.010481,
+     "lon": -9.285768,
+     "nome": "Lgo Nossa Sra da Luz 3"
+    },
+    {
+     "id": "10296423969",
+     "lat": 39.006467,
+     "lon": -9.289958,
+     "nome": "R da Farmácia 4"
+    },
+    {
+     "id": "10296423971",
+     "lat": 39.004911,
+     "lon": -9.287582,
+     "nome": "R Principal 24 (Livramento)"
+    },
+    {
+     "id": "10296423916",
+     "lat": 39.00317,
+     "lon": -9.286608,
+     "nome": "R Principal 9 (C Saúde) Livramento"
+    },
+    {
+     "id": "10296423975",
+     "lat": 39.004027,
+     "lon": -9.283832,
+     "nome": "Estr Carrascal 11"
+    },
+    {
+     "id": "10296423976",
+     "lat": 39.002174,
+     "lon": -9.279511,
+     "nome": "Estr Carrascal 20"
+    },
+    {
+     "id": "10296423978",
+     "lat": 39.001597,
+     "lon": -9.27684,
+     "nome": "Estr Carrascal 4"
+    },
+    {
+     "id": "10296423474",
+     "lat": 39.001199,
+     "lon": -9.276202,
+     "nome": "EN 8 22 (Gradil)"
+    },
+    {
+     "id": "10296423476",
+     "lat": 38.999102,
+     "lon": -9.276098,
+     "nome": "R Principal 1 (Gradil)"
+    },
+    {
+     "id": "10296423479",
+     "lat": 38.994431,
+     "lon": -9.273854,
+     "nome": "R do Val 35 (Gradil)"
+    },
+    {
+     "id": "10296423480",
+     "lat": 38.991962,
+     "lon": -9.274317,
+     "nome": "EN 8 22 (Gradil)"
+    },
+    {
+     "id": "10296423482",
+     "lat": 38.985574,
+     "lon": -9.273732,
+     "nome": "Estrada Nacional 8 (X) Rua Movimento das Forças Armadas"
+    },
+    {
+     "id": "10296423332",
+     "lat": 38.984883,
+     "lon": -9.274923,
+     "nome": "Rua Movimento das Forças Armadas"
+    },
+    {
+     "id": "9392548764",
+     "lat": 38.982806,
+     "lon": -9.280818,
+     "nome": "R Movimento das Forças Armadas 25"
+    },
+    {
+     "id": "10296423331",
+     "lat": 38.984798,
+     "lon": -9.274908,
+     "nome": "Rua Movimento das Forças Armadas"
+    },
+    {
+     "id": "10296423486",
+     "lat": 38.974809,
+     "lon": -9.257844,
+     "nome": "Vila Franca Rosário (X) R Cap João Lopes"
+    },
+    {
+     "id": "10296423464",
+     "lat": 38.971494,
+     "lon": -9.257227,
+     "nome": "EN 8 55 (X) Enxara Bispo"
+    },
+    {
+     "id": "10296423462",
+     "lat": 38.970033,
+     "lon": -9.260266,
+     "nome": "EN 8 30"
+    },
+    {
+     "id": "10296423460",
+     "lat": 38.966701,
+     "lon": -9.262774,
+     "nome": "EN 8 (Qta Fonte)"
+    },
+    {
+     "id": "10296423139",
+     "lat": 38.962723,
+     "lon": -9.260838,
+     "nome": "Estrada Nacional 8 (X) Rua Direita"
+    },
+    {
+     "id": "10296423141",
+     "lat": 38.957873,
+     "lon": -9.258833,
+     "nome": "EN 8 7"
+    }
+   ],
+   "relacao": "20961520"
+  }
+ ],
+ "702": [
+  {
+   "nome": "702: Torres Vedras -> Venda do Pinheiro",
+   "paragens": [
+    {
+     "id": "7797410034",
+     "lat": 39.09279,
+     "lon": -9.265789,
+     "nome": "Torres Vedras (Terminal) P2"
+    },
+    {
+     "id": "12474429633",
+     "lat": 39.091633,
+     "lon": -9.263684,
+     "nome": "GNR"
+    },
+    {
+     "id": "9898424876",
+     "lat": 39.088408,
+     "lon": -9.261346,
+     "nome": "Tribunal"
+    },
+    {
+     "id": "9577497734",
+     "lat": 39.087055,
+     "lon": -9.258515,
+     "nome": "Casa do Benfica"
+    },
+    {
+     "id": "9577497735",
+     "lat": 39.085442,
+     "lon": -9.256453,
+     "nome": "Hospital"
+    },
+    {
+     "id": "12476182624",
+     "lat": 39.080321,
+     "lon": -9.255306,
+     "nome": "Fundição Dois Portos"
+    },
+    {
+     "id": "12487407224",
+     "lat": 39.074796,
+     "lon": -9.251197,
+     "nome": "Acral"
+    },
+    {
+     "id": "13931570354",
+     "lat": 39.070289,
+     "lon": -9.244023,
+     "nome": "Bombas da Galp"
+    },
+    {
+     "id": "13931570356",
+     "lat": 39.058991,
+     "lon": -9.241456,
+     "nome": "EN 8 (X) Catefica (Rotunda)"
+    },
+    {
+     "id": "13931570358",
+     "lat": 39.055527,
+     "lon": -9.253473,
+     "nome": "EN 8 (X) Ribeiralves"
+    },
+    {
+     "id": "13931570361",
+     "lat": 39.051996,
+     "lon": -9.262381,
+     "nome": "Carvalhal"
+    },
+    {
+     "id": "13931570362",
+     "lat": 39.050031,
+     "lon": -9.268652,
+     "nome": "Carvalhal (Restaurante)"
+    },
+    {
+     "id": "13931570365",
+     "lat": 39.045892,
+     "lon": -9.271535,
+     "nome": "Turcifal (R Vale da Padeira 32)"
+    },
+    {
+     "id": "13931570367",
+     "lat": 39.044282,
+     "lon": -9.269499,
+     "nome": "Turcifal (R Vale da Padeira 12)"
+    },
+    {
+     "id": "13931570368",
+     "lat": 39.042136,
+     "lon": -9.266388,
+     "nome": "Turcifal (Igreja)"
+    },
+    {
+     "id": "13931570371",
+     "lat": 39.038948,
+     "lon": -9.267754,
+     "nome": "Turcifal (R José Figueiroa Rego 33)"
+    },
+    {
+     "id": "13931570373",
+     "lat": 39.036622,
+     "lon": -9.27199,
+     "nome": "Turcifal (R Perna de Pau 7)"
+    },
+    {
+     "id": "13931570374",
+     "lat": 39.034863,
+     "lon": -9.275281,
+     "nome": "Turcifal (Rotunda)"
+    },
+    {
+     "id": "13931570376",
+     "lat": 39.02523,
+     "lon": -9.279435,
+     "nome": "Freixofeira (X) EN 8 42"
+    },
+    {
+     "id": "13931570379",
+     "lat": 39.021847,
+     "lon": -9.27988,
+     "nome": "Freixofeira (X) EN 8 3"
+    },
+    {
+     "id": "13931570380",
+     "lat": 39.019689,
+     "lon": -9.279793,
+     "nome": "Quinta da Mucharreira"
+    },
+    {
+     "id": "13926286429",
+     "lat": 39.012155,
+     "lon": -9.274894,
+     "nome": "EN 8 (X) Caneira Velha"
+    },
+    {
+     "id": "10296423472",
+     "lat": 39.01105,
+     "lon": -9.275799,
+     "nome": "R Da Azueira 8"
+    },
+    {
+     "id": "10296423471",
+     "lat": 39.011428,
+     "lon": -9.280149,
+     "nome": "Quinta Do Arneiro"
+    },
+    {
+     "id": "10296423468",
+     "lat": 39.010481,
+     "lon": -9.285768,
+     "nome": "Lgo Nossa Sra da Luz 3"
+    },
+    {
+     "id": "10296423969",
+     "lat": 39.006467,
+     "lon": -9.289958,
+     "nome": "R da Farmácia 4"
+    },
+    {
+     "id": "10296423971",
+     "lat": 39.004911,
+     "lon": -9.287582,
+     "nome": "R Principal 24 (Livramento)"
+    },
+    {
+     "id": "10296423916",
+     "lat": 39.00317,
+     "lon": -9.286608,
+     "nome": "R Principal 9 (C Saúde) Livramento"
+    },
+    {
+     "id": "10296423975",
+     "lat": 39.004027,
+     "lon": -9.283832,
+     "nome": "Estr Carrascal 11"
+    },
+    {
+     "id": "10296423976",
+     "lat": 39.002174,
+     "lon": -9.279511,
+     "nome": "Estr Carrascal 20"
+    },
+    {
+     "id": "10296423978",
+     "lat": 39.001597,
+     "lon": -9.27684,
+     "nome": "Estr Carrascal 4"
+    },
+    {
+     "id": "10296423474",
+     "lat": 39.001199,
+     "lon": -9.276202,
+     "nome": "EN 8 22 (Gradil)"
+    },
+    {
+     "id": "10296423476",
+     "lat": 38.999102,
+     "lon": -9.276098,
+     "nome": "R Principal 1 (Gradil)"
+    },
+    {
+     "id": "10296423479",
+     "lat": 38.994431,
+     "lon": -9.273854,
+     "nome": "R do Val 35 (Gradil)"
+    },
+    {
+     "id": "10296423480",
+     "lat": 38.991962,
+     "lon": -9.274317,
+     "nome": "EN 8 22 (Gradil)"
+    },
+    {
+     "id": "10296423482",
+     "lat": 38.985574,
+     "lon": -9.273732,
+     "nome": "Estrada Nacional 8 (X) Rua Movimento das Forças Armadas"
+    },
+    {
+     "id": "10296423332",
+     "lat": 38.984883,
+     "lon": -9.274923,
+     "nome": "Rua Movimento das Forças Armadas"
+    },
+    {
+     "id": "9392548764",
+     "lat": 38.982806,
+     "lon": -9.280818,
+     "nome": "R Movimento das Forças Armadas 25"
+    },
+    {
+     "id": "10296423331",
+     "lat": 38.984798,
+     "lon": -9.274908,
+     "nome": "Rua Movimento das Forças Armadas"
+    },
+    {
+     "id": "10296423486",
+     "lat": 38.974809,
+     "lon": -9.257844,
+     "nome": "Vila Franca Rosário (X) R Cap João Lopes"
+    },
+    {
+     "id": "10296423464",
+     "lat": 38.971494,
+     "lon": -9.257227,
+     "nome": "EN 8 55 (X) Enxara Bispo"
+    },
+    {
+     "id": "10296423462",
+     "lat": 38.970033,
+     "lon": -9.260266,
+     "nome": "EN 8 30"
+    },
+    {
+     "id": "10296423460",
+     "lat": 38.966701,
+     "lon": -9.262774,
+     "nome": "EN 8 (Qta Fonte)"
+    },
+    {
+     "id": "10296423139",
+     "lat": 38.962723,
+     "lon": -9.260838,
+     "nome": "Estrada Nacional 8 (X) Rua Direita"
+    },
+    {
+     "id": "10296423141",
+     "lat": 38.957873,
+     "lon": -9.258833,
+     "nome": "EN 8 7"
+    }
+   ],
+   "relacao": "20961516"
+  },
+  {
+   "nome": "702: Venda do Pinheiro -> Torres Vedras",
+   "paragens": [
+    {
+     "id": "10296423142",
+     "lat": 38.958117,
+     "lon": -9.258742,
+     "nome": "EN 8 7"
+    },
+    {
+     "id": "10296423140",
+     "lat": 38.96299,
+     "lon": -9.26086,
+     "nome": "Estrada Nacional 8 Frente (X) Rua Direita"
+    },
+    {
+     "id": "10296423461",
+     "lat": 38.966824,
+     "lon": -9.262583,
+     "nome": "EN 8 (Qta Fonte)"
+    },
+    {
+     "id": "10296423463",
+     "lat": 38.969855,
+     "lon": -9.260299,
+     "nome": "EN 8 30"
+    },
+    {
+     "id": "10296423465",
+     "lat": 38.971757,
+     "lon": -9.256913,
+     "nome": "EN 8 55 (X) Enxara Bispo"
+    },
+    {
+     "id": "10296423485",
+     "lat": 38.975273,
+     "lon": -9.258141,
+     "nome": "Vila Franca Rosário (X) R Cap João Lopes"
+    },
+    {
+     "id": "10296423332",
+     "lat": 38.984883,
+     "lon": -9.274923,
+     "nome": "Rua Movimento das Forças Armadas"
+    },
+    {
+     "id": "9392548764",
+     "lat": 38.982806,
+     "lon": -9.280818,
+     "nome": "R Movimento das Forças Armadas 25"
+    },
+    {
+     "id": "10296423331",
+     "lat": 38.984798,
+     "lon": -9.274908,
+     "nome": "Rua Movimento das Forças Armadas"
+    },
+    {
+     "id": "10296423483",
+     "lat": 38.985574,
+     "lon": -9.273594,
+     "nome": "EN 8 (Gradil)"
+    },
+    {
+     "id": "10296423481",
+     "lat": 38.991916,
+     "lon": -9.27417,
+     "nome": "EN 8 22 (Gradil)"
+    },
+    {
+     "id": "10296423478",
+     "lat": 38.994495,
+     "lon": -9.273695,
+     "nome": "R do Val 35 (Gradil)"
+    },
+    {
+     "id": "10296423477",
+     "lat": 38.999134,
+     "lon": -9.275973,
+     "nome": "R Principal 1 (Gradil)"
+    },
+    {
+     "id": "10296423475",
+     "lat": 39.001186,
+     "lon": -9.276065,
+     "nome": "EN 8 22 (Gradil)"
+    },
+    {
+     "id": "10296423979",
+     "lat": 39.001679,
+     "lon": -9.276859,
+     "nome": "Estr Carrascal 4"
+    },
+    {
+     "id": "10296423977",
+     "lat": 39.002244,
+     "lon": -9.27945,
+     "nome": "Estr Carrascal 20"
+    },
+    {
+     "id": "10296423974",
+     "lat": 39.004117,
+     "lon": -9.283935,
+     "nome": "Estr Carrascal 11"
+    },
+    {
+     "id": "10296423973",
+     "lat": 39.003496,
+     "lon": -9.286681,
+     "nome": "R Principal (X) Centro de Saúde"
+    },
+    {
+     "id": "10296423972",
+     "lat": 39.004898,
+     "lon": -9.287435,
+     "nome": "R Principal 24 (Livramento)"
+    },
+    {
+     "id": "10296423970",
+     "lat": 39.006347,
+     "lon": -9.289894,
+     "nome": "R da Farmácia 4"
+    },
+    {
+     "id": "10296423469",
+     "lat": 39.010448,
+     "lon": -9.285617,
+     "nome": "Lgo Nossa Sra da Luz 3"
+    },
+    {
+     "id": "10296423470",
+     "lat": 39.011315,
+     "lon": -9.280015,
+     "nome": "Quinta Do Arneiro"
+    },
+    {
+     "id": "10296423473",
+     "lat": 39.011013,
+     "lon": -9.275642,
+     "nome": "R Da Azueira 8"
+    },
+    {
+     "id": "13926286428",
+     "lat": 39.012118,
+     "lon": -9.274761,
+     "nome": "EN 8 (X) Caneira Velha"
+    },
+    {
+     "id": "13931570381",
+     "lat": 39.019668,
+     "lon": -9.279661,
+     "nome": "Quinta da Mucharreira"
+    },
+    {
+     "id": "13931570378",
+     "lat": 39.021665,
+     "lon": -9.279743,
+     "nome": "Freixofeira (X) EN 8 3"
+    },
+    {
+     "id": "13931570377",
+     "lat": 39.025049,
+     "lon": -9.279299,
+     "nome": "Freixofeira (X) EN 8 42"
+    },
+    {
+     "id": "13931570375",
+     "lat": 39.034758,
+     "lon": -9.275455,
+     "nome": "Turcifal (Rotunda)"
+    },
+    {
+     "id": "13931570372",
+     "lat": 39.036454,
+     "lon": -9.272047,
+     "nome": "Turcifal (R Perna de Pau 7)"
+    },
+    {
+     "id": "13931570370",
+     "lat": 39.038969,
+     "lon": -9.26767,
+     "nome": "Turcifal (R José Figueiroa Rego 33)"
+    },
+    {
+     "id": "13931570369",
+     "lat": 39.04215,
+     "lon": -9.266271,
+     "nome": "Turcifal (Igreja)"
+    },
+    {
+     "id": "13931570366",
+     "lat": 39.044422,
+     "lon": -9.269347,
+     "nome": "Turcifal (R Vale da Padeira 12)"
+    },
+    {
+     "id": "13931570364",
+     "lat": 39.045881,
+     "lon": -9.271259,
+     "nome": "Turcifal (R Vale da Padeira 32)"
+    },
+    {
+     "id": "13931570363",
+     "lat": 39.049999,
+     "lon": -9.268538,
+     "nome": "Carvalhal (Restaurante)"
+    },
+    {
+     "id": "13931570360",
+     "lat": 39.051873,
+     "lon": -9.262138,
+     "nome": "Carvalhal"
+    },
+    {
+     "id": "13931570359",
+     "lat": 39.055404,
+     "lon": -9.253214,
+     "nome": "EN 8 (X) Ribeiralves"
+    },
+    {
+     "id": "13931570357",
+     "lat": 39.059064,
+     "lon": -9.241296,
+     "nome": "EN 8 (X) Catefica (Rotunda)"
+    },
+    {
+     "id": "13931570355",
+     "lat": 39.070364,
+     "lon": -9.244051,
+     "nome": "Bombas da Galp"
+    },
+    {
+     "id": "12487407225",
+     "lat": 39.074524,
+     "lon": -9.250656,
+     "nome": "Acral"
+    },
+    {
+     "id": "13926286430",
+     "lat": 39.080936,
+     "lon": -9.255251,
+     "nome": "Fundição Dois Portos"
+    },
+    {
+     "id": "12476182628",
+     "lat": 39.085225,
+     "lon": -9.256234,
+     "nome": "Hospital"
+    },
+    {
+     "id": "12474429647",
+     "lat": 39.087661,
+     "lon": -9.259197,
+     "nome": "Casa do Benfica"
+    },
+    {
+     "id": "12532959117",
+     "lat": 39.089075,
+     "lon": -9.261057,
+     "nome": "Tribunal"
+    },
+    {
+     "id": "7797522969",
+     "lat": 39.091618,
+     "lon": -9.263998,
+     "nome": "GNR"
+    },
+    {
+     "id": "7797410034",
+     "lat": 39.09279,
+     "lon": -9.265789,
+     "nome": "Torres Vedras (Terminal) P2"
+    }
+   ],
+   "relacao": "20961517"
+  },
+  {
+   "nome": "702: Torres Vedras -> Lisboa (Campo Grande) (via N8 Loures)",
+   "paragens": [
+    {
+     "id": "7797410034",
+     "lat": 39.09279,
+     "lon": -9.265789,
+     "nome": "Torres Vedras (Terminal) P2"
+    },
+    {
+     "id": "12474429633",
+     "lat": 39.091633,
+     "lon": -9.263684,
+     "nome": "GNR"
+    },
+    {
+     "id": "9898424876",
+     "lat": 39.088408,
+     "lon": -9.261346,
+     "nome": "Tribunal"
+    },
+    {
+     "id": "9577497734",
+     "lat": 39.087055,
+     "lon": -9.258515,
+     "nome": "Casa do Benfica"
+    },
+    {
+     "id": "9577497735",
+     "lat": 39.085442,
+     "lon": -9.256453,
+     "nome": "Hospital"
+    },
+    {
+     "id": "12476182624",
+     "lat": 39.080321,
+     "lon": -9.255306,
+     "nome": "Fundição Dois Portos"
+    },
+    {
+     "id": "12487407224",
+     "lat": 39.074796,
+     "lon": -9.251197,
+     "nome": "Acral"
+    },
+    {
+     "id": "13931570354",
+     "lat": 39.070289,
+     "lon": -9.244023,
+     "nome": "Bombas da Galp"
+    },
+    {
+     "id": "13931570356",
+     "lat": 39.058991,
+     "lon": -9.241456,
+     "nome": "EN 8 (X) Catefica (Rotunda)"
+    },
+    {
+     "id": "13931570358",
+     "lat": 39.055527,
+     "lon": -9.253473,
+     "nome": "EN 8 (X) Ribeiralves"
+    },
+    {
+     "id": "13931570361",
+     "lat": 39.051996,
+     "lon": -9.262381,
+     "nome": "Carvalhal"
+    },
+    {
+     "id": "13931570362",
+     "lat": 39.050031,
+     "lon": -9.268652,
+     "nome": "Carvalhal (Restaurante)"
+    },
+    {
+     "id": "13931570365",
+     "lat": 39.045892,
+     "lon": -9.271535,
+     "nome": "Turcifal (R Vale da Padeira 32)"
+    },
+    {
+     "id": "13931570367",
+     "lat": 39.044282,
+     "lon": -9.269499,
+     "nome": "Turcifal (R Vale da Padeira 12)"
+    },
+    {
+     "id": "13931570368",
+     "lat": 39.042136,
+     "lon": -9.266388,
+     "nome": "Turcifal (Igreja)"
+    },
+    {
+     "id": "13931570371",
+     "lat": 39.038948,
+     "lon": -9.267754,
+     "nome": "Turcifal (R José Figueiroa Rego 33)"
+    },
+    {
+     "id": "13931570373",
+     "lat": 39.036622,
+     "lon": -9.27199,
+     "nome": "Turcifal (R Perna de Pau 7)"
+    },
+    {
+     "id": "13931570374",
+     "lat": 39.034863,
+     "lon": -9.275281,
+     "nome": "Turcifal (Rotunda)"
+    },
+    {
+     "id": "13931570376",
+     "lat": 39.02523,
+     "lon": -9.279435,
+     "nome": "Freixofeira (X) EN 8 42"
+    },
+    {
+     "id": "13931570379",
+     "lat": 39.021847,
+     "lon": -9.27988,
+     "nome": "Freixofeira (X) EN 8 3"
+    },
+    {
+     "id": "13931570380",
+     "lat": 39.019689,
+     "lon": -9.279793,
+     "nome": "Quinta da Mucharreira"
+    },
+    {
+     "id": "13926286429",
+     "lat": 39.012155,
+     "lon": -9.274894,
+     "nome": "EN 8 (X) Caneira Velha"
+    },
+    {
+     "id": "10296423472",
+     "lat": 39.01105,
+     "lon": -9.275799,
+     "nome": "R Da Azueira 8"
+    },
+    {
+     "id": "10296423471",
+     "lat": 39.011428,
+     "lon": -9.280149,
+     "nome": "Quinta Do Arneiro"
+    },
+    {
+     "id": "10296423468",
+     "lat": 39.010481,
+     "lon": -9.285768,
+     "nome": "Lgo Nossa Sra da Luz 3"
+    },
+    {
+     "id": "10296423969",
+     "lat": 39.006467,
+     "lon": -9.289958,
+     "nome": "R da Farmácia 4"
+    },
+    {
+     "id": "10296423971",
+     "lat": 39.004911,
+     "lon": -9.287582,
+     "nome": "R Principal 24 (Livramento)"
+    },
+    {
+     "id": "10296423916",
+     "lat": 39.00317,
+     "lon": -9.286608,
+     "nome": "R Principal 9 (C Saúde) Livramento"
+    },
+    {
+     "id": "10296423975",
+     "lat": 39.004027,
+     "lon": -9.283832,
+     "nome": "Estr Carrascal 11"
+    },
+    {
+     "id": "10296423976",
+     "lat": 39.002174,
+     "lon": -9.279511,
+     "nome": "Estr Carrascal 20"
+    },
+    {
+     "id": "10296423978",
+     "lat": 39.001597,
+     "lon": -9.27684,
+     "nome": "Estr Carrascal 4"
+    },
+    {
+     "id": "10296423474",
+     "lat": 39.001199,
+     "lon": -9.276202,
+     "nome": "EN 8 22 (Gradil)"
+    },
+    {
+     "id": "10296423476",
+     "lat": 38.999102,
+     "lon": -9.276098,
+     "nome": "R Principal 1 (Gradil)"
+    },
+    {
+     "id": "10296423479",
+     "lat": 38.994431,
+     "lon": -9.273854,
+     "nome": "R do Val 35 (Gradil)"
+    },
+    {
+     "id": "10296423480",
+     "lat": 38.991962,
+     "lon": -9.274317,
+     "nome": "EN 8 22 (Gradil)"
+    },
+    {
+     "id": "10296423482",
+     "lat": 38.985574,
+     "lon": -9.273732,
+     "nome": "Estrada Nacional 8 (X) Rua Movimento das Forças Armadas"
+    },
+    {
+     "id": "10296423332",
+     "lat": 38.984883,
+     "lon": -9.274923,
+     "nome": "Rua Movimento das Forças Armadas"
+    },
+    {
+     "id": "9392548764",
+     "lat": 38.982806,
+     "lon": -9.280818,
+     "nome": "R Movimento das Forças Armadas 25"
+    },
+    {
+     "id": "10296423331",
+     "lat": 38.984798,
+     "lon": -9.274908,
+     "nome": "Rua Movimento das Forças Armadas"
+    },
+    {
+     "id": "10296423486",
+     "lat": 38.974809,
+     "lon": -9.257844,
+     "nome": "Vila Franca Rosário (X) R Cap João Lopes"
+    },
+    {
+     "id": "10296423464",
+     "lat": 38.971494,
+     "lon": -9.257227,
+     "nome": "EN 8 55 (X) Enxara Bispo"
+    },
+    {
+     "id": "10296423462",
+     "lat": 38.970033,
+     "lon": -9.260266,
+     "nome": "EN 8 30"
+    },
+    {
+     "id": "10296423460",
+     "lat": 38.966701,
+     "lon": -9.262774,
+     "nome": "EN 8 (Qta Fonte)"
+    },
+    {
+     "id": "10296423139",
+     "lat": 38.962723,
+     "lon": -9.260838,
+     "nome": "Estrada Nacional 8 (X) Rua Direita"
+    },
+    {
+     "id": "10296423141",
+     "lat": 38.957873,
+     "lon": -9.258833,
+     "nome": "EN 8 7"
+    }
+   ],
+   "relacao": "20961518"
+  },
+  {
+   "nome": "702: Lisboa (Campo Grande) -> Torres Vedras (via N8 Loures)",
+   "paragens": [
+    {
+     "id": "10296423142",
+     "lat": 38.958117,
+     "lon": -9.258742,
+     "nome": "EN 8 7"
+    },
+    {
+     "id": "10296423140",
+     "lat": 38.96299,
+     "lon": -9.26086,
+     "nome": "Estrada Nacional 8 Frente (X) Rua Direita"
+    },
+    {
+     "id": "10296423461",
+     "lat": 38.966824,
+     "lon": -9.262583,
+     "nome": "EN 8 (Qta Fonte)"
+    },
+    {
+     "id": "10296423463",
+     "lat": 38.969855,
+     "lon": -9.260299,
+     "nome": "EN 8 30"
+    },
+    {
+     "id": "10296423465",
+     "lat": 38.971757,
+     "lon": -9.256913,
+     "nome": "EN 8 55 (X) Enxara Bispo"
+    },
+    {
+     "id": "10296423485",
+     "lat": 38.975273,
+     "lon": -9.258141,
+     "nome": "Vila Franca Rosário (X) R Cap João Lopes"
+    },
+    {
+     "id": "10296423332",
+     "lat": 38.984883,
+     "lon": -9.274923,
+     "nome": "Rua Movimento das Forças Armadas"
+    },
+    {
+     "id": "9392548764",
+     "lat": 38.982806,
+     "lon": -9.280818,
+     "nome": "R Movimento das Forças Armadas 25"
+    },
+    {
+     "id": "10296423331",
+     "lat": 38.984798,
+     "lon": -9.274908,
+     "nome": "Rua Movimento das Forças Armadas"
+    },
+    {
+     "id": "10296423483",
+     "lat": 38.985574,
+     "lon": -9.273594,
+     "nome": "EN 8 (Gradil)"
+    },
+    {
+     "id": "10296423481",
+     "lat": 38.991916,
+     "lon": -9.27417,
+     "nome": "EN 8 22 (Gradil)"
+    },
+    {
+     "id": "10296423478",
+     "lat": 38.994495,
+     "lon": -9.273695,
+     "nome": "R do Val 35 (Gradil)"
+    },
+    {
+     "id": "10296423477",
+     "lat": 38.999134,
+     "lon": -9.275973,
+     "nome": "R Principal 1 (Gradil)"
+    },
+    {
+     "id": "10296423475",
+     "lat": 39.001186,
+     "lon": -9.276065,
+     "nome": "EN 8 22 (Gradil)"
+    },
+    {
+     "id": "10296423979",
+     "lat": 39.001679,
+     "lon": -9.276859,
+     "nome": "Estr Carrascal 4"
+    },
+    {
+     "id": "10296423977",
+     "lat": 39.002244,
+     "lon": -9.27945,
+     "nome": "Estr Carrascal 20"
+    },
+    {
+     "id": "10296423974",
+     "lat": 39.004117,
+     "lon": -9.283935,
+     "nome": "Estr Carrascal 11"
+    },
+    {
+     "id": "10296423973",
+     "lat": 39.003496,
+     "lon": -9.286681,
+     "nome": "R Principal (X) Centro de Saúde"
+    },
+    {
+     "id": "10296423972",
+     "lat": 39.004898,
+     "lon": -9.287435,
+     "nome": "R Principal 24 (Livramento)"
+    },
+    {
+     "id": "10296423970",
+     "lat": 39.006347,
+     "lon": -9.289894,
+     "nome": "R da Farmácia 4"
+    },
+    {
+     "id": "10296423469",
+     "lat": 39.010448,
+     "lon": -9.285617,
+     "nome": "Lgo Nossa Sra da Luz 3"
+    },
+    {
+     "id": "10296423470",
+     "lat": 39.011315,
+     "lon": -9.280015,
+     "nome": "Quinta Do Arneiro"
+    },
+    {
+     "id": "10296423473",
+     "lat": 39.011013,
+     "lon": -9.275642,
+     "nome": "R Da Azueira 8"
+    },
+    {
+     "id": "13926286428",
+     "lat": 39.012118,
+     "lon": -9.274761,
+     "nome": "EN 8 (X) Caneira Velha"
+    },
+    {
+     "id": "13931570381",
+     "lat": 39.019668,
+     "lon": -9.279661,
+     "nome": "Quinta da Mucharreira"
+    },
+    {
+     "id": "13931570378",
+     "lat": 39.021665,
+     "lon": -9.279743,
+     "nome": "Freixofeira (X) EN 8 3"
+    },
+    {
+     "id": "13931570377",
+     "lat": 39.025049,
+     "lon": -9.279299,
+     "nome": "Freixofeira (X) EN 8 42"
+    },
+    {
+     "id": "13931570375",
+     "lat": 39.034758,
+     "lon": -9.275455,
+     "nome": "Turcifal (Rotunda)"
+    },
+    {
+     "id": "13931570372",
+     "lat": 39.036454,
+     "lon": -9.272047,
+     "nome": "Turcifal (R Perna de Pau 7)"
+    },
+    {
+     "id": "13931570370",
+     "lat": 39.038969,
+     "lon": -9.26767,
+     "nome": "Turcifal (R José Figueiroa Rego 33)"
+    },
+    {
+     "id": "13931570369",
+     "lat": 39.04215,
+     "lon": -9.266271,
+     "nome": "Turcifal (Igreja)"
+    },
+    {
+     "id": "13931570366",
+     "lat": 39.044422,
+     "lon": -9.269347,
+     "nome": "Turcifal (R Vale da Padeira 12)"
+    },
+    {
+     "id": "13931570364",
+     "lat": 39.045881,
+     "lon": -9.271259,
+     "nome": "Turcifal (R Vale da Padeira 32)"
+    },
+    {
+     "id": "13931570363",
+     "lat": 39.049999,
+     "lon": -9.268538,
+     "nome": "Carvalhal (Restaurante)"
+    },
+    {
+     "id": "13931570360",
+     "lat": 39.051873,
+     "lon": -9.262138,
+     "nome": "Carvalhal"
+    },
+    {
+     "id": "13931570359",
+     "lat": 39.055404,
+     "lon": -9.253214,
+     "nome": "EN 8 (X) Ribeiralves"
+    },
+    {
+     "id": "13931570357",
+     "lat": 39.059064,
+     "lon": -9.241296,
+     "nome": "EN 8 (X) Catefica (Rotunda)"
+    },
+    {
+     "id": "13931570355",
+     "lat": 39.070364,
+     "lon": -9.244051,
+     "nome": "Bombas da Galp"
+    },
+    {
+     "id": "12487407225",
+     "lat": 39.074524,
+     "lon": -9.250656,
+     "nome": "Acral"
+    },
+    {
+     "id": "13926286430",
+     "lat": 39.080936,
+     "lon": -9.255251,
+     "nome": "Fundição Dois Portos"
+    },
+    {
+     "id": "12476182628",
+     "lat": 39.085225,
+     "lon": -9.256234,
+     "nome": "Hospital"
+    },
+    {
+     "id": "12474429647",
+     "lat": 39.087661,
+     "lon": -9.259197,
+     "nome": "Casa do Benfica"
+    },
+    {
+     "id": "12532959117",
+     "lat": 39.089075,
+     "lon": -9.261057,
+     "nome": "Tribunal"
+    },
+    {
+     "id": "7797522969",
+     "lat": 39.091618,
+     "lon": -9.263998,
+     "nome": "GNR"
+    },
+    {
+     "id": "7797410034",
+     "lat": 39.09279,
+     "lon": -9.265789,
+     "nome": "Torres Vedras (Terminal) P2"
+    }
+   ],
+   "relacao": "20961519"
+  }
+ ],
+ "794": [
+  {
+   "nome": "794: Terminal (Circular) (via Arneiros e Catefica)",
+   "paragens": [
+    {
+     "id": "13958102587",
+     "lat": 39.092571,
+     "lon": -9.265434,
+     "nome": "Terminal (Linha Roxa)"
+    },
+    {
+     "id": "12474429633",
+     "lat": 39.091633,
+     "lon": -9.263684,
+     "nome": "GNR"
+    },
+    {
+     "id": "9898424876",
+     "lat": 39.088408,
+     "lon": -9.261346,
+     "nome": "Tribunal"
+    },
+    {
+     "id": "3008430793",
+     "lat": 39.083833,
+     "lon": -9.261575,
+     "nome": "Caero, Cenfim"
+    },
+    {
+     "id": "12474429650",
+     "lat": 39.082485,
+     "lon": -9.261774,
+     "nome": "São Gonçalo"
+    },
+    {
+     "id": "13958102585",
+     "lat": 39.080515,
+     "lon": -9.25653,
+     "nome": "Parque Coronel Vítor Alves"
+    },
+    {
+     "id": "12476182624",
+     "lat": 39.080321,
+     "lon": -9.255306,
+     "nome": "Fundição Dois Portos"
+    },
+    {
+     "id": "13958102583",
+     "lat": 39.078247,
+     "lon": -9.25429,
+     "nome": "Rua Manuel Martinho"
+    },
+    {
+     "id": "12487407224",
+     "lat": 39.074796,
+     "lon": -9.251197,
+     "nome": "Acral"
+    },
+    {
+     "id": "13958102581",
+     "lat": 39.071618,
+     "lon": -9.248159,
+     "nome": "Rotunda da Quinta do Prior"
+    },
+    {
+     "id": "13931570354",
+     "lat": 39.070289,
+     "lon": -9.244023,
+     "nome": "Bombas da Galp"
+    },
+    {
+     "id": "13958102579",
+     "lat": 39.069832,
+     "lon": -9.228343,
+     "nome": "Louriceira (Rua Principal (X) Rua do Cerrado)"
+    },
+    {
+     "id": "13958102577",
+     "lat": 39.071467,
+     "lon": -9.227657,
+     "nome": "Louriceira (Rua Principal)"
+    },
+    {
+     "id": "13958102575",
+     "lat": 39.072683,
+     "lon": -9.225283,
+     "nome": "Arneiros (Rua da Fonte Nova)"
+    },
+    {
+     "id": "13958102573",
+     "lat": 39.074514,
+     "lon": -9.223141,
+     "nome": "Arneiros"
+    },
+    {
+     "id": "13958102574",
+     "lat": 39.072825,
+     "lon": -9.225405,
+     "nome": "Arneiros (Rua da Fonte Nova)"
+    },
+    {
+     "id": "13958102576",
+     "lat": 39.071538,
+     "lon": -9.227782,
+     "nome": "Louriceira (Rua Principal)"
+    },
+    {
+     "id": "13958102578",
+     "lat": 39.069938,
+     "lon": -9.228489,
+     "nome": "Louriceira (Rua Principal (X) Rua do Cerrado)"
+    },
+    {
+     "id": "13958102568",
+     "lat": 39.063979,
+     "lon": -9.235193,
+     "nome": "Orjariça (Rua de São Vicente)"
+    },
+    {
+     "id": "13958102569",
+     "lat": 39.062446,
+     "lon": -9.23562,
+     "nome": "Orjariça"
+    },
+    {
+     "id": "13958102570",
+     "lat": 39.061095,
+     "lon": -9.237149,
+     "nome": "Orjariça (Rua Luís de Camões)"
+    },
+    {
+     "id": "13958102571",
+     "lat": 39.059713,
+     "lon": -9.240702,
+     "nome": "Catefica (Rua Primeiro de Maio)"
+    },
+    {
+     "id": "13958102572",
+     "lat": 39.060458,
+     "lon": -9.241138,
+     "nome": "Catefica (Rotunda)"
+    },
+    {
+     "id": "13958102567",
+     "lat": 39.068646,
+     "lon": -9.241536,
+     "nome": "EN8 Cruz. Orjariça"
+    },
+    {
+     "id": "13931570355",
+     "lat": 39.070364,
+     "lon": -9.244051,
+     "nome": "Bombas da Galp"
+    },
+    {
+     "id": "13958102580",
+     "lat": 39.071687,
+     "lon": -9.248001,
+     "nome": "Rotunda da Quinta do Prior"
+    },
+    {
+     "id": "12487407225",
+     "lat": 39.074524,
+     "lon": -9.250656,
+     "nome": "Acral"
+    },
+    {
+     "id": "13958102582",
+     "lat": 39.078287,
+     "lon": -9.254162,
+     "nome": "Rua Manuel Martinho"
+    },
+    {
+     "id": "13926286430",
+     "lat": 39.080936,
+     "lon": -9.255251,
+     "nome": "Fundição Dois Portos"
+    },
+    {
+     "id": "13958102584",
+     "lat": 39.080596,
+     "lon": -9.256536,
+     "nome": "Parque Coronel Vítor Alves"
+    },
+    {
+     "id": "12474429619",
+     "lat": 39.082355,
+     "lon": -9.258631,
+     "nome": "Apeci"
+    },
+    {
+     "id": "12476177770",
+     "lat": 39.085058,
+     "lon": -9.258626,
+     "nome": "Escola Madeira Torres"
+    },
+    {
+     "id": "13958102565",
+     "lat": 39.085601,
+     "lon": -9.258959,
+     "nome": "Venerando Matos"
+    },
+    {
+     "id": "12474429648",
+     "lat": 39.086978,
+     "lon": -9.261017,
+     "nome": "Rua António Leal D'Ascenção"
+    },
+    {
+     "id": "12532959117",
+     "lat": 39.089075,
+     "lon": -9.261057,
+     "nome": "Tribunal"
+    },
+    {
+     "id": "1629552894",
+     "lat": 39.090771,
+     "lon": -9.261804,
+     "nome": "Campo da Várzea, Junto ao Tribunal"
+    },
+    {
+     "id": "7797522969",
+     "lat": 39.091618,
+     "lon": -9.263998,
+     "nome": "GNR"
+    },
+    {
+     "id": "13958102587",
+     "lat": 39.092571,
+     "lon": -9.265434,
+     "nome": "Terminal (Linha Roxa)"
+    }
+   ],
+   "relacao": "21018000"
+  },
+  {
+   "nome": "794: Terminal (Circular) (via Catefica)",
+   "paragens": [
+    {
+     "id": "13958102587",
+     "lat": 39.092571,
+     "lon": -9.265434,
+     "nome": "Terminal (Linha Roxa)"
+    },
+    {
+     "id": "12474429633",
+     "lat": 39.091633,
+     "lon": -9.263684,
+     "nome": "GNR"
+    },
+    {
+     "id": "9898424876",
+     "lat": 39.088408,
+     "lon": -9.261346,
+     "nome": "Tribunal"
+    },
+    {
+     "id": "3008430793",
+     "lat": 39.083833,
+     "lon": -9.261575,
+     "nome": "Caero, Cenfim"
+    },
+    {
+     "id": "12474429650",
+     "lat": 39.082485,
+     "lon": -9.261774,
+     "nome": "São Gonçalo"
+    },
+    {
+     "id": "13958102585",
+     "lat": 39.080515,
+     "lon": -9.25653,
+     "nome": "Parque Coronel Vítor Alves"
+    },
+    {
+     "id": "12476182624",
+     "lat": 39.080321,
+     "lon": -9.255306,
+     "nome": "Fundição Dois Portos"
+    },
+    {
+     "id": "13958102583",
+     "lat": 39.078247,
+     "lon": -9.25429,
+     "nome": "Rua Manuel Martinho"
+    },
+    {
+     "id": "12487407224",
+     "lat": 39.074796,
+     "lon": -9.251197,
+     "nome": "Acral"
+    },
+    {
+     "id": "13958102581",
+     "lat": 39.071618,
+     "lon": -9.248159,
+     "nome": "Rotunda da Quinta do Prior"
+    },
+    {
+     "id": "13931570354",
+     "lat": 39.070289,
+     "lon": -9.244023,
+     "nome": "Bombas da Galp"
+    },
+    {
+     "id": "13958102566",
+     "lat": 39.068634,
+     "lon": -9.241646,
+     "nome": "EN8 Cruz. Orjariça"
+    },
+    {
+     "id": "13958102572",
+     "lat": 39.060458,
+     "lon": -9.241138,
+     "nome": "Catefica (Rotunda)"
+    },
+    {
+     "id": "13958102567",
+     "lat": 39.068646,
+     "lon": -9.241536,
+     "nome": "EN8 Cruz. Orjariça"
+    },
+    {
+     "id": "13931570355",
+     "lat": 39.070364,
+     "lon": -9.244051,
+     "nome": "Bombas da Galp"
+    },
+    {
+     "id": "13958102580",
+     "lat": 39.071687,
+     "lon": -9.248001,
+     "nome": "Rotunda da Quinta do Prior"
+    },
+    {
+     "id": "12487407225",
+     "lat": 39.074524,
+     "lon": -9.250656,
+     "nome": "Acral"
+    },
+    {
+     "id": "13958102582",
+     "lat": 39.078287,
+     "lon": -9.254162,
+     "nome": "Rua Manuel Martinho"
+    },
+    {
+     "id": "13926286430",
+     "lat": 39.080936,
+     "lon": -9.255251,
+     "nome": "Fundição Dois Portos"
+    },
+    {
+     "id": "13958102584",
+     "lat": 39.080596,
+     "lon": -9.256536,
+     "nome": "Parque Coronel Vítor Alves"
+    },
+    {
+     "id": "12474429619",
+     "lat": 39.082355,
+     "lon": -9.258631,
+     "nome": "Apeci"
+    },
+    {
+     "id": "12476177770",
+     "lat": 39.085058,
+     "lon": -9.258626,
+     "nome": "Escola Madeira Torres"
+    },
+    {
+     "id": "13958102565",
+     "lat": 39.085601,
+     "lon": -9.258959,
+     "nome": "Venerando Matos"
+    },
+    {
+     "id": "12474429648",
+     "lat": 39.086978,
+     "lon": -9.261017,
+     "nome": "Rua António Leal D'Ascenção"
+    },
+    {
+     "id": "12532959117",
+     "lat": 39.089075,
+     "lon": -9.261057,
+     "nome": "Tribunal"
+    },
+    {
+     "id": "1629552894",
+     "lat": 39.090771,
+     "lon": -9.261804,
+     "nome": "Campo da Várzea, Junto ao Tribunal"
+    },
+    {
+     "id": "7797522969",
+     "lat": 39.091618,
+     "lon": -9.263998,
+     "nome": "GNR"
+    },
+    {
+     "id": "13958102587",
+     "lat": 39.092571,
+     "lon": -9.265434,
+     "nome": "Terminal (Linha Roxa)"
+    }
+   ],
+   "relacao": "21018001"
+  }
+ ],
+ "796": [
+  {
+   "nome": "796: Terminal (Circular) (via Paúl)",
+   "paragens": [
+    {
+     "id": "7797410031",
+     "lat": 39.092941,
+     "lon": -9.265736,
+     "nome": "Terminal (Linha Verde)"
+    },
+    {
+     "id": "12487407219",
+     "lat": 39.08735,
+     "lon": -9.270635,
+     "nome": "Bairro Alminhas, Junto n.°3"
+    },
+    {
+     "id": "12487407218",
+     "lat": 39.090507,
+     "lon": -9.276528,
+     "nome": "Varatojo, R. Liberdade, Junto n.°40"
+    },
+    {
+     "id": "12487407217",
+     "lat": 39.088899,
+     "lon": -9.277845,
+     "nome": "Varatojo, R. Liberdade, Junto n.°16"
+    },
+    {
+     "id": "7797522968",
+     "lat": 39.100381,
+     "lon": -9.283674,
+     "nome": "Paúl, Rua Rio do Vale"
+    },
+    {
+     "id": "6181645763",
+     "lat": 39.104247,
+     "lon": -9.284365,
+     "nome": "Paúl, Polidesportivo"
+    },
+    {
+     "id": "6181645764",
+     "lat": 39.109898,
+     "lon": -9.287226,
+     "nome": "Paúl, Gavedra"
+    },
+    {
+     "id": "7797522961",
+     "lat": 39.106907,
+     "lon": -9.29284,
+     "nome": "Paúl, Chagas"
+    },
+    {
+     "id": "3634268457",
+     "lat": 39.101422,
+     "lon": -9.288174,
+     "nome": "Paúl, Rua da Broeira"
+    },
+    {
+     "id": "3634268456",
+     "lat": 39.100301,
+     "lon": -9.286064,
+     "nome": "Paúl, Rua Rio do Vale"
+    },
+    {
+     "id": "3634268455",
+     "lat": 39.10044,
+     "lon": -9.283886,
+     "nome": "Paúl, Rua Rio do Vale"
+    },
+    {
+     "id": "6181645762",
+     "lat": 39.101716,
+     "lon": -9.282079,
+     "nome": "Paúl, R. Luís Camões"
+    },
+    {
+     "id": "7797522960",
+     "lat": 39.106262,
+     "lon": -9.275171,
+     "nome": "Matos Velhos, R. Martins, Junto n.°6"
+    },
+    {
+     "id": "7797522971",
+     "lat": 39.106705,
+     "lon": -9.270566,
+     "nome": "Olheiros, X Rua Salgueiral"
+    },
+    {
+     "id": "7797522970",
+     "lat": 39.103153,
+     "lon": -9.266673,
+     "nome": "São Vicente, R. Forte São Vicente X R. 1° Maio"
+    },
+    {
+     "id": "7797522962",
+     "lat": 39.099709,
+     "lon": -9.265119,
+     "nome": "Forte de São Vicente"
+    },
+    {
+     "id": "12474429634",
+     "lat": 39.099069,
+     "lon": -9.263924,
+     "nome": "São Vicente, R. Linhas Torres, Frente n.°47"
+    },
+    {
+     "id": "7797522963",
+     "lat": 39.099042,
+     "lon": -9.262677,
+     "nome": "São Vicente, R. Linhas Torres, Frente n.°15"
+    },
+    {
+     "id": "7797410080",
+     "lat": 39.09629,
+     "lon": -9.262867,
+     "nome": "EN 9 - Choupal - Junto ao Cruz. Rua das Linhas de Torres (Choupal)"
+    },
+    {
+     "id": "7797522964",
+     "lat": 39.094116,
+     "lon": -9.257462,
+     "nome": "Rua Heitor Bernardes Botado (SCUT)"
+    },
+    {
+     "id": "7797522965",
+     "lat": 39.092825,
+     "lon": -9.257957,
+     "nome": "Mercado"
+    },
+    {
+     "id": "7797522967",
+     "lat": 39.092295,
+     "lon": -9.261148,
+     "nome": "Horta Nova"
+    },
+    {
+     "id": "7797522969",
+     "lat": 39.091618,
+     "lon": -9.263998,
+     "nome": "GNR"
+    },
+    {
+     "id": "7797410031",
+     "lat": 39.092941,
+     "lon": -9.265736,
+     "nome": "Terminal (Linha Verde)"
+    }
+   ],
+   "relacao": "11484122"
+  }
+ ],
+ "797": [
+  {
+   "nome": "797: Terminal (Circular) (via Sarge)",
+   "paragens": [
+    {
+     "id": "7797410032",
+     "lat": 39.092847,
+     "lon": -9.265678,
+     "nome": "Terminal (Linha Vermelha)"
+    },
+    {
+     "id": "12474429633",
+     "lat": 39.091633,
+     "lon": -9.263684,
+     "nome": "GNR"
+    },
+    {
+     "id": "9898424878",
+     "lat": 39.088879,
+     "lon": -9.261353,
+     "nome": "Tribunal"
+    },
+    {
+     "id": "9577497734",
+     "lat": 39.087055,
+     "lon": -9.258515,
+     "nome": "Casa do Benfica"
+    },
+    {
+     "id": "9577497736",
+     "lat": 39.087486,
+     "lon": -9.255723,
+     "nome": "Fisica"
+    },
+    {
+     "id": "12474429643",
+     "lat": 39.089599,
+     "lon": -9.256152,
+     "nome": "Escola Henriques Nogueira"
+    },
+    {
+     "id": "12474429642",
+     "lat": 39.092394,
+     "lon": -9.25502,
+     "nome": "Inalva, 5 Outubro"
+    },
+    {
+     "id": "7797522964",
+     "lat": 39.094116,
+     "lon": -9.257462,
+     "nome": "Rua Heitor Bernardes Botado (SCUT)"
+    },
+    {
+     "id": "12476182625",
+     "lat": 39.093862,
+     "lon": -9.255095,
+     "nome": "Soerad, Corredoura"
+    },
+    {
+     "id": "12474429631",
+     "lat": 39.093652,
+     "lon": -9.252387,
+     "nome": "Arenes, Cruzamento"
+    },
+    {
+     "id": "12474429630",
+     "lat": 39.094278,
+     "lon": -9.251115,
+     "nome": "Bairro de Arenes"
+    },
+    {
+     "id": "12474429629",
+     "lat": 39.097979,
+     "lon": -9.247513,
+     "nome": "São Miguel"
+    },
+    {
+     "id": "12474429627",
+     "lat": 39.10071,
+     "lon": -9.243581,
+     "nome": "Decathlon"
+    },
+    {
+     "id": "12487407229",
+     "lat": 39.104001,
+     "lon": -9.235171,
+     "nome": "Sarge, EN 115-2, Lar"
+    },
+    {
+     "id": "12487407231",
+     "lat": 39.103953,
+     "lon": -9.232713,
+     "nome": "Sarge, Talho Sarge"
+    },
+    {
+     "id": "12487407232",
+     "lat": 39.104991,
+     "lon": -9.23023,
+     "nome": "Sarge, EN 115-2, X Ordasqueira"
+    },
+    {
+     "id": "12487407233",
+     "lat": 39.106132,
+     "lon": -9.228396,
+     "nome": "Sarge, EN 115-2, Quinta Sol"
+    },
+    {
+     "id": "13967130021",
+     "lat": 39.108798,
+     "lon": -9.225883,
+     "nome": "Casal Figueiras, EN 115-2"
+    },
+    {
+     "id": "12487407234",
+     "lat": 39.106163,
+     "lon": -9.228518,
+     "nome": "Sarge, EN 115-2, Quinta Sol"
+    },
+    {
+     "id": "13958102588",
+     "lat": 39.104958,
+     "lon": -9.230443,
+     "nome": "Sarge, EN 115-2, X Ordasqueira"
+    },
+    {
+     "id": "12487407230",
+     "lat": 39.103876,
+     "lon": -9.232438,
+     "nome": "Sarge, Talho Sarge"
+    },
+    {
+     "id": "12487407228",
+     "lat": 39.104197,
+     "lon": -9.23713,
+     "nome": "Sarge, EN 115-2, Lar"
+    },
+    {
+     "id": "12474429626",
+     "lat": 39.101225,
+     "lon": -9.245349,
+     "nome": "Varandas de Arenes"
+    },
+    {
+     "id": "12474429628",
+     "lat": 39.09985,
+     "lon": -9.248736,
+     "nome": "Jardins de Arenes, Frente BP"
+    },
+    {
+     "id": "12487407227",
+     "lat": 39.105751,
+     "lon": -9.252728,
+     "nome": "Bairro Paródia, R. Manuel Josué"
+    },
+    {
+     "id": "12487407226",
+     "lat": 39.107911,
+     "lon": -9.253509,
+     "nome": "Bairro Paródia, Frente Miradouro"
+    },
+    {
+     "id": "9577461493",
+     "lat": 39.100811,
+     "lon": -9.254335,
+     "nome": "Arena Shopping"
+    },
+    {
+     "id": "12474429640",
+     "lat": 39.098058,
+     "lon": -9.260477,
+     "nome": "Parque do Choupal"
+    },
+    {
+     "id": "7797522964",
+     "lat": 39.094116,
+     "lon": -9.257462,
+     "nome": "Rua Heitor Bernardes Botado (SCUT)"
+    },
+    {
+     "id": "12534601866",
+     "lat": 39.092307,
+     "lon": -9.254622,
+     "nome": "Estação CP"
+    },
+    {
+     "id": "12476177792",
+     "lat": 39.089431,
+     "lon": -9.25388,
+     "nome": "Loja do Cidadão"
+    },
+    {
+     "id": "12516358061",
+     "lat": 39.087477,
+     "lon": -9.256336,
+     "nome": "Fisica"
+    },
+    {
+     "id": "12474429647",
+     "lat": 39.087661,
+     "lon": -9.259197,
+     "nome": "Casa do Benfica"
+    },
+    {
+     "id": "12532959117",
+     "lat": 39.089075,
+     "lon": -9.261057,
+     "nome": "Tribunal"
+    },
+    {
+     "id": "1629552894",
+     "lat": 39.090771,
+     "lon": -9.261804,
+     "nome": "Campo da Várzea, Junto ao Tribunal"
+    },
+    {
+     "id": "7797522969",
+     "lat": 39.091618,
+     "lon": -9.263998,
+     "nome": "GNR"
+    },
+    {
+     "id": "7797410032",
+     "lat": 39.092847,
+     "lon": -9.265678,
+     "nome": "Terminal (Linha Vermelha)"
+    }
+   ],
+   "relacao": "18611889"
+  }
+ ],
+ "798": [
+  {
+   "nome": "798: Terminal (Circular) (via Sanatório)",
+   "paragens": [
+    {
+     "id": "7797410030",
+     "lat": 39.092753,
+     "lon": -9.26561,
+     "nome": "Terminal (Linha Amarela)"
+    },
+    {
+     "id": "12474429633",
+     "lat": 39.091633,
+     "lon": -9.263684,
+     "nome": "GNR"
+    },
+    {
+     "id": "12516358072",
+     "lat": 39.089833,
+     "lon": -9.260901,
+     "nome": null
+    },
+    {
+     "id": "12474429645",
+     "lat": 39.089943,
+     "lon": -9.258511,
+     "nome": "Graça, Praça 25 Abril"
+    },
+    {
+     "id": "12474429625",
+     "lat": 39.088712,
+     "lon": -9.257923,
+     "nome": "Santos Bernades, R. Santos Bernades"
+    },
+    {
+     "id": "12474429646",
+     "lat": 39.087494,
+     "lon": -9.257038,
+     "nome": "Santos Bernades, Cruz Teresa Jesus Pereira"
+    },
+    {
+     "id": "12474429624",
+     "lat": 39.085417,
+     "lon": -9.255554,
+     "nome": "Rua Bombeiros Voluntários"
+    },
+    {
+     "id": "12474429622",
+     "lat": 39.084088,
+     "lon": -9.254109,
+     "nome": "Bairro Fonte Nova"
+    },
+    {
+     "id": "12474429621",
+     "lat": 39.083064,
+     "lon": -9.253684,
+     "nome": "Rotunda do Sol Jardim"
+    },
+    {
+     "id": "12474429623",
+     "lat": 39.083466,
+     "lon": -9.255472,
+     "nome": "Associação Reformados Torres Vedras"
+    },
+    {
+     "id": "12476182635",
+     "lat": 39.08174,
+     "lon": -9.25871,
+     "nome": "Apeci"
+    },
+    {
+     "id": "12474429618",
+     "lat": 39.080596,
+     "lon": -9.258323,
+     "nome": "Clinica CUF"
+    },
+    {
+     "id": "12476177789",
+     "lat": 39.07981,
+     "lon": -9.257419,
+     "nome": "Centro de Saúde"
+    },
+    {
+     "id": "12532959112",
+     "lat": 39.075974,
+     "lon": -9.256552,
+     "nome": "Av. Liberdade, Junto Seat"
+    },
+    {
+     "id": "4575509113",
+     "lat": 39.07295,
+     "lon": -9.254293,
+     "nome": "Barro, Café Monte Trigo"
+    },
+    {
+     "id": "4575486099",
+     "lat": 39.070728,
+     "lon": -9.254379,
+     "nome": "Barro, Escola Primária"
+    },
+    {
+     "id": "12474429616",
+     "lat": 39.0669,
+     "lon": -9.256451,
+     "nome": "Mundo Criança"
+    },
+    {
+     "id": "12487407221",
+     "lat": 39.06711,
+     "lon": -9.271274,
+     "nome": "Serra Vila (Café Central)"
+    },
+    {
+     "id": "12487407220",
+     "lat": 39.064759,
+     "lon": -9.271943,
+     "nome": "Serra Vila (Escola Primária)"
+    },
+    {
+     "id": "12487407221",
+     "lat": 39.06711,
+     "lon": -9.271274,
+     "nome": "Serra Vila (Café Central)"
+    },
+    {
+     "id": "12487407222",
+     "lat": 39.068441,
+     "lon": -9.27006,
+     "nome": "Serra Vila, Rua Nossa Sª da Pena Cruz"
+    },
+    {
+     "id": "12474429616",
+     "lat": 39.0669,
+     "lon": -9.256451,
+     "nome": "Mundo Criança"
+    },
+    {
+     "id": "12532959111",
+     "lat": 39.070762,
+     "lon": -9.254254,
+     "nome": "Barro, Escola Primária"
+    },
+    {
+     "id": "4575509113",
+     "lat": 39.07295,
+     "lon": -9.254293,
+     "nome": "Barro, Café Monte Trigo"
+    },
+    {
+     "id": "4575287495",
+     "lat": 39.076046,
+     "lon": -9.256335,
+     "nome": "Av. Liberdade, Junto Seat"
+    },
+    {
+     "id": "3003673489",
+     "lat": 39.079914,
+     "lon": -9.257191,
+     "nome": "Centro de Saúde"
+    },
+    {
+     "id": "12474429618",
+     "lat": 39.080596,
+     "lon": -9.258323,
+     "nome": "Clinica CUF"
+    },
+    {
+     "id": "12474429619",
+     "lat": 39.082355,
+     "lon": -9.258631,
+     "nome": "Apeci"
+    },
+    {
+     "id": "12474429649",
+     "lat": 39.083207,
+     "lon": -9.260605,
+     "nome": "Lar São José"
+    },
+    {
+     "id": "3008430793",
+     "lat": 39.083833,
+     "lon": -9.261575,
+     "nome": "Caero, Cenfim"
+    },
+    {
+     "id": "12474429650",
+     "lat": 39.082485,
+     "lon": -9.261774,
+     "nome": "São Gonçalo"
+    },
+    {
+     "id": "12476177770",
+     "lat": 39.085058,
+     "lon": -9.258626,
+     "nome": "Escola Madeira Torres"
+    },
+    {
+     "id": "12474429648",
+     "lat": 39.086978,
+     "lon": -9.261017,
+     "nome": "Rua António Leal D'Ascenção"
+    },
+    {
+     "id": "12532959117",
+     "lat": 39.089075,
+     "lon": -9.261057,
+     "nome": "Tribunal"
+    },
+    {
+     "id": "1629552894",
+     "lat": 39.090771,
+     "lon": -9.261804,
+     "nome": "Campo da Várzea, Junto ao Tribunal"
+    },
+    {
+     "id": "7797522969",
+     "lat": 39.091618,
+     "lon": -9.263998,
+     "nome": "GNR"
+    },
+    {
+     "id": "7797410030",
+     "lat": 39.092753,
+     "lon": -9.26561,
+     "nome": "Terminal (Linha Amarela)"
+    }
+   ],
+   "relacao": "18612047"
+  }
+ ],
+ "799": [
+  {
+   "nome": "799: Terminal (Circular) (via Hilarião)",
+   "paragens": [
+    {
+     "id": "7797410029",
+     "lat": 39.092664,
+     "lon": -9.265531,
+     "nome": "Terminal (Linha Azul)"
+    },
+    {
+     "id": "12474429633",
+     "lat": 39.091633,
+     "lon": -9.263684,
+     "nome": "GNR"
+    },
+    {
+     "id": "9898424878",
+     "lat": 39.088879,
+     "lon": -9.261353,
+     "nome": "Tribunal"
+    },
+    {
+     "id": "9577497734",
+     "lat": 39.087055,
+     "lon": -9.258515,
+     "nome": "Casa do Benfica"
+    },
+    {
+     "id": "9577497736",
+     "lat": 39.087486,
+     "lon": -9.255723,
+     "nome": "Fisica"
+    },
+    {
+     "id": "9577497737",
+     "lat": 39.090506,
+     "lon": -9.253511,
+     "nome": "Loja do Cidadão"
+    },
+    {
+     "id": "12532959116",
+     "lat": 39.092625,
+     "lon": -9.254626,
+     "nome": "Estação CP"
+    },
+    {
+     "id": "7797522964",
+     "lat": 39.094116,
+     "lon": -9.257462,
+     "nome": "Rua Heitor Bernardes Botado (SCUT)"
+    },
+    {
+     "id": "12476182625",
+     "lat": 39.093862,
+     "lon": -9.255095,
+     "nome": "Soerad, Corredoura"
+    },
+    {
+     "id": "12474429631",
+     "lat": 39.093652,
+     "lon": -9.252387,
+     "nome": "Arenes, Cruzamento"
+    },
+    {
+     "id": "12476177798",
+     "lat": 39.095656,
+     "lon": -9.252458,
+     "nome": "Rua Fernando Vicente"
+    },
+    {
+     "id": "12532959114",
+     "lat": 39.097951,
+     "lon": -9.253234,
+     "nome": "Zona Comercial"
+    },
+    {
+     "id": "9577461493",
+     "lat": 39.100811,
+     "lon": -9.254335,
+     "nome": "Arena Shopping"
+    },
+    {
+     "id": "12474429640",
+     "lat": 39.098058,
+     "lon": -9.260477,
+     "nome": "Parque do Choupal"
+    },
+    {
+     "id": "12474429639",
+     "lat": 39.100874,
+     "lon": -9.259119,
+     "nome": "Matadouro Municipal"
+    },
+    {
+     "id": "12474429636",
+     "lat": 39.105269,
+     "lon": -9.258995,
+     "nome": "Bairro Perna de Pau"
+    },
+    {
+     "id": "12474429614",
+     "lat": 39.106696,
+     "lon": -9.261666,
+     "nome": "Hilarião (Rua Evaristo Silva)"
+    },
+    {
+     "id": "12474429612",
+     "lat": 39.106809,
+     "lon": -9.26563,
+     "nome": "Escola Padre Vitor Melicias"
+    },
+    {
+     "id": "9577461494",
+     "lat": 39.105308,
+     "lon": -9.265784,
+     "nome": "Associação Hilarião"
+    },
+    {
+     "id": "12474429615",
+     "lat": 39.10433,
+     "lon": -9.263307,
+     "nome": "Salinas Calado, Rua Vale Terminus"
+    },
+    {
+     "id": "12474429637",
+     "lat": 39.103488,
+     "lon": -9.259464,
+     "nome": "EN 8, Vale Terminus, Cruz. C/ Vale Terminus"
+    },
+    {
+     "id": "12474429638",
+     "lat": 39.100058,
+     "lon": -9.260086,
+     "nome": "Matadouro Municipal"
+    },
+    {
+     "id": "12474429640",
+     "lat": 39.098058,
+     "lon": -9.260477,
+     "nome": "Parque do Choupal"
+    },
+    {
+     "id": "9577461493",
+     "lat": 39.100811,
+     "lon": -9.254335,
+     "nome": "Arena Shopping"
+    },
+    {
+     "id": "9577532040",
+     "lat": 39.098109,
+     "lon": -9.25337,
+     "nome": "Zona Comercial"
+    },
+    {
+     "id": "12476182630",
+     "lat": 39.095761,
+     "lon": -9.252811,
+     "nome": "Rua Fernando Vicente"
+    },
+    {
+     "id": "12532959115",
+     "lat": 39.093671,
+     "lon": -9.252144,
+     "nome": "Arenes, Cruzamento"
+    },
+    {
+     "id": "12474429632",
+     "lat": 39.093982,
+     "lon": -9.255093,
+     "nome": "Soerad, Corredoura"
+    },
+    {
+     "id": "7797522964",
+     "lat": 39.094116,
+     "lon": -9.257462,
+     "nome": "Rua Heitor Bernardes Botado (SCUT)"
+    },
+    {
+     "id": "12476177790",
+     "lat": 39.092324,
+     "lon": -9.255519,
+     "nome": "Inalva, 5 Outubro"
+    },
+    {
+     "id": "12474429644",
+     "lat": 39.091228,
+     "lon": -9.258627,
+     "nome": "Graça, 5 Outubro"
+    },
+    {
+     "id": "12474429645",
+     "lat": 39.089943,
+     "lon": -9.258511,
+     "nome": "Graça, Praça 25 Abril"
+    },
+    {
+     "id": "12474429625",
+     "lat": 39.088712,
+     "lon": -9.257923,
+     "nome": "Santos Bernades, R. Santos Bernades"
+    },
+    {
+     "id": "12474429646",
+     "lat": 39.087494,
+     "lon": -9.257038,
+     "nome": "Santos Bernades, Cruz Teresa Jesus Pereira"
+    },
+    {
+     "id": "12474429647",
+     "lat": 39.087661,
+     "lon": -9.259197,
+     "nome": "Casa do Benfica"
+    },
+    {
+     "id": "12532959117",
+     "lat": 39.089075,
+     "lon": -9.261057,
+     "nome": "Tribunal"
+    },
+    {
+     "id": "1629552894",
+     "lat": 39.090771,
+     "lon": -9.261804,
+     "nome": "Campo da Várzea, Junto ao Tribunal"
+    },
+    {
+     "id": "7797522969",
+     "lat": 39.091618,
+     "lon": -9.263998,
+     "nome": "GNR"
+    },
+    {
+     "id": "7797410029",
+     "lat": 39.092664,
+     "lon": -9.265531,
+     "nome": "Terminal (Linha Azul)"
+    }
+   ],
+   "relacao": "18612006"
+  }
+ ]
+}
