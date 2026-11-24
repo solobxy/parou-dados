@@ -3,6 +3,7 @@ import { ITEMS, RECIPES, CAT, ammoOf } from './items.js';
 import { mkItem, IW, IH, capOf } from './bag.js';
 import { MAP, CORE, CITY, inCity } from './world.js';
 import { forestDens } from './sectors.js';
+import { VT } from './vtypes.js';
 import { audio } from './audio.js';
 import { makeMusic } from './music.js';
 import * as THREE from 'three';
@@ -741,7 +742,7 @@ export function initUI(G) {
     { const w = Math.max(44, si.offsetWidth), h = Math.max(30, si.offsetHeight), c = [[SC.x + R * 0.62, SC.y + R * 0.62], [SC.x + inside(h) - w - 10, SC.y + R * 0.3 + 4]];
       const at = c.find(q => free(q[0], q[1], w, h)) || c[1]; si.style.left = at[0].toFixed(0) + 'px'; si.style.top = at[1].toFixed(0) + 'px'; } };
   let hitAt = null;
-  const hit = (kill, zone, stop, at) => { hitAt = at || null; hm.className = (kill ? 'kill ' : '') + (zone === 'head' && !stop ? 'head ' : '') + (stop ? 'stop' : ''); hm.hidden = false; hitT = zone === 'head' && kill ? 0.4 : 0.22; if (zone === 'head' && kill && !stop) feedTxt('Na cabeça'); else if (stop) feedTxt(zone === 'head' ? 'O capacete travou' : 'O colete travou'); };
+  const hit = (kill, zone, stop, at) => { hitAt = at || null; hm.className = (kill ? 'kill ' : '') + (zone === 'head' && !stop ? 'head ' : '') + (stop ? 'stop' : ''); hm.hidden = false; hitT = zone === 'head' && kill ? 0.4 : 0.22; if (zone === 'head' && kill && !stop) feedTxt('Na cabeça'); else if (stop && zone !== 'car') feedTxt(zone === 'head' ? 'O capacete travou' : 'O colete travou'); };
   let ftT = 0; const feedTxt = m => { if (ftT > 0 && toastEl.textContent === m) return; toast(m); toastT = 1.1; ftT = 1; };
   const damage = () => { const d = $('dmg'); d.classList.add('on'); requestAnimationFrame(() => requestAnimationFrame(() => d.classList.remove('on'))); };
   // morte: onde morreste, as tuas camas no mapa e escolher em qual renasces (como no Rust)
@@ -841,8 +842,8 @@ export function initUI(G) {
     const sb = $('stam'); sb.style.opacity = p.stam < 99 ? 1 : 0; sb.firstChild.style.width = p.stam + '%';
     // munições (no carro: velocidade e gasolina)
     const it = G.inv.belt[G.sel], d = it && ITEMS[it.k];
-    if (G.car) { const c = G.car, kmh = Math.round(Math.abs(c.v) * 3.6), key = 'car' + kmh + '|' + Math.round(c.fuel) + '|' + Math.round(c.hp / 4) + G.carSeat; $('ammo').hidden = false;
-      if (vals.am !== key) { vals.am = key; $('aN').innerHTML = kmh + '<small> km/h</small>'; $('aW').textContent = (G.carSeat ? 'Passageiro · ' : '') + 'Gasolina ' + Math.round(c.fuel) + ' L · ' + (c.hp <= 0 ? 'desfeito' : 'estado ' + Math.round(c.hp / 4) + '%'); } }
+    if (G.car) { const c = G.car, kmh = Math.round(Math.abs(c.v) * 3.6), key = 'car' + kmh + '|' + Math.round(c.fuel) + '|' + Math.round(c.hp / 4) + G.carSeat + '|' + Math.round(c.alt || 0); $('ammo').hidden = false;
+      if (vals.am !== key) { vals.am = key; $('aN').innerHTML = kmh + '<small> km/h</small>'; const T = VT[c.k] || VT.sedan; $('aW').textContent = (G.carSeat ? 'Passageiro · ' : T.n + ' · ') + (T.fly ? Math.round(c.alt || 0) + ' m de altura · ' : '') + (T.tank ? 'gasolina ' + Math.round(c.fuel) + ' L · ' : '') + (c.hp <= 0 ? 'desfeito' : 'estado ' + Math.round(c.hp / T.hp * 100) + '%'); } }
     else if (d && d.gun) { $('ammo').hidden = false; const ak = it.ak || (Array.isArray(d.gun.ammo) ? d.gun.ammo[0] : d.gun.ammo), cl = d.gun.clip ? G.clipsOf(d.gun.clip) : [], inMags = cl.reduce((s, m) => s + (m.am || 0), 0), left = G.inv.count(ak) + inMags, noMag = d.gun.clip && !it.mg, k = it.ammo + '/' + left + ak + cl.length + (noMag ? 'n' : '') + (p.reload > 0 ? 'r' : '') + (it.att && it.att.sup ? 's' : ''); if (vals.am !== k) { vals.am = k; $('aN').innerHTML = `${noMag ? '—' : it.ammo}<small>/ ${left}</small>`; $('aW').textContent = p.reload > 0 ? (p.reloadMode === 'swap' ? 'A trocar o carregador' : 'A recarregar') : noMag ? 'Sem carregador' : ITEMS[ak].s + (d.gun.clip ? ' · ' + cl.length + (cl.length === 1 ? ' carregador' : ' carregadores') : '') + (it.att && it.att.sup ? ' · silenc.' : ''); } } else $('ammo').hidden = true;
     $('tReload').hidden = !(d && d.gun) || !!G.car;
     // barra de uso

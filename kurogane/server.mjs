@@ -7,6 +7,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { ITEMS, LOOT, RECIPES, ammoOf } from './jogo/src/items.js';
 import { Grid, mkItem, rollLoot } from './jogo/src/bag.js';
+import { VT, vt } from './jogo/src/vtypes.js';
 
 const PORT = +process.env.PORT || 3190, DIR = process.env.STATE_DIRECTORY || path.join(process.cwd(), 'dados');
 const FILE = path.join(DIR, 'estado.json'), SLEEP_MS = 72 * 3600e3, BAG_MS = 45 * 60e3, MAXP = 60;
@@ -19,7 +20,7 @@ const W0 = () => ({ wv: null, cyc0: Date.now() - 900e3, wx: { r: 0, next: Date.n
 let S = { sleepers: {}, bags: {}, clans: {}, tokens: {}, w: W0(), led: {}, roles: {}, bans: {}, stats: {}, admLog: [] };
 try { S = { ...S, ...JSON.parse(fs.readFileSync(FILE, 'utf8')) }; } catch (e) { }
 S.roles = S.roles || {}; S.bans = S.bans || {}; S.stats = S.stats || {}; S.admLog = S.admLog || [];
-S.w = { ...W0(), ...(S.w || {}) }; for (const z of S.w.zs) z.o = 0; for (const c of Object.values(S.w.cars)) { c.s = [0, 0, 0, 0]; c.v = 0; }
+S.w = { ...W0(), ...(S.w || {}) }; for (const z of S.w.zs) z.o = 0; for (const c of Object.values(S.w.cars)) { c.s = vt(c.k).seats.map(() => 0); c.v = 0; }
 if (!S.lkMig) { S.lkMig = Date.now(); for (const P of Object.values(S.w.base.p || {})) if (P.t === 'porta' && !P.cl) P.cl = { h: null, a: [] }; for (const d of Object.values(S.w.base.d || {})) if ((d.k === 'bau' || d.k === 'bauG') && !d.cl) d.cl = { h: null, a: [] }; }
 // mochilas antigas (só de mortes): passam ao formato novo
 for (const b of Object.values(S.bags)) if (b.items && !b.it) { b.it = b.items; delete b.items; b.body = 1; b.y = b.y ?? 0; }
@@ -61,7 +62,7 @@ const drop = c => {
   if (c.dead) return; c.dead = true; players.delete(c.id); try { c.sock.destroy(); } catch (e) { }
   for (const [k, L] of LK) if (L.c === c.id) LK.delete(k);
   for (const z of S.w.zs) if (z.o === c.id) z.o = 0;
-  for (const car of Object.values(S.w.cars)) { const i = car.s.indexOf(c.id); if (i >= 0) { car.s[i] = 0; if (i === 0) car.v = 0; } }
+  for (const car of Object.values(S.w.cars)) { const i = car.s.indexOf(c.id); if (i >= 0) { car.s[i] = 0; if (i === 0) { car.v = 0; car.alt = 0; } } }
   const p = c.p; if (!p) return; if (S.tokens[p.tok]) S.tokens[p.tok].t = Date.now();
   // quem sai fica a dormir onde estava (com o que tinha), a não ser que já estivesse morto
   if (p.alive && p.tok) { S.sleepers[p.tok] = { x: p.x, z: p.z, y: p.y, lv: p.lv, yaw: p.yaw, name: p.name, look: p.look, inv: p.inv || [], hp: p.hp, ar: p.ar, clan: p.clan || null, t: Date.now(), hid: p.invis ? 1 : 0 }; dirty = true; bcast({ t: 'sleep', list: sleepList() }); }
@@ -254,7 +255,7 @@ const baseMsg = (c, p, m, now) => {
 const boom = (c, p, m) => { const X = EXB[m.k]; if (!X) return; const ti = (p.thr || []).findIndex(q => q.k === m.k && Date.now() - q.t < 120000); if (ti < 0) { strike(c, p, 'explosão sem lançar'); return; } p.thr.splice(ti, 1); const x = num(m.x, -4100, 4100), z = num(m.z, -4100, 4100), y = num(m.y, -5, 40), lv = num(m.lv, 0, 6) | 0; if (Math.hypot(x - p.x, z - p.z) > 60) return;
   bcast({ t: 'boom', k: m.k, x, y, z, lv }, o => o !== c && Math.hypot(o.p.x - x, o.p.z - z) < 300);
   if (Array.isArray(m.lk)) for (const [w, hp] of m.lk.slice(0, 4)) { const i = num(w, 0, 20000, -1) | 0; if (i < 0) continue; const L = S.w.locks[i] || {}; L.hp = Math.min(L.hp ?? 1e9, num(hp, 0, 5000)); if (L.hp <= 0) { L.hp = 0; L.broke = Date.now(); S.w.doors[i] = 1; } S.w.locks[i] = L; dirty = true; bcast({ t: 'lk', i, hp: L.hp, broke: L.broke || 0 }); }
-  if (lv !== 0) return; for (const car of Object.values(S.w.cars)) { const q = Math.hypot(car.x - x, car.z - z); if (q > 5 || car.hp <= 0) continue; car.hp = Math.max(0, car.hp - (m.k === 'c4' ? 700 : 160) * (1 - q / 5)); if (car.hp <= 0) { car.dead = Date.now(); car.s = [0, 0, 0, 0]; car.v = 0; } dirty = true; }
+  if (lv !== 0) return; for (const car of Object.values(S.w.cars)) { const q = Math.hypot(car.x - x, car.z - z); if (q > 5 || car.hp <= 0) continue; car.hp = Math.max(0, car.hp - (m.k === 'c4' ? 700 : 160) * (1 - q / 5) * (car.k === 'humvee' ? 0.6 : 1)); if (car.hp <= 0) { car.dead = Date.now(); car.s = car.s.map(() => 0); car.v = 0; } dirty = true; }
   const B = S.w.base, upd = [], rp = [], dd = [], rd = [];
   for (const [k, P] of Object.entries(B.p)) { if (!B.p[k]) continue; const mm = BK.exec(k); if (!mm) continue; const i = +mm[2], j = +mm[3]; let mx, mz;
     if (mm[1] === 'f' || mm[1] === 't') { mx = i * CELL + CELL / 2; mz = j * CELL + CELL / 2; } else if (mm[1] === 'h') { mx = i * CELL + CELL / 2; mz = j * CELL; } else { mx = i * CELL; mz = j * CELL + CELL / 2; }
@@ -265,17 +266,17 @@ const boom = (c, p, m) => { const X = EXB[m.k]; if (!X) return; const ti = (p.th
 
 
 // ---------- carros: quem conduz manda a posição; o servidor guarda gasolina, estado e quem vai em cada lugar
-const cRow = (id, c) => [id, Math.round(c.x * 10), Math.round(c.z * 10), Math.round(c.yaw * 100), Math.round((c.v || 0) * 10), +(+c.fuel).toFixed(1), Math.round(c.hp), c.s[0] || 0, c.s[1] || 0, c.s[2] || 0, c.s[3] || 0, Math.round(c.ts || 0)];
+const cRow = (id, c) => [id, Math.round(c.x * 10), Math.round(c.z * 10), Math.round(c.yaw * 100), Math.round((c.v || 0) * 10), +(+c.fuel).toFixed(1), Math.round(c.hp), c.k || 'sedan', c.s.map(x => x || 0), Math.round(c.ts || 0), Math.round((c.alt || 0) * 10)];
 const carMsg = (c, p, m, now) => {
   const car = S.w.cars[String(m.id || '')];
-  if (m.t === 'cin') { const seat = num(m.seat, 0, 3) | 0; const holder = car && car.s[seat] && players.get(car.s[seat]);
+  if (m.t === 'cin') { const seat = num(m.seat, 0, car ? car.s.length - 1 : 0) | 0; const holder = car && car.s[seat] && players.get(car.s[seat]);
     if (!car || car.hp <= 0 || (holder && holder.p) || Math.hypot(car.x - p.x, car.z - p.z) > 6) return send(c, { t: 'cin', id: m.id, seat, ok: 0 });
     for (const o of Object.values(S.w.cars)) { const i = o.s.indexOf(c.id); if (i >= 0) o.s[i] = 0; } car.s[seat] = c.id; return send(c, { t: 'cin', id: m.id, seat, ok: 1 }); }
-  if (m.t === 'cout') { if (!car) return; const i = car.s.indexOf(c.id); if (i >= 0) { car.s[i] = 0; if (i === 0) car.v = 0; dirty = true; } return; }
+  if (m.t === 'cout') { if (!car) return; const i = car.s.indexOf(c.id); if (i >= 0) { car.s[i] = 0; if (i === 0) { car.v = 0; car.alt = 0; } dirty = true; } return; }
   if (m.t === 'cu') { if (!Array.isArray(m.L)) return; for (const a of m.L.slice(0, 2)) { const o = S.w.cars[a[0]]; if (!o || o.s[0] !== c.id || o.hp <= 0) continue;
-      o.x = num(a[1], -41000, 41000) / 10; o.z = num(a[2], -41000, 41000) / 10; o.yaw = num(a[3], -100000, 100000) / 100; o.v = num(a[4], -300, 300) / 10; o.fuel = Math.min(o.fuel, num(a[5], 0, 40)); o.hp = Math.min(o.hp, num(a[6], 0, 400)); o.ts = num(a[7], 0, 1e13, 0);
-      if (o.hp <= 0) { o.dead = now; o.s = [0, 0, 0, 0]; o.v = 0; } dirty = true; } return; }
-  if (m.t === 'cf') { if (!car || Math.hypot(car.x - p.x, car.z - p.z) > 6) return; { const L = ledOf(p); if ((L.T.gasolina || 0) < 1) { send(c, { t: 'fix', T: L.T }); return; } addT(L.T, { gasolina: 1 }, -1); } car.fuel = Math.min(40, car.fuel + num(m.add, 0, 20)); dirty = true; return; }
+      o.x = num(a[1], -41000, 41000) / 10; o.z = num(a[2], -41000, 41000) / 10; o.yaw = num(a[3], -100000, 100000) / 100; o.v = num(a[4], -300, 300) / 10; o.fuel = Math.min(o.fuel, num(a[5], 0, 200)); o.hp = Math.min(o.hp, num(a[6], 0, 5000)); o.alt = vt(o.k).fly ? num(a[7], 0, 600) / 10 : 0; o.ts = num(a[8], 0, 1e13, 0);
+      if (o.hp <= 0) { o.dead = now; o.s = o.s.map(() => 0); o.v = 0; o.alt = 0; } dirty = true; } return; }
+  if (m.t === 'cf') { if (!car || Math.hypot(car.x - p.x, car.z - p.z) > 6 || !vt(car.k).tank) return; { const L = ledOf(p); if ((L.T.gasolina || 0) < 1) { send(c, { t: 'fix', T: L.T }); return; } addT(L.T, { gasolina: 1 }, -1); } car.fuel = Math.min(vt(car.k).tank, car.fuel + num(m.add, 0, 20)); dirty = true; return; }
   // atropelar outro jogador: quem conduz diz quem; o servidor confirma que o carro estava mesmo ao lado
   if (m.t === 'ck') { const o = players.get(m.to | 0), mine = Object.values(S.w.cars).find(q => q.s[0] === c.id); if (!o || !o.p || !o.p.alive || !mine || Math.hypot(mine.x - o.p.x, mine.z - o.p.z) > 5) return;
     if (p.clan && o.p.clan === p.clan) return; const v = o.p, dmg = num(m.dmg, 0, 120); v.hp = Math.max(0, v.hp - dmg); const kill = v.hp <= 0; if (kill) v.alive = false;
@@ -302,7 +303,7 @@ const onMsg = (c, m) => {
   if (m.t === 'hi') {
     if (c.p) return; const name = String(m.name || ''); if (!NAME.test(name)) return send(c, { t: 'erro', e: 'nome' });
     // jogo antigo (antes da 0.15, sem o servidor a contar o inventário): tem de recarregar, senão apagava o inventário guardado
-    if ((m.pv | 0) < 3) return send(c, { t: 'erro', e: 'versao' });
+    if ((m.pv | 0) < 4) return send(c, { t: 'erro', e: 'versao' });
     if ([...players.values()].some(o => o.p && o.p.name.toLowerCase() === name.toLowerCase())) return send(c, { t: 'erro', e: 'nome_em_uso' });
     // versão do mundo (casas, caixas, portas): se mudou e não está ninguém ligado, recomeça o mundo partilhado
     const wv = typeof m.wv === 'string' ? m.wv.slice(0, 40) : '';
@@ -326,7 +327,8 @@ const onMsg = (c, m) => {
     const tc = S.tokens[tok].clan, clan = tc && S.clans[tc] ? tc : null;
     c.p = { name, tok, look, x: sl ? sl.x : num(m.x, -4100, 4100), z: sl ? sl.z : num(m.z, -4100, 4100), lastSt: sl ? now : 0, y: 0, lv: 0, yaw: 0, mv: 0, an: 0, w: '', hp: resume ? resume.hp ?? 100 : 100, alive: true, ar: [0, 0], inv: [], clan, lastShot: 0, hd: null, vd: null };
     c.zc = new Map(); c.cc = new Map(); c.p.uid = uidOf(tok); c.p.test = tst;
-    if (!Object.keys(S.w.cars).length && Array.isArray(m.cars)) { m.cars.slice(0, 60).forEach((a, i) => { const x = num(a[0], -4100, 4100), z = num(a[1], -4100, 4100), yaw = num(a[2], -10, 10); S.w.cars['c' + i] = { x, z, yaw, v: 0, fuel: +(10 + Math.random() * 20).toFixed(1), hp: 400, sx: x, sz: z, syaw: yaw, s: [0, 0, 0, 0], dead: 0 }; }); dirty = true; }
+    // veículos: a lista vem do jogo (sítios iguais em todos os aparelhos); muda quando muda o tipo de veículos (CARV), se ninguém estiver a conduzir
+    if (Array.isArray(m.cars) && S.w.carv !== CARV && !Object.values(S.w.cars).some(o => o.s.some(Boolean))) { for (const id of Object.keys(S.w.cars)) if (!S.w.cars[id].adm) delete S.w.cars[id]; for (const o of players.values()) if (o.cc) o.cc.clear(); m.cars.slice(0, 160).forEach((a, i) => { const x = num(a[0], -4100, 4100), z = num(a[1], -4100, 4100), yaw = num(a[2], -10, 10), k = VT[a[3]] ? a[3] : 'sedan', T = VT[k]; S.w.cars['c' + i] = { k, x, z, yaw, v: 0, fuel: T.tank ? +(T.tank * (0.2 + Math.random() * 0.45)).toFixed(1) : 0, hp: T.hp, sx: x, sz: z, syaw: yaw, s: T.seats.map(() => 0), dead: 0 }; }); S.w.carv = CARV; dirty = true; }
     const zseed = !S.w.zs.length && ![...players.values()].some(o => o !== c && o.zseed && now - (o.zseedT || 0) < 15000); if (zseed) { c.zseed = true; c.zseedT = now; }
     send(c, { t: 'ok', id: c.id, tok, killed, resume, drop: dropInfo(), role: S.roles[c.p.uid] || null, players: [...players.values()].filter(o => o.p && o !== c).map(o => [o.id, o.p.name, o.p.look, o.p.clan]), sleep: sleepList(), clan: clanInfo(clan),
       uid: c.p.uid, inv: !m.fresh && !killed && S.led[tok] && !S.led[tok].g ? S.led[tok].inv : null, w: { cyc0: S.w.cyc0, now, wx: S.w.wx.r, base: baseRows(), locks: Object.entries(S.w.locks).map(([i, L]) => [+i, L.hp, L.broke || 0]), doors: Object.entries(S.w.doors).map(([i, o]) => [+i, o]), nodes: Object.entries(S.w.nodes).map(([k, u]) => [k, u - now]).filter(a => a[1] > 0), bags: bagRows(), zseed } });
@@ -337,8 +339,8 @@ const onMsg = (c, m) => {
   if (m.t === 'st') { const nx = num(m.x, -4100, 4100), nz = num(m.z, -4100, 4100), al0 = !!m.al;
     if (p.frozen && Math.hypot(nx - p.x, nz - p.z) > 0.3) { send(c, { t: 'pos', x: p.x, z: p.z, lv: p.lv }); return; } // congelado pela equipa
     if (al0 && !p.alive) { const L = ledOf(p); L.T = { ...KIT }; L.inv = null; dirty = true; p.lastSt = 0; } // renasceu
-    else if (p.lastSt && al0 && p.alive && !p.test) { const dt = (now - p.lastSt) / 1000, inCar = Object.values(S.w.cars).some(o => o.s.includes(c.id)), d = Math.hypot(nx - p.x, nz - p.z);
-      if (d > (inCar ? 25 : 8) * dt + 4) { strike(c, p, 'salto ' + d.toFixed(1) + ' m em ' + dt.toFixed(2) + ' s'); send(c, { t: 'pos', x: p.x, z: p.z, lv: p.lv }); p.lastSt = now; return; } }
+    else if (p.lastSt && al0 && p.alive && !p.test) { const dt = (now - p.lastSt) / 1000, inCar = Object.values(S.w.cars).find(o => o.s.includes(c.id)), d = Math.hypot(nx - p.x, nz - p.z);
+      if (d > (inCar ? vt(inCar.k).vmax * 1.3 + 4 : 8) * dt + 4) { strike(c, p, 'salto ' + d.toFixed(1) + ' m em ' + dt.toFixed(2) + ' s'); send(c, { t: 'pos', x: p.x, z: p.z, lv: p.lv }); p.lastSt = now; return; } }
     if (p.alive && al0 && (p.lv | 0) === 0 && p.y < 3 && Math.hypot(nx - p.x, nz - p.z) < 8 && wallCross(p.x, p.z, nx, nz)) { p.wallN = (p.wallN || 0) + 1; if (p.wallN % 20 === 1) console.log('parede', p.name, p.wallN); send(c, { t: 'pos', x: p.x, z: p.z, lv: p.lv }); p.lastSt = now; return; } // atravessar paredes da base
     p.lastSt = now; p.x = nx; p.z = nz; p.y = num(m.y, -5, 40); p.lv = num(m.lv, 0, 6) | 0;
     { const H = p.hist || (p.hist = []); H.push([now, p.x, p.y, p.z]); while (H.length > 2 && now - H[0][0] > 500) H.shift(); } // onde esteve nos últimos 0,5 s (para o tiro de quem o via um pouco atrás)
@@ -401,19 +403,30 @@ const onMsg = (c, m) => {
 };
 
 // ---------- tiros entre jogadores: trajetória com gravidade e arrasto, até à parede que o cliente viu
-const hitTest = (O, D, k, L, tgt) => {
-  const A = AM[k]; if (!A) return null; const [v0, dmg, pen, cd] = A; let x = O[0], y = O[1], z = O[2], vx = D[0] * v0, vy = D[1] * v0, vz = D[2] * v0, dist = 0; const h = 1 / 240;
-  for (let i = 0; i < 240 * 4 && dist < L; i++) { const v = Math.hypot(vx, vy, vz), k2 = cd * v; vx -= vx * k2 * h; vy -= (vy * k2 + 9.81) * h; vz -= vz * k2 * h; const nx = x + vx * h, ny = y + vy * h, nz = z + vz * h, step = Math.hypot(nx - x, ny - y, nz - z);
+// dentro da carroçaria de um veículo? (caixa rodada; nos abertos só a parte de baixo)
+const inCarBox = (car, x, y, z, m = 0) => { const T = vt(car.k), dx = x - car.x, dz = z - car.z, c = Math.cos(car.yaw), s = Math.sin(car.yaw), u = dx * c - dz * s, w = dx * s + dz * c, a = car.alt || 0; return Math.abs(u) < T.wid / 2 + m && Math.abs(w) < T.len / 2 + m && y > a + 0.2 && y < a + (T.open ? 0.9 : T.h) + m; };
+const hitTest = (O, D, k, L, tgt, cars = []) => {
+  const A = AM[k]; if (!A) return null; const [v0, dmg, pen, cd] = A; let x = O[0], y = O[1], z = O[2], vx = D[0] * v0, vy = D[1] * v0, vz = D[2] * v0, dist = 0; const h = 1 / 240; let pass = null;
+  for (let i = 0; i < 240 * 4 && dist < L + 0.6; i++) { const v = Math.hypot(vx, vy, vz), k2 = cd * v; vx -= vx * k2 * h; vy -= (vy * k2 + 9.81) * h; vz -= vz * k2 * h; const nx = x + vx * h, ny = y + vy * h, nz = z + vz * h, step = Math.hypot(nx - x, ny - y, nz - z);
+    // veículos: a bala bate na carroçaria (estraga-a); nos blindados ou vazios para aí; nos outros passa (mais fraca) e pode acertar em quem vai dentro
+    for (const car of cars) { if (car === pass || Math.abs(nx - car.x) > 4 || Math.abs(nz - car.z) > 4 || !inCarBox(car, nx, ny, nz)) continue; const T = vt(car.k);
+      if (T.armor || !car.s.some(Boolean)) return { car, zone: 'car', dmg, pen, v: Math.hypot(vx, vy, vz) / v0, dist }; pass = car; vx *= 0.7; vy *= 0.7; vz *= 0.7; }
+    if (dist >= L) break;
     // contra cada alvo: cápsula do corpo (0,3 m) e esfera da cabeça (0,16 m); deitado = cápsula no chão
     for (const T of tgt) { const by = T.y; if (Math.abs(nx - T.x) > 3 || Math.abs(nz - T.z) > 3) continue;
       const segPt = (ax, ay, az, bx, by2, bz, px, py, pz) => { const dx = bx - ax, dy = by2 - ay, dz = bz - az, l2 = dx * dx + dy * dy + dz * dz || 1e-9; let t = ((px - ax) * dx + (py - ay) * dy + (pz - az) * dz) / l2; t = Math.max(0, Math.min(1, t)); return Math.hypot(ax + dx * t - px, ay + dy * t - py, az + dz * t - pz); };
-      if (T.lying) { if (segPt(x, y, z, nx, ny, nz, T.x, by + 0.25, T.z) < 0.9 && Math.abs(ny - by) < 0.6) return { T, zone: 'body', dmg, pen, v: Math.hypot(vx, vy, vz) / v0, dist }; continue; }
-      const hd = segPt(x, y, z, nx, ny, nz, T.x, by + 1.62, T.z); if (hd < 0.17) return { T, zone: 'head', dmg, pen, v: Math.hypot(vx, vy, vz) / v0, dist };
+      if (T.lying) { if (segPt(x, y, z, nx, ny, nz, T.x, by + 0.25, T.z) < 0.9 && Math.abs(ny - by) < 0.6) return { T, zone: 'body', dmg, pen, v: Math.hypot(vx, vy, vz) / v0, dist, car: pass }; continue; }
+      const hd = segPt(x, y, z, nx, ny, nz, T.x, by + 1.62, T.z); if (hd < 0.17) return { T, zone: 'head', dmg, pen, v: Math.hypot(vx, vy, vz) / v0, dist, car: pass };
       // corpo: distância do segmento ao eixo vertical (amostras)
-      for (let s = 0; s <= 4; s++) { const sy = by + 0.15 + s * 0.3; if (segPt(x, y, z, nx, ny, nz, T.x, sy, T.z) < 0.3) return { T, zone: sy > 0.85 ? 'body' : 'legs', dmg, pen, v: Math.hypot(vx, vy, vz) / v0, dist }; } }
+      for (let s = 0; s <= 4; s++) { const sy = by + 0.15 + s * 0.3; if (segPt(x, y, z, nx, ny, nz, T.x, sy, T.z) < 0.3) return { T, zone: sy > 0.85 ? 'body' : 'legs', dmg, pen, v: Math.hypot(vx, vy, vz) / v0, dist, car: pass }; } }
     x = nx; y = ny; z = nz; dist += step; }
-  return null;
+  return pass ? { car: pass, zone: 'car', dmg, pen, v: 0.8, dist } : null;
 };
+// tiro num veículo: perde estado; desfeito, quem vai dentro leva um bom golpe e sai
+const carShot = (c, car, dmg) => { if (car.hp <= 0) return; car.hp = Math.max(0, car.hp - dmg); dirty = true; send(c, { t: 'hitc', zone: 'car' });
+  if (car.hp > 0) return; car.dead = Date.now(); car.v = 0;
+  for (const id of car.s) { const o = id && players.get(id); if (!o || !o.p || !o.p.alive) continue; const v = o.p, d = vt(car.k).armor ? 0 : 45; if (v.god || !d) continue; v.hp = Math.max(0, v.hp - d); const kill = v.hp <= 0; if (kill) { v.alive = false; stat(c.p, 'k'); stat(v, 'd'); } send(o, { t: 'hit', by: c.p.name, dmg: d, zone: 'body', hp: v.hp }); if (kill) send(c, { t: 'hitc', on: o.id, zone: 'body', kill, name: v.name }); }
+  car.s = car.s.map(() => 0); };
 const shot = (c, m) => {
   const p = c.p, now = Date.now(); if (!p.alive || now - p.lastShot < 60) return; p.lastShot = now; if (!canShoot(p, String(m.k || ''))) { strike(c, p, 'tiro sem arma ' + m.k); return; }
   const O = Array.isArray(m.o) ? m.o.map(v => num(v, -4100, 4100)) : null, D = Array.isArray(m.d) ? m.d.map(v => num(v, -1, 1)) : null; if (!O || !D || O.length !== 3 || D.length !== 3) return;
@@ -429,14 +442,19 @@ const shot = (c, m) => {
     const P = (o.p.hist || []).filter(h => now - h[0] <= 450).map(h => [h[1], h[2], h[3]]); P.push([o.p.x, o.p.y, o.p.z]); tgt.push({ x: o.p.x, y: o.p.y, z: o.p.z, c: o });
     for (let i = P.length - 1; i > 0; i--) { const a = P[i], b = P[i - 1], dd = Math.hypot(b[0] - a[0], b[2] - a[2]); if (dd < 0.15 || dd > 6) continue; const n = Math.min(8, Math.ceil(dd / 0.25)); for (let k = 1; k <= n; k++) { const f = k / n; tgt.push({ x: a[0] + (b[0] - a[0]) * f, y: a[1] + (b[1] - a[1]) * f, z: a[2] + (b[2] - a[2]) * f, c: o }); } } }
   for (const [tok, s] of Object.entries(S.sleepers)) if (!s.hid && (s.lv || 0) === (p.lv || 0) && !(myClan && s.clan === myClan) && Math.hypot(s.x - O[0], s.z - O[2]) < L + 3) tgt.push({ x: s.x, y: s.y || 0, z: s.z, sl: tok, lying: true });
-  if (!tgt.length) return;
+  // quem vai dentro de um blindado (sem se debruçar) não leva tiros; os veículos perto entram no teste
+  const cars = Object.values(S.w.cars).filter(q => q.hp > 0 && Math.hypot(q.x - O[0], q.z - O[2]) < L + 6);
+  for (let i = tgt.length - 1; i >= 0; i--) { const T = tgt[i]; if (T.c && cars.some(q => vt(q.k).armor && q.s.includes(T.c.id) && ((T.c.p.an | 0) & 8 || inCarBox(q, T.x, (T.y || 0) + 1, T.z, 0.1)))) tgt.splice(i, 1); }
+  if (!tgt.length && !cars.length) return;
   // cada bala segue a direção que o jogador viu no rasto (com o desvio da arma), se não fugir mais do que 0,3 rad da mira; e para onde o cliente a viu parar (parede ou zombie)
   const ds = Array.isArray(m.ds) ? m.ds.slice(0, n) : null, Ls = Array.isArray(m.Ls) ? m.Ls : null;
   for (let i = 0; i < n; i++) {
     let d = D; if (ds && Array.isArray(ds[i]) && ds[i].length === 3) { const q = ds[i].map(v => num(v, -1, 1)), ql = Math.hypot(q[0], q[1], q[2]) || 1; q[0] /= ql; q[1] /= ql; q[2] /= ql; if (q[0] * D[0] + q[1] * D[1] + q[2] * D[2] > Math.cos(0.3)) d = q; }
     else if (n > 1) { const sp = 0.02; d = [D[0] + (Math.random() - 0.5) * sp * 2, D[1] + (Math.random() - 0.5) * sp * 2, D[2] + (Math.random() - 0.5) * sp * 2]; }
     const Li = Ls ? Math.min(L, num(Ls[i], 0, 900, L)) : L;
-    const h = hitTest(O, d, k, Li, tgt); if (!h) continue; const T = h.T;
+    const h = hitTest(O, d, k, Li, tgt, cars); if (!h) continue; const T = h.T;
+    if (h.car) carShot(c, h.car, h.dmg * Math.max(0.3, h.v) * 0.55);
+    if (!T) continue;
     // chumbo perde força com a distância (como no jogo, até 35 m); balas pela velocidade que ainda levam
     let dmg = h.dmg * (n > 1 ? Math.min(1, Math.max(0.25, 1 - h.dist / 35)) : Math.max(0.3, Math.pow(h.v, 1.5))) * (0.9 + Math.random() * 0.2);
     if (T.sl) { const s = S.sleepers[T.sl]; if (!s) continue; s.hp = (s.hp ?? 100) - dmg; if (s.hp <= 0) { stat(p, 'k'); const vu = uidOf(T.sl); S.stats[vu] = S.stats[vu] || { n: s.name, k: 0, d: 0, z: 0 }; S.stats[vu].d++; delete S.sleepers[T.sl]; if (S.tokens[T.sl]) S.tokens[T.sl].killed = true; if (S.led[T.sl]) { S.led[T.sl].T = {}; S.led[T.sl].inv = null; } mkBag(s.x, s.z, s.y || 0, s.lv || 0, s.inv, { body: 1, name: s.name }); bcast({ t: 'sleep', list: sleepList() }); send(c, { t: 'hitc', zone: h.zone, kill: true, name: s.name }); } else send(c, { t: 'hitc', zone: h.zone }); dirty = true; continue; }
@@ -500,7 +518,7 @@ const adm = (c, m) => { const p = c.p, now = Date.now();
   if (a === 'freeze') { if (!o) return send(c, { t: 'admno', e: 'Não está ligado' }); o.p.frozen = m.on ? 1 : 0; send(o, { t: 'frz', on: o.p.frozen }); return admList(c); }
   if (a === 'kill') { if (!o) return send(c, { t: 'admno', e: 'Não está ligado' }); send(o, { t: 'akill' }); return admList(c); }
   if (a === 'give') { const k = String(m.k || ''), D = ITEMS[k]; if (!D) return; const n = num(m.n, 1, Math.max(1, (D.st || 1) * 10), 1) | 0; addT(ledOf(p).T, { [k]: n }); return send(c, { t: 'adgive', k, n }); }
-  if (a === 'car') { const id = 'a' + rid(4), yaw = num(p.yaw, -10, 10), x = p.x + Math.sin(yaw) * 4, z = p.z + Math.cos(yaw) * 4; S.w.cars[id] = { x, z, yaw, v: 0, fuel: 60, hp: 400, sx: x, sz: z, syaw: yaw, s: [0, 0, 0, 0], dead: 0 }; dirty = true; return send(c, { t: 'admmsg', e: 'Carro criado à tua frente' }); }
+  if (a === 'car') { const id = 'a' + rid(4), yaw = num(p.yaw, -10, 10), x = p.x + Math.sin(yaw) * 4, z = p.z + Math.cos(yaw) * 4; const k = VT[m.k] ? m.k : 'sedan', T = VT[k]; S.w.cars[id] = { k, x, z, yaw, v: 0, fuel: T.tank, hp: T.hp, sx: x, sz: z, syaw: yaw, s: T.seats.map(() => 0), dead: 0, adm: 1 }; dirty = true; return send(c, { t: 'admmsg', e: T.n + ' criado à tua frente' }); }
   if (a === 'drop') { if (S.drop.warn) return send(c, { t: 'admno', e: 'Já vem um avião a caminho' }); const ok = dropWarn(Date.now(), Date.now() + 20e3); return send(c, ok ? { t: 'admmsg', e: 'Avião a caminho: cai daqui a 20 s' } : { t: 'admno', e: 'Não encontrei sítio para o avião' }); }
   if (a === 'delbase') { const n = uid ? wipeBase(uid) : 0; send(c, { t: 'admmsg', e: n ? 'Base apagada (' + n + ' peças)' : 'Não tem base' }); return admList(c); }
   if (a === 'role') { if (!uid || uid === p.uid) return send(c, { t: 'admno', e: 'Não podes mudar o teu cargo' }); const nr = m.r === 'admin' || m.r === 'mod' ? m.r : null; if (nr) S.roles[uid] = nr; else delete S.roles[uid]; dirty = true; if (o) { if (!nr) { if (o.p.invis) setInv(o, false); o.p.god = 0; o.p.spec = 0; } admFlags(o); } return admList(c); }
@@ -546,9 +564,10 @@ setInterval(() => { const now = Date.now(), up = []; for (const [id, d] of Objec
 // mundo sem zombies (por exemplo, quem os devia espalhar tinha o jogo antigo): pede a outro jogador ligado
 setInterval(() => { if (S.w.zs.length) return; const now = Date.now(), L = [...players.values()].filter(c => c.p); if (!L.length || L.some(c => c.zseed && now - (c.zseedT || 0) < 15000)) return;
   for (const c of L) c.zseed = false; const c = L[Math.floor(Math.random() * L.length)]; c.zseed = true; c.zseedT = now; send(c, { t: 'zseed' }); }, 5000);
-setInterval(() => { const now = Date.now(); for (const car of Object.values(S.w.cars)) if (car.hp <= 0 && now - car.dead > 1200e3 && zNear(car.sx, car.sz, 30) === 0) { Object.assign(car, { x: car.sx, z: car.sz, yaw: car.syaw, v: 0, hp: 400, fuel: +(10 + Math.random() * 20).toFixed(1), dead: 0, s: [0, 0, 0, 0] }); dirty = true; } }, 30000);
+setInterval(() => { const now = Date.now(); for (const car of Object.values(S.w.cars)) if (car.hp <= 0 && now - car.dead > 1200e3 && zNear(car.sx, car.sz, 30) === 0) { const T = vt(car.k); Object.assign(car, { x: car.sx, z: car.sz, yaw: car.syaw, v: 0, alt: 0, hp: T.hp, fuel: T.tank ? +(T.tank * (0.2 + Math.random() * 0.45)).toFixed(1) : 0, dead: 0, s: T.seats.map(() => 0) }); dirty = true; } }, 30000);
 // ---------- lançamentos aéreos: a cada 30 min (só com gente ligada) um avião cai num sítio ao calhas, longe das terras, da água e das bases.
 // 90 s antes, todos recebem o aviso e a zona no mapa; na queda ficam 3 caixas com loot militar do melhor e 10 soldados zombies à volta
+const CARV = 2; // tipos de veículo (0.23)
 const DROP_MS = 30 * 60e3, DROP_WARN = 90e3, DROP_LIFE = 40 * 60e3;
 if (!S.drop) S.drop = { next: Date.now() + 12 * 60e3 };
 if (process.env.KG_DROP_MS) S.drop.next = Date.now() + +process.env.KG_DROP_MS; // testes

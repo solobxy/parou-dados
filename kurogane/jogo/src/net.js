@@ -67,7 +67,7 @@ export function makeNet({ G, scene, mkRemote, audio, Conta, enc, dec, hurt, die,
         wallEnd(m.o, m.d); if (G.noise) G.noise(m.o[0], m.o[2], m.sup ? 12 : 34); if (G.heardShot && d < 300) G.heardShot(); if (p && d > 2.5) G.ui.sound(m.o[0], m.o[2], 't', d); return;
       }
       case 'hit': hurt(m.dmg, m.by, m.zone, m.pop, m.car ? 'carro' : null); return;
-      case 'hitc': { const r = m.on != null ? R.get(m.on) : null; G.ui.hit(!!m.kill, m.zone, false, r ? new THREE.Vector3(r.x, (r.y || 0) + (m.zone === 'head' ? 1.6 : 1.1), r.z) : null); G.buzz && G.buzz(m.kill ? [25, 40, 35] : 14); if (m.kill) G.ui.toast('Abateste ' + (m.name || 'um jogador')); return; }
+      case 'hitc': { if (m.zone === 'car') { G.ui.hit(false, 'car', true, null); return; } const r = m.on != null ? R.get(m.on) : null; G.ui.hit(!!m.kill, m.zone, false, r ? new THREE.Vector3(r.x, (r.y || 0) + (m.zone === 'head' ? 1.6 : 1.1), r.z) : null); G.buzz && G.buzz(m.kill ? [25, 40, 35] : 14); if (m.kill) G.ui.toast('Abateste ' + (m.name || 'um jogador')); return; }
       case 'sleep': setSleepers(m.list); return;
       case 'dr': world.door(m.i, m.o); return;
       case 'nd': world.node(m.k, m.ms); return;
@@ -99,7 +99,7 @@ export function makeNet({ G, scene, mkRemote, audio, Conta, enc, dec, hurt, die,
     if (ws || !want) return; const a = Conta.ativo(); if (!a || !a.nome) return;
     try { tok = localStorage.getItem(tokKey()); } catch (e) { }
     let opened = false; try { ws = new WebSocket(url()); } catch (e) { ws = null; G.ui.toast('Sem ligação ao servidor. Continuas sozinho.'); return; }
-    ws.onopen = () => { opened = true; send({ t: 'hi', pv: 3, name: a.nome, look: a.look || {}, tok, wv: WV, x: G.p ? G.p.x : 0, z: G.p ? G.p.z : 0, cars: G.cars.spawnPoints(), ctab: G.W.containers.filter(c => c.wid != null).sort((a, b) => a.wid - b.wid).map(c => [c.table, c.slots[0], c.slots[1]]), fresh: !!G.freshStart, test: (() => { try { return localStorage.getItem('kg.test') === '1'; } catch (e) { return false; } })() }); G.freshStart = false; };
+    ws.onopen = () => { opened = true; send({ t: 'hi', pv: 4, name: a.nome, look: a.look || {}, tok, wv: WV, x: G.p ? G.p.x : 0, z: G.p ? G.p.z : 0, cars: G.cars.spawnPoints(), ctab: G.W.containers.filter(c => c.wid != null).sort((a, b) => a.wid - b.wid).map(c => [c.table, c.slots[0], c.slots[1]]), fresh: !!G.freshStart, test: (() => { try { return localStorage.getItem('kg.test') === '1'; } catch (e) { return false; } })() }); G.freshStart = false; };
     ws.onmessage = e => { try { onMsg(JSON.parse(e.data)); } catch (er) { console.error(er); } };
     ws.onclose = () => {
       const was = N.on; ws = null; N.on = false; clearAll(); offline();

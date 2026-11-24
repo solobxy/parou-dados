@@ -7,6 +7,7 @@ import { makeSectors } from './sectors.js';
 import { Body, Horde, bagMesh, HIP, zombiePose, newPose, LOOK_OPTS } from './chars.js';
 import * as Conta from './conta.js';
 import { ITEMS, RECIPES, ammoOf } from './items.js';
+import { VT } from './vtypes.js';
 import { Grid, Inv, mkItem, rollLoot, capOf } from './bag.js';
 import { makeIcons } from './items3d.js';
 import { audio } from './audio.js';
@@ -1120,6 +1121,7 @@ async function boot() {
   // raio contra caixa (entrada, em metros; 1e9 se não toca)
   const rayBox = (o, d, x0, y0, z0, x1, y1, z1) => { let t0 = 0, t1 = 1e9; for (const [oo, dd, lo, hi] of [[o.x, d.x, x0, x1], [o.y, d.y, y0, y1], [o.z, d.z, z0, z1]]) { if (Math.abs(dd) < 1e-9) { if (oo < lo || oo > hi) return 1e9; continue; } let ta = (lo - oo) / dd, tb = (hi - oo) / dd; if (ta > tb) { const q = ta; ta = tb; tb = q; } if (ta > t0) t0 = ta; if (tb < t1) t1 = tb; if (t0 > t1) return 1e9; } return t0; };
   const aimStart = (scope = false) => {
+    if (G.car && (!G.carSeat || !heldDef().gun)) return;
     if (G.p && G.p.swim) { G.ui.toast('A nadar não dá para usar a arma'); return; }
     const p = G.p, d = heldDef(); if (!G.playing || !d.gun || !p.alive || p.climb || p.use || G.invOpen) return;
     const was = AIM.on; AIM.on = true; AIM.idle = 0; if (!was) AIM.steady = 0;
@@ -1167,7 +1169,7 @@ async function boot() {
   };
   G.relock = () => { if (!AIM.on || G.fp) return; const z = bestTarget(); AIM.lock = z ? chestLock(z) : null; AIM.idle = 0; };
   const tryFire = () => { const it = held(), d = heldDef(); if (!d.gun || !G.p.alive || G.invOpen || AIM.raise < 1) return false; return fire(it, d.gun); };
-  G.fireDown = () => { if (G.car) return;
+  G.fireDown = () => { if (G.car && (!G.carSeat || G.car.hp <= 0)) return; // de passageiro dispara-se da janela; quem conduz não
     const p = G.p; if (!G.playing || !p.alive || G.invOpen) return; const d = heldDef();
     { const it = held(); if (it && it.k === 'planta') { G.base.place(); return; } if (it && it.k === 'martelo') { G.base.upgrade(); return; } if (it && it.k === 'granada') { throwGrenade(it); return; } if (it && it.k === 'c4') { plantC4(it); return; } }
     if (!d.gun) { G.tapAttack(); return; }
@@ -1190,7 +1192,7 @@ async function boot() {
   canvas.addEventListener('contextmenu', e => e.preventDefault());
   // corpo a corpo no telemóvel: toque rápido vira-se para o mais perto e ataca
   const faceTo = yaw => { const p = G.p; p.aim = yaw; p.yaw = yaw; if (Math.abs(angDiff(yaw, p.root)) > 1.2) p.root = yaw - Math.sign(angDiff(yaw, p.root)) * 1.2; G.aimHold = 0.5; };
-  G.tapAttack = () => { const p = G.p; if (!p.alive || p.climb) return; if (heldDef().gun) { G.fireDown(); G.fireUp(); return; } const best = bestTarget(); if (best && Math.hypot(best.x - p.x, best.z - p.z) < 3.2) faceTo(Math.atan2(best.x - p.x, best.z - p.z)); attack(); };
+  G.tapAttack = () => { const p = G.p; if (!p.alive || p.climb) return; if (G.car && !heldDef().gun) return; if (heldDef().gun) { G.fireDown(); G.fireUp(); return; } const best = bestTarget(); if (best && Math.hypot(best.x - p.x, best.z - p.z) < 3.2) faceTo(Math.atan2(best.x - p.x, best.z - p.z)); attack(); };
   G.toggleLight = () => { if (!G.playing || !G.p.alive) return; if (!G.lightOn && !hasLight()) { G.ui.toast('Precisas de uma lanterna'); return; } G.lightOn = !G.lightOn; audio.play('ui'); G.ui.refresh(true); };
   // saltar; se houver algo trepável à frente, trepa
   G.jump = () => {
@@ -1242,8 +1244,8 @@ async function boot() {
       // eixos do movimento: na vista de cima, os do ecrã; na mira (primeira pessoa), para a frente é para onde estás a olhar
       let Fx = FWD.x, Fz = FWD.y, Rx = RGT.x, Rz = RGT.y; if (G.fp && AIM.fy != null) { Fx = Math.sin(AIM.fy); Fz = Math.cos(AIM.fy); Rx = -Fz; Rz = Fx; }
       if (G.car) { if (G.carSeat === 0 && p.alive) { const kb = keys.has('KeyW') || keys.has('KeyS') || keys.has('KeyA') || keys.has('KeyD') || keys.has('ArrowUp') || keys.has('ArrowDown');
-          G.cars.drive(dt, kb ? { kb: true, t: (keys.has('KeyW') || keys.has('ArrowUp') ? 1 : 0) - (keys.has('KeyS') || keys.has('ArrowDown') ? 1 : 0), s: (keys.has('KeyA') || keys.has('ArrowLeft') ? 1 : 0) - (keys.has('KeyD') || keys.has('ArrowRight') ? 1 : 0) } : { yaw: Math.atan2(Rx * ix + Fx * iy, Rz * ix + Fz * iy), m: il }); }
-        ix = iy = il = 0; if (G.autoRun) G.setAuto(false); if (AIM.on) aimEnd(); }
+          G.cars.drive(dt, G.dbgDrive ? G.dbgDrive : kb ? { kb: true, t: (keys.has('KeyW') || keys.has('ArrowUp') ? 1 : 0) - (keys.has('KeyS') || keys.has('ArrowDown') ? 1 : 0), s: (keys.has('KeyA') || keys.has('ArrowLeft') ? 1 : 0) - (keys.has('KeyD') || keys.has('ArrowRight') ? 1 : 0) } : { yaw: Math.atan2(Rx * ix + Fx * iy, Rz * ix + Fz * iy), m: il }); }
+        ix = iy = il = 0; if (G.autoRun) G.setAuto(false); if (AIM.on && !G.carSeat) aimEnd(); } // de passageiro pode apontar (debruça-se)
       // correr sempre: segue em frente sem tocar no polegar; o polegar vira; puxar para trás, mirar ou abrir o inventário para
       if (G.autoRun) {
         if (!p.alive || G.invOpen || G.mapOpen || AIM.on || p.use) G.setAuto(false);
@@ -1383,13 +1385,14 @@ async function boot() {
       if (dn && (!best || dn.d < bd - 0.2) && (!cfg.autoDoor || Math.hypot(p.vx, p.vz) < 0.5 || !dn.D.auto)) best = { door: dn.D, label: dn.D.lock && dn.D.lock.hp > 0 ? 'Porta trancada' : dn.D.target ? 'Fechar porta' : 'Abrir porta', x: dn.D.x, z: dn.D.z };
       { const T = best && best.door && best.door.base ? { door: best.door.base } : best && best.dep && (best.dep.k === 'bau' || best.dep.k === 'bauG') ? { dep: best.dep } : null; G.lockT = T; // fechadura: porta ou baú da base à tua frente
         if (T) { const h = held(), cl = G.base.lockOf(T); if (h && h.k === 'fechadura' && !cl) best = { ...(T.door ? { door: best.door } : {}), label: 'Pôr fechadura', lockPut: true, x: best.x, z: best.z }; else if (cl === 1 && G.net.world && !G.base.lockMine(T)) best = T.door ? { ...best, label: best.door.target ? 'Fechar porta' : 'Abrir porta · código' } : best; } }
-      if (G.car) best = { label: G.car.hp <= 0 || G.carSeat ? 'Sair do carro' : 'Sair do carro', carExit: true, x: p.x, z: p.z };
+      if (G.car) best = { label: (G.car.alt || 0) > 0.8 ? 'Aterra para sair' : VT[G.car.k].two ? 'Descer' : 'Sair', carExit: true, x: p.x, z: p.z };
       else if (p.alive && !p.climb && !p.lv) { const c = G.cars.nearest(p); if (c) { const cd = Math.hypot(c.x - p.x, c.z - p.z) - 1.2, h = held();
-          if (!best || cd < bd) best = h && h.k === 'gasolina' ? { label: 'Pôr gasolina no carro (' + Math.round(c.fuel) + ' L)', car: c, fuel: true, x: c.x, z: c.z } : G.cars.seatFree(c) < 0 ? { label: 'Carro cheio', car: c, full: true, x: c.x, z: c.z } : { label: c.seats[0] ? 'Entrar no carro (passageiro)' : 'Conduzir', car: c, x: c.x, z: c.z }; } }
+          const T = VT[c.k], nm = T.n.toLowerCase();
+          if (!best || cd < bd) best = h && h.k === 'gasolina' && T.tank ? { label: 'Pôr gasolina (' + Math.round(c.fuel) + ' de ' + T.tank + ' L)', car: c, fuel: true, x: c.x, z: c.z } : G.cars.seatFree(c) < 0 ? { label: 'Não há lugar', car: c, full: true, x: c.x, z: c.z } : { label: c.seats[0] ? (T.two ? 'Ir à pendura' : 'Entrar (passageiro)') : c.k === 'bike' ? 'Pedalar' : c.k === 'moto' ? 'Conduzir a mota' : 'Conduzir · ' + nm, car: c, x: c.x, z: c.z }; } }
       if (!best && p.alive && !G.car && !p.lv && p.water < 97 && (p.swim || W.wet(p.x, p.z, 1.4))) best = { label: 'Beber água', drink: true, x: p.x, z: p.z };
       G.prompt = best;
       if (G.net.on) { const d = heldDef(), it = held(), mode = d.gun ? (d.long ? 2 : 1) : d.melee && it ? 3 : 0, eq = G.inv.eq, lvl = s => eq[s] ? ITEMS[eq[s].k].lvl || 0 : 0;
-        G.net.frame(dt, { x: +p.x.toFixed(2), z: +p.z.toFixed(2), y: +(p.y - (p.swimY || 0)).toFixed(2), lv: p.lv || 0, yaw: +Math.atan2(Math.sin(p.root), Math.cos(p.root)).toFixed(2), mv: +Math.min(3, p.mv || 0).toFixed(2), an: (G.car ? 8 : mode + (AIM.on ? 4 : 0)), w: mode ? it.k : '', hp: Math.round(Math.max(0, p.hp)), al: p.alive ? 1 : 0, ar: [lvl('head'), lvl('vest')] }, o => canSee(p, o)); }
+        G.net.frame(dt, { x: +p.x.toFixed(2), z: +p.z.toFixed(2), y: +(p.y - (p.swimY || 0)).toFixed(2), lv: p.lv || 0, yaw: +Math.atan2(Math.sin(p.root), Math.cos(p.root)).toFixed(2), mv: +Math.min(3, p.mv || 0).toFixed(2), an: (G.car && !G.leanOut ? 8 : mode + (AIM.on ? 4 : 0)), w: mode ? it.k : '', hp: Math.round(Math.max(0, p.hp)), al: p.alive ? 1 : 0, ar: [lvl('head'), lvl('vest')] }, o => canSee(p, o)); }
       if (G.box && (Math.hypot(G.box.x - p.x, G.box.z - p.z) > 2.6)) { G.box = null; if (G.invOpen) G.ui.openInv(null); }
       updZombies(dt); G.cars.update(dt);
       // sacos: os vazios desaparecem, os velhos também
@@ -1457,7 +1460,7 @@ async function boot() {
       if (PROJ.dirty || PROJ.mode !== 'top') topProj();
       const e = AIM.fpT > 0 && p ? easeD(Math.min(1, AIM.fpT / 0.55)) : 0;
       v3b.copy(camT); if (e > 0) { v3b.x += (AIM.A.x - camT.x) * 0.45 * e; v3b.z += (AIM.A.z - camT.z) * 0.45 * e; v3b.y = camT.y + 0.4 * e; }
-      cam.position.copy(v3b).add(camOff((1 - 0.72 * e) * (G.car ? 1 + 0.35 * Math.min(1, Math.abs(G.car.v) / 17) : 1))); if (G.shakeT > 0) { G.shakeT -= dt; const a = Math.min(1, G.shakeT) * 0.9; cam.position.x += (Math.random() - 0.5) * a; cam.position.z += (Math.random() - 0.5) * a; cam.position.y += (Math.random() - 0.5) * a * 0.5; } cam.lookAt(v3b.x, v3b.y + 1.0, v3b.z);
+      cam.position.copy(v3b).add(camOff((1 - 0.72 * e) * (G.car ? 1 + 0.35 * Math.min(1, Math.abs(G.car.v) / 17) + (G.car.alt || 0) / 26 : 1))); if (G.shakeT > 0) { G.shakeT -= dt; const a = Math.min(1, G.shakeT) * 0.9; cam.position.x += (Math.random() - 0.5) * a; cam.position.z += (Math.random() - 0.5) * a; cam.position.y += (Math.random() - 0.5) * a * 0.5; } cam.lookAt(v3b.x, v3b.y + 1.0, v3b.z);
     }
     cam.updateMatrixWorld();
     scene.fog.near = G.fp ? 300 : 62; scene.fog.far = G.fp ? 850 : 150;
@@ -1468,7 +1471,7 @@ async function boot() {
     if (p && G.playing && p.alive && !G.fp) { VU.uVisK.value = 0.06 + 0.03 * (G.day ?? 1); VIS.t -= dt; const dk = W.doors.reduce((a, D) => a + (D.rc.off ? 1 : 0), 0) + ':' + p.lv + ':' + Math.round((AIM.lean || 0) * 4); VIS.cd = (VIS.cd || 0) - dt; if ((VIS.cd <= 0 && Math.hypot(p.x - VIS.x, p.z - VIS.z) > 0.04) || dk !== VIS.key || VIS.t <= 0) { VIS.x = p.x; VIS.z = p.z; VIS.key = dk; VIS.t = 0.5; VIS.cd = G.cfg.lowres ? 1 / 15 : 1 / 30; const lo = (AIM.lean || 0) * LEAN; drawVis(p.x + Math.cos(p.yaw) * lo, p.z - Math.sin(p.yaw) * lo, p.lv, p.bld && p.lv > 0 ? p.bld : null); } }
     else VU.uVisK.value = 1;
     if (G0.xray) G0.xray.visible = !G.fp;
-    body.root.visible = !!(p && G.playing && p.alive && !G.fp && !G.car);
+    body.root.visible = !!(p && G.playing && p.alive && !G.fp && (!G.car || G.leanOut));
     // onde fica o círculo no ecrã (para os sons à volta e a mira)
     if (p && G.playing && !G.fp) { const c0 = toScreen(_c.set(vc.x, p.y + 0.9, vc.z)), S = G.ui.safe(); G.view = { cx: c0.x, cy: c0.y, rx: Math.max(60, Math.min(c0.x - S.x0, S.x1 - c0.x) - 34), ry: Math.max(60, Math.min(c0.y - S.y0, S.y1 - c0.y) - 34), fp: false }; }
     else { const SC = G.ui.scopeC(); G.view = { cx: SC.x, cy: SC.y, rx: G.ui.scopeR(), ry: G.ui.scopeR(), fp: true, yaw: AIM.fy }; }
