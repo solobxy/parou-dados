@@ -1,0 +1,51 @@
+name: Inventário das operadoras
+
+# Todos os meses compara a lista oficial de operadores do IMT e os feeds GTFS de Portugal (Mobility Database) com o
+# que a PAROU tem (inventario_operadores.json e manifest.json). Se houver novidades, abre (ou atualiza) um aviso.
+# Relatório no ramo "inventario-resultado".
+
+on:
+  schedule:
+    - cron: "41 6 3 * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  inventario:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fontes
+        run: |
+          sudo apt-get install -y -qq poppler-utils >/dev/null
+          curl -fsSL -A "Mozilla/5.0" -o imt.pdf "https://www.imt-ip.pt/wp-content/uploads/IMTT/Portugues/TransportesRodoviarios/TransportePublicoPassageiros/CarreirasServicoPublico/Documents/LISTA_OPERADORES_TPColetivo_Nacional-DSRJE_v2.pdf"
+          pdftotext -layout imt.pdf imt.txt
+          curl -fsSL -o mdb.csv https://files.mobilitydatabase.org/feeds_v2.csv
+          curl -fsSL -o manifest-dados.json https://github.com/solobxy/parou-dados/releases/download/dados/manifest.json
+
+      - name: Comparar
+        id: comparar
+        run: |
+          set +e
+          python inventario.py imt.txt mdb.csv manifest-dados.json
+          echo "codigo=$?" >> "$GITHUB_OUTPUT"
+
+      - name: Aviso
+        if: steps.comparar.outputs.codigo == '2'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          N=$(gh issue list --state open --search "Inventário das operadoras in:title" --json number -q '.[0].number')
+          if [ -n "$N" ]; then gh issue comment "$N" --body-file inventario.md; else gh issue create --title "Inventário das operadoras: há novidades" --body-file inventario.md; fi
+
+      - name: Relatório
+        if: always()
+        run: |
+          mkdir -p pub && cp inventario.md imt.txt pub/ 2>/dev/null || echo vazio > pub/vazio.txt
+          cd pub && git init -q -b inventario-resultado
+          git config user.name "parou-dados"; git config user.email "actions@users.noreply.github.com"
+          git add -A && git commit -q -m "Inventário $(date -u +%Y-%m-%d)" && git push -q -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" inventario-resultado
