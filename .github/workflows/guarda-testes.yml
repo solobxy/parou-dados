@@ -115,12 +115,13 @@ jobs:
         working-directory: app
         run: APP=$PWD node --import tsx ../auditoria/greves-avisos.mjs 2>&1 | grep -v "Experimental\|trace-warnings" | tail -50; exit ${PIPESTATUS[0]}
 
-      - name: Fonte da Transtejo Soflusa e cidades à volta do Tejo
+      - name: Fonte da Transtejo Soflusa, cidades à volta do Tejo e do Douro, desenhos oficiais estragados
         working-directory: app
         run: |
           APP=$PWD node --import tsx ../auditoria/ttsl-fonte.mjs 2>&1 | grep -v "Experimental\|trace-warnings" | tail -20; a=${PIPESTATUS[0]}
           APP=$PWD node --import tsx ../auditoria/cidades-margens.mjs 2>&1 | grep -v "Experimental\|trace-warnings" | tail -20; b=${PIPESTATUS[0]}
-          exit $(( a || b ))
+          APP=$PWD node --import tsx ../auditoria/desenho-alternativo.mjs 2>&1 | grep -v "Experimental\|trace-warnings" | tail -20; c=${PIPESTATUS[0]}
+          exit $(( a || b || c ))
 
       - name: Memória (linhas perto de um ponto com limite; raio entre 100 e 2000 m)
         working-directory: app

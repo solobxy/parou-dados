@@ -133,6 +133,16 @@ ok('[descrição] /greves inteira, até 155, sem reticências', desc.length <= 1
   ok('[plenário] /greves/carris-metropolitana mostra o plenário à parte', /Plenários e possíveis constrangimentos[\s\S]*Alsa Todi/.test(hm));
 }
 
+// --- 3b. Textos que ficam guardados (publicações automáticas da comunidade, posts do canal do WhatsApp): datas por extenso
+{
+  const A = await import(`${APP}/src/server/alertasEngine.ts`);
+  const t = A.quandoFixo(lisboa(1, 7));
+  ok('[canal] data por extenso, sem «amanhã»', /^[a-zçáéíóú]+, \d{1,2} de [a-zç]+ às 07:00$/.test(t) && !/amanh|hoje|ontem/.test(t), t);
+  const fonte = (await import('node:fs')).readFileSync(`${APP}/src/server/alertasEngine.ts`, 'utf8');
+  const corpoCanal = fonte.slice(fonte.indexOf('export async function candidatosPush'), fonte.indexOf('export async function candidatosPush') + 9000);
+  ok('[canal] no canal, as datas dos avisos do IPMA e das greves usam quandoFixo', (corpoCanal.match(/canal \? quandoFixo/g) || []).length >= 3);
+}
+
 // --- 4. Descrições inteiras
 const longa = 'Há greve hoje? Greves anunciadas no metro de Lisboa e do Porto, na CP e nos comboios, na Carris, na STCP, na Fertagus e noutros transportes, com datas, serviços mínimos e notícias. Atualizado sempre.';
 const d1 = T.descricaoInteira(longa);
