@@ -1,0 +1,10 @@
+OK      [preparar] há uma linha real da TTSL transtejo_soflusa:5_0 Cacilhas - Cais do Sodré
+OK      [preparar] há uma linha real da Carris carris:158_0 Glória - Restauradores / circulação Lg. Carmo
+OK      [api] partidas da paragem da TTSL trazem feed_id transtejo_soflusa Cacilhas · 16 partidas · transtejo_soflusa
+FALHOU  [ecrã] linha da TTSL mostra «Fonte — Transtejo Soflusa (TTSL)» 
+FALHOU  [ecrã] aparece uma só vez 0
+FALHOU  [ecrã] cabe no ecrã de 390 px null
+OK      [ecrã] sem erros na página 
+FALHOU  [ecrã en] em inglês: «Source — Transtejo Soflusa (TTSL)» 
+OK      [ecrã] linha da Carris abre e não mostra a fonte da TTSL 9 paragens
+4 testes falharam

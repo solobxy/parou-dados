@@ -1,0 +1,18 @@
+OK      [base] Metro Mondego carregado {"status":"OK","lines_count":5,"stops_count":40}
+OK      [base] linhas U1, U2, U3, S1 e S2 S1 Coimbra B – Serpins | S2 República – Serpins | U1 Coimbra B – Vale das Flores | U2 República – Vale das Flores | U3 República – Coimbra B
+OK      [desenho] linha para Serpins segue a rede (mais de 150 pontos, mais de 30 km) 447 pontos, 37.3 km
+OK      [créditos] atribuição à Metro Mondego e à AGIT, com a licença Fonte: Metro Mondego e AGIT – Agência para a Gestão do Sistema Intermodal da Região de Coimbra (dados abertos, CC BY 4.0)
+OK      [região] Metro Mondego aparece em Coimbra Coimbra
+OK      [página] /linhas/metro-mondego responde 200 200
+OK      [página] mostra as 5 linhas Horários Metro Mondego: linhas e paragens | PAROU
+OK      [página] título com Metro Mondego Horários Metro Mondego: linhas e paragens | PAROU
+OK      [sitemap] linhas do Metro Mondego no mapa do site (para o Google) /linhas/metro-mondego/s1-coimbra-b-serpins /linhas/metro-mondego/s2-republica-serpins /linhas/metro-mondego/u1-coimbra-b-vale-das-flores /linhas/metro-mondego/u2-republica-vale-das-flores /linhas/metro-mondego/u3-republica-coimbra-b
+         /linhas/metro-mondego/u1-coimbra-b-vale-das-flores | U1 Coimbra B – Vale das Flores: horário Metro Mondego | PAROU | Dias úteis: 1.º autocarro às 05:05, último às 00:08, de 30 em 30 min na hora de ponta. Linha U1 · Metro Mondego (Coimbra
+OK      [linha U1] 200, título com U1 e Metro Mondego U1 Coimbra B – Vale das Flores: horário Metro Mondego | PAROU
+OK      [linha U1] descrição com as horas dos dias úteis Dias úteis: 1.º autocarro às 05:05, último às 00:08, de 30 em 30 min na hora de ponta. Lin
+OK      [perto] paragens do Metro Mondego perto da Portagem Portagem, Loja do Cidadão, Aeminium
+OK      [perto] com as linhas do metrobus (U1/U2/S1/S2) U1 S1 U2 S2 U3
+OK      [planeador] Coimbra B → Serpins (2026-11-25T10:00) usa o metrobus Metro Mondego (Coimbra):U3>Metro Mondego (Coimbra):S2 86min | Metro Mondego (Coimbra):U3>Metro Mondego (Coimbra):S2 86min
+OK      [planeador] República → Vale das Flores (2026-11-25T10:00) usa o metrobus Metro Mondego (Coimbra):U2 27min | SMTUC (Coimbra):34>Metro Mondego (Coimbra):U1 23min | Metro Mondego (Coimbra):S2 39min
+
+Todos os testes OK

@@ -1,0 +1,16 @@
+OK      [idioma] português de Portugal ["pt-PT"] -> pt
+OK      [idioma] português do Brasil ["pt-BR","en"] -> pt
+OK      [idioma] inglês ["en-US"] -> en
+OK      [idioma] a primeira preferida manda ["en-GB","pt-PT"] -> en
+OK      [idioma] alemão ["de-DE","en"] -> de
+OK      [idioma] francês do Canadá ["fr-CA"] -> fr
+OK      [idioma] espanhol sem tradução, com português a seguir ["es-ES","pt-PT"] -> pt
+OK      [idioma] espanhol e francês ["es-ES","fr"] -> fr
+OK      [idioma] língua sem tradução: inglês ["nl-NL"] -> en
+OK      [idioma] separador _ também ["zh_CN"] -> en
+OK      [idioma] sem informação: português [] -> pt
+OK      [idioma] vazio: português [""] -> pt
+OK      [idioma] Google fica no português ["en-US"] -> pt
+OK      [idioma] Bing fica no português ["en-US"] -> pt
+OK      [idioma] iPhone em inglês ["en-US"] -> en
+Todos os testes passaram

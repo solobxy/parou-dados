@@ -1,0 +1,50 @@
+OK      [polilinha] exemplo da Google (5 casas) descodifica [{"lat":38.5,"lon":-120.2},{"lat":40.7,"lon":-120.95},{"lat":43.252,"lon":-126.453}]
+OK      [polilinha] exemplo da Google (5 casas) codifica igual 
+OK      [polilinha] descodifica o que o Python escreveu (6 casas) [{"lat":41.14961,"lon":-8.61099},{"lat":41.15,"lon":-8.6},{"lat":41.1523,"lon":-8.5987},{"lat":41.1523,"lon":-8.5987},{"lat":41.234567,"lon":-8.612345}]
+OK      [polilinha] codifica exatamente o mesmo texto que o Python 
+OK      [polilinha] 4000 pontos: ida e volta sem perder nada (≤ 0,0000005°) 
+OK      [polilinha] texto cortado a meio não rebenta 
+OK      [polilinha] texto vazio dá lista vazia 
+OK      [encaixe] encaixa 6 paragens 
+OK      [encaixe] as posições não decrescem 
+OK      [encaixe] paragens em cima da estrada: desvio < 1 m 0.00,0.00,0.00,0.00,0.00,0.00
+OK      [encaixe] sem recuos 
+OK      [circular] a primeira paragem fica no princípio 
+OK      [circular] a última paragem (no mesmo sítio que a primeira) fica no FIM do desenho pos=48.00 de 48
+OK      [circular] as do meio ficam no sítio certo (esquinas a 12, 24 e 36) 0.0,12.0,24.0,36.0,48.0
+OK      [circular] o encaixe é válido 
+OK      [dois lados] paragens que se cruzam por poucos metros continuam válidas 
+OK      [dois lados] posições nunca decrescem (corrigidas) 
+OK      [dois lados] o recuo corrigido é pequeno (< 20 m) 3.0 m
+OK      [não serve] desenho ao contrário das paragens é recusado 
+OK      [não serve] desenho a 1 km das paragens é recusado 
+OK      [não serve] desenho com 1 ponto: sem encaixe 
+OK      [não serve] sem paragens: sem encaixe 
+OK      [ao contrário] um desenho ao contrário é virado e passa a servir 
+OK      [ao contrário] depois de virado, as posições não decrescem e o recuo é 0 
+OK      [ao contrário] o desenho virado vai da 1.ª paragem à última 
+OK      [ao contrário] um desenho no sentido certo não se vira 
+OK      [ao contrário] um desenho de outro sítio continua a ser recusado nos dois sentidos 
+OK      [fatiar] o desenho inteiro tem o comprimento do desenho 2705.3 vs 2705.3
+OK      [fatiar] o troço começa e acaba nas posições pedidas 
+OK      [fatiar] leva os pontos do desenho que ficam pelo meio (17 a 40 = 24 pontos) 26
+OK      [fatiar] entre dois pontos do desenho não repete pontos (11 pontos) 11
+OK      [fatiar] mesma posição: dois pontos iguais, sem rebentar 
+OK      [app] sem desenho: paragens unidas em linha reta (como antes) 
+OK      [app] com desenho: pela estrada 
+OK      [app] a estrada tem muitos mais pontos do que as 4 paragens 73
+OK      [app] o troço pela estrada é mais comprido do que a linha reta entre paragens (as esquinas) 1754 m vs 1456 m
+OK      [app] cada ponto desenhado está em cima da estrada 
+OK      [app] o passado e o restante encontram-se na paragem onde se está 
+OK      [app] índice 0: nada de passado 
+OK      [app] cortes que não batem com as paragens: volta à linha reta 
+OK      [app] desenho vazio: volta à linha reta 
+OK      [app] índice fora do intervalo não rebenta 
+OK      [parcial] 7 paragens encostadas ao desenho: serve 
+OK      [parcial] com 3 de 10 paragens fora do desenho (70% encostadas): não serve 
+OK      [parcial] a paragem fora do desenho fica sem posição (null) [0,8,20,28,38,52,64,76,92,null]
+OK      [parcial] a linha chega à última paragem (a direito, onde não há desenho) 
+OK      [parcial] e começa na primeira 
+OK      [parcial] sem saltos: nenhum segmento desenhado passa de 700 m 
+
+O desenho dos percursos pela estrada funciona.

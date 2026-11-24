@@ -1,0 +1,11 @@
+== telemovel: sem localização
+OK      telemovel: aparece «Ou começa por uma estação» 
+OK      telemovel: tem pontos de partida (6)
+OK      telemovel: tocar em Cais do Sodré mostra os transportes de lá 
+OK      telemovel: sem erros na página 
+== computador: sem localização
+OK      computador: aparece «Ou começa por uma estação» 
+OK      computador: tem pontos de partida (6)
+OK      computador: tocar em Cais do Sodré mostra os transportes de lá 
+OK      computador: sem erros na página 
+8/8 testes OK

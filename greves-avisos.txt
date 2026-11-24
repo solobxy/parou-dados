@@ -1,0 +1,14 @@
+FALHOU  [tipo] plenário com a causa STRIKE não é greve greve
+OK      [tipo] «possíveis constrangimentos» não é greve 
+OK      [tipo] greve continua a ser greve 
+OK      [tipo] greve com plenário no texto continua greve (o título diz greve) 
+/home/runner/work/parou-dados/parou-dados/auditoria/greves-avisos.mjs:47
+const avisos = fixture.item.map((x) => C.avisoDaCp(x, '2026-11-24T20:00:00Z'));
+                                         ^
+
+TypeError: C.avisoDaCp is not a function
+    at <anonymous> (/home/runner/work/parou-dados/parou-dados/auditoria/greves-avisos.mjs:47:42)
+    at Array.map (<anonymous>)
+    at <anonymous> (/home/runner/work/parou-dados/parou-dados/auditoria/greves-avisos.mjs:47:29)
+
+Node.js v22.23.5

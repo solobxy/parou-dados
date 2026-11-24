@@ -1,0 +1,11 @@
+OK  / (200) tem a etiqueta das estatísticas
+OK  / carrega o script uma só vez
+OK  /linhas (200) tem a etiqueta das estatísticas
+OK  /linhas carrega o script uma só vez
+OK  /greves (200) tem a etiqueta das estatísticas
+OK  /greves carrega o script uma só vez
+OK  /transportes (200) tem a etiqueta das estatísticas
+OK  /transportes carrega o script uma só vez
+OK  /_e.js responde 200 application/javascript; charset=utf-8
+OK  /_e (POST) responde 204
+estatísticas: tudo OK

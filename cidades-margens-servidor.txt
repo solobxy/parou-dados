@@ -1,0 +1,8 @@
+/home/runner/work/parou-dados/parou-dados/auditoria/cidades-margens.mjs:14
+for (const [n, [la, lo]] of Object.entries(sul)) ok(`[margem] ${n} fica a sul do Tejo e não conta como Lisboa`, C.aSulDoTejo(la, lo) && !C.naCidade(lx, la, lo));
+                                                                                                                  ^
+
+TypeError: C.aSulDoTejo is not a function
+    at <anonymous> (/home/runner/work/parou-dados/parou-dados/auditoria/cidades-margens.mjs:14:115)
+
+Node.js v22.23.5

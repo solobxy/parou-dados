@@ -1,0 +1,19 @@
+[SQLite DB] Base de dados sem feeds. A registar feeds oficiais do catálogo...
+[SQLite DB] 31 feeds registados com sucesso.
+OK      dia útil: estado ok e não previsto {"estado":"ok","previsto":false}
+OK      dia útil: 07:20, 08:25 e 00:05 por esta ordem ["07:20","08:25","00:05"]
+OK      não conta a partida onde não se pode entrar (pickup_type 1) 
+OK      cada partida traz o destino (variante «via Escola») 
+OK      sábado: 09:00 e 13:00 ["09:00","13:00"]
+OK      domingo sem serviço: sem partidas (e não previsto) {"data":"2026-11-22","estado":"sem-partidas","previsto":false,"partidas":[]}
+OK      dia por publicar: previsto, com a quinta 26/11 como referência {"previsto":true,"ref":"2026-11-26"}
+OK      dia por publicar: horário de dia útil ["07:05","07:35","08:10","23:50"]
+OK      última paragem do sentido: estado «ultima-paragem» ultima-paragem
+OK      outro sentido: 08:00 em C ["08:00"]
+OK      paragem fora da linha: estado «sem-dados» sem-dados
+OK      data de amanhã aceite 
+OK      data de ontem aceite 
+OK      anteontem recusado 
+OK      15 dias à frente recusado 
+OK      texto inválido recusado 
+tudo OK

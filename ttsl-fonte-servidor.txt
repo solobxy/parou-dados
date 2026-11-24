@@ -1,0 +1,10 @@
+FALHOU  [texto] é exatamente o que a TTSL pediu null
+FALHOU  [texto] entra na lista de créditos 
+/home/runner/work/parou-dados/parou-dados/auditoria/ttsl-fonte.mjs:15
+ok('[línguas] inglês: «Source — Transtejo Soflusa (TTSL)»', A.atribuicaoNaLingua('transtejo_soflusa', 'en') === 'Source — Transtejo Soflusa (TTSL)', A.atribuicaoNaLingua('transtejo_soflusa', 'en'));
+                                                              ^
+
+TypeError: A.atribuicaoNaLingua is not a function
+    at <anonymous> (/home/runner/work/parou-dados/parou-dados/auditoria/ttsl-fonte.mjs:15:63)
+
+Node.js v22.23.5
