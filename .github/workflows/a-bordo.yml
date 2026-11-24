@@ -123,7 +123,7 @@ jobs:
         working-directory: app
         run: |
           mkdir -p ../res
-          for t in pesquisa-locais cache-limitada cache-linhas-perto idioma-aparelho caminho-a-pe convite-instalar nomes-paragens ilhas fuso-ilhas horario-dia; do
+          for t in pesquisa-locais cache-limitada cache-linhas-perto idioma-aparelho caminho-a-pe convite-instalar nomes-paragens ilhas fuso-ilhas horario-dia greves-avisos ttsl-fonte cidades-margens; do
             echo "== $t"
             APP=$PWD node --import tsx ../auditoria/$t.mjs 2>&1 | grep -v "Experimental\|trace-warnings" | tee ../res/$t.txt | tail -40
           done
@@ -138,6 +138,19 @@ jobs:
           NODE_ENV=production PORT=3000 PAROU_DATA_DIR=$PWD/dados TZ=Europe/Lisbon FOGOS_TESTE=1 nohup node --import tsx server.ts > app.log 2>&1 &
           for i in $(seq 1 60); do curl -s -m 5 http://127.0.0.1:3000/api/transit/loading-status | grep -q '"isLoading":false' && break; sleep 5; done
           sleep 5
+
+      - name: "Testes com a app a correr: fonte da TTSL, cidades à volta do Tejo, descrições inteiras"
+        continue-on-error: true
+        working-directory: app
+        run: |
+          mkdir -p ../res
+          (APP=$PWD BASE=http://127.0.0.1:3000 node --import tsx ../auditoria/ttsl-fonte.mjs 2>&1 | grep -v "Experimental\|trace-warnings") | tee ../res/ttsl-fonte-servidor.txt | tail -30
+          a=${PIPESTATUS[0]}
+          (APP=$PWD BASE=http://127.0.0.1:3000 node --import tsx ../auditoria/cidades-margens.mjs 2>&1 | grep -v "Experimental\|trace-warnings") | tee ../res/cidades-margens-servidor.txt | tail -30
+          b=${PIPESTATUS[0]}
+          BASE=http://127.0.0.1:3000 node ../auditoria/meta-descricoes.mjs 2>&1 | tee ../res/meta-descricoes.txt | tail -40
+          c=${PIPESTATUS[0]}
+          exit $(( a || b || c ))
 
       - name: "Teste da Madeira (SIGA Rodoeste e CAM: páginas, linhas juntas, nomes)"
         continue-on-error: true
@@ -246,6 +259,13 @@ jobs:
         run: |
           mkdir -p ../res
           SAIDA=../res timeout 400 node horario-dia-ecra.mjs 2>&1 | tee ../res/horario-dia-ecra.txt | tail -60
+
+      - name: Testar a fonte da Transtejo Soflusa no ecrã de uma linha (browser)
+        continue-on-error: true
+        working-directory: auditoria
+        run: |
+          mkdir -p ../res
+          SAIDA=../res timeout 300 node fonte-operador-ecra.mjs 2>&1 | tee ../res/fonte-operador-ecra.txt | tail -30
 
       - name: Testar o movimento dos autocarros no mapa (browser)
         continue-on-error: true

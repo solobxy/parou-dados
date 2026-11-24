@@ -27,7 +27,7 @@ for (const d of casos) {
   ok(`[${d.codigo}] título tem o operador (nome curto)`, tit.includes(t.operadorCurto(d.operador)), tit);
   ok(`[${d.codigo}] título diz "horário"`, /horário/.test(tit));
   ok(`[${d.codigo}] título tem o início do percurso`, tit.includes(t.semParenteses(d.percurso).split(' – ')[0].slice(0, 6)), tit);
-  ok(`[${d.codigo}] descrição até 200 caracteres`, desc.length <= 200, String(desc.length));
+  ok(`[${d.codigo}] descrição inteira: até 155 caracteres e sem reticências`, desc.length <= 155 && !desc.includes('…'), `${desc.length} ${desc}`);
   ok(`[${d.codigo}] descrição tem o operador`, desc.includes(d.operador));
   if (d.uteis && d.uteis.length) {
     ok(`[${d.codigo}] descrição começa pelas horas dos dias úteis`, desc.startsWith('Dias úteis: 1.º '), desc.slice(0, 40));

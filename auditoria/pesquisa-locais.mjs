@@ -126,11 +126,31 @@ for (const [i, l] of [
   insF.run(nCP + i + 1, `${l[0]} ${l[6]} ${L.celulaLocais(l[3], l[4])}`);
 }
 L._teste.limpar();
-for (const q of ['4420-155', '4420 155', '4420155']) {
+// O Photon (moradas) responde a «4420-155» com outro código (4410-151, São Félix da Marinha, Gaia), como no servidor real.
+// Simula-se aqui a resposta para o teste não depender da rede (no sandbox o Photon não responde e o erro não aparecia).
+const fetchReal = globalThis.fetch;
+let pedidosPhoton = 0;
+globalThis.fetch = async (url, ...resto) => {
+  if (!String(url).includes('photon.komoot.io')) return fetchReal(url, ...resto);
+  pedidosPhoton++;
+  const features = /\d{4}/.test(decodeURIComponent(String(url))) ? [{
+    type: 'Feature', geometry: { type: 'Point', coordinates: [-8.6230, 41.0270] },
+    properties: { osm_type: 'R', osm_id: 999, osm_key: 'place', osm_value: 'postcode', type: 'other', name: '4410-151', postcode: '4410-151', locality: 'São Félix da Marinha', city: 'Vila Nova de Gaia', countrycode: 'PT' },
+  }] : [];
+  return new Response(JSON.stringify({ type: 'FeatureCollection', features }), { headers: { 'content-type': 'application/json' } });
+};
+for (const q of ['4420-155', '4420 155', '4420155', ' 4420-155 ']) {
   r = await sugestoes(q, ...LX);
   ok(`[código postal] «${q}» encontra o 4420-155 primeiro`, r[0]?.title === '4420-155' && r[0]?.place?.includes('Gondomar'),
     JSON.stringify(r.slice(0, 3).map((x) => `${x.title} | ${x.place} | ${x.category}`)));
 }
+ok('[código postal] a simulação do Photon foi mesmo usada', pedidosPhoton > 0, String(pedidosPhoton));
+r = await sugestoes('4420-155', ...PO);
+ok('[código postal] «4420-155» no Porto (perto de Gaia): o 4420-155 primeiro', r[0]?.title === '4420-155', JSON.stringify(titulos(r).slice(0, 3)));
+r = await sugestoes('4420-155');
+ok('[código postal] «4420-155» sem localização: o 4420-155 primeiro', r[0]?.title === '4420-155', JSON.stringify(titulos(r).slice(0, 3)));
+r = await sugestoes('4410-151', ...LX);
+ok('[código postal] código que não está na tabela continua a vir do Photon', r[0]?.title === '4410-151', JSON.stringify(titulos(r).slice(0, 3)));
 r = await sugestoes('4420', ...LX);
 ok('[código postal] «4420» (só a primeira parte) mostra códigos de Gondomar', r.some((x) => x.title?.startsWith('4420-')), JSON.stringify(titulos(r).slice(0, 5)));
 r = await sugestoes('colombo', ...LX);

@@ -1,0 +1,648 @@
+{
+ "nota": "Avisos reais da CP (https://www.cp.pt/bei/getContentsList?path=PWA/Homepage/Avisos), lidos a 24/11/2026; só os campos que a PAROU usa",
+ "item": [
+  {
+   "availableLanguages": [
+    "en-US",
+    "pt-PT"
+   ],
+   "contentStructureId": 49545,
+   "customFields": [],
+   "dateCreated": "2026-11-17T19:24:23Z",
+   "dateModified": "2026-11-23T13:07:49Z",
+   "datePublished": "2026-11-17T19:24:00Z",
+   "externalReferenceCode": "26bdfc82-eb52-3197-97d4-18274638dee6",
+   "friendlyUrlPath": "greve-23a27-nov",
+   "id": 1001753,
+   "key": "1001751",
+   "keywords": [],
+   "neverExpire": true,
+   "numberOfComments": 0,
+   "priority": 188.0,
+   "relatedContents": [],
+   "siteId": 20117,
+   "structuredContentFolderId": 56054,
+   "subscribed": false,
+   "title": {
+    "en-US": "Strike | CP - Comboios de Portugal",
+    "pt-PT": "Greve | CP - Comboios de Portugal"
+   },
+   "description": {
+    "en-US": "Minimum services for 24 e 25 de novembro. Service disruption from 23 to 27 November 2026.",
+    "pt-PT": "Serviços mínimos decretados para 24 e 25 de novembro e perturbações na circulação de 23 a 27 de novembro de 2026"
+   },
+   "contentFields": {
+    "pt-PT": [
+     {
+      "contentFieldValue": {
+       "data": "Greve - serviços mínimos a 24 e 25 de novembro"
+      },
+      "dataType": "string",
+      "inputControl": "text",
+      "label": "Título conteúdo",
+      "name": "Text48691729",
+      "nestedContentFields": [],
+      "repeatable": false
+     },
+     {
+      "contentFieldValue": {
+       "data": "Perturbações na circulação de 23 a 27 de novembro 2026"
+      },
+      "dataType": "string",
+      "inputControl": "text",
+      "label": "Lead",
+      "name": "Campo69402820",
+      "nestedContentFields": [],
+      "repeatable": false
+     },
+     {
+      "contentFieldValue": {
+       "data": "true"
+      },
+      "dataType": "boolean",
+      "inputControl": "checkbox",
+      "label": "Destaque",
+      "name": "Checkbox33013581",
+      "nestedContentFields": [],
+      "repeatable": false
+     },
+     {
+      "contentFieldValue": {
+       "data": "2026-11-23T00:00:00Z"
+      },
+      "dataType": "date",
+      "label": "Data de início",
+      "name": "Date35268359",
+      "nestedContentFields": [],
+      "repeatable": false
+     },
+     {
+      "contentFieldValue": {
+       "data": "2026-11-27T00:00:00Z"
+      },
+      "dataType": "date",
+      "label": "Data de fim",
+      "name": "Field40441023",
+      "nestedContentFields": [],
+      "repeatable": false
+     },
+     {
+      "contentFieldValue": {
+       "data": "Por motivo de greve convocada pelo SMAQ – Sindicato dos Maquinistas, de 23 a 27 de novembro, preveem-se fortes perturbações na circulação ferroviária, com supressão de diversos comboios em todos os serviços CP.\n\n\nPara os dias 24 e 25 de novembro, foram definidos os seguintes serviços mínimos:\n \n\n- Alfa Pendular e Intercidades;\n- InterRegional e Regional;\n- Comboios Urbanos de Coimbra;\n- Comboios Urbanos de Lisboa;\n- Comboios Urbanos do Porto.\n \n\nAos clientes que já tenham bilhetes adquiridos para viajar em comboios dos serviços Alfa Pendular, Intercidades, Internacional, InterRegional e Regional, a CP permitirá o reembolso, no valor total do bilhete adquirido, ou a sua troca gratuita para outro comboio da mesma categoria e na mesma classe.\n\n\nPara obter o reembolso ou troca de forma automática, recomendamos:\n- Online (para bilhetes adquiridos nos canais digitais), através do site CP na área \"Pós-Venda\" ou App CP em “MyCP”, até 15 minutos antes da partida do comboio da estação de origem do cliente;\n- Nas bilheteiras CP, antes ou após a data da viagem, e até 10 dias após o fim da greve.\n\nPode também solicitar o reembolso através do formulário online “Reembolso por Atraso ou Supressão”, sujeito a tempos de resposta superiores."
+      },
+      "dataType": "string",
+      "label": "Texto",
+      "name": "RichText98970637",
+      "nestedContentFields": [],
+      "repeatable": false
+     },
+     {
+      "contentFieldValue": {},
+      "dataType": "",
+      "label": "ItemListaColapsável_FS",
+      "name": "Fieldset68796724",
+      "nestedContentFields": [
+       {
+        "contentFieldValue": {
+         "data": ""
+        },
+        "dataType": "string",
+        "inputControl": "text",
+        "label": "Título do Item",
+        "name": "Text08554120",
+        "nestedContentFields": [],
+        "repeatable": false
+       },
+       {
+        "contentFieldValue": {
+         "data": ""
+        },
+        "dataType": "string",
+        "label": "Texto do Item",
+        "name": "RichText08222223",
+        "nestedContentFields": [],
+        "repeatable": false
+       }
+      ],
+      "repeatable": true
+     },
+     {
+      "contentFieldValue": {
+       "data": "Para mais informações, por favor consulte: Linha de Atendimento (Chamadas nacionais: 210 900 032 (Preço de uma chamada para a rede fixa de acordo com o seu tarifário) ou 808 109 110 (Preço de uma chamada local de acordo com o seu tarifário, com máximo de 0,07 € + IVA no primeiro minuto e 0,0277 € + IVA por cada minuto seguinte nos dias úteis das 9h às 21h ou 0,0084 € + IVA das 21h às 9h, fins de semana e feriados, conforme definido pela Anacom), Gabinetes de Apoio ao Cliente ou Bilheteiras CP."
+      },
+      "dataType": "string",
+      "label": "Nota de rodapé",
+      "name": "RichText02523854",
+      "nestedContentFields": [],
+      "repeatable": false
+     },
+     {
+      "contentFieldValue": {},
+      "dataType": "structuredContent",
+      "label": "Comboio",
+      "name": "JournalArticle66157978",
+      "nestedContentFields": [],
+      "repeatable": true
+     },
+     {
+      "contentFieldValue": {
+       "geo": {
+        "latitude": "NaN",
+        "longitude": "NaN"
+       },
+       "data": ""
+      },
+      "dataType": "geolocation",
+      "label": "Posição geográfica",
+      "name": "Geolocation47306908",
+      "nestedContentFields": [],
+      "repeatable": false
+     }
+    ]
+   }
+  },
+  {
+   "availableLanguages": [
+    "en-US",
+    "pt-PT"
+   ],
+   "contentStructureId": 49545,
+   "customFields": [],
+   "dateCreated": "2026-02-04T17:06:36Z",
+   "dateModified": "2026-04-09T14:36:26Z",
+   "datePublished": "2026-02-04T17:08:00Z",
+   "externalReferenceCode": "7e9f9c38-2028-2065-1fae-c5b9ed3039f1",
+   "friendlyUrlPath": "greve-itau-7fevereiro",
+   "id": 716076,
+   "key": "716074",
+   "keywords": [],
+   "neverExpire": true,
+   "numberOfComments": 0,
+   "priority": 151.0,
+   "relatedContents": [],
+   "siteId": 20117,
+   "structuredContentFolderId": 56054,
+   "subscribed": false,
+   "title": {
+    "en-US": "Cafeteria and Bar Service Strike – Starting 7 February | CP",
+    "pt-PT": "Greve Serviço de Cafetaria e Bar – Desde 7 de fevereiro | CP"
+   },
+   "description": {
+    "en-US": "See the information about a strike affecting the cafeteria and bar service on Alfa Pendular and Intercidades trains starting on 7 February.",
+    "pt-PT": "Consulte a informação sobre a greve do serviço de Cafetaria e Bar a bordo dos comboios Alfa Pendular e Intercidades desde 7 de fevereiro."
+   },
+   "contentFields": {
+    "pt-PT": [
+     {
+      "contentFieldValue": {
+       "data": "Serviço de Cafetaria e Bar - Alfa Pendular e Intercidades"
+      },
+      "dataType": "string",
+      "inputControl": "text",
+      "label": "Título conteúdo",
+      "name": "Text48691729",
+      "nestedContentFields": [],
+      "repeatable": false
+     },
+     {
+      "contentFieldValue": {
+       "data": "Greve desde dia 7 de fevereiro"
+      },
+      "dataType": "string",
+      "inputControl": "text",
+      "label": "Lead",
+      "name": "Campo69402820",
+      "nestedContentFields": [],
+      "repeatable": false
+     },
+     {
+      "contentFieldValue": {
+       "data": "false"
+      },
+      "dataType": "boolean",
+      "inputControl": "checkbox",
+      "label": "Destaque",
+      "name": "Checkbox33013581",
+      "nestedContentFields": [],
+      "repeatable": false
+     },
+     {
+      "contentFieldValue": {
+       "data": "2026-02-07T00:00:00Z"
+      },
+      "dataType": "date",
+      "label": "Data de início",
+      "name": "Date35268359",
+      "nestedContentFields": [],
+      "repeatable": false
+     },
+     {
+      "contentFieldValue": {
+       "data": ""
+      },
+      "dataType": "date",
+      "label": "Data de fim",
+      "name": "Field40441023",
+      "nestedContentFields": [],
+      "repeatable": false
+     },
+     {
+      "contentFieldValue": {
+       "data": "Os trabalhadores do concessionário ITAU - Instituto Técnico de Alimentação Humana S.A., que prestam os serviços de cafetaria e bar nos comboios Alfa Pendular e Intercidades, convocaram greve desde dia 7 de fevereiro, o que poderá causar perturbações na prestação dos referidos serviços, com possível impacto desde o dia 6 de fevereiro, sobretudo aos fins de semana e feriados.\n\n\nLamentamos eventuais transtornos, totalmente alheios à CP, e agradecemos a melhor compreensão durante este período.\n "
+      },
+      "dataType": "string",
+      "label": "Texto",
+      "name": "RichText98970637",
+      "nestedContentFields": [],
+      "repeatable": false
+     },
+     {
+      "contentFieldValue": {},
+      "dataType": "",
+      "label": "ItemListaColapsável_FS",
+      "name": "Fieldset68796724",
+      "nestedContentFields": [
+       {
+        "contentFieldValue": {
+         "data": ""
+        },
+        "dataType": "string",
+        "inputControl": "text",
+        "label": "Título do Item",
+        "name": "Text08554120",
+        "nestedContentFields": [],
+        "repeatable": false
+       },
+       {
+        "contentFieldValue": {
+         "data": ""
+        },
+        "dataType": "string",
+        "label": "Texto do Item",
+        "name": "RichText08222223",
+        "nestedContentFields": [],
+        "repeatable": false
+       }
+      ],
+      "repeatable": true
+     },
+     {
+      "contentFieldValue": {
+       "data": "Para mais informações, por favor consulte: Linha de Atendimento (Chamadas nacionais: 210 900 032 (Preço de uma chamada para a rede fixa de acordo com o seu tarifário) ou 808 109 110 (Preço de uma chamada local de acordo com o seu tarifário, com máximo de 0,07 € + IVA no primeiro minuto e 0,0277 € + IVA por cada minuto seguinte nos dias úteis das 9h às 21h ou 0,0084 € + IVA das 21h às 9h, fins de semana e feriados, conforme definido pela Anacom), Gabinetes de Apoio ao Cliente ou Bilheteiras CP"
+      },
+      "dataType": "string",
+      "label": "Nota de rodapé",
+      "name": "RichText02523854",
+      "nestedContentFields": [],
+      "repeatable": false
+     },
+     {
+      "contentFieldValue": {},
+      "dataType": "structuredContent",
+      "label": "Comboio",
+      "name": "JournalArticle66157978",
+      "nestedContentFields": [],
+      "repeatable": true
+     },
+     {
+      "contentFieldValue": {
+       "geo": {
+        "latitude": 3.1e-06,
+        "longitude": 4.4e-06
+       },
+       "data": ""
+      },
+      "dataType": "geolocation",
+      "label": "Posição geográfica",
+      "name": "Geolocation47306908",
+      "nestedContentFields": [],
+      "repeatable": false
+     }
+    ]
+   }
+  },
+  {
+   "availableLanguages": [
+    "en-US",
+    "pt-PT"
+   ],
+   "contentStructureId": 49545,
+   "customFields": [],
+   "dateCreated": "2026-11-19T08:49:25Z",
+   "dateExpired": "2026-11-28T22:00:00Z",
+   "dateModified": "2026-11-20T10:29:29Z",
+   "datePublished": "2026-11-19T10:55:00Z",
+   "externalReferenceCode": "1003017",
+   "friendlyUrlPath": "plataformas-intercidades-23-27-novembro",
+   "id": 1003019,
+   "key": "1003017",
+   "keywords": [],
+   "neverExpire": false,
+   "numberOfComments": 0,
+   "priority": 67.0,
+   "relatedContents": [],
+   "siteId": 20117,
+   "structuredContentFolderId": 56054,
+   "subscribed": false,
+   "title": {
+    "en-US": "Intercidades - Platform changes - 23 to 27 November | CP",
+    "pt-PT": "Intercidades - Alteração de plataformas - 23 a 27  de novembro | CP"
+   },
+   "description": {
+    "en-US": "See the platform changes for Intercidades trains on the North line from 23 to 27 November.",
+    "pt-PT": "Consulte as alterações das plataformas de embarque e desembarque, nos Comboios Intercidades, na Linha da Norte, de 23 a 27  de novembro."
+   },
+   "contentFields": {
+    "pt-PT": [
+     {
+      "contentFieldValue": {
+       "data": "Intercidades - Linha do Norte - 23 a 27 de novembro"
+      },
+      "dataType": "string",
+      "inputControl": "text",
+      "label": "Título conteúdo",
+      "name": "Text48691729",
+      "nestedContentFields": [],
+      "repeatable": false
+     },
+     {
+      "contentFieldValue": {
+       "data": "Alteração de plataformas de embarque e desembarque"
+      },
+      "dataType": "string",
+      "inputControl": "text",
+      "label": "Lead",
+      "name": "Campo69402820",
+      "nestedContentFields": [],
+      "repeatable": false
+     },
+     {
+      "contentFieldValue": {
+       "data": "false"
+      },
+      "dataType": "boolean",
+      "inputControl": "checkbox",
+      "label": "Destaque",
+      "name": "Checkbox33013581",
+      "nestedContentFields": [],
+      "repeatable": false
+     },
+     {
+      "contentFieldValue": {
+       "data": "2026-11-23T00:00:00Z"
+      },
+      "dataType": "date",
+      "label": "Data de início",
+      "name": "Date35268359",
+      "nestedContentFields": [],
+      "repeatable": false
+     },
+     {
+      "contentFieldValue": {
+       "data": "2026-11-27T00:00:00Z"
+      },
+      "dataType": "date",
+      "label": "Data de fim",
+      "name": "Field40441023",
+      "nestedContentFields": [],
+      "repeatable": false
+     },
+     {
+      "contentFieldValue": {
+       "data": "Devido a trabalhos de modernização a cargo da IP – Infraestruturas de Portugal, será necessário efetuar as seguintes alterações:"
+      },
+      "dataType": "string",
+      "label": "Texto",
+      "name": "RichText98970637",
+      "nestedContentFields": [],
+      "repeatable": false
+     },
+     {
+      "contentFieldValue": {},
+      "dataType": "",
+      "label": "ItemListaColapsável_FS",
+      "name": "Fieldset68796724",
+      "nestedContentFields": [
+       {
+        "contentFieldValue": {
+         "data": "Comboio 529 - Lisboa Santa Apolónia (22h30) → Porto Campanhã (01h43)"
+        },
+        "dataType": "string",
+        "inputControl": "text",
+        "label": "Título do Item",
+        "name": "Text08554120",
+        "nestedContentFields": [],
+        "repeatable": false
+       },
+       {
+        "contentFieldValue": {
+         "data": "Local Embarque / Desembarque: Dias23 a 27 novembroEstaçõesEspinhoPlataformaDescendente sentido Lisboa"
+        },
+        "dataType": "string",
+        "label": "Texto do Item",
+        "name": "RichText08222223",
+        "nestedContentFields": [],
+        "repeatable": false
+       }
+      ],
+      "repeatable": true
+     },
+     {
+      "contentFieldValue": {
+       "data": "Para mais informações, por favor consulte: Linha de Atendimento (Chamadas nacionais:  210 900 032 (Preço de uma chamada para a rede fixa de acordo com o seu tarifário) ou 808 109 110 (Preço de uma chamada local de acordo com o seu tarifário, com máximo de 0,07€ + IVA no primeiro minuto e 0,0277€ + IVA por cada minuto seguinte nos dias úteis das 9h às 21h ou 0,0084€ + IVA das 21h às 9h, fins de semana e feriados, conforme definido pela Anacom), Gabinetes de Apoio ao Cliente ou Bilheteiras CP."
+      },
+      "dataType": "string",
+      "label": "Nota de rodapé",
+      "name": "RichText02523854",
+      "nestedContentFields": [],
+      "repeatable": false
+     },
+     {
+      "contentFieldValue": {},
+      "dataType": "structuredContent",
+      "label": "Comboio",
+      "name": "JournalArticle66157978",
+      "nestedContentFields": [],
+      "repeatable": true
+     },
+     {
+      "contentFieldValue": {
+       "geo": {
+        "latitude": "NaN",
+        "longitude": "NaN"
+       },
+       "data": ""
+      },
+      "dataType": "geolocation",
+      "label": "Posição geográfica",
+      "name": "Geolocation47306908",
+      "nestedContentFields": [],
+      "repeatable": false
+     }
+    ]
+   }
+  },
+  {
+   "availableLanguages": [
+    "en-US",
+    "pt-PT"
+   ],
+   "contentStructureId": 49545,
+   "customFields": [],
+   "dateCreated": "2025-09-05T08:22:05Z",
+   "dateModified": "2025-11-03T10:15:06Z",
+   "datePublished": "2025-09-05T08:22:00Z",
+   "externalReferenceCode": "f944f48b-67d8-f096-b2f1-2c255a7d23ac",
+   "friendlyUrlPath": "validacao-obrigatoria",
+   "id": 478948,
+   "key": "478946",
+   "keywords": [],
+   "neverExpire": true,
+   "numberOfComments": 0,
+   "priority": 15.0,
+   "relatedContents": [],
+   "siteId": 20117,
+   "structuredContentFolderId": 56054,
+   "subscribed": false,
+   "title": {
+    "en-US": "Ticket validation mandatory | CP",
+    "pt-PT": "Validação obrigatória dos títulos de transporte | CP"
+   },
+   "description": {
+    "en-US": "Validation is mandatory. If you don't validate your ticket, you will be subject to a fine, in accordance with Law 28/2006 of 4 July.",
+    "pt-PT": "A validação é obrigatória. Valide o seu título de transporte nos validadores existentes na estação ou nos canais de acesso controlado."
+   },
+   "contentFields": {
+    "pt-PT": [
+     {
+      "contentFieldValue": {
+       "data": "Títulos de transporte"
+      },
+      "dataType": "string",
+      "inputControl": "text",
+      "label": "Título conteúdo",
+      "name": "Text48691729",
+      "nestedContentFields": [],
+      "repeatable": false
+     },
+     {
+      "contentFieldValue": {
+       "data": "Validação obrigatória."
+      },
+      "dataType": "string",
+      "inputControl": "text",
+      "label": "Lead",
+      "name": "Campo69402820",
+      "nestedContentFields": [],
+      "repeatable": false
+     },
+     {
+      "contentFieldValue": {
+       "data": "false"
+      },
+      "dataType": "boolean",
+      "inputControl": "checkbox",
+      "label": "Destaque",
+      "name": "Checkbox33013581",
+      "nestedContentFields": [],
+      "repeatable": false
+     },
+     {
+      "contentFieldValue": {
+       "data": ""
+      },
+      "dataType": "date",
+      "label": "Data de início",
+      "name": "Date35268359",
+      "nestedContentFields": [],
+      "repeatable": false
+     },
+     {
+      "contentFieldValue": {
+       "data": ""
+      },
+      "dataType": "date",
+      "label": "Data de fim",
+      "name": "Field40441023",
+      "nestedContentFields": [],
+      "repeatable": false
+     },
+     {
+      "contentFieldValue": {
+       "data": "Valide o seu título de transporte nos validadores existentes na estação ou nos canais de acesso controlado.\n\nA validação de todos os passes, assinaturas e bilhetes é obrigatória e simples: basta aproximar o título de transporte ao local da validação e aguardar pela luz verde.\n\nSe não validar o seu título de transporte sujeita-se a uma coima, de acordo com a Lei 28/2006 de 4 de julho, na sua última redação."
+      },
+      "dataType": "string",
+      "label": "Texto",
+      "name": "RichText98970637",
+      "nestedContentFields": [],
+      "repeatable": false
+     },
+     {
+      "contentFieldValue": {},
+      "dataType": "",
+      "label": "ItemListaColapsável_FS",
+      "name": "Fieldset68796724",
+      "nestedContentFields": [
+       {
+        "contentFieldValue": {
+         "data": ""
+        },
+        "dataType": "string",
+        "inputControl": "text",
+        "label": "Título do Item",
+        "name": "Text08554120",
+        "nestedContentFields": [],
+        "repeatable": false
+       },
+       {
+        "contentFieldValue": {
+         "data": ""
+        },
+        "dataType": "string",
+        "label": "Texto do Item",
+        "name": "RichText08222223",
+        "nestedContentFields": [],
+        "repeatable": false
+       }
+      ],
+      "repeatable": true
+     },
+     {
+      "contentFieldValue": {
+       "data": "Para mais informações, por favor consulte: Linha de Atendimento (Chamadas nacionais: 210 900 032 (preço de uma chamada para a rede fixa de acordo com o seu tarifário) ou 808 109 110 (preço de uma chamada local de acordo com o seu tarifário, com máximo de 0,07 € + IVA no primeiro minuto e 0,0277 € + IVA por cada minuto seguinte nos dias úteis das 9h às 21h ou 0,0084 € + IVA das 21h às 9h, fins de semana e feriados, conforme definido pela Anacom) ou Gabinetes de Apoio ao Cliente e Bilheteiras CP."
+      },
+      "dataType": "string",
+      "label": "Nota de rodapé",
+      "name": "RichText02523854",
+      "nestedContentFields": [],
+      "repeatable": false
+     },
+     {
+      "contentFieldValue": {},
+      "dataType": "structuredContent",
+      "label": "Comboio",
+      "name": "JournalArticle66157978",
+      "nestedContentFields": [],
+      "repeatable": true
+     },
+     {
+      "contentFieldValue": {
+       "geo": {
+        "latitude": "NaN",
+        "longitude": "NaN"
+       },
+       "data": ""
+      },
+      "dataType": "geolocation",
+      "label": "Posição geográfica",
+      "name": "Geolocation47306908",
+      "nestedContentFields": [],
+      "repeatable": false
+     }
+    ]
+   }
+  }
+ ],
+ "maxPages": 1,
+ "total": 4
+}
