@@ -23,7 +23,7 @@ jobs:
         run: |
           mkdir -p res/pdf res/txt
           curl -sSL -w "pagina: %{http_code} %{size_download}\n" -A "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/124.0 Safari/537.36" https://barraqueiro-oeste.pt/horarios-em-pdf/ -o res/pagina.html 2>&1 | tee res/log-pdfs.txt || true
-          grep -o 'https://barraqueiro-oeste.pt/wp-content/uploads/[^"]*\.pdf' res/pagina.html | sort -u > res/pdfs.txt || true
+          grep -o 'wp-content/uploads/[^"]*/[0-9][^"/]*\.pdf' res/pagina.html | sed 's#^#https://barraqueiro-oeste.pt/#' | sort -u > res/pdfs.txt || true
           wc -l res/pdfs.txt
           while read -r u; do
             n=$(basename "$u" .pdf)
@@ -37,13 +37,14 @@ jobs:
       - name: Paragens e linhas do OpenStreetMap (Oeste)
         continue-on-error: true
         run: |
-          Q='[out:json][timeout:90];(node[highway=bus_stop](39.00,-9.42,39.30,-9.10);relation[route=bus](39.05,-9.33,39.13,-9.22););out body;'
-          for s in https://overpass-api.de/api/interpreter https://overpass.private.coffee/api/interpreter https://maps.mail.ru/osm/tools/overpass/api/interpreter; do
-            echo "== $s" >> res/log-osm.txt
-            curl -sS -m 150 -w "%{http_code} %{size_download}\n" -A "PAROU.PT-dados/1.0 (+https://parou.pt)" --data-urlencode "data=$Q" "$s" -o res/osm.json >> res/log-osm.txt 2>&1 || true
-            python3 -c "import json;d=json.load(open('res/osm.json'));print(len(d['elements']),'elementos')" >> res/log-osm.txt 2>&1 && break
-          done
-          cat res/log-osm.txt
+          sudo apt-get install -y -qq osmium-tool >/dev/null
+          curl -fsSL --retry 3 --retry-delay 10 -o portugal.osm.pbf https://download.geofabrik.de/europe/portugal-latest.osm.pbf
+          osmium extract -b -9.45,38.95,-9.05,39.35 portugal.osm.pbf -o oeste.osm.pbf --overwrite
+          osmium tags-filter oeste.osm.pbf n/highway=bus_stop n/public_transport=platform,stop_position -o paragens.osm.pbf --overwrite
+          osmium export paragens.osm.pbf -f geojsonseq -a type,id -x print_record_separator=false -o res/osm-paragens.geojsonseq --overwrite
+          osmium tags-filter -R oeste.osm.pbf r/route=bus -o rotas.osm.pbf --overwrite
+          osmium cat rotas.osm.pbf -t relation -f opl -o res/osm-rotas.opl --overwrite
+          wc -l res/osm-paragens.geojsonseq res/osm-rotas.opl
 
       - name: Publicar resultado
         if: always()
