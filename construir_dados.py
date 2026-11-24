@@ -1655,7 +1655,7 @@ def aplicar_desenhos_extra(conn, extras):
     - operadores desenhados pelo carril (extras["carris"], ex.: CP, Metro): cada viagem com essa sequência de paragens passa a usar o desenho.
     Devolve quantos desenhos ficaram ligados, por grupo."""
     caminhos = (extras or {}).get("caminhos") or {}
-    contagem = {"unir": 0, "viagens": 0}
+    contagem = {"unir": 0, "viagens": 0, "autocarros": 0}
     if not caminhos:
         return contagem
     novos = set()
@@ -1699,6 +1699,29 @@ def aplicar_desenhos_extra(conn, extras):
         fecha()
         conn.executemany("UPDATE trips SET shape_id = ? WHERE trip_id = ?", ligacoes)
         contagem["viagens"] += len(ligacoes)
+
+    # Autocarros sem desenho, ou com um desenho oficial que não serve à viagem (lista do estradas.py): só essas viagens
+    # ganham o desenho pelas estradas; as que têm um desenho oficial bom ficam com ele
+    maus = set((extras or {}).get("desenhos_maus") or [])
+    contagem["autocarros"] = 0
+    for feed in extras.get("autocarros") or []:
+        atual, forma, ids, ligacoes = None, None, [], []
+
+        def fecha_a():
+            if atual is not None and len(ids) >= 2 and (forma is None or forma in maus):
+                chave = chave_padrao(ids)
+                if chave in caminhos:
+                    ligacoes.append((guardar(chave, feed), atual))
+        for tid, sh, sid in conn.execute(
+                "SELECT t.trip_id, t.shape_id, st.stop_id FROM trips t JOIN stop_times st ON st.trip_id = t.trip_id "
+                "WHERE t.feed_id = ? ORDER BY t.trip_id, st.stop_sequence", (feed,)):
+            if tid != atual:
+                fecha_a()
+                atual, forma, ids = tid, sh, []
+            ids.append(sid)
+        fecha_a()
+        conn.executemany("UPDATE trips SET shape_id = ? WHERE trip_id = ?", ligacoes)
+        contagem["autocarros"] += len(ligacoes)
 
     # Desenhos que deixaram de ser usados (por exemplo, os esparsos do metro que o do mapa de carris substituiu)
     conn.execute("DELETE FROM shapes WHERE shape_id NOT IN (SELECT shape_id FROM trips WHERE shape_id IS NOT NULL) "

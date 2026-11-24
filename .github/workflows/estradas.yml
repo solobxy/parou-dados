@@ -4,12 +4,14 @@ name: Estradas (desenhos das linhas sem desenho)
 # Metro de Lisboa e do Porto (desenhos esparsos). Usa o mapa do OpenStreetMap (Geofabrik) e o OSRM, num servidor de estradas e noutro de carris
 # (osrm/comboio.lua), e pede a rota de cada sequência de paragens, pela ordem. Onde não há estrada/carril perto de uma paragem, ou a volta é
 # absurda, o troço fica a direito (como antes): nunca se inventa um caminho.
+# Também desenha os autocarros que a app não consegue desenhar com o desenho oficial (auditoria/desenhos-que-faltam.mjs).
 # O resultado vai para a release "desenhos" (desenhos-extra.json.gz). O gerador diário dos dados (main.yml) liga-o às linhas pela sequência de paragens.
-# Estradas e carris quase não mudam: basta correr de vez em quando (todos os domingos), ou à mão depois de mudar linhas.
+# Corre todos os dias às 04:40 (depois da base das 03:30): as linhas mudam e os desenhos novos entram na base das 15:17.
+# O mapa preparado do OSRM fica em cache a semana toda, por isso só a primeira corrida da semana é demorada.
 
 on:
   schedule:
-    - cron: "40 4 * * 0"
+    - cron: "40 4 * * *"
   workflow_dispatch:
     inputs:
       limite:
@@ -102,6 +104,24 @@ jobs:
           curl -s "http://127.0.0.1:5000/route/v1/driving/-8.6110,41.1496;-8.5760,41.1512?overview=false"; echo
           docker logs --tail 5 carris
 
+      - name: App (para escolher os autocarros que a app não consegue desenhar)
+        uses: actions/checkout@v4
+        with:
+          repository: solobxy/parou
+          path: app
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Autocarros sem desenho bom (decidido pelo código da app)
+        run: |
+          mkdir -p res
+          (cd app && npm ci --no-audit --no-fund --legacy-peer-deps >/dev/null 2>&1 || npm install --no-audit --no-fund --legacy-peer-deps >/dev/null 2>&1)
+          curl -fsL -o anterior.json.gz https://github.com/solobxy/parou-dados/releases/download/desenhos/desenhos-extra.json.gz || true
+          (cd app && APP=$PWD DB=$GITHUB_WORKSPACE/gtfs.db ANTERIOR=$GITHUB_WORKSPACE/anterior.json.gz SAIDA=$GITHUB_WORKSPACE/precisam.json node --import tsx ../auditoria/desenhos-que-faltam.mjs 2>&1 | grep -v "Experimental\|trace-warnings\|SQL lento") | tee res/desenhos-que-faltam.txt
+          ls -l precisam.json || echo '{}' > precisam.json
+
       - name: Gerar os desenhos
         run: |
           mkdir -p res
@@ -111,13 +131,13 @@ jobs:
           if [ "$LIMITE" != "0" ]; then METRICAS="--metricas"; fi
           if [ "$MODO" = "ambos" ]; then
             for M in route match melhor; do
-              python3 auditoria/estradas.py --db gtfs.db --carro http://127.0.0.1:5000 --comboio http://127.0.0.1:5001 --saida desenhos-extra-$M.json.gz --limite "$LIMITE" --modo $M $METRICAS 2>&1 | tee res/estradas-$M.txt
+              python3 auditoria/estradas.py --db gtfs.db --carro http://127.0.0.1:5000 --comboio http://127.0.0.1:5001 --autocarros-json precisam.json --saida desenhos-extra-$M.json.gz --limite "$LIMITE" --modo $M $METRICAS 2>&1 | tee res/estradas-$M.txt
             done
             cp desenhos-extra-melhor.json.gz desenhos-extra.json.gz
             python3 auditoria/comparar-estradas.py desenhos-extra-route.json.gz desenhos-extra-match.json.gz desenhos-extra-melhor.json.gz > res/comparacao.txt
             cat res/comparacao.txt
           else
-            python3 auditoria/estradas.py --db gtfs.db --carro http://127.0.0.1:5000 --comboio http://127.0.0.1:5001 --saida desenhos-extra.json.gz --limite "$LIMITE" --modo "$MODO" $METRICAS 2>&1 | tee res/estradas.txt
+            python3 auditoria/estradas.py --db gtfs.db --carro http://127.0.0.1:5000 --comboio http://127.0.0.1:5001 --autocarros-json precisam.json --saida desenhos-extra.json.gz --limite "$LIMITE" --modo "$MODO" $METRICAS 2>&1 | tee res/estradas.txt
             python3 auditoria/comparar-estradas.py desenhos-extra.json.gz > res/comparacao.txt
             cat res/comparacao.txt
           fi

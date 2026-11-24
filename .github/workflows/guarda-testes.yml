@@ -47,6 +47,7 @@ jobs:
           python3 auditoria/test_caminhos_a_pe.py
           python3 auditoria/test_metro_mondego.py
           python3 auditoria/test_siga_agencias.py
+          python3 auditoria/test_desenhos_autocarros.py
           python3 caiu/verificar/test_paginas.py
 
       - name: caiu.pt luz e gás (contas iguais às da ERSE, Galp COMBINA, parcerias, página)
@@ -121,7 +122,8 @@ jobs:
           APP=$PWD node --import tsx ../auditoria/ttsl-fonte.mjs 2>&1 | grep -v "Experimental\|trace-warnings" | tail -20; a=${PIPESTATUS[0]}
           APP=$PWD node --import tsx ../auditoria/cidades-margens.mjs 2>&1 | grep -v "Experimental\|trace-warnings" | tail -20; b=${PIPESTATUS[0]}
           APP=$PWD node --import tsx ../auditoria/desenho-alternativo.mjs 2>&1 | grep -v "Experimental\|trace-warnings" | tail -20; c=${PIPESTATUS[0]}
-          exit $(( a || b || c ))
+          APP=$PWD node --import tsx ../auditoria/encaixe-desenho.mjs 2>&1 | grep -v "Experimental\|trace-warnings" | tail -20; d=${PIPESTATUS[0]}
+          exit $(( a || b || c || d ))
 
       - name: Memória (linhas perto de um ponto com limite; raio entre 100 e 2000 m)
         working-directory: app

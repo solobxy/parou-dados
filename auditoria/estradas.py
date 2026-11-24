@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Desenha pela estrada (ou pelo carril) as linhas que não trazem desenho nos horários oficiais, com o OSRM e o mapa do OpenStreetMap.
 
-Quem:  UNIR (só tem a ordem das paragens), Comboio CP (sem desenhos) e, opcionalmente, Metro de Lisboa e do Porto (desenhos muito esparsos).
+Quem:  UNIR (só tem a ordem das paragens), Comboio CP (sem desenhos), opcionalmente Metro de Lisboa e do Porto (desenhos muito esparsos),
+       e as viagens de autocarro sem desenho ou com um desenho oficial que não lhes serve (TUB, TUBA, TUT de Torres Vedras…).
 Como:  para cada sequência de paragens pede ao OSRM a rota que passa por todas, pela ordem, sem inverter a marcha nas paragens.
        Carros: estradas. Carris: perfil osrm/comboio.lua (caminho de ferro, metro, metro ligeiro).
        Onde o OSRM não encontra estrada/carril perto de uma paragem, ou dá uma volta absurda, o troço fica a direito entre essas paragens
@@ -323,6 +324,24 @@ def sequencias_viagens(conn, feeds, limite=None):
     return limitar(list(padroes.values()), limite)
 
 
+# Autocarros sem desenho, ou com um desenho oficial que não serve à viagem (passa longe das paragens, é de outra variante):
+# desenham-se pelas estradas, como a UNIR. Quem decide quais são é a própria app (auditoria/desenhos-que-faltam.mjs, com o
+# mesmo código que a app usa para encaixar as paragens), para não se trocar um desenho oficial que a app já aceita.
+PARAGEM_DA_APP = "CASE WHEN st.stop_id LIKE 'cmh:%' THEN 'cm:' || substr(st.stop_id, 5) ELSE st.stop_id END"
+
+
+def sequencias_autocarros(conn, precisam, limite=None):
+    """Sequências de paragens das viagens listadas em precisam.json (uma viagem por sequência)."""
+    padroes = {}
+    for tid in precisam.get("viagens") or []:
+        seq = [(sid, lat, lon, nome) for sid, lat, lon, nome in conn.execute(
+            "SELECT st.stop_id, s.stop_lat, s.stop_lon, s.stop_name FROM stop_times st JOIN stops s ON s.stop_id = " + PARAGEM_DA_APP + " "
+            "WHERE st.trip_id = ? AND s.stop_lat IS NOT NULL ORDER BY st.stop_sequence", (tid,))]
+        if len(seq) >= 2:
+            padroes.setdefault(chave_padrao([x[0] for x in seq]), seq)
+    return limitar(list(padroes.values()), limite)
+
+
 def limitar(lista, limite):
     if not limite or len(lista) <= limite:
         return lista
@@ -381,6 +400,7 @@ def main():
     ap.add_argument("--saida", required=True)
     ap.add_argument("--limite", type=int, default=0, help="só uma amostra de N sequências por grupo (sonda)")
     ap.add_argument("--carris", default="cp,metro_porto,metro_lisboa", help="operadores desenhados pelo carril")
+    ap.add_argument("--autocarros-json", help="precisam.json de auditoria/desenhos-que-faltam.mjs: viagens de autocarro sem desenho bom")
     ap.add_argument("--modo", choices=["route", "match", "melhor"], default="melhor", help="como pedir ao OSRM: route (paragem a paragem), match (sequência inteira) ou melhor (corre os dois e fica com o melhor de cada sequência)")
     ap.add_argument("--metricas", action="store_true", help="mede também quantas paragens ficam a menos de 80 m do desenho (mais lento; para ensaios)")
     args = ap.parse_args()
@@ -389,11 +409,20 @@ def main():
     caminhos, relatorio = {}, {}
     if args.carro:
         correr("unir", args.carro, sequencias_unir(conn, args.limite), relatorio, caminhos, args.modo, args.metricas)
+    autocarros, desenhos_maus = [], []
+    if args.carro and args.autocarros_json and os.path.exists(args.autocarros_json):
+        with open(args.autocarros_json, encoding="utf-8") as fh:
+            precisam = json.load(fh)
+        autocarros, desenhos_maus = precisam.get("feeds") or [], precisam.get("desenhos_maus") or []
+        seqs = sequencias_autocarros(conn, precisam, args.limite)
+        print(f"autocarros: {len(seqs)} sequências sem desenho bom ({', '.join(autocarros)}); {len(desenhos_maus)} desenhos oficiais não servem", flush=True)
+        correr("autocarros", args.carro, seqs, relatorio, caminhos, args.modo, args.metricas)
     if args.comboio:
         for feed in [f for f in args.carris.split(",") if f]:
             correr(feed, args.comboio, sequencias_viagens(conn, [feed], args.limite), relatorio, caminhos, args.modo, args.metricas)
     saida = {"versao": 1, "criado": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), "caminhos": caminhos, "relatorio": relatorio,
-             "carris": [f for f in args.carris.split(",") if f] if args.comboio else []}
+             "carris": [f for f in args.carris.split(",") if f] if args.comboio else [],
+             "autocarros": autocarros, "desenhos_maus": desenhos_maus}
     with gzip.open(args.saida, "wt", encoding="utf-8") as f:
         json.dump(saida, f, separators=(",", ":"))
     print(f"desenhos: {len(caminhos)}  ficheiro: {os.path.getsize(args.saida)} bytes", flush=True)
