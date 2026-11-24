@@ -25,6 +25,8 @@ for (const u of paginas) {
     const d = desc(r.h);
     vistas++;
     ok(`[${caminho}] descrição inteira (${d.length}), sem reticências`, d.length >= 50 && d.length <= 160 && !/…|\.\.\.$/.test(d), d);
+    // Linhas noutras línguas: a frase acaba nas paragens (não cortada a meio, tipo «…, weekday.»)
+    if (/^\/linhas\/[^/]+\/[^/]+$/.test(u) && pre) ok(`[${caminho}] descrição da linha acaba nas paragens`, /(stops|Haltestellen|arrêts)\.( |$)/.test(d), d);
   }
 }
 for (const u of app) {
