@@ -1,0 +1,40 @@
+              HORÁRIO                763_Casal de Moinho Frade - Freiria (Esc.Básica)
+               Timetable
+
+
+                                                             763                                                            763            763             763            763             763            763
+                  Localidades                                                             Localidades
+                                                               B                                                           BBE             BBC            BBC             BBE            BDB             BDB
+           Casal Moinho Frade                                07:15                Freiria (Esc.Básica)                     13:30           13:30          14:10           16:30          17:30           18:10
+           Bordinheira                                       07:18                Concelhos                                13:35           13:35            -             16:35          17:35             -
+           Bonabal                                           07:21                Chãos                                    13:37           13:37            -             16:37          17:37             -
+           Carregueira                                       07:24                Casal Vale de Merendas                   13:41           13:41            -             16:41          17:41             -
+           Cova da Moura                                     07:27                Casal do Grilo                           13:43           13:43            -             16:43          17:43             -
+           Pedra                                             07:30                Casal da Mucharreira                     13:46           13:46            -             16:46          17:46             -
+           Gafanhotos                                        07:33                Fernandinho                              13:50           13:50            -             16:50          17:50             -
+           Moçafaneira                                       07:36                Montengrão                               13:55           13:55            -             16:55          17:55             -
+           Ventosa                                           07:39                Cadoiço                                  13:58           13:58            -             16:58          17:58             -
+           Lugar da Estrada                                  07:42                Lugar da Estrada                         13:59           13:59            -             16:59          17:59             -
+           Cadoiço                                           07:45                Ventosa                                  14:01           14:01            -             17:01          18:01             -
+           Montengrão                                          -                  Moçafaneira                              14:02           14:02            -             17:02          18:02             -
+           Fernandinho                                         -                  Gafanhotos                               14:03           14:03            -             17:03          18:03             -
+           Casal da Mucharreira                                -                  Pedra                                    14:05                          14:17           17:05                          18:17
+           Casal do Grilo                                      -                  Cova da Moura                            14:07                          14:19           17:07                          18:19
+           Casal Vale de Merendas                              -                  Carregueira                              14:10                          14:22           17:10                          18:22
+           Chãos                                               -                  Bonabal                                  14:13                          14:25           17:13                          18:25
+           Concelhos                                           -                  Bordinheira                              14:16                          14:28           17:16                          18:28
+           Freiria (Esc.Básica)                              08:10                Casal Moinho Frade                       14:18                          14:30           17:18                          18:30
+
+              No horário de entrada, os passageiros de Montengão, Fernandinho, Casal Mucharreira, Casal Grilo, Casal Vale de Merendas, Concelhos e Chão, são transportados pela carreira 733
+
+       Contact Center: 261 910 380                                   LEGENDA:
+(Horário de Funcionamento todos os dias das 8h00 às 21h00)           B – Só no Período Escolar, aos dias úteis
+                                                                     BBC - Só no Período Escolar, à 4ª Feira
+                       Alto do Ameal
+                       Estrada Nacional n.º8, Km 52                  BBE - Só no Período Escolar, à 6ª Feira
+                       2565-641 Ramalhal, TVD                        BDB - Só no Período Escolar, à 2ª, 3ª e 5ª Feira
+                       Email.: barraqueiro.oeste@rodest.pt
+                       https://www.barraqueiro-oeste.pt
+
+Em vigor desde 06 de Outubro de 2026                                                          Este horário foi planeado para condições normais de trânsito. O motorista dentro das limitações fará os possíveis para o cumprir.
+

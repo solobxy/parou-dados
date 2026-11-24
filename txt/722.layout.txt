@@ -1,0 +1,35 @@
+              HORÁRIO                722_Ervideira - Torres Vedras via Melroeira, Tourinha
+               Timetable
+
+
+
+
+                                                  722        722           722            722            722                                                    722      722     722         722          722
+           Localidades                                                                                                         Localidades
+                                                                                           B              B                                                               B       B         AFO
+         Ervideira                                           07:25                                                          Torres Vedras                       11:20   13:40   14:45       18:35        19:30
+         Enxara Cavaleiros                                   07:27                                                          Catefica                            11:25   13:45   14:50       18:40        19:35
+         Tourinha                                            07:32                                                          Carvalhal                           11:30   13:50   14:55       18:45        19:40
+         Enxara do Bispo                                     07:35        12:00          14:20          15:20               Turcifal                            11:35   13:55   15:00       18:50        19:45
+         São Sebastião                           07:10       07:40        12:05          14:25          15:25               Melroeira                           11:37   13:57   15:02       18:52        19:47
+         Almeirinho                              07:15       07:45        12:10          14:30          15:30               Casal Barbas                        11:40   14:00   15:05       18:55        19:50
+         Casal Barbas                            07:17       07:47        12:12          14:32          15:32               Almeirinho                          11:45   14:05   15:10       19:00        19:55
+         Melroeira                               07:20       07:50        12:15          14:35          15:35               São Sebastião                       11:50   14:10   15:15       19:05
+         Turcifal                                07:25       07:55        12:20          14:40          15:40               Enxara do Bispo                     11:55   14:15   15:20       19:10
+         Carvalhal                               07:30       08:00        12:25          14:45          15:45               Tourinha                                                        19:13
+         Catefica                                07:35       08:05        12:30          14:50          15:50               Enxara Cavaleiros                                               19:18
+         Torres Vedras                           07:40       08:10        12:35          14:55          15:55               Ervideira                                                       19:20
+
+
+
+
+        Contact Center: 261 910 380                                  LEGENDA:
+ (Horário de Funcionamento todos os dias das 8h00 às 21h00           AFO - Anual, só vai á Enxara dos Cavaleiros, Ervideira e Tourinha, se houver passageiros
+                       Alto do Ameal                                 B - Só no Período Escolar, aos dias úteis
+                       Estrada Nacional n.º8, Km 52
+                       2565-641 Ramalhal, TVD
+                       Email.: barraqueiro.oeste@rodest.pt
+                       https://www.barraqueiro-oeste.pt
+
+Em vigor desde 03 de Outubro de 2022                                                       Este horário foi planeado para condições normais de trânsito. O motorista dentro das limitações fará os possíveis para o cumprir.
+

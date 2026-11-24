@@ -1,0 +1,38 @@
+              HORÁRIO                751_Ameal – Ext. Povoa Penafirme
+               Timetable
+
+
+                            751             751              751     751                                          751        751       751           751     751     751     751     751     751      751       751      751
+ Localidades                  B              B               BFX      B
+                                                                                       Localidades                 BEE        BEE       BBE           BBE     BBE     BBE     BEE     BEE     BEE      BEE       BEE      BEE
+Ameal                       07:10                                                    Externato Penafirme          13:20      13:20     13:20         13:20   13:20   13:40   16:45   16:45   17:00    17:00     18:05    18:05
+Ramalhal                    07:13                                                    Povoa de Além                  -          -       13:22           -       -       -     16:47     -       -        -         -        -
+Vila Facaia                 07:18                                                    Bombardeira                    -          -       13:24           -       -       -     16:49     -       -        -         -        -
+Vale Tábua                  07:20                                                    Casal Paradas                  -          -       13:26           -       -       -     16:51     -       -        -         -      18:10
+Vale da Borra               07:25                                                    Casal Popa                     -          -       13:28           -       -       -     16:53     -       -        -         -      18:12
+Casal do Rego               07:28                                                    Pinheiro Manso                 -        13:27     13:30           -       -       -     16:55     -       -        -         -      18:14
+Vimeiro                       -                                                      Sobreiro Curvo                 -        13:30                     -     13:30     -             16:55     -        -         -      18:17
+Barreirinha                   -             07:30                                    Casal das Areias             13:28                              13:28           13:48                   17:08    17:02     18:13      -
+Martingil                     -             07:32                                    A-Dos-Cunhados               13:30                              13:30           13:50                   17:10    17:07     18:15      -
+A-Dos-Cunhados              07:30           07:35                                    Martingil                      -                                                  -                       -      17:10       -      18:22
+Casal Areias                  -             07:38                                    Barreirinha                    -                                                  -                       -      17:15       -      18:25
+Sobreiro Curvo              07:35           07:40            07:55                   Vimeiro                        -                                                  -                       -                  -
+Pinheiro Manso                -               -                -     07:55           Casal do Rego                13:32                                              13:52                   17:12              18:17
+Casal Popa                    -               -                -     07:58           Vale da Borra                13:36                                              13:56                   17:16              18:20
+Casal Paradas                 -               -                -     08:00           Vale Tábua                   13:37                                              13:57                   17:17              18:22
+Bombardeira                   -               -                -       -             Vila Facaia                  13:41                                              14:01                   17:21              18:26
+Povoa de Além                 -               -                -       -             Ramalhal                     13:46                                              14:06                   17:26              18:35
+Externato Penafirme         07:50           07:50            08:05   08:10           Ameal                        13:55                                              14:15                   17:35              18:45
+
+
+        Contact Center: 261 910 380                                        LEGENDA:
+ (Horário de Funcionamento todos os dias das 8h00 às 21h00                 B – Só no Período Escolar
+                       Alto do Ameal
+                                                                           BBE – Só no Período Escolar, à 6ª Feira
+                       Estrada Nacional n.º8, Km 52                        BEE – Só no Período Escolar, excepto à 6ª Feira
+                       2565-641 Ramalhal, TVD                              BFX - Só Período Escolar, Inicia no restaurante Cerca do Sobreiro Curvo
+                       Email.: barraqueiro.oeste@rodest.pt
+                       https://www.barraqueiro-oeste.pt
+
+Em vigor desde 14 de Setembro de 2026                                                           Este horário foi planeado para condições normais de trânsito. O motorista dentro das limitações fará os possíveis para o cumprir.
+

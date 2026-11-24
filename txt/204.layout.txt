@@ -1,0 +1,42 @@
+                  HORÁRIO                  204_Ericeira - Torres Vedras
+                   Timetable               240_Escravilheira - Torres Vedras
+
+                                                                                                                         Sábado, Domingos                                                                                                                      Sábado, Domingos
+                                                                      Dias úteis                                            e Feriados                                                                     Dias úteis                                             e Feriados
+                                204        240        240          240     204     204     240      240      204                204                                                204      240     240      240      204     240      204      240                  204
+   Localidades                  AFT                   BFR          BFR      B               B        C
+                                                                                                                                                        Localidades                          B       C       BFS      AFT     BFT
+Ericeira (Parq.Intermodal)     06:55                                               13:40                    19:35               14:30               Torres Vedras                  08:35   13:55   14:00    16:40    16:45             18:30    19:20               15:30
+Ericeira(Esc. EB23)            06:57                                               13:42                    19:37               14:32               Ponte de Rol                   08:47   14:02   14:07    16:52    16:57             18:42    19:27               15:42
+St. Isidoro                    07:03                                               13:48                    19:43               14:38               Campotec                       08:50   14:08   14:13    16:55    17:00             18:45    19:33               15:45
+Ribamar                        07:08                                               13:53                    19:48               14:43               Coutada                        08:54   14:15   14:20    16:59    17:04             18:49    19:40               15:49
+S.Lourenço                     07:11                                               13:56                    19:51               14:46               São Pedro da Cadeira             -       -       -        -        -                 -        -                   -
+Charneca Cruz.                 07:14                                               13:59                    19:54               14:49               Aranha Cruz.                   08:57   14:18   14:23    17:02    17:07    18:00    18:52    19:43               15:52
+Barril                         07:16                                               14:01                    19:56               14:51               Escravelheira                  09:00     -       -        -      17:10      -      18:55      -                 15:55
+Escravelheira                    -                                                   -     14:50              -                   -                 Azenha Velha                     -     14:23   14:28    17:07      -      18:05      -      19:48                 -
+Assenta                        07:20      06:25                    09:00           14:05   14:54   14:45    20:00               14:55               Feiteira (Cruz. Gentias)         -     14:24   14:29    17:08      -      18:06      -      19:49                 -
+Cambelas                         -        06:28      07:10         09:03             -     14:57   14:48      -                   -                 Gentias                          -     14:30   14:35    17:14      -      18:12      -      19:55                 -
+Gentias                          -        06:34      07:16         09:09             -     15:03     -        -                   -                 Cambelas                         -     14:33   14:38    17:17      -      18:15      -      19:58                 -
+Feiteira (Cruz. Gentias)         -        06:37      07:19         09:12             -     15:06   14:51      -                   -                 Assenta                        09:05   14:36   14:41    17:20    17:15    18:18    19:00    20:01               16:00
+Azenha Velha                     -        06:38      07:20         09:13             -     15:07   14:52      -                   -                 Escravelheira                    -     14:43                       -                 -                            -
+Escravelheira                  07:25        -          -             -     12:13   14:10     -       -      20:05               15:00               Barril                         09:09                             17:19             19:04                        16:04
+Aranha Cruz.                   07:29      06:42      07:24         09:17   12:17   14:14   15:11   14:56    20:09               15:04               Charneca Cruz.                 09:11                             17:21             19:06                        16:06
+São Pedro da Cadeira             -          -                                -       -     15:15     -        -                   -                 S.Lourenço                     09:14                             17:24             19:09                        16:09
+Coutada                        07:32      06:45                            12:20   14:17   15:18   14:59    20:12               15:07               Ribamar                        09:17                             17:27             19:12                        16:12
+Campotec                       07:36      06:52                            12:24   14:21   15:25   15:06    20:16               15:11               St. Isidoro                    09:22                             17:32             19:17                        16:17
+Ponte de Rol                   07:39      06:58                            12:27   14:24   15:31   15:12    20:19               15:14               Ericeira(Esc. EB23)            09:28                             17:38             19:23                        16:23
+Torres Vedras                  07:57      07:05                            12:45   14:42   15:38   15:19    20:37               15:32               Ericeira (Parq.Intermodal)     09:30                             17:40             19:25                        16:25
+
+
+
+          Contact Center: 261 910 380                                              LEGENDA:
+ (Horário de Funcionamento todos os dias das 8h00 às 21h00                         AFT – Anual, aos dias uteis. No Período Escolar em TVD vai à rotunda CAERO                               B - Só no Período Escolar, aos dias uteis
+                                                                                   BFR - Só no Período Escolar, aos dias uteis. No Cruz. Aranha dá ligação à carreira 221 para TVD          BFS - Só no Período Escolar, aos dias uteis. Vai à rotunda CAERO
+                             Alto do Ameal                                         BFT - Só no Período Escolar, aos dias uteis. No Cruz. Aranha recebe ligação da carreira 221 de TVD       C - Só no Período Não Escolar, aos dias uteis
+                             Estrada Nacional n.º8, Km 52
+                             2565-641 Ramalhal, TVD
+                             Email.: barraqueiro.oeste@rodest.pt
+                             https://www.barraqueiro-oeste.pt
+
+Em vigor desde 12 de Outubro de 2026                                                                       Este horário foi planeado para condições normais de trânsito. O motorista dentro das limitações fará os possíveis para o cumprir.
+

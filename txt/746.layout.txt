@@ -1,0 +1,36 @@
+              HORÁRIO                746_Cadaval (Esc.Basica) - Rechaldeira via Avenal
+               Timetable
+
+
+
+
+                                              746            746      746             746            746         746                                           746         746         746         746        746
+        Localidades                              B             B        B              B               B           B
+                                                                                                                                  Localidades                    B           B          B           B           B
+      Cadaval (Esc.Basica)                                   13:30    16:50          16:50                       18:30           Rechaldeira                   07:15                  08:37       09:00       17:42
+      C. Olaria Cruz.                                        13:35    16:55            -                         18:35           Vilar                         07:19                  08:41       09:04         -
+      D. Durão                                               13:37    16:57            -                         18:37           Avenal                        07:23                              09:08       17:50
+      Murteira                                               13:40    17:00            -                         18:40           Pereiro                       07:28                              09:13       17:55
+      Póvoa                                                  13:45    17:05            -                         18:45           Tojeira                       07:31                              09:16       17:58
+      Casalinho                                              13:50                   17:00                       18:50           Vila Nova                     07:33                              09:18       18:00
+      Ventosa                                08:20           13:55                   17:05                       18:55           Palhais                       07:37                              09:22       18:02
+      Correeira                                -             13:57                   17:07                       18:57           Correeira                     07:39                              09:24         -
+      Palhais                                08:22           14:04                   17:14                       19:04           Ventosa                       07:42                              09:27       18:05
+      Vila Nova                              08:25           14:08                   17:18                       19:08           Casalinho                     07:47                              09:32
+      Tojeira                                08:27           14:11                   17:21                       19:11           Póvoa                           -        08:00                   09:35
+      Pereiro                                08:29           14:14                   17:24                       19:14           Murteira                        -        08:04                   09:39
+      Avenal                                 08:34           14:19                   17:29                       19:19           D. Durão                      07:50        -                     09:42
+      Vilar                                    -             14:23                   17:33          17:40        19:23           C. Olaria Cruz.                 -        08:13                   09:51
+      Rechaldeira                            08:40           14:25                   17:35          17:42        19:25           Cadaval (Esc.Basica)          07:57      08:20                   10:00
+
+
+        Contact Center: 261 910 380                                  LEGENDA:
+ (Horário de Funcionamento todos os dias das 8h00 às 21h00           B – Só no Período Escolar, aos dias uteis
+                       Alto do Ameal
+                       Estrada Nacional n.º8, Km 52
+                       2565-641 Ramalhal, TVD
+                       Email.: barraqueiro.oeste@rodest.pt
+                       https://www.barraqueiro-oeste.pt
+
+Em vigor desde 14 de Setembro de 2026                                                        Este horário foi planeado para condições normais de trânsito. O motorista dentro das limitações fará os possíveis para o cumprir.
+

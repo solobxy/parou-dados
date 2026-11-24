@@ -1,0 +1,19 @@
+Author:          msantos
+Creator:         Microsoft® Word 2016
+Producer:        Microsoft® Word 2016
+CreationDate:    Mon Nov  9 13:46:04 2026 UTC
+ModDate:         Mon Nov  9 13:46:04 2026 UTC
+Custom Metadata: no
+Metadata Stream: no
+Tagged:          yes
+UserProperties:  no
+Suspects:        no
+Form:            none
+JavaScript:      no
+Pages:           1
+Encrypted:       no
+Page size:       841.92 x 595.32 pts (A4)
+Page rot:        0
+File size:       313068 bytes
+Optimized:       no
+PDF version:     1.5

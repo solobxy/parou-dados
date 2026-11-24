@@ -1,0 +1,35 @@
+              HORÁRIO                754_ Casas Novas – Ext. Povoa Penafirme
+               Timetable
+
+
+
+
+                                  754             754        754     754       754        754        754         754                                               754          754    754     754     754     754     754
+  Localidades                      B              BFZ        BGA     BBE       BBE        BGA         BEE        BGA                                                B           BGB    BBE      BEE     BEE     BEE     BEE
+Externato Penafirme                                          13:20   13:35     13:50      16:45      17:05       18:05            Externato Penafirme                                  13:20   13:50   16:45   17:05   18:05
+Palhagueiras                                                 13:30   13:45       -        16:55        -         18:15            Brejenjas                                            13:23     -     16:48     -     18:08
+Casal Figueiras Velhas                                       13:35             13:55                 17:10       18:20            Casal Cruz                                           13:27     -     16:52     -     18:12
+Casal Frade                                                  13:37             13:57                 17:12       18:22            Silveira                                                     14:05           17:08   18:15
+Casalinhos Cima                                              13:38             13:58                 17:13       18:23            Secarias                                                     14:10           17:13   18:20
+Casas Novas                                                  13:40             14:00                 17:15       18:25            Moinho                                                       14:11           17:14   18:21
+Casalinhos Alfaiata               7:30                                         14:03                                              Caixeiros                                                    14:12           17:15   18:22
+Caixeiros                         7:32                                         14:05                                              Casalinhos Alfaiata                                          14:15           17:18   18:25
+Moinho                            7:33                                           -                                                Casas Novas                      7:30
+Secarias                          7:34                                         14:06                                              Casalinhos Cima                  7:33
+Silveira                          7:36            8:00                                                                            Casal Frade                      7:35
+Casal Cruz                          -             8:01                                                                            Casal Figueiras Velhas           7:38
+Brejenjas                           -             8:08                                                                            Palhagueiras                       -          8:05
+Externato Penafirme               7:45            8:15                                                                            Externato Penafirme              7:50         8:15
+
+
+        Contact Center: 261 910 380                                  LEGENDA:
+ (Horário de Funcionamento todos os dias das 8h00 às 21h00           B – Só no Período Escolar                                        BBE – Só no Período Escolar, à 6ª Feira
+                       Alto do Ameal
+                                                                     BEE – Só no Período Escolar, excepto à 6ª Feira
+                       Estrada Nacional n.º8, Km 52                  BFZ - Só Período Escolar, aos dias uteis, Inicia frente ao Lidl da Silveira
+                       2565-641 Ramalhal, TVD                        BGA - Só no Período Escolar, excepto às 6ª Feiras, vai Alto de Estiveira e Rua do Choufral
+                       Email.: barraqueiro.oeste@rodest.pt
+                       https://www.barraqueiro-oeste.pt              BGB - Só no Período Escolar, aos dias uteis, vai Alto de Estiveira e Rua do Choufral
+
+Em vigor desde 14 de Setembro de 2026                                                      Este horário foi planeado para condições normais de trânsito. O motorista dentro das limitações fará os possíveis para o cumprir.
+

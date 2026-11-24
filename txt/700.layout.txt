@@ -1,0 +1,35 @@
+              HORÁRIO
+               Timetable
+                                     700_Lisboa – Torres Vedras via A8 Catefica
+
+
+     Lisboa (Campo Grande) - Torres Vedras                                                                                        Torres Vedras - Lisboa (Campo Grande)
+                                                                                       Sábados, Domingos                                                                                         Sábados, Domingos
+                              Dias úteis                                                    Feriados
+                                                                                                                                                             Dias úteis                               Feriados
+     06:15         11:10              16:12                  18:20   20:30                07:00           19:00                   05:30           07:25            08:31      11:40   17:30        06:00        16:30
+     06:45         11:40              16:24                  18:26   20:50                08:00           19:30                   06:00           07:30            08:38      12:00   18:00        06:30        17:30
+     07:00         12:10              16:36                  18:34   21:20                09:00           20:00                   06:20           07:34            08:45      12:20   18:30        07:00        18:30
+     07:15         12:40              16:48                  18:42   21:50                10:15           20:30                   06:25           07:38            08:52      12:40   19:00        07:30        19:30
+     07:30         13:00              17:00                  18:50   22:20                11:30           21:30                   06:30           07:42            08:59      13:00   19:30        08:00        20:30
+     07:45         13:20              17:09                  18:58   22:50                12:30           22:30                   06:40           07:46            09:06      13:20   20:00        08:30        21:30
+     08:00         13:40              17:18                  19:06   23:30                13:30           23:30                   06:45           07:50            09:15      13:40   20:50        09:00        22:30
+     08:15         14:00              17:27                  19:14   00:30                14:30           00:30                   06:50           07:54            09:30      14:00   21:40        09:45        23:30
+     08:30         14:20              17:36                  19:22   01:30                15:30           01:30                   06:55           07:58            09:45      14:30   22:30        10:30        00:30
+     08:45         14:40              17:45                  19:30                        16:30                                   07:00           08:03            10:00      15:00   23:30        11:30
+     09:00         15:00              17:54                  19:40                        17:00                                   07:05           08:08            10:20      15:30   00:30        12:30
+     09:30         15:20              18:02                  19:50                        17:30                                   07:10           08:13            10:40      16:00                13:30
+     10:00         15:40              18:08                  20:00                        18:00                                   07:15           08:19            11:00      16:30                14:30
+     10:30         16:00              18:14                  20:15                        18:30                                   07:20           08:25            11:20      17:00                15:30
+
+        Contact Center: 261 910 380                                  LEGENDA:
+ (Horário de Funcionamento todos os dias das 8h00 às 21h00
+                                                                     O tempo previsto para o percurso é de 40 minutos.
+                       Alto do Ameal                                 Nos períodos de ponta, os horários de partida dos terminais, poderão sofrer pequenos reajustamentos.
+                       Estrada Nacional n.º8, Km 52
+                       2565-641 Ramalhal, TVD
+                       Email.: barraqueiro.oeste@rodest.pt
+                       https://www.barraqueiro-oeste.pt
+
+Em vigor desde 14 de Setembro 2026                                                          Este horário foi planeado para condições normais de trânsito. O motorista dentro das limitações fará os possíveis para o cumprir.
+

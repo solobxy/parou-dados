@@ -1,0 +1,38 @@
+              HORÁRIO                750_Encarnação – Ext. Povoa Penafirme
+               Timetable
+
+
+                                  750                  750                                    750           750      750          750         750         750          750         750         750         750
+  Localidades                       B                   B
+                                                               Localidades                     BEE           BEE      BBE          BBE         BBE         BBE          BEE         BEE         BEE         BEE
+Encarnação                        07:05                       Externato Penafirme             13:20         13:40    13:20        13:20       13:40       14:10        16:45       16:45       17:00       18:05
+Barril                            07:15                       Vale de Janelas                   -             -      13:24          -           -           -          16:49         -           -           -
+Assenta                           07:25                       Santa Cruz                        -             -      13:27          -           -           -          16:52         -           -           -
+Escravilheira                     07:30                       Recta                           13:30           -                   13:25         -           -                      16:50         -         18:10
+Aranha                            07:35                       Boavista                        13:33           -                   13:28         -           -                      16:53         -         18:11
+Coutada                           07:38                       Casal da Cruz                   13:34           -                                 -           -                        -           -           -
+Casais Vale Martelo               07:40                       Brejenjas                       13:35           -                                 -           -                        -           -           -
+Casal Casa Branca                   -                         Praia Azul                                    13:50                             13:50         -                      16:55         -         18:16
+Silveira                          07:42                       Vale Nogueira                                 13:53                             13:53         -                                  17:10       18:18
+Vale Nogueira                     07:45                       Silveira                                      13:55                             13:55       14:20                                17:11       18:20
+Praia Azul                          -                 08:00   Casal Casa Branca                             13:57                                         14:22                                17:13       18:22
+Brejenjas                           -                   -     Casal Vale Martelo                            14:00                                         14:23                                17:15       18:25
+Casal da Cruz                       -                   -     Coutada                                       14:03                                         14:25                                17:18       18:27
+Boavista                            -                 08:03   Aranha                                        14:05                                         14:28                                17:20       18:30
+Recta                               -                 08:05   Escravilheira                                 14:08                                         14:30                                17:25       18:35
+Santa Cruz                          -                   -     Assenta                                       14:12                                         14:37                                17:30       18:39
+Vale de Janelas                     -                   -     Barril                                        14:16                                         14:40                                17:35       18:44
+Externato Penafirme               07:50               08:10   Encarnação                                    14:30                                         14:45                                17:45       18:49
+
+
+        Contact Center: 261 910 380                            LEGENDA:
+ (Horário de Funcionamento todos os dias das 8h00 às 21h00     B – Só no Período Escolar
+                       Alto do Ameal
+                                                               BBE – Só no Período Escolar, à 6ª Feira
+                       Estrada Nacional n.º8, Km 52            BEE – Só no Período Escolar, excepto à 6ª Feira
+                       2565-641 Ramalhal, TVD
+                       Email.: barraqueiro.oeste@rodest.pt
+                       https://www.barraqueiro-oeste.pt
+
+Em vigor desde 14 de Setembro de 2026                                               Este horário foi planeado para condições normais de trânsito. O motorista dentro das limitações fará os possíveis para o cumprir.
+

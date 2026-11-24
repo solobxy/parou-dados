@@ -1,0 +1,37 @@
+              HORÁRIO                752_ Externato Povoa Penafirme – Externato Povoa Penafirme via Valongo
+               Timetable
+
+
+
+
+                                                752          752           752             752             752                                                    752     752         752          752          752
+       Localidades                               B            BEE           BBE             BEE             BEE
+                                                                                                                                     Localidades                  BGC      B          BGD           BEE          BGE
+  Externato Penafirme                                        13:20         13:40           16:45           18:05                Externato Penafirme                                   13:40        17:05        18:05
+  Casal Seixo                                                13:25         13:45           16:50           18:10                Povoa de Além                                         13:42        17:07        18:07
+  Porto Novo                                                 13:28         13:48           16:53           18:13                Bombardeira                                           13:43        17:08        18:08
+  Maceira (B Pescadores)                                     13:35         13:55           17:00           18:20                Boavista                                              13:47        17:12        18:12
+  Maceira (Igreja)                                           13:37         13:57           17:02           18:22                Valongo                                               13:50        17:15        18:15
+  Porto Rio                                                                                                                     Boavista                                              13:52        17:17        18:17
+  Casal d'Além                                                                                                                  Casal d'Além                              07:30       13:57        17:22        18:22
+  Boavista                                                                                                                      Porto Rio                                 07:33       14:00        17:25        18:25
+  Valongo                                       08:00                                                                           Maceira (Igreja)                  07:25   07:35
+  Boavista                                      08:05                                                                           Maceira (B Pescadores)            07:27   07:37
+  Bombardeira                                   08:08                                                                           Porto Novo                          -     07:42
+  Povoa de Além                                 08:09                                                                           Casal Seixo                       07:30   07:45
+  Externato Penafirme                           08:15                                                                           Externato Penafirme               07:36   07:50
+
+
+
+
+        Contact Center: 261 910 380                                  LEGENDA:
+ (Horário de Funcionamento todos os dias das 8h00 às 21h00           B – Só no Período Escolar
+                                                                     BBE – Só no Período Escolar, à 6ª Feira
+                       Alto do Ameal                                 BEE – Só no Período Escolar, excepto à 6ª Feira
+                       Estrada Nacional n.º8, Km 52
+                       2565-641 Ramalhal, TVD
+                                                                     BGC - Só no Período Escolar, aos dias uteis, Inicia às 07h15 no Vale Vite passa por Toledo
+                       Email.: barraqueiro.oeste@rodest.pt           BGD - Só no Período Escolar, aos dias uteis, vai à Barreirinha e Martingil
+                       https://www.barraqueiro-oeste.pt              BGE - Só no Período Escolar, excepto às 6ª Feiras, vai a Toledo e a Vale Vite
+Em vigor desde 14 de Setembro de 2026                                                       Este horário foi planeado para condições normais de trânsito. O motorista dentro das limitações fará os possíveis para o cumprir.
+

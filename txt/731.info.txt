@@ -1,0 +1,19 @@
+Author:          msantos
+Creator:         Microsoft® Word 2010
+Producer:        Microsoft® Word 2010
+CreationDate:    Thu Oct  3 08:14:36 2024 UTC
+ModDate:         Thu Oct  3 08:14:36 2024 UTC
+Custom Metadata: no
+Metadata Stream: no
+Tagged:          yes
+UserProperties:  no
+Suspects:        no
+Form:            none
+JavaScript:      no
+Pages:           1
+Encrypted:       no
+Page size:       841.92 x 595.32 pts (A4)
+Page rot:        0
+File size:       319927 bytes
+Optimized:       no
+PDF version:     1.5

@@ -1,0 +1,55 @@
+              HORÁRIO                    221_Mafra - Torres Vedras
+               Timetable
+
+                                                                                                                                                                                                             Domingos e
+                                                                                      Dias úteis                                                                                Sábado                        Feriados
+                                             221                 221      221          221           221            221           221            221                  221            221           221       221     221
+     Localidades                             AFT                  B      AGB
+ Mafra (Parq.Desportivo)                    06:50                        08:40        10:40          12:20         17:00                        18:50                07:20          10:25          16:45     10:25   16:45
+ Mafra (Palácio)                            06:57                        08:47        10:47          12:27         17:07                        18:57                07:27          10:32          16:52     10:32   16:52
+ Murgeira                                   07:03                        08:53        10:52          12:33         17:12                        19:03                07:32          10:37          16:57     10:37   16:57
+ Barreiralva                                07:07                        08:57        10:56          12:37         17:16                        19:07                07:36          10:41          17:01     10:41   17:01
+ Barreiralva Cruz.Póvoa                     07:09                        08:59        10:58          12:39         17:18                        19:09                07:38          10:43          17:03     10:43   17:03
+ Monte Bom Cruz                             07:12                        09:02        11:00          12:42         17:20                        19:12                07:40          10:45          17:05     10:45   17:05
+ Picanceira                                 07:16                        09:06        11:04          12:46         17:24                        19:16                07:44          10:49          17:09     10:49   17:09
+ Encarnação                                 07:20                08:10   09:10        11:08          12:50         17:28          18:33         19:20                07:48          10:53          17:13     10:53   17:13
+ Az. Tanoeiros                                -                    -       -            -            12:55           -              -           19:25                  -              -              -         -       -
+ São Pedro da Cadeira                       07:28                08:18   09:17        11:15          13:03         17:35          18:40         19:33                07:55          11:00          17:20     11:00   17:20
+ Aranha Cruz.                               07:29                08:19   09:18        11:16          13:04         17:36          18:41         19:34                07:56          11:01          17:21     11:01   17:21
+ Coutada                                    07:32                08:22   09:21        11:19          13:07         17:39          18:44         19:37                07:59          11:04          17:24     11:04   17:24
+ Ponte de Rol                               07:39                08:29   09:28        11:26          13:14         17:46          18:51         19:44                08:06          11:11          17:31     11:11   17:31
+ Torres Vedras                              08:00                08:50   09:42        11:40          13:30         18:00          19:05         20:00                08:20          11:25          17:45     11:25   17:45
+
+
+
+                                                                                                                                                                                                             Domingos e
+                                                                                      Dias úteis                                                                                Sábado                        Feriados
+                                             221                 221     221           221            221           221           221            221                  221            221           221       221     221
+     Localidades                                                                                      AFT          AGA
+ Torres Vedras                              07:00                08:20   10:10        12:00          15:20         17:30          18:25         20:05                08:20          13:15          18:05     13:15   18:05
+ Ponte de Rol                               07:12                08:32   10:22        12:12          15:32         17:42          18:37         20:17                08:32          13:27          18:17     13:27   18:17
+ Coutada                                    07:19                08:39   10:29        12:19          15:39         17:49          18:44         20:24                08:39          13:34          18:24     13:34   18:24
+ Aranha Cruz.                               07:22                08:42   10:32        12:22          15:42         17:52          18:47         20:27                08:42          13:37          18:27     13:37   18:27
+ São Pedro da Cadeira                       07:23                08:43   10:33        12:23          15:43         17:53          18:48         20:28                08:43          13:38          18:28     13:38   18:28
+ Az. Tanoeiros                              07:28                  -       -          12:28            -             -            18:53           -                    -              -              -         -       -
+ Encarnação                                 07:36                08:51   10:41        12:36          15:51         18:01          18:58         20:36                08:51          13:46          18:36     13:46   18:36
+ Picanceira                                 07:40                08:55   10:45        12:40          15:55         18:05          19:02                              08:55          13:50          18:40     13:50   18:40
+ Monte Bom Cruz                             07:44                08:59   10:49        12:44          15:59         18:09          19:06                              08:59          13:54          18:44     13:54   18:44
+ Barreiralva Cruz.Póvoa                     07:47                09:02   10:52        12:47          16:02         18:12          19:09                              09:02          13:57          18:47     13:57   18:47
+ Barreiralva                                07:49                09:04   10:54        12:49          16:04         18:14          19:11                              09:04          13:59          18:49     13:59   18:49
+ Murgeira                                   07:53                09:08   10:58        12:53          16:08         18:18          19:15                              09:08          14:03          18:53     14:03   18:53
+ Mafra (Palácio)                            08:00                09:15   11:05        13:00          16:15         18:25          19:22                              09:15          14:10          19:00     14:10   19:00
+ Mafra (Parq.Desportivo)                    08:10                09:25   11:15        13:10          16:25         18:35          19:32                              09:25          14:20          19:10     14:20   19:10
+
+
+        Contact Center: 261 910 380                                      LEGENDA:
+ (Horário de Funcionamento todos os dias das 8h00 às 21h00               AFT - Anual, no Período Escolar em Torres Vedras vai à rotunda do CAERO
+                           Alto do Ameal
+                                                                         AGA - Anual, dá ligação no Cruz. Aranha à carreira 240 para a Assenta, no Período Escolar em Torres Vedras vai à rotunda do CAERO
+                           Estrada Nacional n.º8, Km 52                  AGB - Anual, no Período Escolar recebe ligação no Cruz. Aranha da carreira 240 da Assenta
+                           2565-641 Ramalhal, TVD                        B - Só Período Escolar, aos dias úteis
+                           Email.: barraqueiro.oeste@rodest.pt
+                           https://www.barraqueiro-oeste.pt
+
+Em vigor desde 12 de Outubro de 2026                                                          Este horário foi planeado para condições normais de trânsito. O motorista dentro das limitações fará os possíveis para o cumprir.
+

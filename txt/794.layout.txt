@@ -1,0 +1,54 @@
+                        HORÁRIO
+                         Timetable             794_Catefica - Torres Vedras                                                                                           TUT - Linha Roxa
+                                                                                                                                                     Dias úteis
+                                                                          Localidades                794        794      794        794       794        794       794       794       794       794        794      794
+                   •Torres Vedras - Terminal
+                   •Torres Vedras - GNR                                Terminal                     07:00      07:40     08:10     09:00     10:00      11:00     12:00     13:00     14:00     15:00      16:00    17:00
+                   •Torres Vedras - Tribunal                           Esc. São Gonçalo             07:03      07:43     08:13     09:03     10:03      11:03     12:03     13:03     14:03     15:03      16:03    17:03
+                   •Caero, Cenfim                                      Pq. Cor. Vitor Alves         07:04      07:44     08:14     09:04     10:04      11:04     12:04     13:04     14:04     15:04      16:04    17:04
+                   •Escola São Gonçalo                                 Pq. Acral                    07:06      07:46     08:16     09:06     10:06      11:06     12:06     13:06     14:06     15:06      16:06    17:06
+                   •Parque Coronel Vitor Alves                         João Pereira                 07:08      07:48     08:18     09:08     10:08      11:08     12:08     13:08     14:08     15:08      16:08    17:08
+                   •Fundição Dois Portos                               Arneiros                     07:13        -       08:23       -         -          -       12:13       -       14:13       -          -        -
+                   •EN8 Cruz. Rua Manuel Martinho
+                                                                       Louriceira                   07:17        -       08:27       -         -          -       12:17       -       14:17       -          -        -
+                   •ACRAL
+                                                                       Orjariça                     07:18        -       08:28       -         -          -       12:18       -       14:18       -          -        -
+
+
+
+
+TUT - Linha Roxa
+                   •Rotunda da Quinta do Prior
+                   •João Pereira                                       Rot. Uvas -Catefica          07:20      07:50     08:30     09:10     10:10      11:10     12:20     13:10     14:20     15:10      16:10    17:10
+                   •Orjariça                                           Rot. Quinta Prior            07:21      07:51     08:31     09:11     10:11      11:11     12:21     13:11     14:21     15:11      16:11    17:11
+                   •Louriceira                                         Esc. Madeira Torres          07:27      07:57     08:37     09:17     10:17      11:17     12:27     13:17     14:27     15:17      16:17    17:17
+                   •Arneiros                                           Terminal                     07:30      08:00     08:40     09:20     10:20      11:20     12:30     13:20     14:30     15:20      16:20    17:20
+                   •Louriceira
+                   •EN8 Cruz. Orjariça                                                                      Dias úteis                                          Sábados, Domingos e Feriados
+                   •João Pereira
+                   •Rotunda da Quinta do Prior                            Localidades                794        794      794                             794       794       794       794       794        794
+                   •ACRAL
+                   •EN8 Cruz. Rua Manuel Martinho                      Terminal                     18:00      19:00     20:00                          08:00     10:00     13:00     16:00     17:00      19:00
+                   •Fundição Dois Portos                               Esc. São Gonçalo             18:03      19:03     20:03                          08:03     10:03     13:03     16:03     17:03      19:03
+                   •Parque Coronel Vitor Alves                         Pq. Cor. Vitor Alves         18:04      19:04     20:04                          08:04     10:04     13:04     16:04     17:04      19:04
+                   •APECI                                              Pq. Acral                    18:06      19:06     20:06                          08:06     10:06     13:06     16:06     17:06      19:06
+                   •Escola Madeira Torres                              João Pereira                 18:08      19:08     20:08                          08:08     10:08     13:08     16:08     17:08      19:08
+                   •Venerando Matos                                    Arneiros                       -        19:13       -                            08:13       -       13:13       -         -        19:13
+                   •Tribunal                                           Louriceira                     -        19:17       -                            08:17       -       13:17       -         -        19:17
+                   •Campo Varzea                                       Orjariça                       -        19:18       -                            08:18       -       13:18       -         -        19:18
+                   •Torres Vedras - GNR                                Rot. Uvas -Catefica          18:10      19:20     20:10                          08:20     10:10     13:20     16:10     17:10      19:20
+                   •Torres Vedras - Terminal                           Rot. Quinta Prior            18:11      19:21     20:11                          08:21     10:11     13:21     16:11     17:11      19:21
+                                                                       Esc. Madeira Torres          18:17      19:27     20:17                          08:27     10:17     13:27     16:17     17:17      19:27
+                                                                       Terminal                     18:20      19:30     20:20                          08:30     10:20     13:30     16:20     17:20      19:30
+
+                   Contact Center: 261 910 380                         LEGENDA:
+       (Horário de Funcionamento todos os dias das 8h00 às 21h00
+
+                                 Alto do Ameal
+                                 Estrada Nacional n.º8, Km 52
+                                 2565-641 Ramalhal, TVD
+                                 Email.: barraqueiro.oeste@rodest.pt
+                                 https://www.barraqueiro-oeste.pt
+
+   Em vigor desde 05 de Janeiro de 2026                                                       Este horário foi planeado para condições normais de trânsito. O motorista dentro das limitações fará os possíveis para o cumprir.
+
