@@ -176,5 +176,5 @@ export function buildTowns(H) {
   // postes ao longo das estradas novas
   for (let z = -20; z > -150; z -= 22) pole(193.8, z, 8);
   for (let z = 20; z < 140; z += 22) pole(-234.6, z, 8);
-  return { house };
+  return { house, shop };
 }

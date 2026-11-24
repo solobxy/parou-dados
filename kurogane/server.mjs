@@ -68,7 +68,7 @@ const drop = c => {
   if (!p.invis) bcast({ t: 'left', id: c.id });
 };
 const sleepList = () => Object.entries(S.sleepers).filter(([, s]) => !s.hid).map(([k, s]) => [k.slice(0, 8), +s.x.toFixed(1), +s.z.toFixed(1), s.lv || 0, +(s.yaw || 0).toFixed(2), s.name, s.look || {}, s.clan || null]);
-const bagRow = (id, b) => [id, +b.x.toFixed(2), +b.z.toFixed(2), +(b.y || 0).toFixed(2), b.lv || 0, b.body ? 1 : 0, b.name || ''];
+const bagRow = (id, b) => [id, +b.x.toFixed(2), +b.z.toFixed(2), +(b.y || 0).toFixed(2), b.lv || 0, b.body | 0, b.name || '']; // body: 1 = corpo, 2 = caixa do avião
 const bagRows = () => Object.entries(S.bags).map(([id, b]) => bagRow(id, b));
 const clanOf = id => S.clans[id] || null;
 const clanInfo = cid => { const C = clanOf(cid); return C ? { id: cid, nome: C.nome, codigo: C.codigo, membros: C.membros } : null; };
@@ -143,7 +143,7 @@ const store = (k, it) => {
 const mkBag = (x, z, y, lv, it, o = {}) => {
   it = cleanIt(it); if (!it.length) return null;
   if (!o.body) for (const [id, b] of Object.entries(S.bags)) if (!b.body && (b.lv || 0) === lv && Math.hypot(b.x - x, b.z - z) < 1.6 && !lockOf('b' + id) && b.it.length + it.length <= 60) { b.it.push(...it.map(({ x, y, ...r }) => r)); b.t = Date.now(); dirty = true; return id; }
-  const id = rid(6); S.bags[id] = { x, z, y, lv, it, body: o.body ? 1 : 0, name: o.name || '', t: Date.now() }; dirty = true;
+  const id = rid(6); S.bags[id] = { x, z, y, lv, it, body: o.body | 0, name: o.name || '', t: Date.now() }; dirty = true;
   bcast({ t: 'bg', add: [bagRow(id, S.bags[id])] }); return id;
 };
 
@@ -164,12 +164,19 @@ const fundAt = (i, j) => S.w.base.p['f:' + i + ':' + j];
 // onde se pode construir: o mapa vem de mapa.json (exportado do jogo); só vale se for da mesma versão do mundo
 let MAPA = null; try { MAPA = JSON.parse(fs.readFileSync(new URL('./mapa.json', import.meta.url), 'utf8')); MAPA.grid = new Map(); for (const r of [...MAPA.rects, ...MAPA.pads]) for (let ix = Math.floor((r[0] - 2) / 16); ix <= Math.floor((r[2] + 2) / 16); ix++) for (let iz = Math.floor((r[1] - 2) / 16); iz <= Math.floor((r[3] + 2) / 16); iz++) { const k = ix * 1000 + iz; if (!MAPA.grid.has(k)) MAPA.grid.set(k, []); MAPA.grid.get(k).push(r); } } catch (e) { console.log('mapa.json:', e.message); }
 const mapOk = () => !!MAPA && S.w.wv === MAPA.wv;
+// água (lagos e rios), igual à do jogo: lagos com margem ondulada, rios como linhas com largura
+const lakeRS = (L, a) => 1 + 0.1 * Math.sin(3 * a + L[4]) + 0.06 * Math.sin(5 * a + L[5]) + 0.03 * Math.sin(9 * a + L[4] * 2);
+const wetS = (x, z, m = 0) => { const Wt = MAPA && MAPA.water; if (!Wt) return false;
+  for (const L of Wt.lakes) { const dx = (x - L[0]) / L[2], dz = (z - L[1]) / L[3]; if (dx * dx + dz * dz > 2.2) continue; const a = Math.atan2(dz, dx), r = lakeRS(L, a), ex = Math.cos(a) * r * L[2] + Math.sign(Math.cos(a)) * m, ez = Math.sin(a) * r * L[3] + Math.sign(Math.sin(a)) * m; if ((x - L[0]) ** 2 + (z - L[1]) ** 2 < ex * ex + ez * ez) return true; }
+  for (const P of Wt.rivers) for (let i = 0; i < P.length - 1; i++) { const [ax, az, aw] = P[i], [bx, bz, bw] = P[i + 1]; if (x < Math.min(ax, bx) - 40 || x > Math.max(ax, bx) + 40 || z < Math.min(az, bz) - 40 || z > Math.max(az, bz) + 40) continue; const vx = bx - ax, vz = bz - az, t = Math.max(0, Math.min(1, ((x - ax) * vx + (z - az) * vz) / (vx * vx + vz * vz))), hw = aw + (bw - aw) * t + m; if ((ax + vx * t - x) ** 2 + (az + vz * t - z) ** 2 < hw * hw) return true; }
+  return false; };
 const inCityS = (x, z) => x > MAPA.city[0] && x < MAPA.city[2] && z > MAPA.city[1] && z < MAPA.city[3];
 const hardAt = (x, z) => { const c = MAPA.city; if (x > c[0] - 1 && x < c[2] + 1 && z > c[1] - 1 && z < c[3] + 1) return true; for (const r of MAPA.roads) if (x > r[0] - 0.3 && x < r[2] + 0.3 && z > r[1] - 0.3 && z < r[3] + 0.3) return true;
   const l = MAPA.grid.get(Math.floor(x / 16) * 1000 + Math.floor(z / 16)); if (l) for (const r of l) if (x > r[0] - 0.2 && x < r[2] + 0.2 && z > r[1] - 0.2 && z < r[3] + 0.2) return true; return false; };
 const groundBad = (x0, z0, x1, z1) => { const cx = (x0 + x1) / 2, cz = (z0 + z1) / 2;
   if (Math.max(Math.abs(x0), Math.abs(z0), Math.abs(x1), Math.abs(z1)) > 3992) return 'Fora do mapa';
   if (inCityS(cx, cz)) return 'Na cidade não se constrói';
+  for (const [x, z] of [[x0, z0], [x1, z0], [x0, z1], [x1, z1], [cx, cz]]) if (wetS(x, z, 1)) return 'Na água não se constrói';
   for (const [x, z] of [[x0, z0], [x1, z0], [x0, z1], [x1, z1], [cx, cz]]) { if (hardAt(x, z)) return 'Só em terreno natural'; for (const r of MAPA.roads) if (x > r[0] - 3.9 && x < r[2] + 3.9 && z > r[1] - 3.9 && z < r[3] + 3.9) return 'Muito perto da estrada'; }
   for (const zn of MAPA.zones) if (Math.hypot(cx - zn[0], cz - zn[1]) < zn[2] + 19.9) return 'Muito perto de ' + zn[4];
   for (let ix = Math.floor(x0 / 16); ix <= Math.floor(x1 / 16); ix++) for (let iz = Math.floor(z0 / 16); iz <= Math.floor(z1 / 16); iz++) for (const r of MAPA.grid.get(ix * 1000 + iz) || []) if (r[0] < x1 && r[2] > x0 && r[1] < z1 && r[3] > z0) return 'Há alguma coisa no caminho';
@@ -194,6 +201,15 @@ const pDel = (k, out) => { const P = S.w.base.p[k]; if (!P) return; delete S.w.b
   if (S.w.base.p['t:' + i + ':' + j]) { delete S.w.base.p['t:' + i + ':' + j]; out.push('t:' + i + ':' + j); } };
 // tirar um objeto: o que tinha dentro fica num saco no chão
 const dDel = (id, out) => { const d = S.w.base.d[id]; if (!d) return; delete S.w.base.d[id]; out.push(id); const r = S.w.ct['d' + id]; if (r) { if (r.it && r.it.length) mkBag(d.x, d.z, d.y || 0, 0, r.it); delete S.w.ct['d' + id]; } LK.delete('d' + id); };
+// mapa novo: as bases, o que está dentro delas e os sacos ficam; só sai o que agora calha em cima de uma estrada ou casa nova
+const newWorld = wv => { const base = S.w.base, ct = Object.fromEntries(Object.entries(S.w.ct).filter(([k]) => k[0] === 'd'));
+  S.w = { ...W0(), wv, cyc0: S.w.cyc0, wx: S.w.wx, base, ct }; LK.clear(); dirty = true; if (S.drop) { S.drop.zi = []; S.drop.cur = null; S.drop.warn = null; } if (!mapOk()) return;
+  const clash = (x0, z0, x1, z1) => { const cx = (x0 + x1) / 2, cz = (z0 + z1) / 2; if (inCityS(cx, cz)) return true; for (const [x, z] of [[x0, z0], [x1, z0], [x0, z1], [x1, z1], [cx, cz]]) if (hardAt(x, z)) return true;
+    for (let ix = Math.floor(x0 / 16); ix <= Math.floor(x1 / 16); ix++) for (let iz = Math.floor(z0 / 16); iz <= Math.floor(z1 / 16); iz++) for (const r of MAPA.grid.get(ix * 1000 + iz) || []) if (r[0] < x1 && r[2] > x0 && r[1] < z1 && r[3] > z0) return true; return false; };
+  const out = [], outd = [], gone = new Set();
+  for (const k of Object.keys(base.p)) { const m = BK.exec(k); if (!m || m[1] !== 'f') continue; const i = +m[2], j = +m[3]; if (clash(i * CELL + 0.1, j * CELL + 0.1, i * CELL + CELL - 0.1, j * CELL + CELL - 0.1)) { gone.add(i + ':' + j); pDel(k, out); } }
+  for (const [id, d] of Object.entries(base.d)) { const key = Math.floor(d.x / CELL) + ':' + Math.floor(d.z / CELL); if (gone.has(key) || (!fundAt(Math.floor(d.x / CELL), Math.floor(d.z / CELL)) && clash(d.x - 0.4, d.z - 0.4, d.x + 0.4, d.z + 0.4))) dDel(id, outd); }
+  if (out.length || outd.length) console.log('mapa novo: saíram', out.length, 'peças e', outd.length, 'objetos'); };
 const baseMsg = (c, p, m, now) => {
   const B = S.w.base, tok = p.tok;
   if (m.t === 'bp') { const k = String(m.k || ''), mm = BK.exec(k); if (!mm) return; const ty = mm[1], i = +mm[2], j = +mm[3], t = String(m.tt || '');
@@ -290,7 +306,8 @@ const onMsg = (c, m) => {
     if ([...players.values()].some(o => o.p && o.p.name.toLowerCase() === name.toLowerCase())) return send(c, { t: 'erro', e: 'nome_em_uso' });
     // versão do mundo (casas, caixas, portas): se mudou e não está ninguém ligado, recomeça o mundo partilhado
     const wv = typeof m.wv === 'string' ? m.wv.slice(0, 40) : '';
-    if (wv && S.w.wv !== wv) { if ([...players.values()].some(o => o.p)) return send(c, { t: 'erro', e: 'versao' }); S.w = { ...W0(), wv, cyc0: S.w.cyc0, wx: S.w.wx }; LK.clear(); dirty = true; }
+    if (wv && MAPA && wv !== MAPA.wv) return send(c, { t: 'erro', e: 'versao' });
+    if (wv && S.w.wv !== wv) { if ([...players.values()].some(o => o.p)) return send(c, { t: 'erro', e: 'versao' }); newWorld(wv); }
     let tok = typeof m.tok === 'string' && m.tok.length === 32 && S.tokens[m.tok] ? m.tok : null;
     // o nome fica guardado 3 dias depois da última vez (ou enquanto a personagem dorme): ninguém se faz passar por outro
     const lo = name.toLowerCase(), now = Date.now();
@@ -311,7 +328,7 @@ const onMsg = (c, m) => {
     c.zc = new Map(); c.cc = new Map(); c.p.uid = uidOf(tok); c.p.test = tst;
     if (!Object.keys(S.w.cars).length && Array.isArray(m.cars)) { m.cars.slice(0, 60).forEach((a, i) => { const x = num(a[0], -4100, 4100), z = num(a[1], -4100, 4100), yaw = num(a[2], -10, 10); S.w.cars['c' + i] = { x, z, yaw, v: 0, fuel: +(10 + Math.random() * 20).toFixed(1), hp: 400, sx: x, sz: z, syaw: yaw, s: [0, 0, 0, 0], dead: 0 }; }); dirty = true; }
     const zseed = !S.w.zs.length && ![...players.values()].some(o => o !== c && o.zseed && now - (o.zseedT || 0) < 15000); if (zseed) { c.zseed = true; c.zseedT = now; }
-    send(c, { t: 'ok', id: c.id, tok, killed, resume, role: S.roles[c.p.uid] || null, players: [...players.values()].filter(o => o.p && o !== c).map(o => [o.id, o.p.name, o.p.look, o.p.clan]), sleep: sleepList(), clan: clanInfo(clan),
+    send(c, { t: 'ok', id: c.id, tok, killed, resume, drop: dropInfo(), role: S.roles[c.p.uid] || null, players: [...players.values()].filter(o => o.p && o !== c).map(o => [o.id, o.p.name, o.p.look, o.p.clan]), sleep: sleepList(), clan: clanInfo(clan),
       uid: c.p.uid, inv: !m.fresh && !killed && S.led[tok] && !S.led[tok].g ? S.led[tok].inv : null, w: { cyc0: S.w.cyc0, now, wx: S.w.wx.r, base: baseRows(), locks: Object.entries(S.w.locks).map(([i, L]) => [+i, L.hp, L.broke || 0]), doors: Object.entries(S.w.doors).map(([i, o]) => [+i, o]), nodes: Object.entries(S.w.nodes).map(([k, u]) => [k, u - now]).filter(a => a[1] > 0), bags: bagRows(), zseed } });
     bcast({ t: 'join', id: c.id, name, look, clan }, o => o !== c);
     return;
@@ -370,6 +387,7 @@ const onMsg = (c, m) => {
     bcast(o, x => x !== c && Math.hypot(x.p.x - P[0], x.p.z - P[2]) < 300); return; }
   // zombies: a primeira pessoa num mundo novo espalha-os (com as zonas do jogo) e manda a lista
   if (m.t === 'zs') { if (!c.zseed || S.w.zs.length || !Array.isArray(m.L)) return; c.zseed = false;
+    if (S.drop) S.drop.zi = [];
     S.w.zs = m.L.slice(0, 3000).map(a => { const x = num(a[0], -4100, 4100), z = num(a[1], -4100, 4100), h = num(a[3], 0, 4) | 0, v = num(a[4], 0, 4) | 0, hp = num(a[5], 1, 300, 80);
       return { x, z, lv: 0, yaw: Math.random() * 6.28, hp, mx: hp, k: num(a[2], 0, 2) | 0, h, v, h0: h, v0: v, hd: null, vd: null, hx: x, hz: z, st: 0, mv: 0, limp: 0, dt: 0, re: (360 + Math.random() * 300) * 1000, o: 0 }; });
     dirty = true; return; }
@@ -483,6 +501,7 @@ const adm = (c, m) => { const p = c.p, now = Date.now();
   if (a === 'kill') { if (!o) return send(c, { t: 'admno', e: 'Não está ligado' }); send(o, { t: 'akill' }); return admList(c); }
   if (a === 'give') { const k = String(m.k || ''), D = ITEMS[k]; if (!D) return; const n = num(m.n, 1, Math.max(1, (D.st || 1) * 10), 1) | 0; addT(ledOf(p).T, { [k]: n }); return send(c, { t: 'adgive', k, n }); }
   if (a === 'car') { const id = 'a' + rid(4), yaw = num(p.yaw, -10, 10), x = p.x + Math.sin(yaw) * 4, z = p.z + Math.cos(yaw) * 4; S.w.cars[id] = { x, z, yaw, v: 0, fuel: 60, hp: 400, sx: x, sz: z, syaw: yaw, s: [0, 0, 0, 0], dead: 0 }; dirty = true; return send(c, { t: 'admmsg', e: 'Carro criado à tua frente' }); }
+  if (a === 'drop') { if (S.drop.warn) return send(c, { t: 'admno', e: 'Já vem um avião a caminho' }); const ok = dropWarn(Date.now(), Date.now() + 20e3); return send(c, ok ? { t: 'admmsg', e: 'Avião a caminho: cai daqui a 20 s' } : { t: 'admno', e: 'Não encontrei sítio para o avião' }); }
   if (a === 'delbase') { const n = uid ? wipeBase(uid) : 0; send(c, { t: 'admmsg', e: n ? 'Base apagada (' + n + ' peças)' : 'Não tem base' }); return admList(c); }
   if (a === 'role') { if (!uid || uid === p.uid) return send(c, { t: 'admno', e: 'Não podes mudar o teu cargo' }); const nr = m.r === 'admin' || m.r === 'mod' ? m.r : null; if (nr) S.roles[uid] = nr; else delete S.roles[uid]; dirty = true; if (o) { if (!nr) { if (o.p.invis) setInv(o, false); o.p.god = 0; o.p.spec = 0; } admFlags(o); } return admList(c); }
   if (a === 'clanDel' || a === 'clanKick') { const id = String(m.id || ''), C = S.clans[id]; if (!C) return; const gone = a === 'clanDel' ? [...C.membros] : C.membros.filter(n => n === String(m.n || ''));
@@ -528,6 +547,31 @@ setInterval(() => { const now = Date.now(), up = []; for (const [id, d] of Objec
 setInterval(() => { if (S.w.zs.length) return; const now = Date.now(), L = [...players.values()].filter(c => c.p); if (!L.length || L.some(c => c.zseed && now - (c.zseedT || 0) < 15000)) return;
   for (const c of L) c.zseed = false; const c = L[Math.floor(Math.random() * L.length)]; c.zseed = true; c.zseedT = now; send(c, { t: 'zseed' }); }, 5000);
 setInterval(() => { const now = Date.now(); for (const car of Object.values(S.w.cars)) if (car.hp <= 0 && now - car.dead > 1200e3 && zNear(car.sx, car.sz, 30) === 0) { Object.assign(car, { x: car.sx, z: car.sz, yaw: car.syaw, v: 0, hp: 400, fuel: +(10 + Math.random() * 20).toFixed(1), dead: 0, s: [0, 0, 0, 0] }); dirty = true; } }, 30000);
+// ---------- lançamentos aéreos: a cada 30 min (só com gente ligada) um avião cai num sítio ao calhas, longe das terras, da água e das bases.
+// 90 s antes, todos recebem o aviso e a zona no mapa; na queda ficam 3 caixas com loot militar do melhor e 10 soldados zombies à volta
+const DROP_MS = 30 * 60e3, DROP_WARN = 90e3, DROP_LIFE = 40 * 60e3;
+if (!S.drop) S.drop = { next: Date.now() + 12 * 60e3 };
+if (process.env.KG_DROP_MS) S.drop.next = Date.now() + +process.env.KG_DROP_MS; // testes
+const nearBase = (x, z, d) => { for (const k of Object.keys(S.w.base.p)) { if (k[0] !== 'f') continue; const [, i, j] = k.split(':'); if (Math.hypot(+i * CELL - x, +j * CELL - z) < d) return true; } return false; };
+// densidade da floresta (igual à do jogo, sectors.js): o avião cai de preferência numa clareira
+const fHash = (a, b) => { let h = (a * 374761393 + b * 668265263) | 0; h = (h ^ (h >>> 13)) * 1274126177 | 0; return (h ^ (h >>> 16)) >>> 0; };
+const fVn = (x, z) => { const xi = Math.floor(x), zi = Math.floor(z), xf = x - xi, zf = z - zi, s = t => t * t * (3 - 2 * t), h = (a, b) => fHash(a, b) / 4294967296; const a = h(xi, zi), b = h(xi + 1, zi), c = h(xi, zi + 1), d = h(xi + 1, zi + 1), u = s(xf), v = s(zf); return a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v; };
+const forestD = (x, z) => { const n = fVn(x / 260, z / 260) * 0.6 + fVn(x / 90 + 50, z / 90 - 30) * 0.3 + fVn(x / 35 - 9, z / 35 + 4) * 0.1; return Math.max(0, Math.min(1, (n - 0.32) * 1.9)); };
+const dropSpot = () => { for (let k = 0; k < 900; k++) { const x = (Math.random() * 2 - 1) * 3700, z = (Math.random() * 2 - 1) * 3700; if (Math.max(Math.abs(x), Math.abs(z)) < 650) continue; if (k < 700 && Math.max(forestD(x, z), forestD(x + 20, z), forestD(x - 20, z), forestD(x, z + 20), forestD(x, z - 20)) > 0.08) continue; if (mapOk() && (wetS(x, z, 40) || groundBad(x - 30, z - 30, x + 30, z + 30))) continue; if (nearBase(x, z, 150)) continue; return [Math.round(x), Math.round(z)]; } return null; };
+const dropInfo = () => { const D = S.drop, now = Date.now(); return { warn: D.warn ? { mx: D.warn.mx, mz: D.warn.mz, at: D.warn.at, now } : null, cur: D.cur && now - D.cur.t < DROP_LIFE ? D.cur : null }; };
+const dropNow = (now = Date.now()) => { const D = S.drop; if (!D.warn) return; const { x, z } = D.warn, yaw = +(Math.random() * 6.28).toFixed(2); D.warn = null; D.next = now + DROP_MS;
+  for (let i = 0; i < 3; i++) { const a = yaw + 1.2 + i * 0.9, r = 9 + i * 3, g = new Grid(6, 6); rollLoot('aereo', g); mkBag(x + Math.cos(a) * r, z + Math.sin(a) * r, 0, 0, g.list.map(e => encSrv(e.it, e.x, e.y)), { body: 2, name: 'Caixa do avião' }); }
+  // soldados zombies: 10 lugares fixos na lista, que mudam para o sítio novo a cada queda
+  D.zi = (D.zi || []).filter(i => S.w.zs[i] && S.w.zs[i].drop); while (D.zi.length < 10 && S.w.zs.length && S.w.zs.length < 3000) { D.zi.push(S.w.zs.length); S.w.zs.push({ x, z, lv: 0, yaw: 0, hp: 70, mx: 70, k: 1, h: 2, v: 2, h0: 2, v0: 2, hd: null, vd: null, hx: x, hz: z, st: 0, mv: 0, limp: 0, dt: 0, re: 3600e3, o: 0, drop: 1 }); }
+  D.zi.forEach((i, n) => { const zb = S.w.zs[i], a = n / 10 * 6.28, r = 14 + Math.random() * 16, zx = x + Math.cos(a) * r, zz = z + Math.sin(a) * r; Object.assign(zb, { x: zx, z: zz, hx: zx, hz: zz, lv: 0, hp: 70, mx: 70, st: 0, mv: 0, limp: 0, dt: 0, h: 2, v: 2, hd: null, vd: null, o: 0, re: 3600e3 }); for (const c of players.values()) if (c.zc) c.zc.delete(i); });
+  D.cur = { x, z, yaw, t: now }; dirty = true; bcast({ t: 'drop', ph: 2, x, z, yaw }); console.log('avião caído em', x, z); };
+const dropWarn = (now = Date.now(), at = now + DROP_WARN) => { const D = S.drop, s = dropSpot(); if (!s) { D.next = now + DROP_MS; return false; }
+  const a = Math.random() * 6.28, r = 40 + Math.random() * 70; D.warn = { x: s[0], z: s[1], mx: Math.round(s[0] + Math.cos(a) * r), mz: Math.round(s[1] + Math.sin(a) * r), at }; D.next = at; dirty = true; bcast({ t: 'drop', ph: 1, mx: D.warn.mx, mz: D.warn.mz, at, now }); return true; };
+setInterval(() => { const now = Date.now(), D = S.drop, on = [...players.values()].some(c => c.p);
+  if (D.cur && now - D.cur.t > DROP_LIFE) { D.cur = null; dirty = true; bcast({ t: 'drop', ph: 0 }); }
+  if (!D.warn && now >= D.next - DROP_WARN) { if (!on) { D.next = now + DROP_WARN + 60e3; return; } dropWarn(now, Math.max(D.next, now + 30e3)); return; }
+  if (D.warn && now >= D.warn.at) dropNow(now);
+}, 2000);
 // tempo: chuva de 3 a 7 min, a cada 10 a 25 min (igual para todos)
 setInterval(() => { const now = Date.now(), X = S.w.wx; if (now < X.next) return;
   if (X.r > 0) { X.r = 0; X.next = now + (600 + Math.random() * 900) * 1000; } else { X.r = +(0.5 + Math.random() * 0.5).toFixed(2); X.next = now + (180 + Math.random() * 240) * 1000; }
@@ -535,7 +579,7 @@ setInterval(() => { const now = Date.now(), X = S.w.wx; if (now < X.next) return
 // limpezas: quem dorme há mais de 3 dias sai do mapa; mochilas velhas desaparecem (corpos 25 min, sacos 15 min); árvores voltam
 setInterval(() => { const now = Date.now(); let ch = false;
   for (const [k, s] of Object.entries(S.sleepers)) if (now - s.t > SLEEP_MS) { delete S.sleepers[k]; ch = true; }
-  for (const [id, b] of Object.entries(S.bags)) if (now - b.t > (b.body ? 1500e3 : 900e3) && !lockOf('b' + id)) bagDel(id);
+  for (const [id, b] of Object.entries(S.bags)) if (now - b.t > (b.body === 2 ? 2400e3 : b.body ? 1500e3 : 900e3) && !lockOf('b' + id)) bagDel(id);
   for (const [k, u] of Object.entries(S.w.nodes)) if (u < now) { delete S.w.nodes[k]; dirty = true; }
   for (const [k, t] of Object.entries(S.tokens)) if (now - t.t > 60 * 24 * 3600e3 && !S.sleepers[k]) delete S.tokens[k];
   if (ch) { dirty = true; bcast({ t: 'sleep', list: sleepList() }); } }, 30000);

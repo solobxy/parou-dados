@@ -73,7 +73,9 @@ export function makeCars({ scene, G, W, collide, solidAt, groundY, addRect, remo
       if (t > 0) c.v += (c.v < 0 ? BRK : ACC) * t * dt; else if (t < 0) c.v += (c.v > 0 ? BRK : ACC * 0.7) * t * dt; else c.v -= Math.sign(c.v) * Math.min(Math.abs(c.v), 2.2 * dt);
       c.v = clamp(c.v, -MAXR, vmax + (Math.abs(c.v) > vmax ? 0 : 0)); if (c.v > vmax) c.v = Math.max(vmax, c.v - 6 * dt);
       c.yaw += sy * 1.75 * Math.min(1, Math.abs(c.v) / 5) * Math.sign(c.v || 1) * dt;
-      const fx = Math.sin(c.yaw), fz = Math.cos(c.yaw); c.x += fx * c.v * dt; c.z += fz * c.v * dt;
+      const fx = Math.sin(c.yaw), fz = Math.cos(c.yaw), ox0 = c.x, oz0 = c.z; c.x += fx * c.v * dt; c.z += fz * c.v * dt;
+      // água: o carro não entra (para à beira)
+      { const s = Math.sign(c.v) || 1; if (W.wet(c.x + fx * 2.3 * s, c.z + fz * 2.3 * s)) { c.x = ox0; c.z = oz0; if (Math.abs(c.v) > 6) c.hp = Math.max(0, c.hp - (Math.abs(c.v) - 6) * 6); c.v = 0; if (!c.wetT || G.t > c.wetT) { c.wetT = G.t + 4; G.ui.toast('O carro não entra na água'); } } }
       c.fuel = Math.max(0, c.fuel - Math.abs(c.v) * dt * USE);
       // batidas: três círculos ao longo do carro
       let px = 0, pz = 0, n = 0; for (const k of [-1.45, 0, 1.45]) { const o = { x: c.x + fx * k, z: c.z + fz * k, lv: 0, h: 0 }, ox = o.x, oz = o.z; collide(o, 0.95); if (Math.abs(o.x - ox) + Math.abs(o.z - oz) > 1e-4) { px += o.x - ox; pz += o.z - oz; n++; } }

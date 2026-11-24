@@ -1,8 +1,9 @@
 // O mapa: bairro japonês Shin-Kurogane no centro, floresta à volta.
 import * as THREE from 'three';
 import { buildMonuments } from './monuments.js';
-import { Builder, rnd, rr, ri, pick, shade, mat4 } from './builder.js';
+import { Builder, rnd, rr, ri, pick, shade, mat4, getSeed, setSeed } from './builder.js';
 import { buildTowns } from './towns.js';
+import { buildRegions } from './regions.js';
 
 // MAP: metade do lado do mundo todo (8 km); CORE: o mapa do centro, feito à mão (900 m)
 export const MAP = 4000, CORE = 450;
@@ -12,7 +13,7 @@ export const inCity = (x, z) => x > CITY.x0 && x < CITY.x1 && z > CITY.z0 && z <
 export function buildWorld(scene, mats, A) {
   const b = new Builder(40);
   // todo o chão pavimentado (betão, asfalto, ladrilho, terra batida) fica registado: aí não nascem árvores nem arbustos
-  const pads = [], floor0 = b.floor.bind(b); b.floor = (x0, z0, x1, z1, y, hex, mat) => { if (y < 0.1 && y >= 0 && mat !== 'grass') pads.push({ x0: Math.min(x0, x1), z0: Math.min(z0, z1), x1: Math.max(x0, x1), z1: Math.max(z0, z1) }); return floor0(x0, z0, x1, z1, y, hex, mat); };
+  const pads = [], floor0 = b.floor.bind(b); b.floor = (x0, z0, x1, z1, y, hex, mat) => { if (y < 0.1 && y >= 0 && mat !== 'grass' && !b.wet) pads.push({ x0: Math.min(x0, x1), z0: Math.min(z0, z1), x1: Math.max(x0, x1), z1: Math.max(z0, z1) }); return floor0(x0, z0, x1, z1, y, hex, mat); };
   const W = {
     rects: [], circles: [], containers: [], cuts: [], map: [], nodes: [], lamps: [], steps: [], zones: [], openings: [], roads: [], rocks: [], stairs: [], doors: [],
     // acordas na berma do mundo (a 3,9 km do centro); o kit de teste começa à beira do mapa do centro
@@ -505,18 +506,41 @@ export function buildWorld(scene, mats, A) {
   const camp = (x, z) => { b.add(new THREE.ConeGeometry(1.8, 2.0, 4), 0x6a7a4a, 'v', mat4(x, 1.0, z, Math.PI / 4)); rect(x - 1.3, z - 1.3, x + 1.3, z + 1.3, 's', 2); for (let i = 0; i < 7; i++) { const a = i / 7 * Math.PI * 2; b.ico(0.2, x + 3 + Math.cos(a) * 0.6, 0.12, z + 1 + Math.sin(a) * 0.6, 0x6a6a66); } b.box(0.9, 0.08, 0.1, x + 3, 0.2, z + 1, 0x3a2a1a, { ry: 0.5 }); crate(x - 2.4, z + 1.6, 0.4, 'Revistar mochila abandonada', 'cabana', 0x5a4a2e); blood(x + 1.5, z + 2.5, 0.8); };
   camp(62, 58); camp(-200, -232); camp(232, -60); camp(-120, 120); camp(400, -160); camp(-420, 90); camp(-250, 400); camp(250, -400);
   W.koCheck = () => { const bad = []; for (let lv = 0; lv < 4; lv++) { const KO = koOf(lv); for (const r of W.rects) if (!r.stairRail && (r.lv || 0) === lv && r.k !== 'g' && KO.some(k => r.x0 < k.x1 - 0.02 && r.x1 > k.x0 + 0.02 && r.z0 < k.z1 - 0.02 && r.z1 > k.z0 + 0.02)) bad.push([lv, +r.x0.toFixed(2), +r.z0.toFixed(2), +r.x1.toFixed(2), +r.z1.toFixed(2), r.k, r.h]); } return bad; };
+  // zonas longe do centro: no arranque só se registam colisões, portas e loot (a seco); a geometria só se faz quando chegas perto e sai quando te afastas.
+  // Ao construir, repete-se exatamente o mesmo sorteio, por isso as paredes caem onde as colisões já estão
+  W.lazy = [];
+  const lazy = (x0, z0, x1, z1, fn) => { const L = { x0, z0, x1, z1, fn, s0: getSeed(), c0: [cid, tid, eid], cut0: W.cuts.length, meshes: null };
+    const r0 = W.rects.length, k0 = W.containers.length; b.dry = true; try { fn(); } finally { b.dry = false; } L.cuts = W.cuts.slice(L.cut0); L.ck = lzck(W.rects.slice(r0), W.containers.slice(k0)); W.lazy.push(L); return L; };
+  const lzck = (R, C) => R.length + ':' + C.length + ':' + R.reduce((a, r) => a + r.x0 * 3 + r.z1 * 7 + r.h, 0).toFixed(2) + ':' + C.map(c => c.id + c.table).join();
+  const linkCut = (c, built) => {
+    if (!c.shell) { c.group = built.cuts.get(c.id) || new THREE.Group(); return; }
+    c.gt = []; c.g = []; c.mats = [];
+    for (let L = 0; L < c.n; L++) { c.gt[L] = built.cuts.get(c.id + ':' + L + 't') || new THREE.Group(); if (L) { c.g[L] = built.cuts.get(c.id + ':' + L) || new THREE.Group(); c.mats[L] = []; c.g[L].traverse(m => { if (m.isMesh) { m.material = m.material.clone(); m.material.userData.o0 = m.material.opacity; m.material.userData.t0 = m.material.transparent; c.mats[L].push(m.material); } }); } } c.fv = [];
+    c.gR = built.cuts.get(c.id + ':R') || new THREE.Group(); };
+  W.lazyBuild = L => { if (L.meshes) return; const s = getSeed(), C = [cid, tid, eid], lens = {}; for (const k in W) if (Array.isArray(W[k])) lens[k] = W[k].length;
+    const bk = b.buckets, lg = b.log, cur = CUR; b.buckets = new Map(); b.log = []; setSeed(L.s0); [cid, tid, eid] = L.c0; let built; b.wet = true;
+    try { L.fn(); } finally { const ck = lzck(W.rects.slice(lens.rects), W.containers.slice(lens.containers)); if (ck !== L.ck) { console.warn('zona preguiçosa diferente', L.x0, L.z0); W.lazyBad = (W.lazyBad || 0) + 1; } built = b.build(scene, mats); for (const k in lens) W[k].length = lens[k]; setSeed(s); [cid, tid, eid] = C; b.buckets = bk; b.log = lg; CUR = cur; b.cut = null; b.wet = false; }
+    L.meshes = built.meshes; L.groups = [...built.cuts.values()]; for (const c of L.cuts) linkCut(c, built); W.onLazy && W.onLazy(L, true); };
+  W.lazyDrop = L => { if (!L.meshes) return; W.onLazy && W.onLazy(L, false);
+    for (const m of L.meshes) { if (m.parent) m.parent.remove(m); m.geometry.dispose(); } for (const g of L.groups) if (g.parent) g.parent.remove(g);
+    for (const c of L.cuts) { if (c.mats) for (const l of c.mats) if (l) l.forEach(m => m.dispose()); linkCut(c, { cuts: new Map() }); } L.meshes = L.groups = null; };
   const TW = buildTowns({ b, A, W, rect, circ, mp, container, shell, car, pole, wires, lamp, crate, cabinet, counter, table, chair, bed, shelf, fridge, woodFence, blood, bags, cone, barrier, hsign, vsign, bench, bike, vend, road, dirt, rr, ri, pick, rnd, shade, mat4, tower, lantern, sofa, books, stove, kfridge, toilet, sinkI, lampF, plantI, deskPC, boxes, tvI, wardrobe, rugI, clutter, level });
-  buildMonuments({ b, A, W, rect, circ, mp, container, shell, car, pole, wires, lamp, crate, cabinet, counter, table, chair, bed, shelf, fridge, woodFence, blood, bags, cone, barrier, hsign, vsign, bench, bike, vend, road, dirt, rr, ri, pick, rnd, shade, mat4, tower, lantern, sofa, books, stove, kfridge, toilet, sinkI, lampF, plantI, deskPC, boxes, tvI, wardrobe, rugI, clutter, level }, TW.house);
+  buildMonuments({ lazy, b, A, W, rect, circ, mp, container, shell, car, pole, wires, lamp, crate, cabinet, counter, table, chair, bed, shelf, fridge, woodFence, blood, bags, cone, barrier, hsign, vsign, bench, bike, vend, road, dirt, rr, ri, pick, rnd, shade, mat4, tower, lantern, sofa, books, stove, kfridge, toilet, sinkI, lampF, plantI, deskPC, boxes, tvI, wardrobe, rugI, clutter, level }, TW.house);
+
+  // mundo de fora, 2.ª parte (com a sua própria semente: o resto do mapa fica igual)
+  { const sv = getSeed(), t0 = performance.now(); setSeed(20261124); buildRegions({ lazy, b, A, W, rect, circ, mp, container, shell, car, pole, lamp, crate, cabinet, counter, table, chair, bed, shelf, fridge, woodFence, blood, bags, cone, barrier, bench, bike, vend, dirt, rr, ri, pick, rnd, shade, mat4, tower, lantern, sofa, books, boxes, clutter, toilet, sinkI, deskPC, plantI, wardrobe }, TW.house, TW.shop); setSeed(sv); W.regionMs = Math.round(performance.now() - t0); }
 
   // grelha para saber depressa onde já há coisas
-  W.pads = pads; const BG = 16, bgrid = new Map();
+  W.pads = pads; const BG = 16, bgrid = new Map(), padG = new Map();
+  for (const r of pads) for (let ix = Math.floor((r.x0 - 3) / BG); ix <= Math.floor((r.x1 + 3) / BG); ix++) for (let iz = Math.floor((r.z0 - 3) / BG); iz <= Math.floor((r.z1 + 3) / BG); iz++) { const k = ix * 1000 + iz; if (!padG.has(k)) padG.set(k, []); padG.get(k).push(r); }
+  const padsAt = (x, z) => padG.get(Math.floor(x / BG) * 1000 + Math.floor(z / BG)) || [];
   for (const r of W.rects) for (let ix = Math.floor((r.x0 - 2) / BG); ix <= Math.floor((r.x1 + 2) / BG); ix++) for (let iz = Math.floor((r.z0 - 2) / BG); iz <= Math.floor((r.z1 + 2) / BG); iz++) { const k = ix * 1000 + iz; if (!bgrid.has(k)) bgrid.set(k, []); bgrid.get(k).push(r); }
   const blocked = (x, z, m = 0) => {
     if (Math.abs(x) > CORE - 2 || Math.abs(z) > CORE - 2) return true;
     if (x > CITY.x0 - 4 - m && x < CITY.x1 + 4 + m && z > CITY.z0 - 4 - m && z < CITY.z1 + 4 + m) return true;
     if (Math.abs(z) < 6.5 + m) return true; if (z > -57 && z < -47) return true;
     for (const r of W.roads) if (x > r.x0 - 2 - m && x < r.x1 + 2 + m && z > r.z0 - 2 - m && z < r.z1 + 2 + m) return true;
-    for (const r of pads) if (x > r.x0 - 1.5 - m && x < r.x1 + 1.5 + m && z > r.z0 - 1.5 - m && z < r.z1 + 1.5 + m) return true;
+    for (const r of padsAt(x, z)) if (x > r.x0 - 1.5 - m && x < r.x1 + 1.5 + m && z > r.z0 - 1.5 - m && z < r.z1 + 1.5 + m) return true;
     for (const zn of W.zones) if ((x - zn.x) ** 2 + (z - zn.z) ** 2 < (zn.r + m) ** 2) return true;
     const l = bgrid.get(Math.floor(x / BG) * 1000 + Math.floor(z / BG)); if (l) for (const r of l) if (x > r.x0 - 1.5 - m && x < r.x1 + 1.5 + m && z > r.z0 - 1.5 - m && z < r.z1 + 1.5 + m) return true;
     return false;
@@ -525,7 +549,7 @@ export function buildWorld(scene, mats, A) {
   W.paved = (x, z) => {
     if (x > CITY.x0 - 1 && x < CITY.x1 + 1 && z > CITY.z0 - 1 && z < CITY.z1 + 1) return true;
     for (const r of W.roads) if (x > r.x0 - 0.3 && x < r.x1 + 0.3 && z > r.z0 - 0.3 && z < r.z1 + 0.3) return true;
-    for (const r of pads) if (x > r.x0 - 0.3 && x < r.x1 + 0.3 && z > r.z0 - 0.3 && z < r.z1 + 0.3) return true;
+    for (const r of padsAt(x, z)) if (x > r.x0 - 0.3 && x < r.x1 + 0.3 && z > r.z0 - 0.3 && z < r.z1 + 0.3) return true;
     const l = bgrid.get(Math.floor(x / BG) * 1000 + Math.floor(z / BG)); if (l) for (const r of l) if (x > r.x0 - 0.2 && x < r.x1 + 0.2 && z > r.z0 - 0.2 && z < r.z1 + 0.2) return true;
     return false;
   };
@@ -552,12 +576,7 @@ export function buildWorld(scene, mats, A) {
   { const E = new THREE.Color(1.05, 0.62, 0.2), lw = 0.26, y = 0.05; b.box(2 * MAP + lw, 0.012, lw, 0, y, -MAP, E, { mat: 'lit' }); b.box(2 * MAP + lw, 0.012, lw, 0, y, MAP, E, { mat: 'lit' }); b.box(lw, 0.012, 2 * MAP, -MAP, y, 0, E, { mat: 'lit' }); b.box(lw, 0.012, 2 * MAP, MAP, y, 0, E, { mat: 'lit' }); }
 
   const built = b.build(scene, mats);
-  for (const c of W.cuts) {
-    if (!c.shell) { c.group = built.cuts.get(c.id) || new THREE.Group(); continue; }
-    c.gt = []; c.g = []; c.mats = [];
-    for (let L = 0; L < c.n; L++) { c.gt[L] = built.cuts.get(c.id + ':' + L + 't') || new THREE.Group(); if (L) { c.g[L] = built.cuts.get(c.id + ':' + L) || new THREE.Group(); c.mats[L] = []; c.g[L].traverse(m => { if (m.isMesh) { m.material = m.material.clone(); m.material.userData.o0 = m.material.opacity; m.material.userData.t0 = m.material.transparent; c.mats[L].push(m.material); } }); } } c.fv = [];
-    c.gR = built.cuts.get(c.id + ':R') || new THREE.Group();
-  }
+  for (const c of W.cuts) linkCut(c, built);
   W.meshes = built.meshes;
   return W;
 }

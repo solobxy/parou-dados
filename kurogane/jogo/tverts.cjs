@@ -1,0 +1,1 @@
+module.exports = async (page) => { console.log(await page.evaluate(() => { let v = 0, m = 0, byC = 0; for (const o of G.W.meshes || []) { if (o.geometry) { v += o.geometry.attributes.position.count; m++; } } return 'meshes ' + m + ' verts ' + v + ' outer ' + G.W.outerMs + ' build ' + G.W.buildMs + ' heap ' + Math.round((performance.memory||{}).usedJSHeapSize/1e6) + 'MB'; })); };

@@ -1,0 +1,1 @@
+module.exports = async (page) => { console.log(JSON.stringify(await page.evaluate(() => (G.W.bridges || []).map(B => [Math.round(B[0]), Math.round(B[1]), Math.round(Math.max(B[2] - B[0], B[3] - B[1]))])))); };

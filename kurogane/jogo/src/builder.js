@@ -5,6 +5,7 @@ import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.j
 
 let seed = 7202611;
 export const setSeed = s => { seed = s; };
+export const getSeed = () => seed;
 export const rnd = () => { seed = (seed + 0x6D2B79F5) | 0; let t = Math.imul(seed ^ (seed >>> 15), 1 | seed); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
 export const rr = (a, b) => a + (b - a) * rnd();
 export const ri = (a, b) => Math.floor(rr(a, b + 1));
@@ -12,7 +13,7 @@ export const pick = a => a[Math.floor(rnd() * a.length)];
 export const shade = (hex, f) => { const c = new THREE.Color(hex); c.multiplyScalar(f); return c.getHex(); };
 
 const KEEP = ['position', 'normal', 'uv'];
-const UVS = { asph: 7, tile: 2.4, grass: 9, dirt: 7, conc: 4 };
+const UVS = { asph: 7, tile: 2.4, grass: 9, dirt: 7, conc: 4, water: 16 };
 const _v = new THREE.Vector3(), _c = new THREE.Color(), _q = new THREE.Quaternion(), _e = new THREE.Euler(), _s = new THREE.Vector3();
 
 export const mat4 = (x = 0, y = 0, z = 0, ry = 0, rx = 0, rz = 0, sx = 1, sy = sx, sz = sx) =>
@@ -28,6 +29,8 @@ export class Builder {
   pop() { this.stack.pop(); return this; }
   // junta uma geometria já criada (é consumida)
   add(g, hex, mat = 'v', local = null, jit = 0) {
+    // a seco (só colisões e loot, sem geometria): gasta o mesmo número de sorteios para o resultado ser igual quando se constrói a sério
+    if (this.dry) { g.dispose(); if (jit) rr(-jit, jit); return null; }
     let geo = g.index ? g.toNonIndexed() : g;
     if (geo !== g) g.dispose();
     for (const k of Object.keys(geo.attributes)) if (!KEEP.includes(k)) geo.deleteAttribute(k);
@@ -74,7 +77,7 @@ export class Builder {
       g.computeBoundingSphere(); g.computeBoundingBox();
       const m = new THREE.Mesh(g, mats[mat]);
       const sh = !['gl', 'lit', 'sign', 'decal'].includes(mat);
-      m.castShadow = sh && mat !== 'asph' && mat !== 'tile' && mat !== 'grass' && mat !== 'dirt'; m.receiveShadow = mat !== 'lit' && mat !== 'sign';
+      m.castShadow = sh && mat !== 'water' && mat !== 'asph' && mat !== 'tile' && mat !== 'grass' && mat !== 'dirt'; m.receiveShadow = mat !== 'lit' && mat !== 'sign';
       if (mat === 'gl') m.renderOrder = 2;
       if (mat === 'decal') m.renderOrder = 1;
       if (thin) { m.renderOrder = 3; m.userData.thin = true; }
@@ -90,14 +93,18 @@ export class Builder {
 // Atlas para letreiros: todos os letreiros numa só textura.
 export class Atlas {
   constructor(W = 2048, H = 2048) { this.W = W; this.H = H; this.c = document.createElement('canvas'); this.c.width = W; this.c.height = H; this.x = this.c.getContext('2d'); this.cx = 0; this.cy = 0; this.row = 0; }
+  // prateleiras por altura: cada letreiro vai para a prateleira mais baixa onde cabe (assim os altos não gastam linhas inteiras)
   alloc(w, h) {
-    if (this.cx + w > this.W) { this.cx = 0; this.cy += this.row + 2; this.row = 0; }
-    if (this.cy + h > this.H) { console.warn('atlas cheio'); this.cy = 0; }
-    const s = { px: this.cx, py: this.cy, w, h, u0: this.cx / this.W, u1: (this.cx + w) / this.W, v1: 1 - this.cy / this.H, v0: 1 - (this.cy + h) / this.H };
-    this.cx += w + 2; this.row = Math.max(this.row, h); return s;
+    this.sh = this.sh || []; let S = this.sh.find(q => q.h >= h && q.h <= h * 1.5 + 8 && q.x + w <= this.W);
+    if (!S) { const top = this.sh.reduce((m, q) => Math.max(m, q.y + q.h + 2), 0); if (top + h > this.H) { console.warn('atlas cheio'); S = this.sh.find(q => q.h >= h && q.x + w <= this.W) || { x: 0, y: 0, h }; } else { S = { x: 0, y: top, h }; this.sh.push(S); } }
+    const s = { px: S.x, py: S.y, w, h, u0: S.x / this.W, u1: (S.x + w) / this.W, v1: 1 - S.y / this.H, v0: 1 - (S.y + h) / this.H };
+    S.x += w + 2; this.cy = Math.max(this.cy || 0, S.y + S.h); return s;
   }
   // texto (horizontal ou vertical) num retângulo
   sign(text, o = {}) {
+    const key = text + '|' + JSON.stringify(o); this.memo = this.memo || new Map(); if (this.memo.has(key)) return this.memo.get(key); const r = this.sign0(text, o); this.memo.set(key, r); return r;
+  }
+  sign0(text, o = {}) {
     const { w = 128, h = 512, bg = null, fg = '#fff', weight = 900, vertical = false, pad = 0.1, font = 'JP', border = null, sub = null } = o;
     const s = this.alloc(w, h), x = this.x;
     x.save(); x.translate(s.px, s.py); x.beginPath(); x.rect(0, 0, w, h); x.clip();

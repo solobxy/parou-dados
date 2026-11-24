@@ -13,8 +13,12 @@ export const forestDens = (x, z) => { const n = vn(x / 260, z / 260) * 0.6 + vn(
 export function makeSectors({ scene, W, nodes, addCirc, removeCirc, iMesh, geos, mats, CORE, MAP, near }) {
   const loaded = new Map(); let busy = false;
   const inCore = (x, z) => Math.max(Math.abs(x), Math.abs(z)) < CORE + 2;
+  // sítios construídos longe do centro (vilas, monumentos, quintas): aí não nascem árvores, rochas nem arbustos
+  const clr = new Map(); for (const L of W.lazy || []) for (let sx = Math.floor(L.x0 / SECT); sx <= Math.floor(L.x1 / SECT); sx++) for (let sz = Math.floor(L.z0 / SECT); sz <= Math.floor(L.z1 / SECT); sz++) { const k = sx * 1000 + sz; if (!clr.has(k)) clr.set(k, []); clr.get(k).push(L); }
+  const cleared = (x, z, m) => { const l = clr.get(Math.floor(x / SECT) * 1000 + Math.floor(z / SECT)); if (l) for (const L of l) if (x > L.x0 - m && x < L.x1 + m && z > L.z0 - m && z < L.z1 + m) return true; return false; };
   const freeAt = (x, z, m) => {
     if (Math.abs(x) > MAP - 3 || Math.abs(z) > MAP - 3 || inCore(x, z)) return false;
+    if (W.wet(x, z, m + 1.5)) return false; if (cleared(x, z, m)) return false;
     for (const r of W.roads) if (x > r.x0 - m - 2 && x < r.x1 + m + 2 && z > r.z0 - m - 2 && z < r.z1 + m + 2) return false;
     for (const zn of W.zones) if ((x - zn.x) ** 2 + (z - zn.z) ** 2 < (zn.r + m + 4) ** 2) return false;
     let hit = false; near(x - m - 1, z - m - 1, x + m + 1, z + m + 1, r => { if (!hit && (r.lv || 0) === 0 && x > r.x0 - m - 1 && x < r.x1 + m + 1 && z > r.z0 - m - 1 && z < r.z1 + m + 1) hit = true; }, () => { });
@@ -32,7 +36,7 @@ export function makeSectors({ scene, W, nodes, addCirc, removeCirc, iMesh, geos,
     // arbustos e erva
     const bushes = [], grass = [];
     for (let i = 0; i < 40; i++) { const x = x0 + R() * SECT, z = z0 + R() * SECT; if (!freeAt(x, z, 0.5) || close(x, z, 1.4)) continue; bushes.push({ x, z, s: 0.7 + R() * 0.6, ry: R() * 6.28 }); }
-    for (let i = 0; i < 260; i++) { const x = x0 + R() * SECT, z = z0 + R() * SECT; if (inCore(x, z) || W.paved(x, z)) continue; grass.push({ x, z, s: 0.7 + R() * 0.9, ry: R() * 6 }); }
+    for (let i = 0; i < 260; i++) { const x = x0 + R() * SECT, z = z0 + R() * SECT; if (inCore(x, z) || W.paved(x, z) || W.wet(x, z, 0.3)) continue; grass.push({ x, z, s: 0.7 + R() * 0.9, ry: R() * 6 }); }
     // malhas e colisões; as árvores e rochas são recursos (dá para cortar e partir)
     const mat4 = (x, y, z, ry, s) => new THREE.Matrix4().compose(new THREE.Vector3(x, y, z), new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), ry), new THREE.Vector3(s, s, s));
     trees.forEach((l, v) => { if (!l.length) return; for (const t of l) { t.kind = 'tree'; t.r = 0.32 * t.s; t.hp = t.max = Math.round(150 * t.s); t.alive = true; t.sec = S; nodes.push(t); S.nodes.push(t); t.col = { x: t.x, z: t.z, r: t.r, k: 's', on: true, node: t }; addCirc(t.col); S.circs.push(t.col); } S.meshes.push(...iMesh(v ? geos.broad : geos.cedar, mats.tree, l, t => mat4(t.x, 0, t.z, t.ry, t.s), true, SECT)); });

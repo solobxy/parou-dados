@@ -82,7 +82,7 @@ async function boot() {
     conc: noiseTex(256, '#b4afa6', [[2600, (x, a, b) => { const v = 150 + Math.floor(R() * 60); x.fillStyle = `rgba(${v},${v - 2},${v - 6},.35)`; x.fillRect(a, b, 2, 2); }], [10, (x, a, b) => { x.fillStyle = 'rgba(70,64,56,.12)'; x.beginPath(); x.ellipse(a, b, 10 + R() * 40, 6 + R() * 30, R() * 3, 0, 7); x.fill(); }]], (x, W) => { x.strokeStyle = 'rgba(60,56,50,.35)'; x.lineWidth = 2; x.strokeRect(0, 0, W, W); }),
     fence: ctex(64, 64, (x, w) => { x.clearRect(0, 0, w, w); x.strokeStyle = '#c8ccd0'; x.lineWidth = 3; x.beginPath(); x.moveTo(0, 0); x.lineTo(w, w); x.moveTo(w, 0); x.lineTo(0, w); x.stroke(); }),
   };
-  const A = new Atlas(2048, 2048);
+  const A = new Atlas(2048, 2048); window.__atlas = A;
   const S = (o = {}) => new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.86, ...o });
   const mats = {
     v: S(), vf: S({ flatShading: true }), m: S({ roughness: 0.38, metalness: 0.55 }), win: S({ roughness: 0.18, metalness: 0.45, envMapIntensity: 1.6 }),
@@ -92,6 +92,10 @@ async function boot() {
     asph: S({ map: TX.asph, roughness: 0.95 }), tile: S({ map: TX.tile, roughness: 0.9 }), grass: S({ map: TX.grass, roughness: 1 }), dirt: S({ map: TX.dirt, roughness: 1 }), conc: S({ map: TX.conc, roughness: 0.95 }),
     decal: S({ roughness: 0.9, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }),
     fence: S({ map: TX.fence, alphaTest: 0.5, side: THREE.DoubleSide, metalness: 0.4, roughness: 0.5 }),
+    water: S({ roughness: 0.32, metalness: 0.05, envMapIntensity: 0.9, normalMap: (() => { const N = 128, c = document.createElement('canvas'); c.width = c.height = N; const x = c.getContext('2d'), im = x.createImageData(N, N), W2 = [[1, 2, 0.5, 0.3], [3, -1, 1.7, 0.22], [-2, 3, 2.9, 0.18], [5, 4, 0.4, 0.1], [-6, 5, 1.1, 0.08]];
+      const h = (i, j) => W2.reduce((s, [a, b2, f, k]) => s + k * Math.sin(2 * Math.PI * (a * i + b2 * j) / N + f), 0);
+      for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) { const dx = (h(i + 1, j) - h(i - 1, j)) * 9, dy = (h(i, j + 1) - h(i, j - 1)) * 9, l = Math.hypot(dx, dy, 1), o = (j * N + i) * 4; im.data[o] = (-dx / l * 0.5 + 0.5) * 255; im.data[o + 1] = (-dy / l * 0.5 + 0.5) * 255; im.data[o + 2] = (1 / l * 0.5 + 0.5) * 255; im.data[o + 3] = 255; }
+      x.putImageData(im, 0, 0); const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; return t; })(), normalScale: new THREE.Vector2(0.16, 0.16) }),
   };
 
   // ---------- mundo
@@ -102,8 +106,11 @@ async function boot() {
   atlasTex.needsUpdate = true;
   // sombras dos prédios mesmo com o telhado e as paredes de cima escondidos (quando estás lá dentro): o sol e a lanterna nunca atravessam telhados nem paredes,
   // só entram por janelas (o vidro não faz sombra) e portas abertas. Cópias só para sombra, na camada 1, que a câmara não desenha
-  { const shm = new THREE.MeshBasicMaterial(); const add = g => g && g.traverse(m => { if (!m.isMesh || !m.castShadow) return; const sh = new THREE.Mesh(m.geometry, shm); sh.layers.set(1); sh.castShadow = true; sh.receiveShadow = false; sh.matrixAutoUpdate = false; m.updateWorldMatrix(true, false); sh.matrix.copy(m.matrixWorld); sh.matrixWorldNeedsUpdate = true; scene.add(sh); m.castShadow = false; });
-    for (const c of W.cuts) { if (c.shell) { c.gt.forEach(add); c.g.forEach(add); add(c.gR); } else add(c.group); }
+  { const shm = new THREE.MeshBasicMaterial(); let SH = null; const add = g => g && g.traverse(m => { if (!m.isMesh || !m.castShadow) return; const sh = new THREE.Mesh(m.geometry, shm); sh.layers.set(1); sh.castShadow = true; sh.receiveShadow = false; sh.matrixAutoUpdate = false; m.updateWorldMatrix(true, false); sh.matrix.copy(m.matrixWorld); sh.matrixWorldNeedsUpdate = true; scene.add(sh); if (SH) SH.push(sh); m.castShadow = false; });
+    const addC = c => { if (c.shell) { c.gt.forEach(add); c.g.forEach(add); add(c.gR); } else add(c.group); };
+    for (const c of W.cuts) addC(c);
+    // zonas que se constroem quando chegas perto: as mesmas cópias de sombra (e saem quando a zona sai)
+    W.onLazy = (L, on) => { if (on) { SH = L.sh = []; L.cuts.forEach(addC); SH = null; } else { for (const m of L.sh || []) scene.remove(m); L.sh = null; } };
     sun.shadow.camera.layers.enable(1); }
 
   // colisões: grelha espacial
@@ -670,6 +677,11 @@ async function boot() {
     else audio.rain(0, false);
   };
   G.sectors = SECTORS;
+  // vilas e monumentos longe do centro: constrói o mais perto que falta (um por imagem) e larga os que ficaram longe
+  const lazyTick = (px, pz) => { let best = null, bd = 1e9; for (const L of W.lazy) { const d = Math.max(L.x0 - px, px - L.x1, L.z0 - pz, pz - L.z1, 0); if (L.meshes) { if (d > 430) W.lazyDrop(L); } else if (d < 250 && d < bd) { bd = d; best = L; } } if (best) { W.lazyBuild(best); return true; } return false; };
+  G.lazyTick = lazyTick;
+  // só para testes: vista de cima (ortográfica) de um quadrado de lado L à volta de (x, z), devolvida como imagem
+  G.dbgTop = (x, z, L, px = 900) => { for (let i = 0; i < 80 && lazyTick(x, z); i++); const oc = new THREE.OrthographicCamera(-L / 2, L / 2, L / 2, -L / 2, 1, 400); oc.position.set(x, 200, z + 0.01); oc.lookAt(x, 0, z); const s0 = new THREE.Vector2(); renderer.getSize(s0); const r0 = renderer.getPixelRatio(); renderer.setPixelRatio(1); renderer.setSize(px, px, false); const fg = scene.fog; scene.fog = null; renderer.render(scene, oc); scene.fog = fg; const url = renderer.domElement.toDataURL('image/jpeg', 0.85); renderer.setPixelRatio(r0); renderer.setSize(s0.x, s0.y, false); return url; };
   G.weather = (on = true) => { G.rainT = on ? 1 : 0; WX.t = on ? 300 : 900; };
   G.explodeAt = (k, x, z) => explode({ k, P: new THREE.Vector3(x, 0.5, z), lv: 0 });
   const swing = m => { const p = G.p; if (p.cd > 0 || p.use) return; p.cd = m.cd; p.swing = 0; p.swingM = m; p.swingHit = false; audio.play('swing', 0.8); };
@@ -709,9 +721,36 @@ async function boot() {
   const dropBag = (x, z, grid, o = {}) => {
     if (G.net && G.net.world && !o.net) { if (!grid.empty) G.net.bag(x, z, o.y ?? groundY(x, z), o.lv ?? 0, encG(grid)); return null; }
     if (!o.net) for (const b of G.bags) if (!o.body && !b.body && (b.lv || 0) === (o.lv ?? 0) && Math.hypot(b.x - x, b.z - z) < 1.6) { for (const e of [...grid.list]) b.grid.insert(e.it); return b; }
-    const lv = o.lv ?? 0, y0 = o.y ?? groundY(x, z); const m = (o.body ? bodyBagM : bagM).clone(); m.position.set(x + (o.body ? 0 : (Math.random() - 0.5) * 0.4), y0, z + (o.body ? 0 : (Math.random() - 0.5) * 0.4)); m.rotation.y = Math.random() * 6; scene.add(m);
-    const b = { x, z, grid, mesh: m, label: o.label || (o.body ? 'Revistar o teu corpo' : 'Revistar saco'), body: !!o.body, t: G.t, bag: true, lv, nid: o.nid, mine: o.mine }; G.bags.push(b); return b;
+    const lv = o.lv ?? 0, y0 = o.y ?? groundY(x, z); const m = (o.crate ? crateM : o.body ? bodyBagM : bagM).clone(); m.position.set(x + (o.body || o.crate ? 0 : (Math.random() - 0.5) * 0.4), y0, z + (o.body || o.crate ? 0 : (Math.random() - 0.5) * 0.4)); m.rotation.y = Math.random() * 6; scene.add(m);
+    const b = { x, z, grid, mesh: m, label: o.label || (o.body ? 'Revistar o teu corpo' : 'Revistar saco'), body: !!o.body, crate: !!o.crate, t: G.t, bag: true, lv, nid: o.nid, mine: o.mine }; G.bags.push(b); return b;
   };
+  // ---------- lançamento aéreo: aviso com zona no mapa, avião caído com fogo e fumo, caixas com o melhor loot
+  const crateM = (() => { const g = new THREE.Group(), M = c => new THREE.MeshStandardMaterial({ color: c, roughness: 0.75 }), mB = M(0x4a5a32), mS = M(0x2c3620);
+    const box = (w, h, d, x, y, z, m) => { const o = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m); o.position.set(x, y, z); o.castShadow = o.receiveShadow = true; g.add(o); };
+    box(1.3, 0.85, 0.95, 0, 0.43, 0, mB); for (const y of [0.1, 0.8]) box(1.34, 0.1, 0.99, 0, y, 0, mS); for (const x of [-0.45, 0.45]) box(0.1, 0.87, 0.99, x, 0.43, 0, mS);
+    const f = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.3, 6), new THREE.MeshBasicMaterial({ color: new THREE.Color(3, 0.4, 0.2) })); f.position.set(0.5, 0.95, 0.3); f.rotation.z = 0.6; g.add(f); return g; })();
+  const puffTex = ctex(64, 64, (x, w, h) => { const g = x.createRadialGradient(32, 32, 2, 32, 32, 31); g.addColorStop(0, 'rgba(60,58,54,.9)'); g.addColorStop(1, 'rgba(60,58,54,0)'); x.fillStyle = g; x.fillRect(0, 0, w, h); }, false);
+  let wreck = null;
+  const wreckMake = (x, z, yaw) => { const g = new THREE.Group(), M = c => new THREE.MeshStandardMaterial({ color: c, roughness: 0.7, metalness: 0.2 }), body = M(0xb8b6ae), burnt = M(0x2a2826);
+    const add = (geo, m, px, py, pz, rx = 0, ry = 0, rz = 0) => { const o = new THREE.Mesh(geo, m); o.position.set(px, py, pz); o.rotation.set(rx, ry, rz); o.castShadow = o.receiveShadow = true; g.add(o); return o; };
+    add(new THREE.CylinderGeometry(1.7, 1.7, 11, 14), body, 0, 1.5, 2, Math.PI / 2 - 0.08, 0, 0.05); add(new THREE.CylinderGeometry(1.7, 1.4, 7, 14), burnt, 1.2, 1.3, -8, Math.PI / 2 + 0.1, 0.35, -0.2);
+    add(new THREE.BoxGeometry(13, 0.3, 2.6), body, -6, 0.6, 1.5, 0, 0.2, 0.18); add(new THREE.BoxGeometry(0.3, 3.4, 2.6), M(0x8a2a22), 1.6, 2.8, -11, 0.2, 0.35, 0.3); add(new THREE.CylinderGeometry(0.8, 0.8, 2.6, 10), burnt, 4.5, 0.8, 4, Math.PI / 2, 0.6, 0);
+    const sc = new THREE.Mesh(new THREE.CircleGeometry(13, 24), new THREE.MeshStandardMaterial({ color: 0x1e1c18, roughness: 1, transparent: true, opacity: 0.75, polygonOffset: true, polygonOffsetFactor: -2 })); sc.rotation.x = -Math.PI / 2; sc.position.y = 0.04; g.add(sc);
+    const fire = new THREE.PointLight(0xff7a2a, 30, 22, 1.6); fire.position.set(0.5, 2.5, -3); g.add(fire);
+    const flames = []; for (let i = 0; i < 4; i++) { const f = new THREE.Mesh(new THREE.ConeGeometry(0.5 + i * 0.12, 1.6, 7), new THREE.MeshBasicMaterial({ color: new THREE.Color(2.4, 0.9, 0.2), transparent: true, opacity: 0.85 })); f.position.set(-1 + i * 0.9, 2.2, -4 + i * 1.4); g.add(f); flames.push(f); }
+    const puffs = []; for (let i = 0; i < 9; i++) { const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: puffTex, transparent: true, depthWrite: false })); s.userData.t = i / 9; g.add(s); puffs.push(s); }
+    g.position.set(x, 0, z); g.rotation.y = yaw; scene.add(g);
+    const c = Math.cos(yaw), s = Math.sin(yaw), R = []; for (const [lx, lz, hw, hd] of [[0, 2, 1.7, 5.5], [1.2, -8, 1.6, 3.5]]) { const wx = x + lx * c + lz * s, wz = z - lx * s + lz * c, a = Math.abs(c), b2 = Math.abs(s), ex = hw * a + hd * b2, ez = hw * b2 + hd * a, r = { x0: wx - ex, z0: wz - ez, x1: wx + ex, z1: wz + ez, k: 's', h: 3, lv: 0 }; addRect(r); R.push(r); }
+    return { g, fire, flames, puffs, R, x, z }; };
+  const wreckDrop = () => { if (!wreck) return; scene.remove(wreck.g); wreck.g.traverse(o => { if (o.geometry) o.geometry.dispose(); }); wreck.R.forEach(removeRect); wreck = null; };
+  G.drop = { warn: null, cur: null };
+  G.airdrop = m => { const D = G.drop, now = Date.now();
+    if (m.ph === 9) { D.warn = m.warn ? { mx: m.warn.mx, mz: m.warn.mz, at: now + (m.warn.at - m.warn.now) } : null; D.cur = m.cur || null; wreckDrop(); if (D.cur) wreck = wreckMake(D.cur.x, D.cur.z, D.cur.yaw); return; }
+    if (m.ph === 1) { D.warn = { mx: m.mx, mz: m.mz, at: now + (m.at - m.now) }; const s = Math.round((m.at - m.now) / 1000), p = G.p, d = p ? Math.round(Math.hypot(m.mx - p.x, m.mz - p.z) / 100) / 10 : 0; G.ui.toast('Um avião vai cair daqui a ' + s + ' s, a ' + String(d).replace('.', ',') + ' km. A zona está no mapa.'); audio.play('bip'); return; }
+    if (m.ph === 2) { D.warn = null; D.cur = { x: m.x, z: m.z, yaw: m.yaw, t: now }; wreckDrop(); wreck = wreckMake(m.x, m.z, m.yaw); const p = G.p, d = p ? Math.hypot(m.x - p.x, m.z - p.z) : 1e9; audio.play('explosao', clamp(1.1 - d / 900, 0.12, 1)); if (d < 400) { G.shakeT = Math.max(G.shakeT || 0, 0.5 * (1 - d / 400)); } G.ui.toast('O avião caiu. Há caixas com loot militar no sítio marcado no mapa.'); return; }
+    if (m.ph === 0) { D.cur = null; wreckDrop(); } };
+  const wreckTick = dt => { if (!wreck) return; const t = G.t; wreck.fire.intensity = 24 + Math.sin(t * 13) * 6 + Math.sin(t * 7.3) * 5; wreck.flames.forEach((f, i) => { f.scale.y = 0.8 + 0.3 * Math.sin(t * 9 + i * 2); f.rotation.y = t * (1 + i * 0.3); });
+    for (const s of wreck.puffs) { const u = s.userData; u.t = (u.t + dt / 7) % 1; const k = u.t; s.position.set(-1 + Math.sin(k * 5 + u.t) * 0.8 + k * 4, 2 + k * 18, -4 + k * 3); s.scale.setScalar(2 + k * 9); s.material.opacity = (1 - k) * 0.55 * Math.min(1, k * 6); } };
   G.dropGrid = (x, z, g) => dropBag(x, z, g);
   G.dropItem = it => { const g = new Grid(6, 4); g.insert(it); const p = G.p; dropBag(p.x + Math.sin(p.yaw) * 0.6, p.z + Math.cos(p.yaw) * 0.6, g, { lv: p.lv, y: p.base + groundY(p.x, p.z, p.lv) }); };
   const openBox = c => {
@@ -719,7 +758,7 @@ async function boot() {
     if (!c.bag && !c.own) { if (!c.grid) { c.grid = new Grid(c.slots[0], c.slots[1]); rollLoot(c.table, c.grid); c.next = G.t + 300; } else if (G.t > c.next && c.grid.list.length < 2) { rollLoot(c.table, c.grid); c.next = G.t + 300; } }
     G.box = c; G.ui.openInv(c);
   };
-  G.interact = () => { const pr = G.prompt; if (!pr) return; if (pr.lockPut && G.lockT) { G.ui.lockMenu(G.lockT); return; } if (pr.carExit) { G.cars.exit(); return; } if (pr.car) { if (pr.full) return; if (pr.fuel) { const h = held(); if (h && h.k === 'gasolina' && G.cars.refuel(pr.car, h)) { consume(h); G.ui.refresh(true); } return; } G.cars.enter(pr.car); return; } if (pr.own && pr.bed) { G.base.use(pr); return; } if (pr.own && pr.bench) { G.box = null; G.ui.openInv(null, 'craft'); return; } if (pr.door) { const D = pr.door; if (D.lock && D.lock.hp > 0) { G.ui.toast('Trancada. Só abre com explosivos (' + Math.round(D.lock.hp / D.lock.max * 100) + '%)'); audio.play('vazio'); return; } if (!setDoor(D, D.target ? 0 : 1)) G.ui.toast('Está alguém na porta'); return; } openBox(pr); };
+  G.interact = () => { const pr = G.prompt; if (!pr) return; if (pr.drink) { G.p.water = Math.min(100, G.p.water + 20); audio.play('comer'); G.ui.toast('Bebeste água'); G.ui.refresh && G.ui.refresh(true); return; } if (pr.lockPut && G.lockT) { G.ui.lockMenu(G.lockT); return; } if (pr.carExit) { G.cars.exit(); return; } if (pr.car) { if (pr.full) return; if (pr.fuel) { const h = held(); if (h && h.k === 'gasolina' && G.cars.refuel(pr.car, h)) { consume(h); G.ui.refresh(true); } return; } G.cars.enter(pr.car); return; } if (pr.own && pr.bed) { G.base.use(pr); return; } if (pr.own && pr.bench) { G.box = null; G.ui.openInv(null, 'craft'); return; } if (pr.door) { const D = pr.door; if (D.lock && D.lock.hp > 0) { G.ui.toast('Trancada. Só abre com explosivos (' + Math.round(D.lock.hp / D.lock.max * 100) + '%)'); audio.play('vazio'); return; } if (!setDoor(D, D.target ? 0 : 1)) G.ui.toast('Está alguém na porta'); return; } openBox(pr); };
 
   // ---------- zombies
   const zoneAt = (x, z) => { if (inCity(x, z)) return W.zones[0]; let best = null; for (const zn of W.zones) { if (zn.kind === 'city') continue; const d = Math.hypot(x - zn.x, z - zn.z); if (d < zn.r && (!best || zn.r < best.r)) best = zn; } return best; };
@@ -732,14 +771,14 @@ async function boot() {
   const reviveZ = z => { Object.assign(z, { x: z.hx, z: z.hz, hp: z.hpMax || 80, state: 'wander', deadT: 0, sink: 0, limp: 0, lv: 0, base: 0, st: null, bld: null, tx: z.hx, tz: z.hz, lost: 0, mem: 0, atkT: 0, head: false, reT: 360 + Math.random() * 300 }); if (z.helm0 != null) { z.helm = z.helm0; z.vest = z.vest0; } armDur(z); };
   const popWorld = () => {
     G.zs.length = 0;
-    const add = (cx, cz, r, n) => { for (let k = 0, made = 0; k < n * 8 && made < n; k++) { const a = Math.random() * 6.28, rr0 = Math.sqrt(Math.random()) * r, x = cx + Math.sin(a) * rr0, z = cz + Math.cos(a) * rr0; if (Math.abs(x) > MAP - 3 || Math.abs(z) > MAP - 3 || solidAt(x, z, 0.5)) continue; G.zs.push(mkZ(x, z)); made++; } };
-    for (const zn of W.zones) add(zn.x, zn.z, zn.kind === 'city' ? 46 : Math.max(10, zn.r), { city: 42, mil: 24, town: 16, mon: 9, cabin: 2 }[zn.kind] ?? 6);
+    const add = (cx, cz, r, n) => { for (let k = 0, made = 0; k < n * 8 && made < n; k++) { const a = Math.random() * 6.28, rr0 = Math.sqrt(Math.random()) * r, x = cx + Math.sin(a) * rr0, z = cz + Math.cos(a) * rr0; if (Math.abs(x) > MAP - 3 || Math.abs(z) > MAP - 3 || solidAt(x, z, 0.5) || W.wet(x, z, 1)) continue; G.zs.push(mkZ(x, z)); made++; } };
+    for (const zn of W.zones) add(zn.x, zn.z, zn.kind === 'city' ? 46 : Math.max(10, zn.r), zn.nz ?? { city: 42, mil: 24, town: 16, mon: 9, cabin: 2 }[zn.kind] ?? 6);
     add(0, 0, CORE - 8, 40); // espalhados pela floresta
     // floresta do mundo de fora: poucos, espalhados
     for (let k = 0, made = 0; k < 2000 && made < 160; k++) { const x = (Math.random() * 2 - 1) * (MAP - 20), z = (Math.random() * 2 - 1) * (MAP - 20); if (Math.max(Math.abs(x), Math.abs(z)) < CORE + 30) continue; add(x, z, 4, 1); made++; }
   };
   G.popWorld = popWorld;
-  const spawnZ = (cx, cz, r0, r1) => { for (let k = 0; k < 12; k++) { const a = Math.random() * 6.28, r = r0 + Math.random() * (r1 - r0), x = cx + Math.sin(a) * r, z = cz + Math.cos(a) * r; if (Math.abs(x) > MAP - 3 || Math.abs(z) > MAP - 3 || solidAt(x, z, 0.5)) continue; const zb = zAt(x, z), zn = zoneAt(x, z);
+  const spawnZ = (cx, cz, r0, r1) => { for (let k = 0; k < 12; k++) { const a = Math.random() * 6.28, r = r0 + Math.random() * (r1 - r0), x = cx + Math.sin(a) * r, z = cz + Math.cos(a) * r; if (Math.abs(x) > MAP - 3 || Math.abs(z) > MAP - 3 || solidAt(x, z, 0.5) || W.wet(x, z, 1)) continue; const zb = zAt(x, z), zn = zoneAt(x, z);
       // soldados na base militar (capacete IIIA e colete III); polícias na cidade (colete IIIA)
       if (zn && zn.kind === 'mil' && Math.random() < 0.55) { zb.kind = 'mil'; zb.helm = 2; zb.vest = Math.random() < 0.6 ? 2 : 3; zb.hp = 70; } else if (zn && zn.kind === 'city' && Math.random() < 0.12) { zb.kind = 'pol'; zb.vest = 2; zb.helm = Math.random() < 0.4 ? 2 : 0; zb.hp = 75; } armDur(zb);
       G.zs.push(zb); return true; } return false; };
@@ -876,7 +915,7 @@ async function boot() {
   const nodeWait = new Map(); // chave → quando volta (ms), para setores que ainda não estão carregados
   const nodeOff = (n, ms) => { if (!n.alive) return; n.alive = false; n.col.on = false; n.respawn = G.t + ms / 1000; hideNode(n); };
   W.onSector = S => { if (!nodeWait.size) return; const now = Date.now(); for (const n of S.nodes) { const u = nodeWait.get(n.key); if (u && u > now) nodeOff(n, u - now); } };
-  const bagRows = rows => { const me = (Conta.ativo() || {}).nome; for (const [id, x, z, y, lv, body, name] of rows) { if (G.bags.some(b => b.nid === id)) continue; const mine = body && name === me; const b = dropBag(x, z, new Grid(6, 4), { net: true, nid: id, body: !!body, lv, y, mine, label: body ? (mine ? 'Revistar o teu corpo' : 'Revistar o corpo de ' + name) : 'Revistar saco' }); b.grid = null; b.mesh.position.set(x, y, z); } };
+  const bagRows = rows => { const me = (Conta.ativo() || {}).nome; for (const [id, x, z, y, lv, body, name] of rows) { if (G.bags.some(b => b.nid === id)) continue; const crate = body === 2, mine = body === 1 && name === me; const b = dropBag(x, z, new Grid(6, 4), { net: true, nid: id, body: body === 1, crate, lv, y, mine, label: crate ? 'Abrir caixa do avião' : body ? (mine ? 'Revistar o teu corpo' : 'Revistar o corpo de ' + name) : 'Revistar saco' }); b.grid = null; b.mesh.position.set(x, y, z); } };
   const bagGone = id => { const i = G.bags.findIndex(b => b.nid === id); if (i < 0) return; const b = G.bags[i]; scene.remove(b.mesh); G.bags.splice(i, 1); if (G.box === b) { G.box = null; if (G.invOpen) G.ui.openInv(null); } };
   // ---------- zombies online: o servidor guarda-os todos; simulas os que estão mais perto de ti e vês os outros como quem os simula os vê
   const zById = new Map(), zSent = new Map(), KIND = ['', 'mil', 'pol'], KC = { mil: 1, pol: 2 };
@@ -1010,7 +1049,7 @@ async function boot() {
     // o mundo do perfil volta como estava: zombies, sacos no chão, o que já tiraste das caixas e a hora (quem saiu a meio de uma luta volta a meio dela)
     if (wd) restoreWorld(wd); else if (ch && ch.zs) restoreZs(ch.zs); else popWorld();
     if (!G.zs.length) popWorld();
-    SECTORS.fill(G.p.x, G.p.z);
+    SECTORS.fill(G.p.x, G.p.z); for (let i = 0; i < 12 && lazyTick(G.p.x, G.p.z); i++);
     refresh(); save(); G.ui.showHUD(cont ? 'Acordaste onde adormeceste.' : kit ? 'Kit de teste: começas à beira do mapa do centro.' : whereMsg(G.p.x, G.p.z));
     G.killer = null; G.cars.clear(); G.cars.spawnLocal(); if (G.online && !kit) G.net.start(); else G.net.stop();
   };
@@ -1081,6 +1120,7 @@ async function boot() {
   // raio contra caixa (entrada, em metros; 1e9 se não toca)
   const rayBox = (o, d, x0, y0, z0, x1, y1, z1) => { let t0 = 0, t1 = 1e9; for (const [oo, dd, lo, hi] of [[o.x, d.x, x0, x1], [o.y, d.y, y0, y1], [o.z, d.z, z0, z1]]) { if (Math.abs(dd) < 1e-9) { if (oo < lo || oo > hi) return 1e9; continue; } let ta = (lo - oo) / dd, tb = (hi - oo) / dd; if (ta > tb) { const q = ta; ta = tb; tb = q; } if (ta > t0) t0 = ta; if (tb < t1) t1 = tb; if (t0 > t1) return 1e9; } return t0; };
   const aimStart = (scope = false) => {
+    if (G.p && G.p.swim) { G.ui.toast('A nadar não dá para usar a arma'); return; }
     const p = G.p, d = heldDef(); if (!G.playing || !d.gun || !p.alive || p.climb || p.use || G.invOpen) return;
     const was = AIM.on; AIM.on = true; AIM.idle = 0; if (!was) AIM.steady = 0;
     AIM.scope = !!(scope && scopeItem());
@@ -1190,7 +1230,7 @@ async function boot() {
     G.t += dt;
     const p = G.p;
     if (G.paused) { G.ui.frame(0); renderer.render(scene, cam); return; }
-    updDoors(dt); updBooms(dt); updWeather(dt); if (G.playing && G.p) SECTORS.tick(G.p.x, G.p.z); if (G.base) { G.base.tick(dt); G.buildK = G.base.frame(); }
+    updDoors(dt); updBooms(dt); updWeather(dt); wreckTick(dt); mats.water.normalMap.offset.set((G.t * 0.011) % 1, (G.t * 0.006) % 1); if (G.playing && G.p) { SECTORS.tick(G.p.x, G.p.z); lazyTick(G.p.x, G.p.z); } if (G.base) { G.base.tick(dt); G.buildK = G.base.frame(); }
     if (G.playing && p) {
       // movimento relativo ao ecrã, com peso: acelera e trava, o corpo vira para onde andas
       const cfg = G.cfg;
@@ -1270,14 +1310,16 @@ async function boot() {
       // correr (baixa a arma)
       const fwdOk = !moving || Math.abs(angDiff(moveYaw, p.root)) < 0.9;
       const L = load(), over = Math.max(0, L.kg - L.cap);
-      const wantSprint = over <= 18 && (keys.has('ShiftLeft') || keys.has('ShiftRight') || (cfg.sprintPush && !AIM.on && sticks.L && sticks.L.m > 0.93) || G.autoRun) && il > 0.3 && !p.use && !back && fwdOk && !AIM.scope;
+      // na água: nadas devagar, não corres nem usas a arma, e cansas-te; sem fôlego vais perdendo vida
+      { const was = p.swim; p.swim = p.alive && !p.climb && !G.car && (p.lv || 0) === 0 && W.wet(p.x, p.z); if (p.swim && !was) { if (AIM.on) aimEnd(); G.ui.toast('A nadar · sem armas e devagar'); } if (p.swim && moving) { p.stam = Math.max(0, p.stam - dt * 3.2); if (p.stam <= 0 && !(G.admF && G.admF.god)) { p.hp -= dt * 2.5; p.hurtT = 0.3; if (p.hp <= 0) die('afogado'); } } }
+      const wantSprint = !p.swim && over <= 18 && (keys.has('ShiftLeft') || keys.has('ShiftRight') || (cfg.sprintPush && !AIM.on && sticks.L && sticks.L.m > 0.93) || G.autoRun) && il > 0.3 && !p.use && !back && fwdOk && !AIM.scope;
       if (wantSprint && AIM.on) aimEnd();
       if (wantSprint && p.stam > 0 && !p.stamLock && p.onGround) { p.sprint = true; p.stam -= dt * 3.3 * (1 - 0.4 * sk('res')) * (1 + over / 20); if (moving) skUp('res', dt * 5.8e-4); if (p.stam <= 0) { p.stam = 0; p.stamLock = true; } } else { p.sprint = false; p.stam = Math.min(100, p.stam + dt * (AIM.breathOn ? 0 : 9 * (1 + 0.3 * sk('res')))); if (p.stam > 20) p.stamLock = false; }
       let spd = p.sprint ? 5.0 : 3.0;
       if (AIM.on && !p.sprint) spd = AIM.scope ? 1.1 : 2.4; if (back) spd *= 0.62;
       if (moving) spd *= 0.5 + 0.5 * Math.max(0, Math.cos(Math.min(Math.PI / 2, Math.abs(angDiff(moveYaw, p.root)) * (aimingNow ? 0.6 : 1))));
       if (over > 0) spd *= Math.max(0.62, 1 - over / 45);
-      if (p.use) spd = 1.5; if (!p.alive || p.climb) spd = 0; if (!p.onGround) spd *= 0.9;
+      if (p.use) spd = 1.5; if (p.swim) spd = Math.min(spd, p.stam > 0 ? 1.8 : 1.0); if (!p.alive || p.climb) spd = 0; if (!p.onGround) spd *= 0.9;
       let tvx = moving ? wx / Math.max(il, 1e-6) * Math.min(il, 1) * spd : 0, tvz = moving ? wz / Math.max(il, 1e-6) * Math.min(il, 1) * spd : 0;
       // a passar numa porta aberta: puxa-te devagar para o meio do vão, para não ficares preso no aro (no telemóvel o polegar raramente vai certinho)
       if (moving && !p.climb && !G.car) { const v = Math.hypot(tvx, tvz); for (const D of W.doors) { if (D.t < 0.6 || (D.lv || 0) !== (p.lv || 0) || Math.abs(D.x - p.x) > 2 || Math.abs(D.z - p.z) > 2) continue;
@@ -1326,7 +1368,8 @@ async function boot() {
         const uu = p.use && ITEMS[p.use.it.k] && ITEMS[p.use.it.k].use, ukind = uu ? ((uu.water || 0) > (uu.food || 0) ? 'drink' : uu.food ? 'eat' : 'heal') : null;
         const wf = d.gun ? ray(p.x, p.z, Math.sin(p.yaw), Math.cos(p.yaw), 1.0, null, 's', p.lv || 0, 1.2) : 1; p.wallK = (p.wallK || 0) + (clamp((0.85 - wf) / 0.35, 0, 1) - (p.wallK || 0)) * Math.min(1, dt * 12);
         body.pose(dt, p.mv, mode, p.swing, p.recoil, twist, p.climb ? p.climb.t : -1, p.step, d.gun ? AIM.raise * (1 - 0.85 * p.wallK) : 1, ukind ? { kind: ukind, t: Math.min(1, p.use.t / p.use.dur) } : null);
-        { const l = AIM.lean || 0; body.root.position.set(p.x + Math.cos(p.root) * l * 0.14, p.y, p.z - Math.sin(p.root) * l * 0.14); body.root.rotation.set(0, p.root, -l * 0.2, 'YXZ'); }
+        p.swimY = (p.swimY || 0) + ((p.swim ? 0.95 : 0) - (p.swimY || 0)) * Math.min(1, dt * 5);
+        { const l = AIM.lean || 0; body.root.position.set(p.x + Math.cos(p.root) * l * 0.14, p.y - p.swimY, p.z - Math.sin(p.root) * l * 0.14); body.root.rotation.set(0, p.root, -l * 0.2, 'YXZ'); }
       }
       p.hurtT -= dt;
       if (G.quit) { const q = G.quit; if (!p.alive || p.hp < q.hp - 0.01 || Math.hypot(p.x - q.x, p.z - q.z) > 0.25) { G.quit = null; G.ui.quitTick(-1); G.ui.toast('Saída cancelada'); } else { q.t -= dt; G.ui.quitTick(q.t); if (q.t <= 0) G.toMenu(); } }
@@ -1343,9 +1386,10 @@ async function boot() {
       if (G.car) best = { label: G.car.hp <= 0 || G.carSeat ? 'Sair do carro' : 'Sair do carro', carExit: true, x: p.x, z: p.z };
       else if (p.alive && !p.climb && !p.lv) { const c = G.cars.nearest(p); if (c) { const cd = Math.hypot(c.x - p.x, c.z - p.z) - 1.2, h = held();
           if (!best || cd < bd) best = h && h.k === 'gasolina' ? { label: 'Pôr gasolina no carro (' + Math.round(c.fuel) + ' L)', car: c, fuel: true, x: c.x, z: c.z } : G.cars.seatFree(c) < 0 ? { label: 'Carro cheio', car: c, full: true, x: c.x, z: c.z } : { label: c.seats[0] ? 'Entrar no carro (passageiro)' : 'Conduzir', car: c, x: c.x, z: c.z }; } }
+      if (!best && p.alive && !G.car && !p.lv && p.water < 97 && (p.swim || W.wet(p.x, p.z, 1.4))) best = { label: 'Beber água', drink: true, x: p.x, z: p.z };
       G.prompt = best;
       if (G.net.on) { const d = heldDef(), it = held(), mode = d.gun ? (d.long ? 2 : 1) : d.melee && it ? 3 : 0, eq = G.inv.eq, lvl = s => eq[s] ? ITEMS[eq[s].k].lvl || 0 : 0;
-        G.net.frame(dt, { x: +p.x.toFixed(2), z: +p.z.toFixed(2), y: +p.y.toFixed(2), lv: p.lv || 0, yaw: +Math.atan2(Math.sin(p.root), Math.cos(p.root)).toFixed(2), mv: +Math.min(3, p.mv || 0).toFixed(2), an: (G.car ? 8 : mode + (AIM.on ? 4 : 0)), w: mode ? it.k : '', hp: Math.round(Math.max(0, p.hp)), al: p.alive ? 1 : 0, ar: [lvl('head'), lvl('vest')] }, o => canSee(p, o)); }
+        G.net.frame(dt, { x: +p.x.toFixed(2), z: +p.z.toFixed(2), y: +(p.y - (p.swimY || 0)).toFixed(2), lv: p.lv || 0, yaw: +Math.atan2(Math.sin(p.root), Math.cos(p.root)).toFixed(2), mv: +Math.min(3, p.mv || 0).toFixed(2), an: (G.car ? 8 : mode + (AIM.on ? 4 : 0)), w: mode ? it.k : '', hp: Math.round(Math.max(0, p.hp)), al: p.alive ? 1 : 0, ar: [lvl('head'), lvl('vest')] }, o => canSee(p, o)); }
       if (G.box && (Math.hypot(G.box.x - p.x, G.box.z - p.z) > 2.6)) { G.box = null; if (G.invOpen) G.ui.openInv(null); }
       updZombies(dt); G.cars.update(dt);
       // sacos: os vazios desaparecem, os velhos também

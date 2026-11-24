@@ -33,6 +33,7 @@ export function makeNet({ G, scene, mkRemote, audio, Conta, enc, dec, hurt, die,
       case 'ok': {
         N.id = m.id; tok = m.tok; try { localStorage.setItem(tokKey(), tok); } catch (e) { } N.on = true; retry = 0;
         clearAll(); for (const [id, name, look, clan] of m.players) addRemote(id, name, look, clan); setSleepers(m.sleep); N.clan = m.clan ? m.clan.id : null; N.clanInfo = m.clan;
+        if (G.airdrop) G.airdrop({ ph: 9, ...(m.drop || {}) });
         N.role = m.role || null; G.admF = { r: N.role, inv: 0, god: 0, spec: 0 }; G.frozen = false; G.ui.admRole && G.ui.admRole(N.role);
         off = m.w.now - Date.now(); cyc0 = m.w.cyc0; N.uid = m.uid; N.world = true; cur = null; world.reset(m.w); if (m.inv && !m.killed && G.loadInv) G.loadInv(m.inv); invSig = '';
         const n = m.players.length; G.ui.toast(n ? `Online · ${n} ${n === 1 ? 'jogador ligado' : 'jogadores ligados'}` : 'Online · estás sozinho no servidor por agora');
@@ -71,6 +72,7 @@ export function makeNet({ G, scene, mkRemote, audio, Conta, enc, dec, hurt, die,
       case 'dr': world.door(m.i, m.o); return;
       case 'nd': world.node(m.k, m.ms); return;
       case 'wx': world.wx(m.r); return;
+      case 'drop': G.airdrop && G.airdrop(m); return;
       case 'zk': world.z.killed(m.i, m.by, m.head); return;
       case 'zh': world.z.hit(m.i, m.dx, m.dz); return;
       case 'zat': hurt(m.dmg, null, 'body', null, 'zombie'); return;

@@ -3,7 +3,7 @@
 import * as THREE from 'three';
 
 export function buildMonuments(H, house) {
-  const { b, A, W, rect, circ, mp, container, shell, car, pole, lamp, crate, cabinet, counter, table, chair, bed, shelf, fridge, woodFence, blood, bags, cone, barrier, bench, bike, vend, dirt, road, rr, ri, pick, rnd, shade, mat4, lantern, sofa, books, toilet, sinkI, plantI, deskPC, boxes, tvI, wardrobe, rugI, clutter } = H;
+  const { lazy, b, A, W, rect, circ, mp, container, shell, car, pole, lamp, crate, cabinet, counter, table, chair, bed, shelf, fridge, woodFence, blood, bags, cone, barrier, bench, bike, vend, dirt, road, rr, ri, pick, rnd, shade, mat4, lantern, sofa, books, toilet, sinkI, plantI, deskPC, boxes, tvI, wardrobe, rugI, clutter } = H;
   const zone = (name, jp, x, z, r, kind, sub) => W.zones.push({ name, jp, x, z, r, kind, sub });
   const LIT = (r, g, bl) => new THREE.Color(r, g, bl);
   const VERM = 0xc8321e, DARK = 0x2c3038, GOLD = 0xc8a040, STONE = 0x9a968c;
@@ -170,7 +170,8 @@ export function buildMonuments(H, house) {
   // ---------- mundo de fora (8 km): estrada em anel e vilas ao longo das estradas
   const tOut = performance.now(); const R = 2000; dirt(-R - 2.4, -R, -R + 2.4, R); dirt(R - 2.4, -R, R + 2.4, R); dirt(-R, -R - 2.4, R, -R + 2.4); dirt(-R, R - 2.4, R, R + 2.4);
   // vila genérica: casas viradas para a estrada, dos dois lados (ax 'x' = estrada ao longo de x)
-  const vila = (name, jp, X, Z, ax, n) => { zone(name, jp, X, Z, 50, 'town', 'Vila · casas');
+  const vila = (name, jp, X, Z, ax, n) => lazy(X - 75, Z - 75, X + 75, Z + 75, () => vila0(name, jp, X, Z, ax, n));
+  const vila0 = (name, jp, X, Z, ax, n) => { zone(name, jp, X, Z, 50, 'town', 'Vila · casas');
     for (let i = 0; i < n; i++) { const along = (i - (n - 1) / 2) * 15 + rr(-1.5, 1.5), side = i % 2 ? 1 : -1, w = rr(7.4, 9), d = rr(6.4, 7.6), off = 6.8 + 2.4 + (ax === 'x' ? d : w) / 2 + rr(0, 2);
       if (ax === 'x') house(X + along, Z + side * off, w, d, side > 0 ? 'n' : 's'); else house(X + side * off, Z + along, w, d, side > 0 ? 'w' : 'e'); }
     const cx = ax === 'x' ? X + rr(-12, 12) : X + rr(-1.6, 1.6), cz = ax === 'x' ? Z + rr(-1.6, 1.6) : Z + rr(-12, 12); car(cx, cz, ax === 'x' ? Math.PI / 2 + rr(-0.15, 0.15) : rr(-0.15, 0.15), pick([0x8a2a22, 0x3a3d40, 0xd8d6d0, 0x2a5a8a, 0x4a5a3a]), { wreck: rnd() < 0.5 });
