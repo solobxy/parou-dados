@@ -1,7 +1,7 @@
 {
-  "built_at": "2026-11-24T19:33:24.936511+00:00",
-  "db_bytes": 750161920,
-  "gz_bytes": 204641871,
+  "built_at": "2026-11-24T22:53:55.527049+00:00",
+  "db_bytes": 750186496,
+  "gz_bytes": 204655945,
   "totals": {
     "lines": 2838,
     "stops": 50688,
@@ -660,11 +660,12 @@
     }
   ],
   "desenhos": {
-    "bytes": 9838837,
+    "bytes": 9859154,
     "por_operador": {
       "barraqueiro_oeste": {
         "viagens": 119,
-        "com_desenho": 0
+        "com_desenho": 119,
+        "desenhos": 6
       },
       "cam_madeira": {
         "viagens": 1514,
@@ -798,8 +799,8 @@
       },
       "tub_braga": {
         "viagens": 3794,
-        "com_desenho": 3619,
-        "desenhos": 383
+        "com_desenho": 3730,
+        "desenhos": 395
       },
       "tuba_barcelos": {
         "viagens": 648,
@@ -1006,13 +1007,13 @@
           "total": 385
         },
         "servicos_com_data_hoje": [
-          "DU",
-          "BU",
           "CU",
+          "AU",
+          "DU",
           "FU",
           "EU",
-          "BexpU",
-          "AU"
+          "BU",
+          "BexpU"
         ],
         "viagens_por_servico": [
           {
@@ -1067,5 +1068,5 @@
       }
     }
   },
-  "duration_s": 242
+  "duration_s": 301
 }
