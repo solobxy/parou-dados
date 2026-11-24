@@ -52,6 +52,7 @@ def comparar_mdb(caminho_csv, manifest, ignorar=()):
         for k in ("url",):
             if f.get(k):
                 usados.add(f[k].split("?")[0].rstrip("/"))
+                usados.update(re.findall(r"(?:mdb|tld|tfs)-\d+", f[k]))  # espelho do Mobility Database
     novos = []
     with open(caminho_csv, encoding="utf-8") as fh:
         for l in csv.DictReader(fh):
