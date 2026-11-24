@@ -115,6 +115,27 @@ r = await sugestoes('mar shopping');
 ok('[uma palavra] «mar shopping» encontra o MarShopping (no mapa é uma palavra só)', r[0]?.title === 'MarShopping', JSON.stringify(titulos(r)));
 r = await sugestoes('avenida da liberdade', ...LX);
 ok('[nome exato] «avenida da liberdade» dá a avenida antes do hotel que tem o nome dela', r[0]?.title === 'Avenida da Liberdade', JSON.stringify(titulos(r)));
+// --- códigos postais (GeoNames, juntos à lista de locais pelo parou-dados, no fim, com importância baixa)
+const nCP = db.prepare('SELECT COUNT(*) n FROM locais').get().n;
+for (const [i, l] of [
+  ['4420-155', 'localidade', 'São Cosme, Gondomar', 41.1440, -8.5310, 0.05, '4420155'],
+  ['4420-156', 'localidade', 'São Cosme, Gondomar', 41.1452, -8.5322, 0.05, '4420156'],
+  ['1000-155', 'localidade', 'Lisboa', 38.7400, -9.1400, 0.05, '1000155'],
+].entries()) {
+  ins.run(nCP + i + 1, ...l);
+  insF.run(nCP + i + 1, `${l[0]} ${l[6]} ${L.celulaLocais(l[3], l[4])}`);
+}
+L._teste.limpar();
+for (const q of ['4420-155', '4420 155', '4420155']) {
+  r = await sugestoes(q, ...LX);
+  ok(`[código postal] «${q}» encontra o 4420-155 primeiro`, r[0]?.title === '4420-155' && r[0]?.place?.includes('Gondomar'),
+    JSON.stringify(r.slice(0, 3).map((x) => `${x.title} | ${x.place} | ${x.category}`)));
+}
+r = await sugestoes('4420', ...LX);
+ok('[código postal] «4420» (só a primeira parte) mostra códigos de Gondomar', r.some((x) => x.title?.startsWith('4420-')), JSON.stringify(titulos(r).slice(0, 5)));
+r = await sugestoes('colombo', ...LX);
+ok('[código postal] não atrapalha as outras pesquisas', r[0]?.title === 'Centro Comercial Colombo', JSON.stringify(titulos(r)));
+
 const t0 = Date.now();
 for (let i = 0; i < 50; i++) await sugestoes(i % 2 ? 'continente' : 'colombo', ...LX);
 ok('[rapidez] 50 pesquisas em menos de 1 s', Date.now() - t0 < 1000, `${Date.now() - t0} ms`);
