@@ -336,6 +336,12 @@ async function boot() {
   const mkRemote = L => { const b = new Body(mats, lookCol(L && typeof L === 'object' ? L : {})); scene.add(b.root); return b; };
   const horde = new Horde(scene, mats, 900, null); // zombies sem silhueta vermelha: atrás de paredes simplesmente não se veem
   const bagM = bagMesh(mats), bodyBagM = bagMesh(mats, true);
+  // sacos no chão: contorno quente que pulsa quando estás perto (casca por trás do saco, sem custo de pós-processamento)
+  const haloTex = (() => { const c = document.createElement('canvas'); c.width = c.height = 64; const x = c.getContext('2d'), g = x.createRadialGradient(32, 32, 4, 32, 32, 32); g.addColorStop(0, 'rgba(255,200,110,.9)'); g.addColorStop(0.45, 'rgba(242,170,70,.45)'); g.addColorStop(1, 'rgba(242,160,60,0)'); x.fillStyle = g; x.fillRect(0, 0, 64, 64); return new THREE.CanvasTexture(c); })();
+  const haloGeo = new THREE.PlaneGeometry(1, 1), haloMat = new THREE.MeshBasicMaterial({ map: haloTex, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, fog: false, opacity: 0.6 });
+  const glowMat = new THREE.MeshBasicMaterial({ color: 0xF2B65A, side: THREE.BackSide, transparent: true, opacity: 0.7, depthWrite: false, fog: false });
+  const addGlow = m => { let geo = null; m.traverse(o => { if (!geo && o.isMesh) geo = o.geometry; }); if (!geo) return null; geo.computeBoundingBox(); const c = geo.boundingBox.getCenter(new THREE.Vector3()), sz = geo.boundingBox.getSize(new THREE.Vector3()); const g = new THREE.Mesh(geo, glowMat); const k = 0.12; g.scale.set(1 + k / Math.max(0.2, sz.x) * 2, 1 + k / Math.max(0.2, sz.y) * 2, 1 + k / Math.max(0.2, sz.z) * 2); g.position.copy(c).multiply(new THREE.Vector3(1 - g.scale.x, 1 - g.scale.y, 1 - g.scale.z)); g.renderOrder = -1; g.raycast = () => {}; const grp = new THREE.Group(); grp.add(g); const h = new THREE.Mesh(haloGeo, haloMat); h.rotation.x = -Math.PI / 2; h.position.set(c.x, 0.03, c.z); h.scale.setScalar(Math.max(sz.x, sz.z) * 1.9 + 0.5); h.raycast = () => {}; grp.add(h); grp.visible = false; m.add(grp); m.userData.gl = grp; return grp; };
+  const glowBags = () => { const p = G.p; if (!p) return; glowMat.opacity = 0.5 + 0.3 * Math.sin(G.t * 4.2); haloMat.opacity = 0.45 + 0.2 * Math.sin(G.t * 4.2); for (const b of G.bags) { const m = b.mesh; if (!m) continue; const near = p.alive && (b.lv || 0) === (p.lv || 0) && Math.hypot(b.x - p.x, b.z - p.z) < 6; const g = m.userData.gl || (near ? addGlow(m) : null); if (g) g.visible = near; } };
 
   // ---------- estado
   const G = window.G = {
@@ -1324,6 +1330,7 @@ async function boot() {
       if (G.quit) { const q = G.quit; if (!p.alive || p.hp < q.hp - 0.01 || Math.hypot(p.x - q.x, p.z - q.z) > 0.25) { G.quit = null; G.ui.quitTick(-1); G.ui.toast('Saída cancelada'); } else { q.t -= dt; G.ui.quitTick(q.t); if (q.t <= 0) G.toMenu(); } }
       // limite do mapa: aviso ao chegar perto da linha (no máximo a cada 6 s)
       if (p.alive && MAP - Math.max(Math.abs(p.x), Math.abs(p.z)) < 2.2 && G.t > (G.edgeT || 0)) { G.edgeT = G.t + 6; G.ui.toast('Chegaste ao limite do mapa'); }
+      glowBags();
       // interagir
       let best = null, bd = 1.9;
       if (p.alive && !p.climb && p.h < 0.6) for (const c of [...W.containers, ...G.bags]) { if ((c.lv || 0) !== p.lv) continue; const d = Math.hypot(c.x - p.x, c.z - p.z); if (d < bd && los(p.x, p.z, c.x, c.z, [c.x, c.z], 'sg', p.lv, 0.5)) { best = c; bd = d; } }

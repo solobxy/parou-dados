@@ -51,14 +51,15 @@ svg{width:18px;height:18px;flex:none}
 @media (max-width:520px){#build .bmodes button{padding:0 7px;font-size:12px}#build .binfo{display:none}}
 @media (prefers-reduced-motion:reduce){#build{animation:none}}
 /* vida, comida e água numa só placa */
-#vit{position:absolute;z-index:3;display:flex;gap:4px;align-items:stretch;padding:7px 12px 7px 10px;background:var(--iron);box-shadow:inset 0 1px 0 var(--edge);clip-path:polygon(0 0,calc(100% - var(--cut)) 0,100% var(--cut),100% 100%,0 100%)}
+#vit{position:absolute;z-index:3;display:flex;gap:2px;align-items:stretch;padding:2px 4px}
+#vit .vb{text-shadow:0 1px 2px rgba(0,0,0,.9),0 0 10px rgba(0,0,0,.55)}#vit .vb svg{filter:drop-shadow(0 1px 1.5px rgba(0,0,0,.9))}
 .vb{display:flex;align-items:center;gap:7px;height:20px;width:104px}
 .vb svg{width:14px;height:14px}
 .vb .num{font-size:15px;min-width:22px;text-align:right}
-.vb i{flex:1;height:4px;background:rgba(255,255,255,.1);overflow:hidden;position:relative}
+.vb i{flex:1;height:4px;background:rgba(10,11,13,.55);box-shadow:0 0 0 1px rgba(0,0,0,.35),0 1px 3px rgba(0,0,0,.5);overflow:hidden;position:relative}
 .vb i b{position:absolute;inset:0 auto 0 0;transition:width .25s}
 .vb.hp svg,.vb.hp .num{color:#F07A68}.vb.hp b{background:var(--red)}
-.vb.fd svg,.vb.fd .num{color:#EDB06A}.vb.fd b{background:var(--food)}
+.vb.fo svg,.vb.fo .num{color:#EDB06A}.vb.fo b{background:var(--food)}
 .vb.wt svg,.vb.wt .num{color:#7DBEF0}.vb.wt b{background:var(--water)}
 .vb.low .num{animation:pulse 1.2s ease-in-out infinite}
 @keyframes pulse{50%{opacity:.45}}
@@ -215,23 +216,23 @@ body.touch #bottom{bottom:calc(8px + var(--sb))}
 .iwt i{position:absolute;left:20px;right:0;bottom:0;height:2px;background:rgba(255,255,255,.1);overflow:hidden}.iwt u{display:block;height:100%;width:0;background:var(--tx2);transition:width .3s ease-out,background-color .3s}
 .iwt.heavy b,.iwt.heavy{color:var(--amb)}
 @media (max-width:400px){.tabs button{padding:0 8px;font-size:13px;letter-spacing:.04em}.iwt .ic{display:none}.iwt i{left:0}}.iwt.heavy u{background:var(--amb)}.iwt.over b,.iwt.over{color:#e5574a}.iwt.over u{background:#e5574a}
-.istat{margin-left:6px;font:600 13px "Barlow Condensed",sans-serif;letter-spacing:.06em;color:var(--tx2);text-transform:uppercase}
-.ibody{flex:1;min-height:0;display:grid;gap:8px 14px;padding-top:8px;grid-template-columns:auto minmax(200px,250px) auto;grid-template-rows:1fr auto auto;grid-template-areas:"box eq bag" "box belt bag" "box hint bag";justify-content:center;align-items:end}
+.istat{display:none;margin-left:6px;font:600 13px "Barlow Condensed",sans-serif;letter-spacing:.06em;color:var(--tx2);text-transform:uppercase}
+.ibody{flex:1;min-height:0;display:grid;gap:8px 14px;padding-top:8px;grid-template-columns:auto minmax(200px,250px) auto;grid-template-rows:auto auto 1fr;grid-template-areas:"box eq bag" "box belt bag" "box hint bag";justify-content:center;align-items:start}
 .ipan{min-height:0}
-#cBox{grid-area:box;align-self:stretch;display:flex;flex-direction:column;justify-content:flex-end;min-width:calc(var(--cs) * 6 + 10px)}
-#cEq{grid-area:eq;align-self:end}
+#cBox{grid-area:box;align-self:stretch;display:flex;flex-direction:column;justify-content:flex-start;min-width:calc(var(--cs) * 6 + 10px)}
+#cEq{grid-area:eq;align-self:start}
 #cBelt{grid-area:belt}
-.ihint{grid-area:hint;margin:0;max-width:250px;font-size:13px;line-height:1.4;color:var(--tx2)}
-#cBag{grid-area:bag;align-self:end}
+.ihint{grid-area:hint;margin:4px 0 0;max-width:250px;display:flex;flex-direction:column;gap:5px;font-size:12.5px;line-height:1.3;color:#8f897f}.ihint b{display:inline-block;min-width:74px;font:600 12px "Barlow Condensed",sans-serif;letter-spacing:.06em;text-transform:uppercase;color:var(--tx2)}
+#cBag{grid-area:bag;align-self:start}
 .col{display:flex;flex-direction:column;gap:6px;min-height:0}
-#boxV{flex:1;justify-content:flex-end}#craftV{flex:1;justify-content:flex-start}
+#boxV{flex:1;justify-content:flex-start}#craftV{flex:1;justify-content:flex-start}
 #craftV .scroll{display:flex;flex-direction:column;gap:6px;flex:1;padding-bottom:10px}
 .ph{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:24px;font:700 12px "Barlow Condensed",sans-serif;letter-spacing:.1em;text-transform:uppercase;color:var(--tx2)}
-.ph .btn.sm{height:40px;padding:0 14px;font-size:14px}
+.ph .btn.sm{height:38px;margin:-7px 0;padding:0 14px;font-size:14px}
 .ph em{font-style:normal;color:var(--tx2);font-weight:600;letter-spacing:.04em}
 .ph #boxName{color:var(--tx);letter-spacing:.06em}
 .eqw{display:flex;gap:6px;align-items:flex-end}
-#cEq .ph{display:none}
+
 #portrait{width:calc(var(--slot) * 1.2);height:var(--slot);object-fit:cover;object-position:50% 20%;background:radial-gradient(ellipse at 50% 40%,rgba(255,255,255,.06),rgba(255,255,255,0))}
 .eqs{display:flex;gap:4px}
 .slot{width:var(--slot);height:var(--slot);background:rgba(255,255,255,.04);position:relative;display:block;overflow:hidden;border-radius:2px}
@@ -247,7 +248,7 @@ body.touch #bottom{bottom:calc(8px + var(--sb))}
 .cell.off{background:repeating-linear-gradient(135deg,rgba(255,255,255,.025) 0 4px,transparent 4px 8px)}
 .item{position:absolute;overflow:hidden;cursor:grab;touch-action:none;border-radius:2px;box-shadow:inset 0 1px 0 rgba(255,255,255,.08)}
 .item img{position:absolute;left:0;top:0;width:100%;height:100%;object-fit:contain;pointer-events:none}
-.item .nm{position:absolute;left:4px;top:3px;right:4px;overflow:hidden;text-overflow:ellipsis;font:600 10px/1 "Barlow Condensed",sans-serif;letter-spacing:.05em;text-transform:uppercase;color:rgba(238,233,224,.88);text-shadow:0 1px 2px rgba(0,0,0,.95);pointer-events:none;white-space:nowrap}
+.item .nm{position:absolute;left:4px;top:3px;right:4px;overflow:hidden;text-overflow:ellipsis;font:600 11px/1.05 "Barlow Condensed",sans-serif;letter-spacing:0;color:rgba(238,233,224,.92);white-space:normal;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;hyphens:auto;text-shadow:0 1px 2px rgba(0,0,0,.95);pointer-events:none}
 .item .ct{position:absolute;right:3px;bottom:3px;font:700 12px/1 "Barlow Condensed",sans-serif;padding:2px 4px;background:rgba(0,0,0,.7);font-variant-numeric:tabular-nums;pointer-events:none}
 .item .ct.am{color:var(--amb)}
 .item.sel{box-shadow:inset 0 0 0 2px var(--amb)}
@@ -400,9 +401,13 @@ h1 small{display:block;font:900 clamp(16px,3vw,22px)/1.2 "KJP",sans-serif;letter
 .dp p{margin:0;color:#E0D8CC;font-size:16px}
 .dp .stat{font:600 14px "Barlow Condensed",sans-serif;letter-spacing:.06em;text-transform:uppercase;color:var(--tx2)}
 #map{background:rgba(9,10,12,.94);flex-direction:column;gap:8px;padding:calc(10px + var(--st)) 12px calc(10px + var(--sb))}
-#map canvas{max-width:min(92vw,calc(100vh - 80px));max-height:calc(100vh - 80px);aspect-ratio:1;box-shadow:0 0 0 1px rgba(255,255,255,.12)}
+#map canvas{max-width:min(94vw,calc(100dvh - 118px - var(--st) - var(--sb)));max-height:calc(100dvh - 118px - var(--st) - var(--sb));aspect-ratio:1;box-shadow:0 0 0 1px rgba(255,255,255,.12)}
 #map .mh{display:flex;align-items:center;gap:14px;flex-wrap:wrap;justify-content:center;font:600 13px "Barlow Condensed",sans-serif;letter-spacing:.06em;text-transform:uppercase;color:var(--tx2)}
-#map .mh i{display:inline-block;width:10px;height:10px;margin-right:5px;vertical-align:-1px}
+#map .mz{display:flex;gap:2px}#map .mz .btn{width:48px;height:44px;padding:0;font:600 24px/1 Barlow,sans-serif}#map .mz .btn:disabled{opacity:.35}
+#map .mh #mScale{min-width:64px;text-align:right;color:var(--tx);font-variant-numeric:tabular-nums}
+@media (orientation:landscape){#map:not([hidden]){display:grid;grid-template-columns:auto 172px;grid-template-rows:auto 1fr;grid-template-areas:"cv mh" "cv ml";column-gap:18px;row-gap:14px;align-content:center;justify-content:center}#map canvas{grid-area:cv;max-width:calc(100vw - 260px);max-height:calc(100dvh - 20px - var(--st) - var(--sb))}#map .mh{grid-area:mh;flex-direction:column;align-items:stretch;gap:8px}#map .mh #mScale{text-align:left;font-size:15px}#map .mh .mz .btn{flex:1}#map .mh #mClose{position:fixed;right:calc(12px + var(--sr));top:calc(10px + var(--st))}#map .ml{grid-area:ml;flex-direction:column;align-items:flex-start;justify-content:flex-start;gap:8px}}
+#map .ml{display:flex;gap:6px 14px;flex-wrap:wrap;justify-content:center;font:600 12px "Barlow Condensed",sans-serif;letter-spacing:.06em;text-transform:uppercase;color:var(--tx2)}
+#map .ml i{display:inline-block;width:9px;height:9px;margin-right:5px;vertical-align:-1px;border-radius:1px}
 #load{background:#0d0f11;flex-direction:column;gap:14px;z-index:80}
 #load .bar{width:160px;height:3px;background:rgba(255,255,255,.1);overflow:hidden}
 #load .bar b{display:block;height:100%;width:40%;background:var(--amb);animation:ld 1s ease-in-out infinite alternate}
@@ -478,7 +483,7 @@ input[type=range]{width:160px;accent-color:#F2A33A;height:30px}
 /* vertical: mapa e menus em cima, controlos e cinto em baixo */
 @media (orientation:portrait){
 #zone{display:none}
-#vit{left:50%;transform:translateX(-50%);bottom:calc(68px + var(--sb));padding:6px 10px}
+#vit{left:50%;transform:translateX(-50%);bottom:calc(68px + var(--sb));padding:2px 4px;gap:14px}
 .vb{width:96px}
 #ammo{right:calc(92px + var(--sr));bottom:calc(206px + var(--sb));height:48px}
 #feed{top:calc(12px + var(--st) + var(--mmw) + 6px);left:50%;transform:translateX(-50%);flex-direction:row}#feed .fd:nth-last-child(n+3){display:none}
@@ -496,9 +501,9 @@ input[type=range]{width:160px;accent-color:#F2A33A;height:30px}
 /* inventário ao alto: equipamento em cima, o que tiras no meio, ações, cinto e mochila em baixo, perto do polegar */
 .ibody{grid-template-columns:1fr;grid-template-rows:auto minmax(0,1fr) auto auto;grid-template-areas:"eq" "box" "belt" "bag";justify-items:center;align-items:stretch;gap:8px}
 .ihint{display:none}
-#cBox{min-width:0;width:100%;justify-content:flex-start}
+#cBox{min-width:0;width:calc(var(--cs) * 6 + 10px);max-width:100%;justify-content:flex-start}
 #cBox .grid{margin:0 auto}
-#cEq{width:100%}#cEq .eqw{justify-content:center}
+#cEq,#cBag{width:calc(var(--cs) * 6 + 10px);max-width:100%}#cEq .eqw{justify-content:flex-start}
 #cBelt .beltI{grid-template-columns:repeat(6,var(--slot))}
 #cBelt .ph{display:none}
 .tabs button{padding:0 11px;font-size:14px}.ihead{gap:8px}
@@ -542,7 +547,7 @@ input[type=range]{width:160px;accent-color:#F2A33A;height:30px}
   </div>
   <div id="vit" data-h="vit"><div id="status"></div>
     <div class="vb hp">{{heart}}<span class="num" id="vHp">100</span><i><b id="bHp"></b></i></div>
-    <div class="vb fd">{{utensils}}<span class="num" id="vFd">100</span><i><b id="bFd"></b></i></div>
+    <div class="vb fo">{{utensils}}<span class="num" id="vFd">100</span><i><b id="bFd"></b></i></div>
     <div class="vb wt">{{droplet}}<span class="num" id="vWt">100</span><i><b id="bWt"></b></i></div>
   </div>
   <div id="ammo" data-h="ammo" hidden><div class="num" id="aN">0<small>/ 0</small></div><span id="aW"></span></div>
@@ -564,7 +569,7 @@ input[type=range]{width:160px;accent-color:#F2A33A;height:30px}
     <section class="ipan" id="cBag"><div class="ph"><span>Mochila</span><em id="bagCap"></em></div><div class="grid" id="gBag"></div></section>
   </div>
 </div>
-<div id="map" class="ov" hidden><div class="mh"><span><i style="background:#F2A33A"></i>Tu</span><span><i style="background:#8e8a82"></i>Bairro · PvP</span><span><i style="background:#c8402e"></i>Loot militar</span><span><i style="background:#3f5531"></i>Floresta</span><span id="mScale"></span><button class="btn sm" id="mClan">Clã</button><button class="btn sm" id="mZoom">Aproximar</button><button class="btn sm" id="mClose">Fechar</button></div><canvas id="mapc" width="1024" height="1024"></canvas></div>
+<div id="map" class="ov" hidden><div class="mh"><span id="mScale"></span><span class="mz"><button class="btn sm" id="mOut" aria-label="Afastar">−</button><button class="btn sm" id="mIn" aria-label="Aproximar">+</button></span><button class="btn sm" id="mClan">Clã</button><button class="close" id="mClose" aria-label="Fechar">{{x}}</button></div><canvas id="mapc" width="1024" height="1024"></canvas><div class="ml"><span><i style="background:#F2A33A"></i>Tu</span><span><i style="background:#6FA8FF"></i>Clã</span><span><i style="background:#8e8a82"></i>Bairro · PvP</span><span><i style="background:#c8402e"></i>Loot militar</span><span><i style="background:#7fd38a"></i>Cama</span></div></div>
 <div id="quit" hidden><div class="qr"><b id="qN">5</b></div><div class="qt"><span>A sair do jogo</span><em>Estás em combate. Fica parado: mexer-te ou levar dano cancela.</em></div><button class="btn sm" id="qX">Cancelar</button></div>
 <div id="dead" class="ov" hidden><div class="dp" id="dp"><h2>Morreste</h2><p id="dCause"></p><div class="stat" id="dStat"></div><div class="dbeds" id="dBeds" hidden><canvas id="dMap" width="400" height="400" aria-label="Mapa: onde morreste e as tuas camas"></canvas><div class="dlist" id="dList" role="list"></div></div><button class="btn pri big" id="dGo">Acordar noutro sítio</button><div class="note" id="dNote">As tuas coisas ficaram num saco onde caíste.</div></div></div>
 <div id="start" class="ov" hidden><div class="sp">
@@ -575,7 +580,7 @@ input[type=range]{width:160px;accent-color:#F2A33A;height:30px}
   <nav class="menu"><button class="mi pri" id="sCont" hidden><b>Continuar</b><em>Voltas onde ficaste</em></button><button class="mi pri" id="sPlay"><b>Jogar</b><em>Acordas perto de uma vila ou monumento</em></button><button class="mi" id="sSet"><b>Definições</b><em>Controlos, imagem e som</em></button></nav>
   <div class="onl" id="sOnl" role="status"><i class="dot" aria-hidden="true"></i><span><b>Servidor</b><em id="sOnT">A ver quem está a jogar…</em></span></div>
   <div class="keys" id="sKeys"></div>
-  <div class="foot">Protótipo 0.16 · um servidor para todos · quem sai fica a dormir no mundo</div>
+  <div class="foot">Protótipo 0.17 · um servidor para todos · quem sai fica a dormir no mundo</div>
 </div><button id="sMus" aria-label="Música do menu"><span class="on">{{volume-2}}</span><span class="off">{{volume-x}}</span></button><a class="credit" href="https://dinissousa.pt" target="_blank" rel="noopener">feito por dinissousa.pt</a></div>
 <div id="pfm" class="ov" hidden><div class="pfbox"><div class="pfh"><b id="pfT"></b><button class="close" id="pfX" aria-label="Fechar">{{x}}</button></div><div id="pfB" class="pfb"></div></div></div>
 <div id="set" class="ov" hidden><div class="sp2"><div class="ihead"><b class="cond" style="font-size:20px;letter-spacing:.06em;text-transform:uppercase">Definições</b><button class="close" id="setClose" aria-label="Fechar" style="margin-left:auto">{{x}}</button></div><div class="sbody" id="setBody"></div></div></div>

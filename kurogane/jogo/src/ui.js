@@ -131,7 +131,7 @@ export function initUI(G) {
   };
   const renderBar = () => {
     const nm = $('iName'), ct = $('iCat'), ds = $('iDesc'), ac = $('iAct'); ac.innerHTML = '';
-    if (!sel || !locate(sel.it)) { sel = null; bar.hidden = true; $('iHint').textContent = G.TOUCH ? 'Toca num objeto para ver o que podes fazer. Arrasta para o mudar de sítio; para fora do inventário, larga-o no chão. Dois toques fazem a ação principal.' : 'Clica num objeto para ver o que podes fazer. Arrasta para o mudar de sítio; para fora, larga-o no chão. Duplo clique faz a ação principal.'; return; }
+    if (!sel || !locate(sel.it)) { sel = null; bar.hidden = true; $('iHint').innerHTML = G.TOUCH ? '<span><b>Toque</b> ver o que fazer</span><span><b>Dois toques</b> ação principal</span><span><b>Arrastar</b> mover; para fora, largar</span>' : '<span><b>Clique</b> ver o que fazer</span><span><b>Duplo clique</b> ação principal</span><span><b>Arrastar</b> mover; para fora, largar</span>'; return; }
     bar.hidden = false; ds.classList.remove('open');
     const it = sel.it, d = ITEMS[it.k], loc = locate(it);
     nm.textContent = d.n + (it.n > 1 ? ' × ' + it.n : ''); ct.textContent = d.rare ? 'Raro · ' + CAT[d.cat] : CAT[d.cat]; ct.className = 'cat' + (d.rare ? ' rare' : '');
@@ -578,26 +578,39 @@ export function initUI(G) {
     const r = sz / 2 - sz * 0.1; c.fillStyle = 'rgba(15,17,19,.8)'; const nx = sz / 2 + Math.sin(G.YAW) * r, ny = sz / 2 - Math.cos(G.YAW) * r; c.beginPath(); c.arc(nx, ny, sz * 0.075, 0, 7); c.fill(); c.fillStyle = '#EEE9E0'; c.font = `700 ${sz * 0.1}px "Barlow Condensed",sans-serif`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('N', nx, ny + sz * 0.005);
   };
   // mapa grande: o mundo todo ou perto de ti (2 km)
-  let mapNear = false;
+  const SPANS = [MAP * 2, 4000, 2000, 1000, 500]; let mapLv = 0; // mundo todo → 500 m
   const toggleMap = force => {
     G.mapOpen = force ?? !G.mapOpen; $('map').hidden = !G.mapOpen; if (!G.mapOpen) return; drawBig();
   };
   const drawBig = () => {
-    const cv = $('mapc'), c = cv.getContext('2d'), p = G.p, span = mapNear ? 2000 : MAP * 2, cx = mapNear ? clamp(p.x, -MAP + span / 2, MAP - span / 2) : 0, cz = mapNear ? clamp(p.z, -MAP + span / 2, MAP - span / 2) : 0, S = cv.width / span;
+    const cv = $('mapc'), c = cv.getContext('2d'), p = G.p, span = SPANS[mapLv], mapNear = mapLv > 0, cx = mapNear ? clamp(p.x, -MAP + span / 2, MAP - span / 2) : 0, cz = mapNear ? clamp(p.z, -MAP + span / 2, MAP - span / 2) : 0, S = cv.width / span, u = cv.width / Math.max(240, cv.getBoundingClientRect().width || cv.width); // u: píxeis do desenho por píxel do ecrã
     c.setTransform(1, 0, 0, 1, 0, 0); c.imageSmoothingEnabled = true; c.fillStyle = '#4a6338'; c.fillRect(0, 0, cv.width, cv.height);
-    const sx = (cx - span / 2 + MAP) * KW, sz2 = span * KW; c.drawImage(offW, sx, (cz - span / 2 + MAP) * KW, sz2, sz2, 0, 0, cv.width, cv.height);
+    const sx = (cx - span / 2 + MAP) * KW, sz2 = span * KW; if (span <= 4000) c.filter = `blur(${Math.round(16000 / span)}px)`; c.drawImage(offW, sx, (cz - span / 2 + MAP) * KW, sz2, sz2, 0, 0, cv.width, cv.height); c.filter = 'none';
     // perto do centro e ampliado: usa o mapa com detalhe
     if (mapNear) { const a = Math.max(-CORE, cx - span / 2), b = Math.min(CORE, cx + span / 2), a2 = Math.max(-CORE, cz - span / 2), b2 = Math.min(CORE, cz + span / 2); if (b > a && b2 > a2) c.drawImage(off, (a + CORE) * K, (a2 + CORE) * K, (b - a) * K, (b2 - a2) * K, (a - cx + span / 2) * S, (a2 - cz + span / 2) * S, (b - a) * S, (b2 - a2) * S); }
     const T = v => (v - cx + span / 2) * S, Tz = v => (v - cz + span / 2) * S;
+    if (span <= 2000) { const L = (x0, z0, x1, z1) => x1 > cx - span / 2 && x0 < cx + span / 2 && z1 > cz - span / 2 && z0 < cz + span / 2, inCore = (x, z) => Math.abs(x) < CORE && Math.abs(z) < CORE; // estradas nítidas fora do centro
+      for (const r of G.W.roads) if (L(r.x0, r.z0, r.x1, r.z1) && !inCore((r.x0 + r.x1) / 2, (r.z0 + r.z1) / 2)) { c.fillStyle = r.x1 - r.x0 > 8 && r.z1 - r.z0 > 8 ? '#8c7c63' : '#a89a80'; c.fillRect(T(r.x0), Tz(r.z0), Math.max(1.5, (r.x1 - r.x0) * S), Math.max(1.5, (r.z1 - r.z0) * S)); }
+      for (const q of G.W.cuts) if (q.enter && L(q.x0, q.z0, q.x1, q.z1) && !inCore(q.x0, q.z0)) { c.fillStyle = '#8a7f72'; c.fillRect(T(q.x0), Tz(q.z0), (q.x1 - q.x0) * S, (q.z1 - q.z0) * S); c.strokeStyle = 'rgba(242,163,58,.9)'; c.lineWidth = 1.5; c.strokeRect(T(q.x0), Tz(q.z0), (q.x1 - q.x0) * S, (q.z1 - q.z0) * S); }
+      if (span <= 1000) { c.fillStyle = 'rgba(30,48,26,.95)'; for (const t of G.sectors.trees()) { if (!t.alive || !L(t.x, t.z, t.x, t.z) || inCore(t.x, t.z)) continue; c.beginPath(); c.arc(T(t.x), Tz(t.z), Math.max(1.5, 2.1 * t.s * S), 0, 7); c.fill(); } }
+    }
     c.textAlign = 'center';
-    for (const zn of G.W.zones) { const X = T(zn.x), Z = Tz(zn.z); if (X < -40 || Z < -40 || X > cv.width + 40 || Z > cv.height + 40) continue; if (zn.kind === 'cabin') { c.fillStyle = '#e8dcc8'; c.beginPath(); c.arc(X, Z, mapNear ? 5 : 3, 0, 7); c.fill(); continue; } const big = zn.kind === 'city'; if (!mapNear && !big && Math.max(Math.abs(zn.x), Math.abs(zn.z)) < CORE) continue; c.font = `700 ${big ? 24 : mapNear ? 19 : 15}px "Barlow Condensed",sans-serif`; const lab = zn.name.toUpperCase() + (big ? ' · PvP' : ''); const w = c.measureText(lab).width; c.fillStyle = 'rgba(12,14,16,.78)'; c.fillRect(X - w / 2 - 6, Z - 13, w + 12, 24); c.fillStyle = zn.kind === 'mil' ? '#ff9a7a' : big ? '#F2A33A' : '#EEE9E0'; c.fillText(lab, X, Z + 5); }
-    for (const b of G.bags) if (b.body && (b.mine || !b.nid)) { c.fillStyle = '#F07A68'; c.beginPath(); c.arc(T(b.x), Tz(b.z), 8, 0, 7); c.fill(); }
-    if (G.base) { c.font = '600 15px Barlow,sans-serif'; for (const d of G.base.beds()) { const X = T(d.x), Z = Tz(d.z); c.fillStyle = '#7fd38a'; c.strokeStyle = '#0f1a10'; c.lineWidth = 2; c.fillRect(X - 5, Z - 5, 10, 10); c.strokeRect(X - 5, Z - 5, 10, 10); if (mapNear) { c.lineWidth = 4; c.strokeStyle = 'rgba(12,14,16,.85)'; c.strokeText(d.name, X, Z - 12); c.fillStyle = '#DDF3E0'; c.fillText(d.name, X, Z - 12); } } }
-    if (G.net && G.net.on) { c.font = '700 17px "Barlow Condensed",sans-serif'; for (const m of G.net.mates()) { const X = T(m.x), Z = Tz(m.z); c.fillStyle = '#6FA8FF'; c.strokeStyle = '#0d1520'; c.lineWidth = 3; c.beginPath(); c.arc(X, Z, 7, 0, 7); c.fill(); c.stroke(); c.lineWidth = 4; c.strokeStyle = 'rgba(12,14,16,.85)'; c.strokeText(m.name, X, Z - 13); c.fillStyle = '#CFE0FF'; c.fillText(m.name, X, Z - 13); } }
-    c.save(); c.translate(T(p.x), Tz(p.z)); c.rotate(Math.atan2(Math.cos(p.yaw), Math.sin(p.yaw))); c.fillStyle = '#F2A33A'; c.strokeStyle = '#1a1208'; c.lineWidth = 3; c.beginPath(); c.moveTo(16, 0); c.lineTo(-10, 11); c.lineTo(-5, 0); c.lineTo(-10, -11); c.closePath(); c.fill(); c.stroke(); c.restore();
-    $('mScale').textContent = mapNear ? 'Perto de ti · 2 × 2 km' : `Mundo · ${MAP * 2 / 1000} × ${MAP * 2 / 1000} km`; $('mZoom').textContent = mapNear ? 'Ver tudo' : 'Aproximar';
+    const placed = [], pri = z => z.kind === 'city' ? 3 : z.kind === 'mil' ? 2 : 1; for (const zn of [...G.W.zones].sort((a, b) => pri(b) - pri(a) || Math.hypot(a.x - p.x, a.z - p.z) - Math.hypot(b.x - p.x, b.z - p.z))) { const X = T(zn.x), Z = Tz(zn.z); if (X < -40 || Z < -40 || X > cv.width + 40 || Z > cv.height + 40) continue; if (zn.kind === 'cabin') { c.fillStyle = '#e8dcc8'; c.beginPath(); c.arc(X, Z, (mapNear ? 3 : 2) * u, 0, 7); c.fill(); continue; } const big = zn.kind === 'city'; if (!mapNear && !big && Math.max(Math.abs(zn.x), Math.abs(zn.z)) < CORE) continue; c.font = `700 ${Math.round((big ? 13 : mapNear ? 12 : 10.5) * u)}px "Barlow Condensed",sans-serif`; const lab = zn.name.toUpperCase() + (big ? ' · PvP' : ''); const w = c.measureText(lab).width, box = [X - w / 2 - 6 * u, Z - 10 * u, X + w / 2 + 6 * u, Z + 10 * u]; if (placed.some(q => q[0] < box[2] && box[0] < q[2] && q[1] < box[3] && box[1] < q[3])) continue; placed.push(box); c.fillStyle = 'rgba(12,14,16,.78)'; c.fillRect(X - w / 2 - 4 * u, Z - 8 * u, w + 8 * u, 16 * u); c.fillStyle = zn.kind === 'mil' ? '#ff9a7a' : big ? '#F2A33A' : '#EEE9E0'; c.textBaseline = 'middle'; c.fillText(lab, X, Z + 0.5 * u); c.textBaseline = 'alphabetic'; }
+    for (const b of G.bags) if (b.body && (b.mine || !b.nid)) { c.fillStyle = '#F07A68'; c.beginPath(); c.arc(T(b.x), Tz(b.z), 4 * u, 0, 7); c.fill(); }
+    if (G.base) { c.font = `600 ${Math.round(12 * u)}px Barlow,sans-serif`; for (const d of G.base.beds()) { const X = T(d.x), Z = Tz(d.z); c.fillStyle = '#7fd38a'; c.strokeStyle = '#0f1a10'; c.lineWidth = 1.2 * u; c.fillRect(X - 3 * u, Z - 3 * u, 6 * u, 6 * u); c.strokeRect(X - 3 * u, Z - 3 * u, 6 * u, 6 * u); if (mapNear) { c.lineWidth = 3 * u; c.strokeStyle = 'rgba(12,14,16,.85)'; c.strokeText(d.name, X, Z - 7 * u); c.fillStyle = '#DDF3E0'; c.fillText(d.name, X, Z - 7 * u); } } }
+    if (G.net && G.net.on) { c.font = `700 ${Math.round(14 * u)}px "Barlow Condensed",sans-serif`; for (const m of G.net.mates()) { const X = T(m.x), Z = Tz(m.z); c.fillStyle = '#6FA8FF'; c.strokeStyle = '#0d1520'; c.lineWidth = 1.6 * u; c.beginPath(); c.arc(X, Z, 5 * u, 0, 7); c.fill(); c.stroke(); c.lineWidth = 3 * u; c.strokeStyle = 'rgba(12,14,16,.85)'; c.strokeText(m.name, X, Z - 9 * u); c.fillStyle = '#CFE0FF'; c.fillText(m.name, X, Z - 9 * u); } }
+    if (G.net && G.net.on) { const W2 = cv.width, m0 = 16 * u; c.font = `700 ${Math.round(13 * u)}px "Barlow Condensed",sans-serif`; for (const m of G.net.mates()) { const X = T(m.x), Z = Tz(m.z); if (X >= 0 && Z >= 0 && X <= W2 && Z <= W2) continue; // colega fora da vista: seta na borda com a distância
+        const dx = X - W2 / 2, dz = Z - W2 / 2, k = (W2 / 2 - m0) / Math.max(Math.abs(dx), Math.abs(dz)), ex = W2 / 2 + dx * k, ez = W2 / 2 + dz * k, a = Math.atan2(dz, dx), d = Math.hypot(m.x - p.x, m.z - p.z);
+        c.save(); c.translate(ex, ez); c.rotate(a); c.fillStyle = '#6FA8FF'; c.strokeStyle = '#0d1520'; c.lineWidth = 1.6 * u; c.beginPath(); c.moveTo(9 * u, 0); c.lineTo(-5 * u, 6.5 * u); c.lineTo(-5 * u, -6.5 * u); c.closePath(); c.fill(); c.stroke(); c.restore();
+        const lbl = m.name + ' · ' + (d >= 1000 ? (d / 1000).toFixed(1).replace('.', ',') + ' km' : Math.round(d) + ' m'), tx = clamp(ex - Math.cos(a) * 20 * u, 40 * u, W2 - 40 * u), tz = clamp(ez - Math.sin(a) * 20 * u, 12 * u, W2 - 8 * u); c.lineWidth = 3 * u; c.strokeStyle = 'rgba(12,14,16,.85)'; c.strokeText(lbl, tx, tz); c.fillStyle = '#CFE0FF'; c.fillText(lbl, tx, tz); } }
+    { const X = T(p.x), Z = Tz(p.z); c.fillStyle = 'rgba(242,163,58,.18)'; c.strokeStyle = 'rgba(242,163,58,.85)'; c.lineWidth = 1.3 * u; c.beginPath(); c.arc(X, Z, 15 * u, 0, 7); c.fill(); c.stroke(); } // tu: um anel à volta para se ver logo
+    c.save(); c.translate(T(p.x), Tz(p.z)); c.rotate(Math.atan2(Math.cos(p.yaw), Math.sin(p.yaw))); c.fillStyle = '#F2A33A'; c.strokeStyle = '#1a1208'; c.lineWidth = 1.6 * u; c.beginPath(); c.moveTo(10 * u, 0); c.lineTo(-6 * u, 7 * u); c.lineTo(-3 * u, 0); c.lineTo(-6 * u, -7 * u); c.closePath(); c.fill(); c.stroke(); c.restore();
+    $('mScale').textContent = (mapNear ? '' : 'Mundo · ') + (span >= 1000 ? span / 1000 + ' km' : span + ' m'); $('mIn').disabled = mapLv >= SPANS.length - 1; $('mOut').disabled = mapLv <= 0;
   };
-  $('mZoom').onclick = e => { e.stopPropagation(); mapNear = !mapNear; audio.play('ui'); drawBig(); };
+  const mapStep = d => { const n = clamp(mapLv + d, 0, SPANS.length - 1); if (n === mapLv) return; mapLv = n; audio.play('ui'); drawBig(); };
+  $('mIn').onclick = e => { e.stopPropagation(); mapStep(1); }; $('mOut').onclick = e => { e.stopPropagation(); mapStep(-1); };
+  $('mapc').addEventListener('wheel', e => { e.preventDefault(); mapStep(e.deltaY < 0 ? 1 : -1); }, { passive: false });
+  { let pd = 0; const cv = $('mapc'); cv.addEventListener('touchmove', e => { if (e.touches.length !== 2) return; e.preventDefault(); const d = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY); if (!pd) { pd = d; return; } if (d / pd > 1.35) { mapStep(1); pd = d; } else if (pd / d > 1.35) { mapStep(-1); pd = d; } }, { passive: false }); cv.addEventListener('touchend', () => { pd = 0; }); }
 
   // ---------- avisos
   const toastEl = $('toast'); let toastT = 0;
@@ -709,7 +722,7 @@ export function initUI(G) {
     const p = G.p;
     setV('vHp', Math.max(0, Math.ceil(p.hp))); setV('vFd', Math.ceil(p.food)); setV('vWt', Math.ceil(p.water));
     setB('bHp', p.hp); setB('bFd', p.food); setB('bWt', p.water);
-    const low = { hp: p.hp < 30, fd: p.food < 15, wt: p.water < 15 };
+    const low = { hp: p.hp < 30, fo: p.food < 15, wt: p.water < 15 };
     for (const k in low) { const el = document.querySelector('.vb.' + k); if (el.classList.contains('low') !== low[k]) el.classList.toggle('low', low[k]); }
     const st = (p.bleed ? 'b' : '') + (G.inside ? 'i' : '');
     if (vals.st !== st + (G.inside ? G.inside.name : '')) { vals.st = st + (G.inside ? G.inside.name : ''); $('status').innerHTML = (p.bleed ? '<span class="chip">A sangrar</span>' : ''); }
