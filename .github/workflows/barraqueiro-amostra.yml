@@ -19,14 +19,15 @@ jobs:
         run: sudo apt-get install -y -qq poppler-utils >/dev/null
 
       - name: PDFs e texto
+        continue-on-error: true
         run: |
           mkdir -p res/pdf res/txt
-          curl -sSL -A "Mozilla/5.0 PAROU.PT-dados/1.0" https://barraqueiro-oeste.pt/horarios-em-pdf/ -o res/pagina.html || true
+          curl -sSL -w "pagina: %{http_code} %{size_download}\n" -A "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/124.0 Safari/537.36" https://barraqueiro-oeste.pt/horarios-em-pdf/ -o res/pagina.html 2>&1 | tee res/log-pdfs.txt || true
           grep -o 'https://barraqueiro-oeste.pt/wp-content/uploads/[^"]*\.pdf' res/pagina.html | sort -u > res/pdfs.txt || true
           wc -l res/pdfs.txt
           while read -r u; do
             n=$(basename "$u" .pdf)
-            curl -sSL -A "Mozilla/5.0 PAROU.PT-dados/1.0" "$u" -o "res/pdf/$n.pdf" || continue
+            curl -sSL -w "$n: %{http_code} %{size_download}\n" -A "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/124.0 Safari/537.36" "$u" -o "res/pdf/$n.pdf" 2>&1 | tee -a res/log-pdfs.txt || continue
             pdftotext -layout "res/pdf/$n.pdf" "res/txt/$n.layout.txt" || true
             pdftotext -bbox-layout "res/pdf/$n.pdf" "res/txt/$n.bbox.html" || true
             pdfinfo "res/pdf/$n.pdf" > "res/txt/$n.info.txt" || true
@@ -34,13 +35,18 @@ jobs:
           ls -la res/txt | head -80
 
       - name: Paragens e linhas do OpenStreetMap (Oeste)
+        continue-on-error: true
         run: |
-          Q='[out:json][timeout:180];(node[highway=bus_stop](38.95,-9.45,39.35,-9.05);node[public_transport=platform](38.95,-9.45,39.35,-9.05);relation[route=bus](38.95,-9.45,39.35,-9.05););out body;'
-          for s in https://overpass-api.de/api/interpreter https://overpass.kumi.systems/api/interpreter; do
-            curl -sS --data-urlencode "data=$Q" "$s" -o res/osm.json && python3 -c "import json;d=json.load(open('res/osm.json'));print(len(d['elements']),'elementos')" && break
+          Q='[out:json][timeout:90];(node[highway=bus_stop](39.00,-9.42,39.30,-9.10);relation[route=bus](39.05,-9.33,39.13,-9.22););out body;'
+          for s in https://overpass-api.de/api/interpreter https://overpass.private.coffee/api/interpreter https://maps.mail.ru/osm/tools/overpass/api/interpreter; do
+            echo "== $s" >> res/log-osm.txt
+            curl -sS -m 150 -w "%{http_code} %{size_download}\n" -A "PAROU.PT-dados/1.0 (+https://parou.pt)" --data-urlencode "data=$Q" "$s" -o res/osm.json >> res/log-osm.txt 2>&1 || true
+            python3 -c "import json;d=json.load(open('res/osm.json'));print(len(d['elements']),'elementos')" >> res/log-osm.txt 2>&1 && break
           done
+          cat res/log-osm.txt
 
       - name: Publicar resultado
+        if: always()
         run: |
           mkdir -p pub && cp -r res/* pub/
           cd pub && git init -q -b barraqueiro-resultado
