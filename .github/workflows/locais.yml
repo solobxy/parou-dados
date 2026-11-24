@@ -67,6 +67,16 @@ jobs:
           python locais.py locais.geojsonseq locais.json.gz | tee relatorio-locais.txt
           ls -l locais.json.gz
 
+      # Códigos postais (GeoNames, CC BY 4.0): ~200 mil, juntos no fim da lista com importância baixa.
+      # Se o GeoNames falhar, os locais saem na mesma, só sem os códigos.
+      - name: Códigos postais
+        continue-on-error: true
+        run: |
+          curl -fsSL --retry 3 --retry-delay 10 -o PT.zip https://download.geonames.org/export/zip/PT.zip
+          unzip -o -q PT.zip PT.txt
+          python codigos_postais.py PT.txt locais.json.gz | tee -a relatorio-locais.txt
+          ls -l locais.json.gz
+
       - name: Publicar na release "locais"
         if: ${{ (inputs.publicar || '1') == '1' }}
         env:
