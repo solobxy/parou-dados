@@ -157,7 +157,7 @@ ok("[extra] metro: o desenho esparso é substituído pelo do mapa de carris", co
 ok("[extra] o desenho esparso que deixou de ser usado desaparece da base", conn.execute("SELECT COUNT(*) FROM shapes WHERE shape_id = 'metro:esparso'").fetchone()[0] == 0)
 pontos = cd.descodificar_polilinha(conn.execute("SELECT pontos FROM shapes WHERE shape_id = (SELECT shape_id FROM trips WHERE trip_id = 'cp:T1')").fetchone()[0])
 ok("[extra] o desenho guardado é o que veio (3 pontos, com a curva)", len(pontos) == 3 and abs(pontos[1][0] - 41.25) < 1e-5)
-ok("[extra] sem desenhos extra: nada muda e nada falha", cd.aplicar_desenhos_extra(base_nova(), None) == {"unir": 0, "viagens": 0})
+ok("[extra] sem desenhos extra: nada muda e nada falha", cd.aplicar_desenhos_extra(base_nova(), None) == {"unir": 0, "viagens": 0, "autocarros": 0})
 cd.URL_DESENHOS_EXTRA = "http://127.0.0.1:9/nao-existe.json.gz"
 ok("[extra] se o ficheiro não existir ou não se ler, a base sai sem eles (sem falhar)", cd.carregar_desenhos_extra() is None)
 
