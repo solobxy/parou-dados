@@ -1,0 +1,88 @@
+name: Inventário de operadoras e códigos postais (amostra das fontes)
+
+# Recolhe as fontes para o inventário de operadoras (NAP Portugal, lista do IMT, Mobility Database) e para os
+# códigos postais (GeoNames), para construir e testar os scripts. Resultado no ramo "inventario-resultado".
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  amostra:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Mobility Database (Portugal)
+        continue-on-error: true
+        run: |
+          mkdir -p res
+          curl -fsSL https://files.mobilitydatabase.org/feeds_v2.csv -o feeds_v2.csv
+          python3 - <<'EOF'
+          import csv
+          linhas = list(csv.DictReader(open("feeds_v2.csv", encoding="utf-8")))
+          pt = [l for l in linhas if (l.get("location.country_code") or "").upper() == "PT"]
+          with open("res/mdb-pt.csv", "w", encoding="utf-8", newline="") as fh:
+              w = csv.DictWriter(fh, fieldnames=list(linhas[0].keys()))
+              w.writeheader(); w.writerows(pt)
+          print(len(pt), "feeds de Portugal")
+          EOF
+
+      - name: GeoNames (códigos postais de Portugal)
+        continue-on-error: true
+        run: |
+          for f in PT_full.csv.zip PT.zip; do
+            curl -fsSL -w "$f: %{http_code} %{size_download}\n" "https://download.geonames.org/export/zip/$f" -o "$f" | tee -a res/log-geonames.txt || true
+          done
+          for f in PT_full.csv.zip PT.zip; do unzip -o -q "$f" -d "geo_$f" 2>/dev/null && ls -la "geo_$f" >> res/log-geonames.txt; done
+          for d in geo_*; do for t in "$d"/*; do echo "== $t" >> res/log-geonames.txt; wc -l "$t" >> res/log-geonames.txt; head -5 "$t" >> res/log-geonames.txt; grep -m3 "4420-155\|4420155" "$t" >> res/log-geonames.txt; done; done
+          cat res/log-geonames.txt
+
+      - name: NAP Portugal (página com JavaScript)
+        continue-on-error: true
+        run: |
+          npm i --no-save playwright@1.48.2 >/dev/null 2>&1
+          npx playwright install --with-deps chromium >/dev/null 2>&1
+          cat > nap.cjs <<'EOF'
+          const { chromium } = require('playwright');
+          const fs = require('fs');
+          (async () => {
+            const b = await chromium.launch();
+            const p = await b.newPage();
+            const respostas = [];
+            p.on('response', async r => {
+              const ct = r.headers()['content-type'] || '';
+              if (ct.includes('json')) {
+                try { respostas.push({ url: r.url(), corpo: (await r.text()).slice(0, 400000) }); } catch {}
+              }
+            });
+            for (const u of ['https://nap-portugal.imt-ip.pt/nap/multimodal', 'https://nap-portugal.imt-ip.pt/nap/search?category=transportes']) {
+              try { await p.goto(u, { waitUntil: 'networkidle', timeout: 60000 }); await p.waitForTimeout(4000); } catch (e) { console.log(u, e.message); }
+              fs.appendFileSync('res/nap-texto.txt', `\n===== ${u}\n` + (await p.innerText('body').catch(() => '')));
+            }
+            fs.writeFileSync('res/nap-json.json', JSON.stringify(respostas, null, 1));
+            console.log(respostas.length, 'respostas JSON');
+            await b.close();
+          })();
+          EOF
+          node nap.cjs
+
+      - name: Lista de operadores do IMT
+        continue-on-error: true
+        run: |
+          curl -fsSL -A "Mozilla/5.0" "https://www.imt-ip.pt/sites/IMTT/Portugues/TransportesRodoviarios/TransportePublicoPassageiros/Paginas/TransportePublicoPassageiros.aspx" -o res/imt-pagina.html || true
+          grep -oi 'href="[^"]*\(lista\|operador\)[^"]*\.\(xlsx\|xls\|pdf\|csv\)"' res/imt-pagina.html | head -20 | tee res/imt-links.txt || true
+
+      - name: Publicar resultado
+        if: always()
+        run: |
+          mkdir -p pub && cp -r res/* pub/ 2>/dev/null || echo vazio > pub/vazio.txt
+          cd pub && git init -q -b inventario-resultado
+          git config user.name "parou-dados"; git config user.email "actions@users.noreply.github.com"
+          git add -A && git commit -q -m "Amostra inventário $(date -u +%Y-%m-%dT%H:%MZ)" && git push -q -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" inventario-resultado
