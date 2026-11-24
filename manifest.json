@@ -1,14 +1,14 @@
 {
-  "built_at": "2026-11-24T14:18:25.700447+00:00",
-  "db_bytes": 730648576,
-  "gz_bytes": 201173218,
+  "built_at": "2026-11-24T17:01:59.693842+00:00",
+  "db_bytes": 731488256,
+  "gz_bytes": 201265700,
   "totals": {
-    "lines": 2833,
-    "stops": 50556,
-    "trips": 129051,
-    "stop_times": 3902337,
-    "operators": 33,
-    "operators_ok": 30,
+    "lines": 2838,
+    "stops": 50688,
+    "trips": 129170,
+    "stop_times": 3906447,
+    "operators": 34,
+    "operators_ok": 31,
     "operators_desatualizados": 2
   },
   "feeds": [
@@ -431,6 +431,25 @@
       "dias_uteis_sem_servico": 0
     },
     {
+      "id": "barraqueiro_oeste",
+      "operator_name": "Barraqueiro Oeste (TUT Torres Vedras)",
+      "status": "OK",
+      "lines": 5,
+      "stops": 132,
+      "trips": 119,
+      "valid_until": "2027-11-24",
+      "validade": "ok",
+      "dias_validade": 365,
+      "horario_prolongado": false,
+      "url": "https://barraqueiro-oeste.pt/horarios-em-pdf/",
+      "last_error": null,
+      "servicos_associados": null,
+      "servicos_sem_calendario": null,
+      "viagens_hoje": 87,
+      "viagens_amanha": 87,
+      "dias_uteis_sem_servico": 0
+    },
+    {
       "id": "mdb-1272",
       "operator_name": "Cascais Próxima, E.M., S.A. (MobiCascais)",
       "status": "OK",
@@ -643,6 +662,10 @@
   "desenhos": {
     "bytes": 9838837,
     "por_operador": {
+      "barraqueiro_oeste": {
+        "viagens": 119,
+        "com_desenho": 0
+      },
       "cam_madeira": {
         "viagens": 1514,
         "com_desenho": 1514,
@@ -983,12 +1006,12 @@
           "total": 385
         },
         "servicos_com_data_hoje": [
-          "DU",
+          "BU",
           "CU",
           "BexpU",
           "FU",
+          "DU",
           "EU",
-          "BU",
           "AU"
         ],
         "viagens_por_servico": [
@@ -1044,5 +1067,5 @@
       }
     }
   },
-  "duration_s": 452
+  "duration_s": 335
 }
