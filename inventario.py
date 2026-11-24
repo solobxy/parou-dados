@@ -45,8 +45,8 @@ def comparar_imt(nomes, inventario):
     return sorted(set(novos))
 
 
-def comparar_mdb(caminho_csv, manifest):
-    usados = set()
+def comparar_mdb(caminho_csv, manifest, ignorar=()):
+    usados = set(ignorar)
     for f in manifest.get("feeds", []):
         usados.add(f.get("id", ""))
         for k in ("url",):
@@ -99,7 +99,7 @@ def main(argv):
     with open(argv[3], encoding="utf-8") as fh:
         manifest = json.load(fh)
     novos_imt = comparar_imt(nomes, inventario) if len(nomes) >= 50 else [f"(lista do IMT ilegível: só {len(nomes)} nomes)"]
-    novos_mdb = comparar_mdb(argv[2], manifest)
+    novos_mdb = comparar_mdb(argv[2], manifest, inventario.get("mdb_ignorar", {}))
     texto = relatorio(inventario, novos_imt, novos_mdb)
     with open("inventario.md", "w", encoding="utf-8") as fh:
         fh.write(texto)
