@@ -67,10 +67,11 @@ export function initUI(G) {
   // ---------- sticks tácteis
   // polegar esquerdo: mover. Polegar direito: com arma de fogo arrasta a mira (como um rato); com arma branca aponta e toque rápido = golpe
   const gunHeld = () => { const it = G.inv.belt[G.sel]; return !!(it && ITEMS[it.k].gun); };
+  const mx = x => cfg.mirror ? innerWidth - x : x; // com os comandos trocados, o #touch está espelhado: o botão fica onde puseste o dedo
   const pad = (id, key) => {
     const el = $(id), kn = el.querySelector('.knob'), ki = kn.querySelector('i'); let pid = null, ox = 0, oy = 0, lx = 0, ly = 0, t0 = 0, maxM = 0, trk = false, moved = 0; const R = 50;
-    el.addEventListener('pointerdown', e => { if (pid !== null || !G.playing || G.invOpen) return; pid = e.pointerId; el.setPointerCapture(pid); ox = lx = e.clientX; oy = ly = e.clientY; t0 = performance.now(); maxM = 0; moved = 0; trk = key === 'R' && gunHeld(); $(key === 'L' ? 'gL' : 'gR').style.opacity = 0; if (trk) { if (!G.aimS.on) G.aimStart(); return; } kn.style.left = ox + 'px'; kn.style.top = oy + 'px'; kn.classList.add('on'); ki.style.transform = ''; G.sticks[key] = { x: 0, y: 0, m: 0 }; });
-    el.addEventListener('pointermove', e => { if (e.pointerId !== pid) return; if (trk) { const dx = e.clientX - lx, dy = e.clientY - ly; lx = e.clientX; ly = e.clientY; moved += Math.abs(dx) + Math.abs(dy); G.aimDrag(dx, dy); return; } let dx = e.clientX - ox, dy = e.clientY - oy; const l = Math.hypot(dx, dy); if (l > R) { dx *= R / l; dy *= R / l; if (key === 'L' && l > R * 1.6) { ox = e.clientX - dx * 1.0; oy = e.clientY - dy * 1.0; kn.style.left = ox + 'px'; kn.style.top = oy + 'px'; } } const m = Math.min(1, l / R); maxM = Math.max(maxM, m); G.sticks[key] = { x: dx / R, y: dy / R, m }; ki.style.transform = `translate(${dx}px,${dy}px)`; });
+    el.addEventListener('pointerdown', e => { if (pid !== null || !G.playing || G.invOpen) return; pid = e.pointerId; el.setPointerCapture(pid); ox = lx = e.clientX; oy = ly = e.clientY; t0 = performance.now(); maxM = 0; moved = 0; trk = key === 'R' && gunHeld(); $(key === 'L' ? 'gL' : 'gR').style.opacity = 0; if (trk) { if (!G.aimS.on) G.aimStart(); return; } kn.style.left = mx(ox) + 'px'; kn.style.top = oy + 'px'; kn.classList.add('on'); ki.style.transform = ''; G.sticks[key] = { x: 0, y: 0, m: 0 }; });
+    el.addEventListener('pointermove', e => { if (e.pointerId !== pid) return; if (trk) { const dx = e.clientX - lx, dy = e.clientY - ly; lx = e.clientX; ly = e.clientY; moved += Math.abs(dx) + Math.abs(dy); G.aimDrag(dx, dy); return; } let dx = e.clientX - ox, dy = e.clientY - oy; const l = Math.hypot(dx, dy); if (l > R) { dx *= R / l; dy *= R / l; if (key === 'L' && l > R * 1.6) { ox = e.clientX - dx * 1.0; oy = e.clientY - dy * 1.0; kn.style.left = mx(ox) + 'px'; kn.style.top = oy + 'px'; } } const m = Math.min(1, l / R); maxM = Math.max(maxM, m); G.sticks[key] = { x: dx / R, y: dy / R, m }; ki.style.transform = `translate(${cfg.mirror ? -dx : dx}px,${dy}px)`; });
     const up = e => { if (e.pointerId !== pid) return; pid = null; kn.classList.remove('on'); G.sticks[key] = null; if (key !== 'R') return; const quick = performance.now() - t0 < 260; if (trk) { if (quick && moved < 10) G.relock(); return; } if (quick && maxM < 0.35) G.tapAttack(); };
     el.addEventListener('pointerup', up); el.addEventListener('pointercancel', up);
   };
@@ -304,7 +305,7 @@ export function initUI(G) {
   // ---------- definições (guardadas neste browser)
   // sensibilidade por defeito mais alta no telemóvel (o polegar anda pouco)
   const SENS0 = matchMedia('(pointer: coarse)').matches ? 1.7 : 1.2;
-  const DEF = { v: 2, quick: false, sprintPush: true, assist: true, autoDoor: true, autoLean: true, sens: SENS0, sensV: 2, btn: 1, op: 1, shadows: true, lowres: false, fps: false, vol: 0.7, musMenu: 0.7, musGame: 0.5, soundViz: true, haptics: false,
+  const DEF = { v: 2, quick: true, mirror: false, sprintPush: true, assist: true, autoDoor: true, autoLean: true, sens: SENS0, sensV: 2, btn: 1, op: 1, shadows: true, lowres: false, fps: false, vol: 0.7, musMenu: 0.7, musGame: 0.5, soundViz: true, haptics: false,
     hud: { mm: { on: 1 }, zone: { on: 1 }, tr: { on: 1 }, vit: { on: 1 }, belt: { on: 1 }, ammo: { on: 1 }, feed: { on: 1 }, reload: { on: 1 }, use: { on: 1 }, sprint: { on: 1 }, jump: { on: 1 }, fire: { on: 1 }, light: { on: 1 }, scope: { on: 1 }, lower: { on: 1 }, breath: { on: 1 } } };
   const NAMES = { mm: 'Minimapa', zone: 'Zona', tr: 'Mapa, inventário e definições', vit: 'Vida, comida e água', belt: 'Cinto', ammo: 'Munições', feed: 'Avisos de recolha', reload: 'Recarregar', use: 'Revistar e portas', sprint: 'Correr sempre (Auto)', jump: 'Saltar', fire: 'Mirar e disparar', light: 'Lanterna', scope: 'Mira 4x/8x', lower: 'Baixar a arma', breath: 'Respirar' };
   const BTN = ['reload', 'use', 'sprint', 'jump', 'fire', 'tr', 'light', 'scope', 'lower', 'breath'];
@@ -313,6 +314,7 @@ export function initUI(G) {
   if (!cfg || cfg.v !== 2) cfg = JSON.parse(JSON.stringify(DEF)); for (const k in DEF) if (cfg[k] === undefined) cfg[k] = JSON.parse(JSON.stringify(DEF[k])); for (const k in DEF.hud) if (!cfg.hud[k]) cfg.hud[k] = { ...DEF.hud[k] };
   if (cfg.sensV !== 2) { if (cfg.sens === 1) cfg.sens = SENS0; cfg.sensV = 2; }
   if (!cfg.autoV) { cfg.autoV = 1; if (cfg.hud && cfg.hud.sprint) cfg.hud.sprint.on = 1; } // o botão de correr sempre passa a aparecer
+  if (!cfg.q2) { cfg.q2 = 1; cfg.quick = true; } // 0.22: o botão grande passa a disparar logo (antes o 1.º toque só levantava a arma)
   G.cfg = cfg;
   const saveCfg = () => { try { localStorage.setItem('kurogane-cfg-v1', JSON.stringify(cfg)); } catch (e) { } };
 
@@ -469,7 +471,7 @@ export function initUI(G) {
   const posOf = k => { const h = cfg.hud[k] || (cfg.hud[k] = { on: 1 }); return h[OR()] || (h[OR()] = { dx: 0, dy: 0, s: 1 }); };
   const applyHud = () => {
     for (const el of hudEls()) { const k = el.dataset.h, h = cfg.hud[k] || { on: 1 }, q = h[OR()] || {}; el.style.translate = `${q.dx || 0}px ${q.dy || 0}px`; el.style.scale = String((q.s || 1) * (BTN.includes(k) ? cfg.btn : 1)); el.classList.toggle('hoff', !h.on); }
-    $('hud').style.opacity = cfg.op; $('fps').hidden = !cfg.fps;
+    $('hud').style.opacity = cfg.op; $('fps').hidden = !cfg.fps; document.body.classList.toggle('mir', !!cfg.mirror);
   };
   const applyAll = () => { applyHud(); audio.vol(cfg.vol); if (G.applyGfx) G.applyGfx(cfg); saveCfg(); };
   // botões novos
@@ -496,7 +498,8 @@ export function initUI(G) {
     const grp = (t, rows, cls = '') => { const g = document.createElement('div'); g.className = 'sgrp ' + cls; g.innerHTML = `<h3>${t}</h3>`; rows.forEach(r => g.appendChild(r)); body.appendChild(g); };
     const doors = row('Portas automáticas', 'Abrem quando vais contra elas e fecham-se atrás de ti. Desligado, abres e fechas com o botão.', tog(() => cfg.autoDoor, v => cfg.autoDoor = v));
     const lean = row('Espreitar nas esquinas', 'Ao apontar encostado a uma parede, esquina ou poste, o boneco inclina-se para o lado livre para conseguires disparar.', tog(() => cfg.autoLean, v => cfg.autoLean = v));
-    const quick = row('Disparo rápido', 'O primeiro toque já dispara (assim que a arma sobe). Desligado, o primeiro toque só levanta a arma e mostra a mira.', tog(() => cfg.quick, v => cfg.quick = v));
+    const quick = row('Disparo rápido', 'O botão de disparar dispara logo (assim que a arma sobe). Desligado, o primeiro toque só levanta a arma.', tog(() => cfg.quick, v => cfg.quick = v));
+    const mirror = row('Comandos para canhotos', 'Troca os lados: andas com o polegar direito, apontas e disparas com o esquerdo.', tog(() => cfg.mirror, v => { cfg.mirror = v; applyHud(); }));
     const sens = row('Sensibilidade da mira', 'Quanto a mira anda ao arrastar o dedo ou o rato na mira 4x/8x.', range(0.5, 3, 0.05, () => cfg.sens, v => cfg.sens = v));
     // ecrã inteiro: esconde as barras do browser (o iPhone só deixa pela app no ecrã principal)
     { const D = document.documentElement, can = !!(document.fullscreenEnabled || document.webkitFullscreenEnabled) && !!(D.requestFullscreen || D.webkitRequestFullscreen), on = () => !!(document.fullscreenElement || document.webkitFullscreenElement);
@@ -504,7 +507,7 @@ export function initUI(G) {
       b.onclick = () => { audio.play('ui'); try { const r = on() ? (document.exitFullscreen || document.webkitExitFullscreen).call(document) : (D.requestFullscreen ? D.requestFullscreen({ navigationUI: 'hide' }) : D.webkitRequestFullscreen()); if (r && r.catch) r.catch(() => toast('Este browser não deixou pôr em ecrã inteiro')); } catch (e) { toast('Este browser não deixou pôr em ecrã inteiro'); } };
       grp('Ecrã inteiro', [row(on() ? 'Estás em ecrã inteiro' : 'Jogar em ecrã inteiro', can ? 'Esconde as barras do browser. Para sair, toca aqui outra vez ou faz o gesto de voltar.' : 'Este browser não deixa. No iPhone: Partilhar e «Adicionar ao ecrã principal», e abre o jogo a partir daí.', can ? b : document.createElement('span'))]); }
     if (G.TOUCH) {
-      grp('Controlos', [quick,
+      grp('Controlos', [mirror, quick,
         row('Mira assistida', 'Ao levantar a arma, a mira vai para o zombie mais perto que estiver à vista e com tiro livre, e segue-o. Nunca prende a jogadores. Arrasta para a cabeça ou para as pernas.', tog(() => cfg.assist, v => cfg.assist = v)),
         sens, doors, lean,
         row('Correr ao empurrar o polegar até ao fim', 'O botão «Auto» corre sempre em frente sem tocar no polegar.', tog(() => cfg.sprintPush, v => { cfg.sprintPush = v; if (!v) cfg.hud.sprint.on = 1; })),
@@ -605,7 +608,7 @@ export function initUI(G) {
   const endEdit = () => { G.editing = false; hudBox.classList.remove('edit'); $('hedit').hidden = true; hudEls().forEach(e => { e.classList.remove('hsel'); e.hidden = !!e.dataset.wasHidden; }); for (const k in vals) delete vals[k]; saveCfg(); if (!G.playing) hudBox.hidden = true; openSet(); };
   const selectEl = el => { hudEls().forEach(e => e.classList.toggle('hsel', e === el)); edSel = el; const k = el.dataset.h; $('heName').textContent = NAMES[k]; $('heVis').textContent = cfg.hud[k].on ? 'Esconder' : 'Mostrar'; };
   hudBox.addEventListener('pointerdown', e => { if (!G.editing) return; const el = e.target.closest('[data-h]'); if (!el) return; e.preventDefault(); e.stopPropagation(); selectEl(el); const h = posOf(el.dataset.h); edDrag = { el, h, x: e.clientX, y: e.clientY, dx: h.dx || 0, dy: h.dy || 0 }; try { hudBox.setPointerCapture(e.pointerId); } catch (er) { } }, true);
-  hudBox.addEventListener('pointermove', e => { if (!edDrag) return; edDrag.h.dx = Math.round(edDrag.dx + e.clientX - edDrag.x); edDrag.h.dy = Math.round(edDrag.dy + e.clientY - edDrag.y); applyHud(); });
+  hudBox.addEventListener('pointermove', e => { if (!edDrag) return; edDrag.h.dx = Math.round(edDrag.dx + (cfg.mirror && edDrag.el.closest('#touch') ? -1 : 1) * (e.clientX - edDrag.x)); edDrag.h.dy = Math.round(edDrag.dy + e.clientY - edDrag.y); applyHud(); });
   hudBox.addEventListener('pointerup', () => { edDrag = null; });
   const sz = f => { if (!edSel) return; const h = posOf(edSel.dataset.h); h.s = clamp((h.s || 1) * f, 0.5, 2.2); applyHud(); };
   $('hePlus').onclick = () => sz(1.12); $('heMinus').onclick = () => sz(1 / 1.12);
@@ -880,7 +883,7 @@ export function initUI(G) {
     { const inCar = !!G.car; if (vals.car !== inCar) { vals.car = inCar; for (const id of ['tFire', 'tScope', 'tLower', 'tBreath', 'tJump', 'tSprint']) $(id).style.visibility = inCar ? 'hidden' : ''; } }
     // botões das armas
     const fb = $('tFire'), armed = !!gun && A.raise >= 1; if (fb.classList.contains('armed') !== armed) fb.classList.toggle('armed', armed); if (fb.classList.contains('melee') !== !gun) fb.classList.toggle('melee', !gun); { const bk = G.buildK === 'planta' || G.buildK === 'martelo', hk2 = (G.inv.belt[G.sel] || {}).k, bm = hk2 === 'granada' || hk2 === 'c4'; if (fb.classList.contains('build') !== bk) fb.classList.toggle('build', bk); if (fb.classList.contains('boom') !== bm) fb.classList.toggle('boom', bm); }
-    const hk = (G.inv.belt[G.sel] || {}).k, fl = G.buildK === 'planta' ? 'Construir' : G.buildK === 'martelo' ? 'Melhorar' : hk === 'granada' ? 'Lançar' : hk === 'c4' ? 'Colocar' : gun ? (armed ? 'Disparar' : A.on ? '' : 'Mirar') : 'Golpe'; if (vals.fl !== fl) { vals.fl = fl; fb.querySelector('em').textContent = fl; }
+    const hk = (G.inv.belt[G.sel] || {}).k, fl = G.buildK === 'planta' ? 'Construir' : G.buildK === 'martelo' ? 'Melhorar' : hk === 'granada' ? 'Lançar' : hk === 'c4' ? 'Colocar' : gun ? (armed || cfg.quick ? 'Disparar' : A.on ? '' : 'Levantar') : 'Bater'; if (vals.fl !== fl) { vals.fl = fl; fb.querySelector('em').textContent = fl; }
     const hasSc = !!(gun && it.att && it.att.scope); $('tScope').hidden = !hasSc; $('tLower').hidden = !(gun && A.on); $('tScope').classList.toggle('on', !!A.scope); $('tBreath').hidden = !fp || !!(it && it.att && it.att.scope === 'reddot'); $('tBreath').classList.toggle('on', !!A.breathOn);
     $('padR').querySelector('.knob').style.visibility = gun ? 'hidden' : ''; if (fp) { $('gR').style.opacity = 0; $('gL').style.opacity = 0; }
     // avisos

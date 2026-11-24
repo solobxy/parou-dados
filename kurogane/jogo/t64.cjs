@@ -5,8 +5,8 @@ module.exports = async (page, shot, mode) => {
   await ev(() => G.dbgKit()); await W(2500);
   const N = +(process.env.N || 12), spreadK = process.env.SPREAD !== undefined ? +process.env.SPREAD : 1, natural = !!process.env.NATURAL;
   // um sítio aberto: nada entre o jogador e 24 m à frente, a várias alturas, nem um pouco ao lado
-  await ev(() => { Object.assign(G.p, { x: 1500, z: 900 }); }); await W(4000);
-  const spot = await ev(() => { for (let r = 0; r < 60; r += 3) for (let a = 0; a < 6.28; a += 0.5) { const x = 1500 + Math.cos(a) * r, z = 900 + Math.sin(a) * r; let ok = true; for (const h of [0.3, 1.0, 1.35, 1.9]) for (const dx of [-0.8, 0, 0.8]) if (G.dbg.wallHit([x + dx, h, z], [x + dx, h, z + 24]) < 0.999) ok = false; if (ok) return [Math.round(x), Math.round(z)]; } return [1500, 900]; });
+  await ev(() => { Object.assign(G.p, { x: 1000, z: 700 }); }); await W(4000);
+  const spot = await ev(() => { for (let r = 0; r < 60; r += 3) for (let a = 0; a < 6.28; a += 0.5) { const x = 1000 + Math.cos(a) * r, z = 700 + Math.sin(a) * r; let ok = true; for (const h of [0.3, 1.0, 1.35, 1.9]) for (const dx of [-0.8, 0, 0.8]) if (G.dbg.wallHit([x + dx, h, z], [x + dx, h, z + 24]) < 0.999) ok = false; if (ok) return [Math.round(x), Math.round(z)]; } return [1000, 700]; });
   console.log('sítio', spot);
   const sel = k => ev(k => { const i = G.inv.belt.findIndex(b => b && b.k === k); if (i >= 0) G.sel = i; else { G.inv.belt[0] = G.dbg.item(k, 1); G.sel = 0; } G.cfg.assist = true; return G.inv.belt[G.sel].k; }, k);
   const run = async (cond) => ev(async ({ cond, N, spreadK, natural, spot }) => {

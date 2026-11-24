@@ -39,6 +39,7 @@ export function makeCars({ scene, G, W, collide, solidAt, groundY, addRect, remo
   const place = c => { c.m.g.position.set(c.x, groundY(c.x, c.z, 0), c.z); c.m.g.rotation.y = c.yaw; };
   const burnt = M(0x2a2624, { r: 0.95, m: 0.1 });
   const wreck = c => { if (c.dead) return; c.dead = true; c.v = 0; c.m.g.traverse(o => { if (o.isMesh && o.material !== glass && o.material !== tyre) o.material = burnt; }); };
+  const HL = [0, 1].map(i => { const L = new THREE.SpotLight(0xfff2d6, 0, 42, 0.62, 0.6, 1.1); if (!i) { L.castShadow = true; L.shadow.mapSize.set(512, 512); L.shadow.bias = -0.0008; L.shadow.camera.near = 0.5; L.shadow.camera.layers.enable(1); } scene.add(L, L.target); return L; });
   const onRoad = (x, z) => { for (const r of W.roads) if (x > r.x0 - 0.5 && x < r.x1 + 0.5 && z > r.z0 - 0.5 && z < r.z1 + 0.5) return true; return false; };
   const me = () => (G.net && G.net.on ? G.net.id : -1);
   const C = {
@@ -102,6 +103,9 @@ export function makeCars({ scene, G, W, collide, solidAt, groundY, addRect, remo
         if (!c.seats[0] && Math.abs(c.v) < 0.3 && (!c.rc || Math.hypot(c.x - c.rcx, c.z - c.rcz) > 0.15 || Math.abs(angDiff(c.yaw, c.rcy)) > 0.05)) setRect(c);
         else if (c.seats[0] && c.rc && (c === G.car || Math.abs(c.v) > 0.3)) { removeRect(c.rc); c.rc = null; }
       }
+      // faróis a sério: os 2 carros com condutor mais perto de ti acendem um foco à frente (mais forte de noite)
+      { const night = 1 - (G.day ?? 1), P = G.p || { x: 0, z: 0 }, on = list.filter(q => q.seats[0] && q.hp > 0 && Math.hypot(q.x - P.x, q.z - P.z) < 90).sort((a, b) => (a === G.car ? -1 : b === G.car ? 1 : Math.hypot(a.x - P.x, a.z - P.z) - Math.hypot(b.x - P.x, b.z - P.z)));
+        HL.forEach((L, i) => { const q = on[i]; if (!q) { L.intensity = 0; return; } const fx = Math.sin(q.yaw), fz = Math.cos(q.yaw); L.position.set(q.x + fx * 2.2, 0.85, q.z + fz * 2.2); L.target.position.set(q.x + fx * 20, 0, q.z + fz * 20); L.intensity = 6 + night * 140; }); }
       const c = G.car, p = G.p; if (!c || !p) { if (audio.engine) audio.engine(0, 0); return; }
       const [sx, , sz] = SEATS[G.carSeat]; const cs = Math.cos(c.yaw), sn = Math.sin(c.yaw); p.x = c.x + sx * cs + sz * sn; p.z = c.z - sx * sn + sz * cs; p.vx = p.vz = 0; p.root = p.yaw = p.aim = c.yaw; p.lv = 0; p.base = 0;
       audio.engine && audio.engine(G.carSeat === 0 && c.fuel > 0 && c.hp > 0 ? 1 : 0, Math.abs(c.v) / MAXF);

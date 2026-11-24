@@ -1421,7 +1421,7 @@ async function boot() {
       mats.sign.emissiveIntensity = 1.05 + 1.0 * (1 - D); mats.nwin.emissiveIntensity = 1.5 * (1 - D); mats.nwin2.emissiveIntensity = 1.1 * (1 - D); renderer.toneMappingExposure = 1.02 + 0.2 * (1 - D);
       const nt = 1 - D;
       if (p && G.playing && p.alive) {
-        glow.position.set(p.x, p.y + 1.8, p.z); glow.intensity = nt * 3.5;
+        glow.position.set(p.x, p.y + 1.8, p.z); glow.intensity = G.car ? 0 : nt * 3.5;
         if (G.lightOn && !hasLight()) G.lightOn = false;
         const wl = gunLight(), fy = p.yaw;
         if (wl) { torch.intensity = G.lightOn ? 95 : 0; torch.angle = 0.34; torch.distance = 36; if (G.fp && AIM.on) { torch.position.copy(AIM.eye).addScaledVector(AIM.dir, 0.5); torch.target.position.copy(AIM.eye).addScaledVector(AIM.dir, 20); } else { torch.position.set(p.x + Math.sin(fy) * 0.7, p.y + 1.32, p.z + Math.cos(fy) * 0.7); if (AIM.on && AIM.Aw) torch.target.position.copy(AIM.Aw); else torch.target.position.set(p.x + Math.sin(fy) * 12, p.y + 0.3, p.z + Math.cos(fy) * 12); } }
