@@ -68,6 +68,7 @@ export const ITEMS = {
   c4: { n: 'Carga C4', s: 'C4', w: 2, h: 1, cat: 'w', icon: 'c4', rare: 1, st: 3, desc: 'Cola-se à parede ou porta à tua frente e rebenta 10 s depois. Uma deita abaixo madeira; pedra precisa de duas; metal de três.' },
   // construção e objetos da base
   planta: { n: 'Planta de construção', s: 'Planta', w: 1, h: 1, cat: 'g', icon: 'plan', desc: 'Na mão: escolhe a peça (fundação, parede, porta, janela, teto) e toca em disparar para a pôr. Só em terreno natural, longe da cidade e dos monumentos.' },
+  fechadura: { n: 'Fechadura de código', s: 'Fechadura', w: 1, h: 1, cat: 'g', icon: 'codelock', desc: 'Na mão, junto a uma porta ou baú da tua base: escolhe um código de 4 números. Só entra quem o souber; tu e o teu clã entram sempre.' },
   martelo: { n: 'Martelo', s: 'Martelo', w: 2, h: 1, cat: 'g', icon: 'hammer', desc: 'Na mão: melhora a peça para onde estás virado (madeira → pedra → metal) ou demole-a.' },
   bau: { n: 'Baú', s: 'Baú', w: 2, h: 2, cat: 'g', icon: 'chest', deploy: 'bau', desc: 'Guarda 18 casas de coisas. Fica onde o puseres.' },
   bauG: { n: 'Baú grande', s: 'Baú grande', w: 2, h: 2, cat: 'g', icon: 'chestL', deploy: 'bauG', desc: 'Guarda 30 casas.' },
@@ -95,7 +96,7 @@ export const LOOT = {
   militar: [['granada', 0.35], ['explosivo', 0.1], ['polvora', 0.8], ['metalR', 0.6], ['cStanag', 1.8], ['cAk', 1.3], ['cPist', 0.7], ['c308', 0.5], ['cSmg', 0.4], ['reddot', 0.8], ['lantArma', 0.8], ['lanterna', 0.6], ['m4', 1.8], ['ak', 1.2], ['smg', 0.8], ['caca', 0.5], ['a556', 5], ['a762', 3.5], ['a308', 1.2], ['a9', 2], ['a9s', 0.8], ['silP', 0.6], ['silR', 0.5], ['mira4', 0.9], ['mira8', 0.25], ['capacete', 1.5], ['colete', 1.5], ['mochila', 1.2], ['medkit', 1.2], ['katana', 0.5], ['racao', 1.6]],
   carro: [['gasolina', 0.7], ['lanterna', 0.6], ['lata', 1], ['sardinhas', 0.8], ['chocolate', 1], ['agua', 1], ['sumo', 0.8], ['cafe', 0.8], ['a9', 1.6], ['c12', 1], ['ligadura', 1], ['metal', 1], ['pecabra', 0.6], ['machado', 0.4], ['bebida', 0.8], ['pistola', 0.15]],
   carropol: [['pistola', 1.5], ['cacadeira', 1], ['a9', 3], ['c12', 2], ['c12s', 0.8], ['colete', 0.6], ['ligadura', 1]],
-  oficina: [['gasolina', 1.2], ['metalR', 1.2], ['carvao', 0.6], ['lantArma', 0.3], ['lanterna', 0.8], ['metal', 3], ['picareta', 1.2], ['machado', 1.2], ['pecabra', 1.2], ['machete', 0.6], ['enxofre', 1], ['a9', 0.8], ['c12', 0.6]],
+  oficina: [['fechadura', 0.5], ['gasolina', 1.2], ['metalR', 1.2], ['carvao', 0.6], ['lantArma', 0.3], ['lanterna', 0.8], ['metal', 3], ['picareta', 1.2], ['machado', 1.2], ['pecabra', 1.2], ['machete', 0.6], ['enxofre', 1], ['a9', 0.8], ['c12', 0.6]],
   cabana: [['c308', 0.4], ['lanterna', 1.0], ['lata', 2], ['sardinhas', 1], ['racao', 1], ['maca', 1.2], ['a9', 1.2], ['a308', 1], ['c12', 1.2], ['c12s', 0.6], ['mira4', 0.25], ['machado', 1], ['machete', 0.7], ['faca', 0.8], ['caca', 0.4], ['cacadeira', 0.35], ['pistola', 0.3], ['lanca', 0.8], ['ligadura', 1], ['mochila', 0.4]],
   zombie: [['ligadura', 2], ['lata', 0.8], ['chocolate', 1], ['maca', 0.8], ['a9', 1.8], ['c12', 0.8], ['a357', 0.4], ['a556', 0.4], ['a762', 0.3], ['a308', 0.2], ['onigiri', 0.8], ['sumo', 0.6], ['bebida', 0.5]],
 };
@@ -126,6 +127,7 @@ export const RECIPES = [
   { k: 'revolver', n: 1, b: 1, need: { metalR: 45, madeira: 15 } },
   { k: 'cacadeira', n: 1, b: 1, need: { metalR: 70, madeira: 60 } },
   { k: 'cPist', n: 1, b: 1, need: { metalR: 10 } },
+  { k: 'fechadura', n: 1, b: 1, need: { metalR: 30 } },
   { k: 'lantArma', n: 1, b: 1, need: { metalR: 15, madeira: 5 } },
   { k: 'a9', n: 20, b: 1, need: { metalR: 6, polvora: 6 } },
   { k: 'a357', n: 12, b: 1, need: { metalR: 6, polvora: 8 } },

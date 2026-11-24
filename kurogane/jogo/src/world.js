@@ -509,7 +509,7 @@ export function buildWorld(scene, mats, A) {
   buildMonuments({ b, A, W, rect, circ, mp, container, shell, car, pole, wires, lamp, crate, cabinet, counter, table, chair, bed, shelf, fridge, woodFence, blood, bags, cone, barrier, hsign, vsign, bench, bike, vend, road, dirt, rr, ri, pick, rnd, shade, mat4, tower, lantern, sofa, books, stove, kfridge, toilet, sinkI, lampF, plantI, deskPC, boxes, tvI, wardrobe, rugI, clutter, level }, TW.house);
 
   // grelha para saber depressa onde já há coisas
-  const BG = 16, bgrid = new Map();
+  W.pads = pads; const BG = 16, bgrid = new Map();
   for (const r of W.rects) for (let ix = Math.floor((r.x0 - 2) / BG); ix <= Math.floor((r.x1 + 2) / BG); ix++) for (let iz = Math.floor((r.z0 - 2) / BG); iz <= Math.floor((r.z1 + 2) / BG); iz++) { const k = ix * 1000 + iz; if (!bgrid.has(k)) bgrid.set(k, []); bgrid.get(k).push(r); }
   const blocked = (x, z, m = 0) => {
     if (Math.abs(x) > CORE - 2 || Math.abs(z) > CORE - 2) return true;

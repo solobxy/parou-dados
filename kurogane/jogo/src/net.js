@@ -71,9 +71,10 @@ export function makeNet({ G, scene, mkRemote, audio, Conta, enc, dec, hurt, die,
       case 'boxfix': if (cur && cur.key === m.c && cur.c.grid) { const g = cur.c.grid; for (const e of [...g.list]) g.remove(e.it); for (const o of m.it || []) { const it = world.dec(o); if (it) { if (g.fits(it, o.x, o.y)) g.add(it, o.x, o.y); else g.insert(it); } } cur.sig = sigOf(cur.c); G.ui.refresh(true); } return;
       case 'zseed': if (N.world) N.zseed(world.z.seed()); return;
       case 'bb': world.base(m); return;
-      case 'bno': G.ui.toast(m.e || 'Não deu'); G.base.refused(m.a, m.k); return;
+      case 'bno': if (m.a === 'lkc') { G.ui.codeErr(m.e); return; } if (m.lk && m.a === 'bdo') { const P = G.base.pieces.get(m.k); if (P) { G.ui.codeAsk({ door: P }); return; } } G.ui.toast(m.e || 'Não deu'); G.base.refused(m.a, m.k); return;
+      case 'lkok': G.base.lockOk(m); G.ui.codeDone(m); return;
       case 'bxok': G.base.demolished(m.tt); return;
-      case 'bdok': if (m.pick) G.base.picked(m.pick); else G.base.deployed(m.k); return;
+      case 'bdok': if (m.pick) G.base.picked(m.pick, m.lb); else G.base.deployed(m.k); return;
       case 'boom': world.boom(m); return;
       case 'thr': world.thr(m); return;
       case 'lk': world.lock(m.i, m.hp, m.broke); return;

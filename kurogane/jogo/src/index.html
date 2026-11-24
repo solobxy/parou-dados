@@ -156,6 +156,9 @@ svg{width:18px;height:18px;flex:none}
 /* revistar e portas: placa com a ação em âmbar */
 #tUse{--sz:auto;width:auto;height:50px;padding:0 18px 0 12px;flex-direction:row;gap:10px;font:600 16px "Barlow Condensed",sans-serif;letter-spacing:.03em;white-space:nowrap;overflow:hidden;clip-path:polygon(0 0,calc(100% - var(--cut)) 0,100% var(--cut),100% 100%,0 100%);--bd:rgba(242,163,58,.55)}
 #tUse i{display:grid;place-items:center;color:var(--amb);flex:none}
+#tLock{--sz:auto;width:auto;height:44px;padding:0 14px 0 10px;flex-direction:row;gap:8px}#tLock svg{width:18px;height:18px;color:var(--amb)}#tLock em{font-style:normal}
+.kp-lead{margin:0;color:#C9C3B8;line-height:1.45}.kp-dots{display:flex;justify-content:center;gap:14px;padding:6px 0 2px}.kp-dots i{width:16px;height:16px;border-radius:50%;box-shadow:inset 0 0 0 2px rgba(255,255,255,.35);transition:background .1s}.kp-dots i.on{background:var(--amb);box-shadow:none}.kp-dots.shake{animation:kpShake .32s}@keyframes kpShake{20%,60%{transform:translateX(-7px)}40%,80%{transform:translateX(7px)}}
+.kp-msg{margin:0;min-height:18px;text-align:center;color:#F08A7A;font-size:14px}.kp{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}.kp .kp-k{height:56px;font:600 24px "Barlow Condensed",sans-serif}.kp .kp-ok{font-size:17px}@media (orientation:landscape) and (max-height:520px){#pfm.kpw .pfbox{width:min(600px,100%)}#pfm.kpw #pfB{display:grid;grid-template-columns:1fr 264px;grid-template-rows:auto auto 1fr;column-gap:22px;row-gap:10px;align-items:start}#pfm.kpw .kp{grid-column:2;grid-row:1/span 3}#pfm.kpw .kp-dots{justify-content:flex-start}#pfm.kpw .kp-msg{text-align:left}.kp .kp-k{height:48px}}.kp .kp-ok:disabled{opacity:.4}.kp .kp-x svg{width:22px;height:22px}
 #tUse i svg{width:22px;height:22px}
 #tUse .ic-d{display:none}#tUse.door .ic-h{display:none}#tUse.door .ic-d{display:block}
 #tUse>span{overflow:hidden;text-overflow:ellipsis}
@@ -473,7 +476,7 @@ input[type=range]{width:160px;accent-color:#F2A33A;height:30px}
 #tScope{right:calc(108px + var(--sr));bottom:calc(140px + var(--sb))}
 #tLower{right:calc(34px + var(--sr));bottom:calc(182px + var(--sb))}
 #tBreath{right:calc(176px + var(--sr));bottom:calc(196px + var(--sb))}
-#tUse{right:calc(16px + var(--sr));bottom:calc(254px + var(--sb));max-width:min(260px,calc(50vw - 190px))}
+#tUse{right:calc(16px + var(--sr));bottom:calc(254px + var(--sb));max-width:min(260px,calc(50vw - 190px))}#tLock{right:calc(16px + var(--sr));bottom:calc(312px + var(--sb))}
 #tSprint{left:calc(16px + var(--sl));bottom:calc(214px + var(--sb))}
 #tLight{left:calc(16px + var(--sl));bottom:calc(148px + var(--sb))}
 #gL{left:calc(80px + var(--sl));bottom:calc(52px + var(--sb))}#gR{right:calc(170px + var(--sr));bottom:calc(150px + var(--sb))}
@@ -493,7 +496,7 @@ input[type=range]{width:160px;accent-color:#F2A33A;height:30px}
 #tScope{right:calc(168px + var(--sr));bottom:calc(122px + var(--sb))}
 #tLower{right:calc(18px + var(--sr));bottom:calc(274px + var(--sb))}
 #tBreath{left:calc(16px + var(--sl));bottom:calc(252px + var(--sb))}
-#tUse{left:50%;transform:translateX(-50%);bottom:calc(266px + var(--sb));max-width:calc(100vw - 170px)}
+#tUse{left:50%;transform:translateX(-50%);bottom:calc(266px + var(--sb));max-width:calc(100vw - 170px)}#tLock{left:50%;transform:translateX(-50%);bottom:calc(322px + var(--sb))}
 #tSprint{left:calc(16px + var(--sl));bottom:calc(186px + var(--sb))}
 #tLight{left:calc(16px + var(--sl));bottom:calc(118px + var(--sb))}
 #gL{left:calc(124px + var(--sl));bottom:calc(206px + var(--sb))}#gR{display:none}
@@ -536,6 +539,7 @@ input[type=range]{width:160px;accent-color:#F2A33A;height:30px}
     <div class="pad" id="padR"><div class="knob"><i></i></div></div>
     <div class="ghost" id="gL">Mover</div><div class="ghost" id="gR">Apontar</div>
     <button class="tb" id="tReload" data-h="reload" aria-label="Recarregar">{{rotate-ccw}}<em>Carregar</em></button>
+    <button class="tb" id="tLock" hidden aria-label="Fechadura">{{lock-keyhole}}<em>Código</em></button>
     <button class="tb" id="tUse" data-h="use" hidden><i><span class="ic-h">{{hand}}</span><span class="ic-d">{{door-open}}</span></i><span></span></button>
     <button class="tb" id="tFire" data-h="fire" aria-label="Levantar a arma e disparar"><span class="ic-g">{{crosshair}}</span><span class="ic-m">{{hand-fist}}</span><span class="ic-b">{{hammer}}</span><span class="ic-x">{{bomb}}</span><em></em></button>
     <button class="tb" id="tScope" data-h="scope" aria-label="Mira" hidden>{{scan-eye}}<em>Mira</em></button>
@@ -580,7 +584,7 @@ input[type=range]{width:160px;accent-color:#F2A33A;height:30px}
   <nav class="menu"><button class="mi pri" id="sCont" hidden><b>Continuar</b><em>Voltas onde ficaste</em></button><button class="mi pri" id="sPlay"><b>Jogar</b><em>Acordas perto de uma vila ou monumento</em></button><button class="mi" id="sSet"><b>Definições</b><em>Controlos, imagem e som</em></button></nav>
   <div class="onl" id="sOnl" role="status"><i class="dot" aria-hidden="true"></i><span><b>Servidor</b><em id="sOnT">A ver quem está a jogar…</em></span></div>
   <div class="keys" id="sKeys"></div>
-  <div class="foot">Protótipo 0.17 · um servidor para todos · quem sai fica a dormir no mundo</div>
+  <div class="foot">Protótipo 0.18 · um servidor para todos · quem sai fica a dormir no mundo</div>
 </div><button id="sMus" aria-label="Música do menu"><span class="on">{{volume-2}}</span><span class="off">{{volume-x}}</span></button><a class="credit" href="https://dinissousa.pt" target="_blank" rel="noopener">feito por dinissousa.pt</a></div>
 <div id="pfm" class="ov" hidden><div class="pfbox"><div class="pfh"><b id="pfT"></b><button class="close" id="pfX" aria-label="Fechar">{{x}}</button></div><div id="pfB" class="pfb"></div></div></div>
 <div id="set" class="ov" hidden><div class="sp2"><div class="ihead"><b class="cond" style="font-size:20px;letter-spacing:.06em;text-transform:uppercase">Definições</b><button class="close" id="setClose" aria-label="Fechar" style="margin-left:auto">{{x}}</button></div><div class="sbody" id="setBody"></div></div></div>

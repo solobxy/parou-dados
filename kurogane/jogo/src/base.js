@@ -296,30 +296,39 @@ export function makeBase({ scene, W, G, audio, addRect, removeRect, visDirty, in
       return [a * CELL, b * CELL, (c + 1) * CELL, (d + 1) * CELL]; },
     pieceAt(x, z, r) { for (const P of pieces.values()) for (const q of P.rects || []) if (x > q.x0 - r && x < q.x1 + r && z > q.z0 - r && z < q.z1 + r) return P; return null; },
     // gravar e repor
-    save(encG) { return { p: [...pieces.values()].map(P => [P.t, P.k, P.i ?? null, P.j ?? null, P.tier, Math.round(P.hp), P.door ? P.door.target : 0]), d: deps.map(d => [d.k, +d.x.toFixed(2), +d.z.toFixed(2), +d.yaw.toFixed(3), d.y, Math.round(d.hp), d.c && d.c.grid ? encG(d.c.grid) : null, d.on ? 1 : 0, 0, d.name || null, d.cd || 0]) }; },
+    save(encG) { return { p: [...pieces.values()].map(P => [P.t, P.k, P.i ?? null, P.j ?? null, P.tier, Math.round(P.hp), P.door ? P.door.target : 0, P.cl || 0]), d: deps.map(d => [d.k, +d.x.toFixed(2), +d.z.toFixed(2), +d.yaw.toFixed(3), d.y, Math.round(d.hp), d.c && d.c.grid ? encG(d.c.grid) : null, d.on ? 1 : 0, 0, d.name || null, d.cd || 0, d.cl || 0]) }; },
     load(s, decG) { Base.clear(); if (!s) return;
-      for (const [t, k, i, j, tier, hp, open] of s.p || []) { const P = add(t, k, t === 'fund' || t === 'teto' ? { i, j } : {}); P.tier = tier; P.hp = hp; buildMesh(P); if (P.door) { P.door.mesh.material = MAT[P.tier]; P.door.t = P.door.target = open ? 1 : 0; } }
-      for (const [k, x, z, yaw, y, hp, gl, on, sp, name, cd] of s.d || []) { const D = DEPLOY[k]; if (!D) continue; const grid = gl && D.slots ? decG(gl, new Grid(D.slots[0], D.slots[1])) : null; placeDep(k, x, z, yaw, { y, hp, grid, on, name, cd }); } },
+      for (const [t, k, i, j, tier, hp, open, cl] of s.p || []) { const P = add(t, k, t === 'fund' || t === 'teto' ? { i, j } : {}); P.tier = tier; P.hp = hp; P.cl = cl || 0; buildMesh(P); if (P.door) { P.door.mesh.material = MAT[P.tier]; P.door.t = P.door.target = open ? 1 : 0; } }
+      for (const [k, x, z, yaw, y, hp, gl, on, sp, name, cd, cl] of s.d || []) { const D = DEPLOY[k]; if (!D) continue; const grid = gl && D.slots ? decG(gl, new Grid(D.slots[0], D.slots[1])) : null; const d = placeDep(k, x, z, yaw, { y, hp, grid, on, name, cd }); d.cl = cl || 0; } },
     clear() { for (const P of [...pieces.values()]) remove(P); for (const d of [...deps]) removeDep(d); },
     online(net) { NET = net; pend.clear(); },
     // do servidor: peças e objetos novos ou mudados, e os que saíram
     applyNet(m) {
-      for (const [k, t, tier, hp, open, u] of m.p || []) { let P = pieces.get(k);
+      for (const [k, t, tier, hp, open, u, cl] of m.p || []) { let P = pieces.get(k);
         if (!P) { const [ty, a, b] = k.split(':'); P = add(t, k, ty === 'f' || ty === 't' ? { i: +a, j: +b } : {}); }
         if (P.tier !== tier) { P.tier = tier; buildMesh(P); if (P.door) P.door.mesh.material = MAT[P.tier]; }
-        P.hp = hp; P.u = u; if (P.door && P.door.target !== open) { P.door.target = open; audio.play(open ? 'porta' : 'portaF', G.p ? Math.max(0, 1 - Math.hypot(P.door.x - G.p.x, P.door.z - G.p.z) / 30) : 0.5); }
+        P.hp = hp; P.u = u; P.cl = cl || 0; if (P.door && P.door.target !== open) { P.door.target = open; audio.play(open ? 'porta' : 'portaF', G.p ? Math.max(0, 1 - Math.hypot(P.door.x - G.p.x, P.door.z - G.p.z) / 30) : 0.5); }
         const c = pend.get('bp:' + k) || pend.get('bu:' + k); if (c) { pend.delete('bp:' + k); pend.delete('bu:' + k); } }
       for (const k of m.rp || []) { const P = pieces.get(k); if (P) remove(P); }
-      for (const [id, k, x, z, yaw, y, hp, on, u, name, cd] of m.d || []) { let d = deps.find(e => e.nid === id);
+      for (const [id, k, x, z, yaw, y, hp, on, u, name, cd, cl] of m.d || []) { let d = deps.find(e => e.nid === id);
         if (!d) d = placeDep(k, x, z, yaw, { y, hp, on, nid: id, u, name, cd, grid: null });
-        d.hp = hp; d.u = u; d.cd = cd; if (G.box !== d.c) d.on = !!on; if (name && d.name !== name) { d.name = name; if (d.c) d.c.label = bedLabel(d); } }
+        d.hp = hp; d.u = u; d.cd = cd; d.cl = cl || 0; if (G.box !== d.c) d.on = !!on; if (name && d.name !== name) { d.name = name; if (d.c) d.c.label = bedLabel(d); } }
       for (const id of m.rd || []) { const d = deps.find(e => e.nid === id); if (d) { if (G.box === d.c) { G.box = null; G.ui.closeInv(); } removeDep(d); } }
     },
     // o servidor recusou: devolve o que pagaste
     refused(a, k) { const key = a + ':' + k, c = pend.get(key); if (c) { pend.delete(key); giveBack(c); } },
     demolished(tt) { giveBack(Object.fromEntries(Object.entries(PIECES[tt].cost).map(([k, n]) => [k, Math.floor(n / 2)]))); audio.play('partir'); },
     deployed(k) { pend.delete('bd:' + k); },
-    picked(k) { const ik = Object.keys(ITEMS).find(q => ITEMS[q].deploy === k); if (ik) giveBack({ [ik]: 1 }); audio.play('apanhar'); },
+    picked(k, lb) { const ik = Object.keys(ITEMS).find(q => ITEMS[q].deploy === k); if (ik) giveBack(lb ? { [ik]: 1, fechadura: 1 } : { [ik]: 1 }); audio.play('apanhar'); },
+    // fechaduras de código (portas e baús da base): o servidor guarda o código; aqui só se pede e se lembra onde já entraste
+    auth: new Set(),
+    lockKey(T) { return T.door ? T.door.k : 'd' + (T.dep.nid || ''); },
+    lockOf(T) { return (T.door ? T.door.cl : T.dep.cl) || 0; },
+    lockMine(T) { const o = T.door || T.dep; return !NET || o.u === NET.uid || Base.auth.has(Base.lockKey(T)); },
+    lockSend(T, o) { if (!NET) { const x = T.door || T.dep; if (o.rm) { x.cl = 0; giveBack({ fechadura: 1 }); } else { if (!x.cl) { G.inv.take('fechadura', 1); G.ui && G.ui.refresh(true); } x.cl = 1; } G.save && G.save(); return; }
+      const key = Base.lockKey(T); if (o.t === 'lkset' && !o.rm && !Base.lockOf(T)) { G.inv.take('fechadura', 1); G.ui && G.ui.refresh(true); pend.set('lkset:' + key, { fechadura: 1 }); }
+      NET.send({ ...o, ...(T.door ? { k: T.door.k } : { id: T.dep.nid }) }); },
+    lockOk(m) { Base.auth.add(m.k); pend.delete('lkset:' + m.k); if (m.rm) { Base.auth.delete(m.k); if (m.back) giveBack({ fechadura: 1 }); toast('Fechadura tirada'); } else if (m.set) toast('Código guardado'); audio.play('ui'); },
   };
   return Base;
 }

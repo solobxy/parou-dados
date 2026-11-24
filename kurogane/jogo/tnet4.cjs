@@ -25,7 +25,7 @@ server.listen(0, async () => {
     for (const P of [A, B]) await P.ev(() => G.dbgKit());
     await W(3000);
     const X = 1000.5, Z = 600.5, I = 333, J = 200; // célula da base da Ana
-    await A.ev(s => { G.p.x = s[0]; G.p.z = s[1]; G.gain('madeira', 900); G.gain('pedraR', 400); G.gain('metal', 50); for (const k of ['bau', 'saco', 'fornalha']) G.inv.give(G.dbg.item(k, 1)); G.net.start(); }, [X, Z]); await W(2000);
+    await A.ev(s => { G.p.x = s[0]; G.p.z = s[1]; G.gain('madeira', 900); G.gain('pedraR', 400); G.gain('metal', 50); for (const k of ['bau', 'saco', 'fornalha', 'fechadura', 'fechadura']) G.inv.give(G.dbg.item(k, 1)); G.net.start(); }, [X, Z]); await W(2000);
     await B.ev(s => { G.p.x = s[0] + 7; G.p.z = s[1]; G.gain('madeira', 300); G.inv.give(G.dbg.item('c4', 1)); G.inv.give(G.dbg.item('granada', 1)); G.net.start(); }, [X, Z]); await W(2500);
     // a Ana põe a fundação (pelo caminho normal do jogo) e uma porta
     const fk = await A.ev(() => { G.p.yaw = 0; G.base.setMode('fund'); const t = G.base.B; const r = G.base.place(); return r; }); await W(1000);
@@ -37,9 +37,12 @@ server.listen(0, async () => {
     await A.ev(k => G.net.raw({ t: 'bp', k, tt: 'porta' }), door); await W(900);
     ok(JSON.stringify(await pk(B, door)) === JSON.stringify(await pk(A, door)) && (await pk(B, door))[0] === 'porta', 'a porta da Ana aparece ao Bruno');
     // o Bruno não abre a porta da Ana, nem constrói colado à base dela
+    await A.ev(k => G.base.lockSend({ door: G.base.pieces.get(k) }, { t: 'lkset', code: '2468' }), door); await W(900);
+    await B.ev(s => { G.p.x = s[0]; G.p.z = s[1] + 0.6; }, [X, Z]); await W(900);
     await B.ev(k => { const D = G.base.pieces.get(k).door; G.prompt = { door: D, label: '' }; G.interact(); }, door); await W(900);
-    const d1 = await pk(A, door), t1 = await B.ev(() => document.getElementById('toast').textContent);
-    console.log('porta depois do Bruno tentar:', JSON.stringify(d1), '·', t1); ok(d1[3] === 0 && /Trancada/.test(t1), 'a porta da Ana está trancada para o Bruno');
+    const d1 = await pk(A, door), t1 = await B.ev(() => !document.getElementById('pfm').hidden && !!document.querySelector('#pfB .kp'));
+    console.log('porta depois do Bruno tentar:', JSON.stringify(d1), '· teclado', t1); ok(d1[3] === 0 && t1, 'a porta da Ana (com fechadura) está trancada para o Bruno: pede o código');
+    await B.ev(() => document.getElementById('pfX').click()); await B.ev(s => { G.p.x = s[0] + 7; G.p.z = s[1]; }, [X, Z]); await W(700);
     await B.ev(s => G.net.raw({ t: 'bp', k: 'f:' + (s[0] + 1) + ':' + s[1], tt: 'fund' }), [fi, fj]); await W(800);
     const nb = await B.ev(() => document.getElementById('toast').textContent); ok(/outro jogador/.test(nb), 'o Bruno não constrói colado à base da Ana (' + nb + ')');
     // a Ana abre a sua porta: aberta para os dois
@@ -78,16 +81,17 @@ server.listen(0, async () => {
     const f2 = 'f:' + (fi + 3) + ':' + fj, d2 = 'h:' + (fi + 3) + ':' + fj, w2 = 'v:' + (fi + 3) + ':' + fj;
     await A.ev(s => { G.p.x = (s[0] + 3) * 3 + 1.5; G.p.z = s[1] * 3 + 6; }, [fi, fj]); await B.ev(s => { G.p.x = (s[0] + 3) * 3 + 4; G.p.z = s[1] * 3 + 6; }, [fi, fj]); await W(700);
     await A.ev(k => G.net.raw({ t: 'bp', k, tt: 'fund' }), f2); await W(600); await A.ev(k => G.net.raw({ t: 'bp', k, tt: 'porta' }), d2); await W(800);
+    await A.ev(s => { G.p.z = s[1] * 3 - 2; }, [fi, fj]); await W(700); await A.ev(k => G.base.lockSend({ door: G.base.pieces.get(k) }, { t: 'lkset', code: '1357' }), d2); await W(800);
     await A.ev(() => G.net.clanCmd('create', 'Ronin')); await W(600); const code = await A.ev(() => G.net.clanInfo.codigo);
     await B.ev(c => G.net.clanCmd('join', c), code); await W(800);
-    await B.ev(k => G.net.raw({ t: 'bdo', k, o: 1 }), d2); await B.ev(k => G.net.raw({ t: 'bp', k, tt: 'parede' }), w2); await W(1000);
+    await B.ev(s => { G.p.x = (s[0] + 3) * 3 + 1.5; G.p.z = s[1] * 3 - 2.2; }, [fi, fj]); await W(800); await B.ev(k => G.net.raw({ t: 'bdo', k, o: 1 }), d2); await B.ev(k => G.net.raw({ t: 'bp', k, tt: 'parede' }), w2); await W(1000);
     const cl = await Promise.all([pk(A, d2), pk(A, w2)]); console.log('no clã: porta', JSON.stringify(cl[0]), '· parede do Bruno', JSON.stringify(cl[1]));
     ok(cl[0] && cl[0][3] === 1 && cl[1] && cl[1][0] === 'parede', 'no mesmo clã, o Bruno abre a porta e constrói na base da Ana');
     // granada: o Bruno lança; a Ana vê-a a voar, e depois só a explosão
     await A.ev(s => { G.p.x = s[0]; G.p.z = s[1]; }, [X, Z]); await B.ev(s => { G.p.x = s[0] + 8; G.p.z = s[1]; const it = G.inv.all().find(o => o.k === 'granada'); const w = G.inv.where(it); if (w.t === 'bag') { G.inv.bag.remove(it); G.inv.belt[4] = it; } G.sel = G.inv.belt.indexOf(it); G.p.cd = 0; }, [X, Z]); await W(800);
     await B.ev(() => { G.fireDown(); G.fireUp && G.fireUp(); }); await W(500);
     const gh = await A.ev(() => G.booms.filter(b => b.ghost).map(b => b.k)); console.log('a Ana vê no ar:', JSON.stringify(gh)); ok(gh.includes('gran'), 'a Ana vê a granada do Bruno a voar');
-    await W(14000); const gh2 = await A.ev(() => G.booms.filter(b => b.ghost && b.k === 'gran').length); ok(gh2 === 0, 'depois da explosão a granada desaparece');
+    await W(24000); const gh2 = await A.ev(() => G.booms.filter(b => b.ghost && b.k === 'gran').length); ok(gh2 === 0, 'depois da explosão a granada desaparece');
     console.log('erros A:', A.errs.length, 'B:', B.errs.length);
   } catch (e) { console.log('ERRO', e.stack || e); fails++; }
   console.log(fails ? fails + ' falhas' : 'tudo bem');

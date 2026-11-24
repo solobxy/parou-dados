@@ -356,9 +356,36 @@ export function initUI(G) {
     document.addEventListener('keydown', e => { if (e.key !== 'Enter' || e.target.tagName !== 'INPUT') return; const b = nextBtn(e.target); if (b) { e.preventDefault(); b.click(); } });
     document.addEventListener('focusout', () => setTimeout(kbSet, 100)); }
   const pfm = $('pfm'), pfB = $('pfB');
-  const pfClose = () => { pfm.hidden = true; pfB.onclick = null; pfm.classList.remove('wide'); };
+  const pfClose = () => { pfm.hidden = true; pfB.onclick = null; pfm.classList.remove('wide', 'kpw'); };
   let mnT = 0; const mnote = t => { const m = $('mnote'); m.textContent = t; m.hidden = false; clearTimeout(mnT); mnT = setTimeout(() => { m.hidden = true; }, 6000); };
   $('pfX').onclick = () => { audio.play('ui'); pfClose(); };
+  // teclado de código (fechaduras): 4 números, apagar e confirmar; também com as teclas do computador
+  let KP = null;
+  const keypad = ({ title, lead, ok, onCode }) => {
+    $('pfT').textContent = title; pfm.classList.remove('wide', 'kpw'); pfm.classList.add('kpw');
+    pfB.innerHTML = `<p class="kp-lead">${lead}</p><div class="kp-dots" aria-hidden="true"><i></i><i></i><i></i><i></i></div><p class="kp-msg" id="kpM" role="status"></p><div class="kp">${[1, 2, 3, 4, 5, 6, 7, 8, 9].map(n => `<button class="btn kp-k" data-n="${n}">${n}</button>`).join('')}<button class="btn kp-k kp-x" data-n="x" aria-label="Apagar">{{delete}}</button><button class="btn kp-k" data-n="0">0</button><button class="btn pri kp-k kp-ok" data-n="ok">${ok}</button></div>`;
+    let code = ''; const dots = pfB.querySelector('.kp-dots'), okB = pfB.querySelector('.kp-ok');
+    const draw = () => { dots.querySelectorAll('i').forEach((e, i) => e.classList.toggle('on', i < code.length)); okB.disabled = code.length !== 4; };
+    const press = n => { if (n === 'x') code = code.slice(0, -1); else if (n === 'ok') { if (code.length === 4) onCode(code); return; } else if (code.length < 4) code += n; $('kpM').textContent = ''; draw(); };
+    pfB.onclick = e => { const b = e.target.closest('.kp-k'); if (!b) return; e.stopPropagation(); audio.play('ui'); G.buzz && G.buzz(8); press(b.dataset.n); };
+    KP = { press, err: t => { code = ''; draw(); $('kpM').textContent = t; dots.classList.remove('shake'); void dots.offsetWidth; dots.classList.add('shake'); G.buzz && G.buzz(40); } };
+    draw(); pfm.hidden = false; return KP;
+  };
+  document.addEventListener('keydown', e => { if (!KP || pfm.hidden || !pfB.querySelector('.kp')) return; if (/^[0-9]$/.test(e.key)) KP.press(e.key); else if (e.key === 'Backspace') KP.press('x'); else if (e.key === 'Enter') KP.press('ok'); else return; e.preventDefault(); e.stopPropagation(); }, true);
+  const codeAsk = T => keypad({ title: 'Fechadura', lead: T.door ? 'Esta porta tem fechadura. Escreve o código de 4 números.' : 'Este baú tem fechadura. Escreve o código de 4 números.', ok: 'Abrir', onCode: c => G.base.lockSend(T, { t: 'lkc', code: c }) });
+  const codeErr = t => { if (KP && !pfm.hidden && pfB.querySelector('.kp')) KP.err(t || 'Código errado'); else toast(t || 'Código errado'); };
+  const codeDone = m => { if (KP && !pfm.hidden && pfB.querySelector('.kp')) { KP = null; pfClose(); }
+    if (m.k[0] === 'd' && !m.set && !m.rm) { const d = G.base.deps.find(q => 'd' + q.nid === m.k); if (d && d.c) G.net.open(d.c); } };
+  const lockMenu = T => {
+    const cl = G.base.lockOf(T), what = T.door ? 'porta' : 'baú', set = (title, ok) => keypad({ title, lead: cl ? 'Escolhe o novo código. Quem já sabia o antigo deixa de entrar (o teu clã continua a entrar).' : `Escolhe um código de 4 números para esta ${what}. Quem o souber entra; tu e o teu clã entram sempre.`, ok, onCode: c => { G.base.lockSend(T, { t: 'lkset', code: c }); KP = null; pfClose(); } });
+    if (!cl) { if (!G.inv.count('fechadura')) { toast('Precisas de uma fechadura de código'); return; } set('Pôr fechadura', 'Trancar'); return; }
+    $('pfT').textContent = 'Fechadura'; pfm.classList.remove('wide', 'kpw');
+    pfB.innerHTML = `<p>${cl === 2 ? `Esta ${what} já estava trancada antes das fechaduras: só tu e o teu clã entram. Põe um código para o poderes dar a mais alguém.` : `Esta ${what} tem fechadura de código. Tu e o teu clã entram sempre.`}</p><button class="btn pri big" id="lkNew">${cl === 2 ? 'Pôr código' : 'Mudar código'}</button>${cl === 1 ? '<button class="btn big" id="lkRm">Tirar fechadura</button>' : ''}`;
+    pfB.onclick = null; $('lkNew').onclick = e => { e.stopPropagation(); audio.play('ui'); set(cl === 2 ? 'Pôr código' : 'Mudar código', 'Guardar'); };
+    if ($('lkRm')) $('lkRm').onclick = e => { e.stopPropagation(); audio.play('ui'); G.base.lockSend(T, { t: 'lkset', rm: 1 }); pfClose(); };
+    pfm.hidden = false;
+  };
+  $('tLock').addEventListener('pointerdown', e => { e.stopPropagation(); if (G.lockT) { audio.play('ui'); lockMenu(G.lockT); } });
   const startLabels = () => { G.hasSave = !!Conta.lerPersonagem(); $('sCont').hidden = !G.hasSave; const b = $('sPlay'); b.querySelector('b').textContent = G.hasSave ? 'Começar de novo' : 'Jogar'; b.querySelector('em').textContent = G.hasSave ? 'Perdes o que tens e começas do zero' : 'Acordas perto de uma vila ou monumento'; b.classList.toggle('pri', !G.hasSave); };
   const pfRender = () => {
     const a = Conta.ativo(), c = Conta.conta(), P = Conta.perfis();
@@ -383,7 +410,7 @@ export function initUI(G) {
   };
   // clã: criar, entrar com código, ver quem está, sair. Os do mesmo clã veem-se no mapa e não se magoam
   const showClan = () => {
-    const N = G.net; $('pfT').textContent = 'Clã'; pfm.classList.remove('wide');
+    const N = G.net; $('pfT').textContent = 'Clã'; pfm.classList.remove('wide', 'kpw');
     const draw = () => {
       if (!N.on) { pfB.innerHTML = '<p>Os clãs só funcionam ligado ao servidor. Abre o jogo no site do Kurogane, com internet, e volta aqui: o botão «Clã» fica no mapa.</p>'; return; }
       const C = N.clanInfo;
@@ -679,7 +706,7 @@ export function initUI(G) {
     dSure = null; dKey = ''; dRows(); $('dead').hidden = false; toastEl.hidden = true; requestAnimationFrame(dMap); clearInterval(dTick); dTick = setInterval(() => { if ($('dead').hidden) { clearInterval(dTick); return; } dRows(); dMap(); }, 1000); };
   // cama ou saco-cama: mudar o nome ou apanhar
   const bedMenu = d => {
-    const nm = d.k === 'saco' ? 'Saco-cama' : 'Cama'; $('pfT').textContent = nm; pfm.classList.remove('wide');
+    const nm = d.k === 'saco' ? 'Saco-cama' : 'Cama'; $('pfT').textContent = nm; pfm.classList.remove('wide', 'kpw');
     pfB.innerHTML = `<p>Quando morres, escolhes no mapa em que cama ou saco-cama queres renascer. Depois de usares ${d.k === 'saco' ? 'este saco-cama esperas 5 min' : 'esta cama esperas 2 min'} até dar outra vez.</p>${field('bdN', 'Nome', 'text', d.name, 'off')}<div class="pmsg" id="bdM"></div><button class="btn pri big" id="bdOk">Guardar nome</button><button class="btn big" id="bdPick">Apanhar ${d.k === 'saco' ? 'o saco-cama' : 'a cama'}</button>`;
     $('bdN').maxLength = 24;
     $('bdOk').onclick = e => { e.stopPropagation(); if (!G.base.renameBed(d, $('bdN').value)) { $('bdM').textContent = 'Escreve um nome'; $('bdM').className = 'pmsg err'; return; } audio.play('ui'); pfClose(); toast('Agora chama-se ' + d.name); };
@@ -740,6 +767,7 @@ export function initUI(G) {
     // revistar
     const pr = G.prompt && !G.invOpen && p.alive ? G.prompt : null;
     const lbl = pr ? pr.label + (pr.grid && pr.grid.empty && !pr.bag ? ' · vazio' : '') : '';
+    { const T = G.lockT, lk = !!(pr && T && G.base.lockOf(T) && G.base.lockMine(T) && !pr.lockPut); if (vals.lk !== lk) { vals.lk = lk; $('tLock').hidden = !lk; } }
     if (vals.pr !== lbl) { vals.pr = lbl; $('prompt').hidden = !pr; $('tUse').hidden = !pr; if (pr) { $('prompt').lastChild.textContent = lbl; $('tUse').lastChild.textContent = lbl; $('tUse').classList.toggle('door', !!pr.door); } }
     // zona
     const mins = Math.floor((G.tod ?? 0.33) * 1440), hhmm = String(Math.floor(mins / 60)).padStart(2, '0') + ':' + String(Math.floor(mins / 10) * 10 % 60).padStart(2, '0');
@@ -787,7 +815,7 @@ export function initUI(G) {
 
   return {
     refresh, openInv, closeInv, toast, feed, hit, damage, death, toggleMap, frame, resize, safe, scopeR, scopeC,
-    closeDeath: () => { $('dead').hidden = true; clearInterval(dTick); }, sound, bedMenu,
+    closeDeath: () => { $('dead').hidden = true; clearInterval(dTick); }, sound, bedMenu, codeAsk, codeErr, codeDone, lockMenu,
     showHUD: msg => { $('hud').hidden = false; refresh(); toast(msg); },
     // sair para o menu (com 5 s parado se estiveres em combate)
     toMenu: () => { setTimeout(() => { pfRender(); if (G.ui_count) G.ui_count(); }, 50); if (!pfm.hidden && $('pfT').textContent === 'Clã') pfClose(); $('quit').hidden = true; $('hud').hidden = true; setEl.hidden = true; G.paused = false; closeInv(); $('map').hidden = true; G.hasSave = true; $('sCont').hidden = false; $('sPlay').querySelector('b').textContent = 'Começar de novo'; $('sPlay').querySelector('em').textContent = 'Perdes o que tens e começas do zero'; $('sPlay').classList.remove('pri'); $('start').hidden = false; },

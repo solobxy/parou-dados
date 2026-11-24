@@ -719,7 +719,7 @@ async function boot() {
     if (!c.bag && !c.own) { if (!c.grid) { c.grid = new Grid(c.slots[0], c.slots[1]); rollLoot(c.table, c.grid); c.next = G.t + 300; } else if (G.t > c.next && c.grid.list.length < 2) { rollLoot(c.table, c.grid); c.next = G.t + 300; } }
     G.box = c; G.ui.openInv(c);
   };
-  G.interact = () => { const pr = G.prompt; if (!pr) return; if (pr.carExit) { G.cars.exit(); return; } if (pr.car) { if (pr.full) return; if (pr.fuel) { const h = held(); if (h && h.k === 'gasolina' && G.cars.refuel(pr.car, h)) { consume(h); G.ui.refresh(true); } return; } G.cars.enter(pr.car); return; } if (pr.own && pr.bed) { G.base.use(pr); return; } if (pr.own && pr.bench) { G.box = null; G.ui.openInv(null, 'craft'); return; } if (pr.door) { const D = pr.door; if (D.lock && D.lock.hp > 0) { G.ui.toast('Trancada. Só abre com explosivos (' + Math.round(D.lock.hp / D.lock.max * 100) + '%)'); audio.play('vazio'); return; } if (!setDoor(D, D.target ? 0 : 1)) G.ui.toast('Está alguém na porta'); return; } openBox(pr); };
+  G.interact = () => { const pr = G.prompt; if (!pr) return; if (pr.lockPut && G.lockT) { G.ui.lockMenu(G.lockT); return; } if (pr.carExit) { G.cars.exit(); return; } if (pr.car) { if (pr.full) return; if (pr.fuel) { const h = held(); if (h && h.k === 'gasolina' && G.cars.refuel(pr.car, h)) { consume(h); G.ui.refresh(true); } return; } G.cars.enter(pr.car); return; } if (pr.own && pr.bed) { G.base.use(pr); return; } if (pr.own && pr.bench) { G.box = null; G.ui.openInv(null, 'craft'); return; } if (pr.door) { const D = pr.door; if (D.lock && D.lock.hp > 0) { G.ui.toast('Trancada. Só abre com explosivos (' + Math.round(D.lock.hp / D.lock.max * 100) + '%)'); audio.play('vazio'); return; } if (!setDoor(D, D.target ? 0 : 1)) G.ui.toast('Está alguém na porta'); return; } openBox(pr); };
 
   // ---------- zombies
   const zoneAt = (x, z) => { if (inCity(x, z)) return W.zones[0]; let best = null; for (const zn of W.zones) { if (zn.kind === 'city') continue; const d = Math.hypot(x - zn.x, z - zn.z); if (d < zn.r && (!best || zn.r < best.r)) best = zn; } return best; };
@@ -937,7 +937,7 @@ async function boot() {
     wx: r => { G.rainT = r; },
     // caixa ou saco aberto: monta a grelha com o que o servidor tem (ou enche uma caixa nova com loot)
     opened: (c, m) => {
-      if (m.busy) { G.ui.toast(m.busy + ' está a revistar isto'); return false; } if (m.gone) { bagGone(c.nid); return false; } if (m.far) { G.ui.toast('Chega-te mais perto'); return false; }
+      if (m.busy) { G.ui.toast(m.busy + ' está a revistar isto'); return false; } if (m.lk) { if (m.lk === 1 && c.dep) G.ui.codeAsk({ dep: c.dep }); else G.ui.toast('Trancado'); return false; } if (m.gone) { bagGone(c.nid); return false; } if (m.far) { G.ui.toast('Chega-te mais perto'); return false; }
       let g;
       if (c.did) { g = decG(m.it || [], new Grid(c.slots[0], c.slots[1])); c.grid = g; if (c.dep && c.dep.k === 'fornalha') { c.dep.on = !!m.on; c.dep.burn = 0; if (m.el) G.base.catchUp(c.dep, m.el / 1000); } G.box = c; G.ui.openInv(c); return false; }
       if (c.nid) { let rows = m.body ? 10 : 4; for (;;) { g = decG(m.it, new Grid(6, rows)); if (g.list.length >= m.it.length || rows >= 16) break; rows += 2; } }
@@ -946,7 +946,7 @@ async function boot() {
     },
     encG, dec,
   };
-  G.net = makeNet({ G, scene, mkRemote, bagMesh: bagM, audio, Conta, enc, dec, die, world: netWorld, WV,
+  G.WV = WV; G.net = makeNet({ G, scene, mkRemote, bagMesh: bagM, audio, Conta, enc, dec, die, world: netWorld, WV,
     hurt: (dmg, by, zone, pop, cause) => {
       if (!G.p || !G.p.alive) return; if (cause === 'zombie') { hurtPlayer(dmg, 'zombie'); return; } G.killer = by; if (cause === 'carro') { hurtPlayer(dmg, 'carro', true); return; }
       if (pop) { const s = pop === 'head' ? 'head' : 'vest'; if (G.inv.eq[s]) { G.inv.eq[s] = null; refresh(); G.ui.toast(s === 'head' ? 'O teu capacete partiu-se' : 'O teu colete partiu-se'); } }
@@ -1336,6 +1336,8 @@ async function boot() {
       if (p.alive && !p.climb && p.h < 0.6) for (const c of [...W.containers, ...G.bags]) { if ((c.lv || 0) !== p.lv) continue; const d = Math.hypot(c.x - p.x, c.z - p.z); if (d < bd && los(p.x, p.z, c.x, c.z, [c.x, c.z], 'sg', p.lv, 0.5)) { best = c; bd = d; } }
       const dn = p.alive && !p.climb && p.h < 0.6 ? G.doorAt(p) : null;
       if (dn && (!best || dn.d < bd - 0.2) && (!cfg.autoDoor || Math.hypot(p.vx, p.vz) < 0.5 || !dn.D.auto)) best = { door: dn.D, label: dn.D.lock && dn.D.lock.hp > 0 ? 'Porta trancada' : dn.D.target ? 'Fechar porta' : 'Abrir porta', x: dn.D.x, z: dn.D.z };
+      { const T = best && best.door && best.door.base ? { door: best.door.base } : best && best.dep && (best.dep.k === 'bau' || best.dep.k === 'bauG') ? { dep: best.dep } : null; G.lockT = T; // fechadura: porta ou baú da base à tua frente
+        if (T) { const h = held(), cl = G.base.lockOf(T); if (h && h.k === 'fechadura' && !cl) best = { ...(T.door ? { door: best.door } : {}), label: 'Pôr fechadura', lockPut: true, x: best.x, z: best.z }; else if (cl === 1 && G.net.world && !G.base.lockMine(T)) best = T.door ? { ...best, label: best.door.target ? 'Fechar porta' : 'Abrir porta · código' } : best; } }
       if (G.car) best = { label: G.car.hp <= 0 || G.carSeat ? 'Sair do carro' : 'Sair do carro', carExit: true, x: p.x, z: p.z };
       else if (p.alive && !p.climb && !p.lv) { const c = G.cars.nearest(p); if (c) { const cd = Math.hypot(c.x - p.x, c.z - p.z) - 1.2, h = held();
           if (!best || cd < bd) best = h && h.k === 'gasolina' ? { label: 'Pôr gasolina no carro (' + Math.round(c.fuel) + ' L)', car: c, fuel: true, x: c.x, z: c.z } : G.cars.seatFree(c) < 0 ? { label: 'Carro cheio', car: c, full: true, x: c.x, z: c.z } : { label: c.seats[0] ? 'Entrar no carro (passageiro)' : 'Conduzir', car: c, x: c.x, z: c.z }; } }
