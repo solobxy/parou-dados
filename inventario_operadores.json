@@ -102,7 +102,7 @@
    "rede": "unir"
   },
   {
-   "chave": "Aveiense",
+   "chave": "Aveirense",
    "nome": "Auto Viação Aveirense (Aveirobus)",
    "zona": "Aveiro, Águeda",
    "estado": "falta"
@@ -235,7 +235,7 @@
    "estado": "falta"
   },
   {
-   "chave": "Gondomarese",
+   "chave": "Gondomar",
    "nome": "Gondomarense",
    "zona": "AM Porto",
    "estado": "tem",
@@ -358,7 +358,7 @@
    "estado": "falta"
   },
   {
-   "chave": "Marques, Lda",
+   "chave": "Marques,",
    "nome": "Marques (grupo Barraqueiro)",
    "zona": "Beiras, Coimbra, Viseu",
    "estado": "falta"
@@ -524,7 +524,7 @@
    "rede": "tcb_barreiro"
   },
   {
-   "chave": "SMTUC",
+   "chave": "Urbanos de Coimbra",
    "nome": "SMTUC (Coimbra)",
    "zona": "Coimbra",
    "estado": "tem",

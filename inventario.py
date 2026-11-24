@@ -28,14 +28,25 @@ def norm(t):
 
 
 def nomes_imt(texto):
-    """Nomes de operadores no texto do PDF do IMT: linhas que acabam em Lda/SA/E.M./Unipessoal ou começam com sigla."""
+    """Nomes de operadores no texto do PDF do IMT (primeira coluna, acabam em Ldª/SA/E.M./Unipessoal).
+    Um nome partido em duas linhas conta uma vez: a 2.ª linha (sem início de nome) é ignorada."""
+    sufixo = re.compile(r"\b(ld[aª]?|l\.da|sa|s\.a|e\.m|unipessoal|município|municipal|serviços)(?![a-z])", re.I)
     nomes = []
+    anterior_aberto = False  # a linha anterior começou um nome sem o acabar
     for linha in texto.splitlines():
+        if not linha.strip() or linha.startswith(" " * 10):
+            continue  # linhas vazias e as da coluna da área (o nome não continua aí)
         primeiro = re.split(r"\s{2,}|\|", linha.strip())[0].strip()
         if len(primeiro) < 4 or primeiro.lower().startswith(("operador", "lista de")):
+            anterior_aberto = False
             continue
-        if re.search(r"\b(lda|l\.da|ld|sa|s\.a|e\.m|unipessoal|município|municipal|serviços)\b\.?", primeiro, re.I):
+        tem_sufixo = bool(sufixo.search(primeiro))
+        if anterior_aberto or primeiro.endswith(")"):
+            anterior_aberto = not tem_sufixo
+            continue
+        if tem_sufixo:
             nomes.append(primeiro)
+        anterior_aberto = not tem_sufixo
     return nomes
 
 
