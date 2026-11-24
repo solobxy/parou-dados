@@ -1,12 +1,12 @@
 {
-  "built_at": "2026-11-24T02:19:13.219878+00:00",
-  "db_bytes": 730652672,
-  "gz_bytes": 201169747,
+  "built_at": "2026-11-24T14:18:25.700447+00:00",
+  "db_bytes": 730648576,
+  "gz_bytes": 201173218,
   "totals": {
-    "lines": 2834,
+    "lines": 2833,
     "stops": 50556,
-    "trips": 129052,
-    "stop_times": 3902353,
+    "trips": 129051,
+    "stop_times": 3902337,
     "operators": 33,
     "operators_ok": 30,
     "operators_desatualizados": 2
@@ -54,9 +54,9 @@
       "id": "cp",
       "operator_name": "CP - Comboios de Portugal",
       "status": "OK",
-      "lines": 190,
+      "lines": 189,
       "stops": 457,
-      "trips": 1659,
+      "trips": 1658,
       "valid_until": "2027-12-11",
       "validade": "ok",
       "dias_validade": 382,
@@ -659,8 +659,8 @@
         "desenhos": 1538
       },
       "cp": {
-        "viagens": 1659,
-        "com_desenho": 1659,
+        "viagens": 1658,
+        "com_desenho": 1658,
         "desenhos": 241
       },
       "fertagus": {
@@ -983,13 +983,13 @@
           "total": 385
         },
         "servicos_com_data_hoje": [
-          "BexpU",
+          "DU",
           "CU",
-          "BU",
-          "AU",
-          "EU",
+          "BexpU",
           "FU",
-          "DU"
+          "EU",
+          "BU",
+          "AU"
         ],
         "viagens_por_servico": [
           {
@@ -1044,5 +1044,5 @@
       }
     }
   },
-  "duration_s": 339
+  "duration_s": 452
 }
