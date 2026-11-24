@@ -27,7 +27,7 @@ boot().catch(e => { console.error(e.stack || String(e)); window.__failed = Strin
 
 async function boot() {
   const wait = (p, ms) => Promise.race([p, new Promise(r => setTimeout(r, ms))]);
-  await wait(Promise.all([document.fonts.load('700 40px "Barlow Condensed"'), document.fonts.load('600 40px "Barlow Condensed"'), document.fonts.load('900 40px "KJP"', '黒鉄'), document.fonts.load('500 16px "Barlow"')]), 2500);
+  await wait(Promise.all([document.fonts.load('700 40px "Roboto Condensed"'), document.fonts.load('600 40px "Roboto Condensed"'), document.fonts.load('900 40px "KJP"', '黒鉄'), document.fonts.load('500 16px "Roboto Condensed"')]), 2500);
 
   // ---------- renderer, cena, luz
   const canvas = document.getElementById('c');
@@ -321,7 +321,7 @@ async function boot() {
     const prev = m.onBeforeCompile;
     m.onBeforeCompile = (sh, r) => { if (prev) prev(sh, r); Object.assign(sh.uniforms, VU);
       sh.vertexShader = 'varying vec3 vVisW;\n' + sh.vertexShader.replace('#include <project_vertex>', '#include <project_vertex>\n vec4 vwp = vec4( transformed, 1.0 );\n#ifdef USE_INSTANCING\n vwp = instanceMatrix * vwp;\n#endif\n vVisW = ( modelMatrix * vwp ).xyz;');
-      sh.fragmentShader = 'uniform sampler2D uVis; uniform vec2 uVisO; uniform float uVisS; uniform float uVisK; varying vec3 vVisW;\nfloat visS( vec2 u ) { float o = 1.7 / 384.0; return ( texture2D( uVis, u ).r * 2.0 + texture2D( uVis, u + vec2( o, 0.0 ) ).r + texture2D( uVis, u - vec2( o, 0.0 ) ).r + texture2D( uVis, u + vec2( 0.0, o ) ).r + texture2D( uVis, u - vec2( 0.0, o ) ).r ) / 6.0; }\n' + sh.fragmentShader.replace('#include <tonemapping_fragment>', ' { vec2 vuv = ( vVisW.xz - uVisO ) / uVisS + 0.5; float vv = ( vuv.x < 0.0 || vuv.y < 0.0 || vuv.x > 1.0 || vuv.y > 1.0 ) ? 1.0 : visS( vuv ); vec3 vc0 = gl_FragColor.rgb; float vl = dot( vc0, vec3( 0.299, 0.587, 0.114 ) ); gl_FragColor.rgb = mix( vec3( vl ) * uVisK * vec3( 0.9, 0.96, 1.1 ), vc0, vv ); }\n#include <tonemapping_fragment>'); };
+      sh.fragmentShader = 'uniform sampler2D uVis; uniform vec2 uVisO; uniform float uVisS; uniform float uVisK; varying vec3 vVisW;\nfloat visS( vec2 u ) { float o = 0.9 / 384.0; return ( texture2D( uVis, u ).r * 2.0 + texture2D( uVis, u + vec2( o, 0.0 ) ).r + texture2D( uVis, u - vec2( o, 0.0 ) ).r + texture2D( uVis, u + vec2( 0.0, o ) ).r + texture2D( uVis, u - vec2( 0.0, o ) ).r ) / 6.0; }\n' + sh.fragmentShader.replace('#include <tonemapping_fragment>', ' { vec2 vuv = ( vVisW.xz - uVisO ) / uVisS + 0.5; float vv = ( vuv.x < 0.0 || vuv.y < 0.0 || vuv.x > 1.0 || vuv.y > 1.0 ) ? 1.0 : visS( vuv ); vec3 vc0 = gl_FragColor.rgb; float vl = dot( vc0, vec3( 0.299, 0.587, 0.114 ) ); gl_FragColor.rgb = mix( vec3( vl ) * uVisK * vec3( 0.9, 0.96, 1.1 ), vc0, vv ); }\n#include <tonemapping_fragment>'); };
     const key = m.customProgramCacheKey ? m.customProgramCacheKey.bind(m) : () => ''; m.customProgramCacheKey = () => key() + '|vis'; m.needsUpdate = true;
   };
   const visifyScene = () => scene.traverse(o => { if (!o.isMesh || o.userData.sil || o === aimLine) return; (Array.isArray(o.material) ? o.material : [o.material]).forEach(visify); });

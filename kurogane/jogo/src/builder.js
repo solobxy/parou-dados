@@ -122,6 +122,6 @@ export class Atlas {
   texture() { const t = new THREE.CanvasTexture(this.c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; t.generateMipmaps = true; return t; }
 }
 export const FONT_JP = '"KJP","Hiragino Sans","Hiragino Kaku Gothic ProN","Yu Gothic","Meiryo","Noto Sans CJK JP","Noto Sans JP",sans-serif';
-export const FONT_UI = '"Barlow Condensed","Arial Narrow",sans-serif';
+export const FONT_UI = '"Roboto Condensed","Arial Narrow",sans-serif';
 
 export const ctex = (w, h, draw, rep = true) => { const c = document.createElement('canvas'); c.width = w; c.height = h; const x = c.getContext('2d'); draw(x, w, h); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; if (rep) t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 8; return t; };

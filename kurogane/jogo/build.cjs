@@ -11,11 +11,10 @@ execFileSync('pyftsubset', [path.join(NM, '@expo-google-fonts/noto-sans-jp/900Bl
 const b64 = f => fs.readFileSync(f).toString('base64');
 const ff = (fam, w, file) => `@font-face{font-family:"${fam}";font-weight:${w};font-style:normal;font-display:swap;src:url(data:font/woff2;base64,${b64(file)}) format("woff2")}`;
 const fonts = [
-  ff('Barlow Condensed', 600, path.join(NM, '@fontsource/barlow-condensed/files/barlow-condensed-latin-600-normal.woff2')),
-  ff('Barlow Condensed', 700, path.join(NM, '@fontsource/barlow-condensed/files/barlow-condensed-latin-700-normal.woff2')),
-  ff('Barlow', 400, path.join(NM, '@fontsource/barlow/files/barlow-latin-400-normal.woff2')),
-  ff('Barlow', 500, path.join(NM, '@fontsource/barlow/files/barlow-latin-500-normal.woff2')),
-  ff('Barlow', 600, path.join(NM, '@fontsource/barlow/files/barlow-latin-600-normal.woff2')),
+  ff('Roboto Condensed', 400, path.join(NM, '@fontsource/roboto-condensed/files/roboto-condensed-latin-400-normal.woff2')),
+  ff('Roboto Condensed', 500, path.join(NM, '@fontsource/roboto-condensed/files/roboto-condensed-latin-500-normal.woff2')),
+  ff('Roboto Condensed', 600, path.join(NM, '@fontsource/roboto-condensed/files/roboto-condensed-latin-600-normal.woff2')),
+  ff('Roboto Condensed', 700, path.join(NM, '@fontsource/roboto-condensed/files/roboto-condensed-latin-700-normal.woff2')),
   ff('KJP', 900, jpOut),
 ].join('\n');
 // 2) código
