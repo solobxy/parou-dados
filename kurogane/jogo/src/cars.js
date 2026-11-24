@@ -1,6 +1,7 @@
 // Carros: conduzir (com gasolina e estragos), levar passageiros, atropelar zombies. Online, quem conduz simula o carro
 // e manda a posição; os outros veem-no a andar. Parados ficam onde os deixaram (para todos).
 import * as THREE from 'three';
+import { track, push, sample } from './interp.js';
 
 const MAXF = 17, MAXOFF = 9, MAXR = 5, ACC = 6.5, BRK = 14, HP = 400, TANK = 40, USE = 0.012; // m/s, m/s², litros, litros por metro
 const SEATS = [[-0.42, 0.75, 0.15], [0.42, 0.75, 0.15], [-0.42, 0.75, -0.9], [0.42, 0.75, -0.9]]; // condutor à esquerda
@@ -90,8 +91,8 @@ export function makeCars({ scene, G, W, collide, solidAt, groundY, addRect, remo
     update(dt) {
       const now = performance.now();
       for (const c of list) {
-        if (c.buf && c.buf.length && !(c === G.car && G.carSeat === 0)) { const B = c.buf, tR = now - 120; let a = null, b = null; for (let k = B.length - 1; k >= 0; k--) if (B[k].t <= tR) { a = B[k]; b = B[k + 1] || B[k]; break; } if (!a) a = b = B[0];
-          const f = b === a ? 1 : clamp((tR - a.t) / (b.t - a.t), 0, 1); const nx = a.x + (b.x - a.x) * f, nz = a.z + (b.z - a.z) * f; c.spin += Math.hypot(nx - c.x, nz - c.z) * Math.sign(b.v || 1) / 0.34; c.x = nx; c.z = nz; c.yaw = a.yaw + angDiff(b.yaw, a.yaw) * f; c.v = b.v; }
+        // de outro condutor: desenhado um pouco atrás, entre as duas imagens certas (pela hora a que o condutor as mandou)
+        if (c.T && !(c === G.car && G.carSeat === 0)) { const S = sample(c.T, now, c.o || (c.o = {})); if (S) { c.spin += Math.hypot(S.x - c.x, S.z - c.z) * Math.sign(S.s.v || 1) / 0.34; c.x = S.x; c.z = S.z; c.yaw = S.yaw; c.v = S.s.v; } }
         if (c.hp <= 0) wreck(c); place(c); for (const w of c.m.wheels) w.rotation.x = c.spin;
         const night = 1 - (G.day ?? 1); c.m.lamp.emissiveIntensity = c.seats[0] ? 0.4 + night * 2.4 : 0.15; c.m.tail.emissiveIntensity = c.seats[0] ? (c.v < -0.2 || (c === G.car && c.brk) ? 1.8 : 0.5) : 0.2;
         c.m.heads.forEach((h, i) => h.visible = !!c.seats[i] && !(c === G.car && G.fp));
@@ -105,16 +106,16 @@ export function makeCars({ scene, G, W, collide, solidAt, groundY, addRect, remo
     },
     // online: os carros que o servidor manda (e quem vai em cada lugar)
     rows(U) { const now = performance.now(), my = me();
-      for (const [id, x10, z10, y100, v10, fuel, hp, d0, s1, s2, s3] of U) { let c = byId.get(id); const x = x10 / 10, z = z10 / 10, yaw = y100 / 100;
+      for (const [id, x10, z10, y100, v10, fuel, hp, d0, s1, s2, s3, ts] of U) { let c = byId.get(id); const x = x10 / 10, z = z10 / 10, yaw = y100 / 100;
         if (!c) { c = add(id, x, z, yaw, { fuel, hp }); }
         const seats = [d0, s1, s2, s3]; c.seats = seats; c.hp = hp;
         if (G.car === c && !seats.includes(my)) { c.seats[G.carSeat] = my; this.exit(false); c.seats = seats; G.ui.toast(hp <= 0 ? 'O carro ficou desfeito' : 'Saíste do carro'); }
         if (G.car === c && G.carSeat === 0) continue; // o teu: a posição és tu que mandas
-        c.fuel = fuel; if (d0) { (c.buf || (c.buf = [])).push({ t: now, x, z, yaw, v: v10 / 10 }); if (c.buf.length > 10) c.buf.shift(); } else { c.buf = null; c.x = x; c.z = z; c.yaw = yaw; c.v = 0; }
+        c.fuel = fuel; if (d0) { if (!c.T || c.drv !== d0) { c.T = track(); c.drv = d0; } push(c.T, ts || now, now, { x, z, y: 0, yaw, v: v10 / 10 }); } else { c.T = null; c.drv = 0; c.x = x; c.z = z; c.yaw = yaw; c.v = 0; }
         if (hp <= 0) wreck(c); }
     },
     gone(ids) { for (const id of ids) { const c = byId.get(id); if (c && c !== G.car) del(c); } },
-    up() { const c = G.car; if (!c || G.carSeat !== 0) return null; const a = [c.id, Math.round(c.x * 10), Math.round(c.z * 10), Math.round(c.yaw * 100), Math.round(c.v * 10), +c.fuel.toFixed(1), Math.round(c.hp)], sg = a.join(); if (sg === c.sent) return null; c.sent = sg; return a; },
+    up() { const c = G.car; if (!c || G.carSeat !== 0) return null; const a = [c.id, Math.round(c.x * 10), Math.round(c.z * 10), Math.round(c.yaw * 100), Math.round(c.v * 10), +c.fuel.toFixed(1), Math.round(c.hp)], sg = a.join(); if (sg === c.sent) return null; c.sent = sg; a.push(Math.round(performance.now())); return a; },
   };
   return C;
 }

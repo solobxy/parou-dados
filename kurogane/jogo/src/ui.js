@@ -79,13 +79,13 @@ export function initUI(G) {
   // ---------- inventário
   const inv = $('inv'), gBag = $('gBag'), gBox = $('gBox');
   let sel = null, tab = 'inv', lastPortrait = '', lastTap = { id: 0, t: 0 };
-  inv.querySelectorAll('.tabs button').forEach(b => b.onclick = () => { tab = b.dataset.tab; inv.querySelectorAll('.tabs button').forEach(x => x.classList.toggle('on', x === b)); audio.play('ui'); render(); });
+  inv.querySelectorAll('.tabs button').forEach(b => b.onclick = () => { tab = b.dataset.tab; sel = null; inv.querySelectorAll('.tabs button').forEach(x => x.classList.toggle('on', x === b)); audio.play('ui'); render(); });
   const layout = () => {
     const sl = G.TOUCH ? 46 : innerHeight > 640 ? 60 : 52; inv.style.setProperty('--slot', sl + 'px');
     const body = inv.querySelector('.ibody'), Hb = body.clientHeight, Wd = body.clientWidth, g6 = 5 * GAP;
     if (innerHeight > innerWidth) {
       // ao alto: o que fica fixo (equipamento, ações, cinto, títulos) e o resto dividido entre a mochila (6 linhas) e pelo menos 3 linhas do que se revista
-      const fixed = 2 * 24 + 2 * sl + 150 + 4 * 8 + 12;
+      const fixed = 2 * 24 + 2 * sl + 4 * 8 + 12;
       const byH = Math.floor((Hb - fixed - 8 * GAP) / 9), byW = Math.floor((Wd - g6) / 6);
       CS = clamp(Math.min(byH, byW), 34, 54); inv.style.setProperty('--cs', CS + 'px'); $('cBox').style.width = ''; return;
     }
@@ -131,12 +131,13 @@ export function initUI(G) {
   };
   const renderBar = () => {
     const nm = $('iName'), ct = $('iCat'), ds = $('iDesc'), ac = $('iAct'); ac.innerHTML = '';
-    if (!sel || !locate(sel.it)) { sel = null; nm.textContent = 'Toca num objeto'; ct.textContent = ''; ct.className = 'cat'; ds.textContent = G.TOUCH ? 'Toca e escolhe uma ação, ou arrasta para outro sítio. Arrastar para fora larga no chão.' : 'Clica e escolhe uma ação, ou arrasta para outro sítio. Arrastar para fora larga no chão. Duplo clique faz a ação principal.'; return; }
+    if (!sel || !locate(sel.it)) { sel = null; bar.hidden = true; $('iHint').textContent = G.TOUCH ? 'Toca num objeto para ver o que podes fazer. Arrasta para o mudar de sítio; para fora do inventário, larga-o no chão. Dois toques fazem a ação principal.' : 'Clica num objeto para ver o que podes fazer. Arrasta para o mudar de sítio; para fora, larga-o no chão. Duplo clique faz a ação principal.'; return; }
+    bar.hidden = false; ds.classList.remove('open');
     const it = sel.it, d = ITEMS[it.k], loc = locate(it);
     nm.textContent = d.n + (it.n > 1 ? ' × ' + it.n : ''); ct.textContent = d.rare ? 'Raro · ' + CAT[d.cat] : CAT[d.cat]; ct.className = 'cat' + (d.rare ? ' rare' : '');
     const attTxt = d.gun && it.att ? Object.values(it.att).filter(Boolean).map(k => ITEMS[k].s).join(', ') : '';
-    ds.textContent = d.desc + (d.gun ? (d.gun.clip && !it.mg ? ' Sem carregador.' : ` Carregada: ${it.ammo}/${capOf(it)} de ${ITEMS[it.ak || ammoOf(d.gun)[0]].s}.`) + (attTxt ? ' Tem: ' + attTxt + '.' : '') : '') + (d.clip ? ` Tem ${it.am || 0}/${d.clip.cap}` + (it.am ? ` de ${ITEMS[it.ak].s}.` : '.') : '') + (d.bal ? ` Perfuração ${d.bal.pen}: os coletes de nível igual ou maior travam-na.` : '');
-    const add = (label, fn, pri) => { const b = document.createElement('button'); b.className = 'btn sm' + (pri ? ' pri' : ''); b.textContent = label; b.onclick = () => { audio.play('ui'); fn(); G.refresh(); }; ac.appendChild(b); };
+    ds.textContent = d.desc + (d.gun ? (d.gun.clip && !it.mg ? ' Sem carregador.' : ` Carregada: ${it.ammo}/${capOf(it)} de ${ITEMS[it.ak || ammoOf(d.gun)[0]].s}.`) + (attTxt ? ' Tem: ' + attTxt.replace(/\.$/, '') + '.' : '') : '') + (d.clip ? ` Tem ${it.am || 0}/${d.clip.cap}` + (it.am ? ` de ${ITEMS[it.ak].s}.` : '.') : '') + (d.bal ? ` Perfuração ${d.bal.pen}: os coletes de nível igual ou maior travam-na.` : '');
+    const add = (label, fn, pri, cls) => { const b = document.createElement('button'); b.className = 'btn sm' + (pri ? ' pri' : '') + (cls ? ' ' + cls : ''); b.textContent = label; b.onclick = () => { audio.play('ui'); fn(); G.refresh(); }; ac.appendChild(b); };
     if (loc.t === 'box') { add('Tirar', () => takeToMe(it, loc), true); }
     else {
       if (d.use) add('Usar', () => { G.use(it); if (G.TOUCH) closeInv(); });
@@ -163,9 +164,25 @@ export function initUI(G) {
       if (d.gun) for (const k of ammoOf(d.gun)) if (k !== (it.pref || it.ak) && ammoOf(d.gun).length > 1) add('Usar ' + ITEMS[k].s, () => { it.pref = k; toast('Na próxima recarga usa ' + ITEMS[k].s); });
       if (it.n > 1) add('Dividir', () => split(it));
       if (loc.t === 'bag' && d.w !== d.h) add('Rodar', () => rotateAt(it, loc));
-      add('Largar', () => { removeAt(it, loc); G.dropItem(it); sel = null; });
+      add('Largar no chão', () => { removeAt(it, loc); G.dropItem(it); sel = null; }, false, 'end');
     }
+    // a ação principal vai primeiro, a toda a largura; largar fica no fim
+    [...ac.querySelectorAll('.btn.pri')].reverse().forEach(b => ac.prepend(b));
+    placeBar();
   };
+  // o cartão do objeto aparece ao lado dele (deitado: à esquerda ou à direita; ao alto: por cima ou por baixo), sem o tapar
+  const bar = $('iBar');
+  const placeBar = () => {
+    if (bar.hidden || !sel) return; const src = [...inv.querySelectorAll('[data-src]')].find(e => { const f = e.dataset.src && fromSrc(e.dataset.src); return f && f.it === sel.it; });
+    const vw = innerWidth, vh = innerHeight, m = 8, W = bar.offsetWidth, H = bar.offsetHeight, r = src ? src.getBoundingClientRect() : { left: vw / 2, right: vw / 2, top: vh / 2, bottom: vh / 2, width: 0, height: 0 };
+    let x, y;
+    if (vh > vw) { x = (vw - W) / 2; const head = inv.querySelector('.ihead').getBoundingClientRect().bottom + 6; y = r.top + r.height / 2 > vh / 2 ? Math.max(head, r.top - H - 10) : Math.min(vh - H - m, r.bottom + 10); if (y < head) y = head; }
+    else { const right = r.left + r.width / 2 < vw / 2; x = right ? r.right + 10 : r.left - W - 10; x = clamp(x, m, vw - W - m); y = clamp(r.top - 6, m, vh - H - m); }
+    bar.style.transform = `translate(${Math.round(x)}px,${Math.round(y)}px)`;
+  };
+  $('iBarX').onclick = () => { audio.play('ui'); sel = null; render(); };
+  $('iDesc').onclick = () => { $('iDesc').classList.toggle('open'); placeBar(); };
+  addEventListener('resize', () => { if (G.invOpen) requestAnimationFrame(placeBar); });
   // treino: nível, barra e o que já ganhaste, em números reais
   const renderSkills = () => {
     const v = k => G.sk(k), pc = x => Math.round(x * 100), L = [
@@ -241,6 +258,7 @@ export function initUI(G) {
     ghostDraw(); audio.play('ui', 0.5); dragMove(drag.lx, drag.ly); };
   addEventListener('keydown', e => { if ((e.key === 'r' || e.key === 'R') && drag && drag.moved) { e.preventDefault(); e.stopPropagation(); dragRotate(); } }, true);
   inv.addEventListener('pointerdown', e => {
+    if (e.target.closest('#iBar')) return;
     if (drag && !drag.none && drag.moved && e.pointerId !== drag.pid) { e.preventDefault(); dragRotate(); return; }
     const src = e.target.closest('[data-src]'); const s = src && src.dataset.src ? fromSrc(src.dataset.src) : null;
     if (!s) { drag = { none: true, x: e.clientX, y: e.clientY, target: e.target }; return; }
@@ -257,14 +275,14 @@ export function initUI(G) {
   };
   inv.addEventListener('pointermove', e => {
     if (!drag || drag.none || e.pointerId !== drag.pid) return;
-    if (!drag.moved && Math.hypot(e.clientX - drag.x, e.clientY - drag.y) > 7) { drag.moved = true; ghost.innerHTML = `<img src="${G.ICONS[drag.it.k]}" alt="">`; ghostDraw(); ghost.hidden = false; drag.el.classList.add('drag'); if (!drag.el.classList.contains('item')) { drag.ox = drag.w / 2; drag.oy = drag.h / 2; } }
+    if (!drag.moved && Math.hypot(e.clientX - drag.x, e.clientY - drag.y) > 7) { drag.moved = true; ghost.innerHTML = `<img src="${G.ICONS[drag.it.k]}" alt="">`; ghostDraw(); ghost.hidden = false; drag.el.classList.add('drag'); bar.hidden = true; if (!drag.el.classList.contains('item')) { drag.ox = drag.w / 2; drag.oy = drag.h / 2; } }
     if (!drag.moved) return;
     drag.lx = e.clientX; drag.ly = e.clientY; dragMove(e.clientX, e.clientY);
   });
   const endDrag = e => {
     if (!drag || (drag.pid !== undefined && e.pointerId !== drag.pid)) return; const D = drag; drag = null; ghost.hidden = true; prev.remove(); inv.querySelectorAll('.slot.drop').forEach(x => x.classList.remove('drop'));
     if (D.none) { // toque em sítio vazio: mover o selecionado para lá
-      if (Math.hypot(e.clientX - D.x, e.clientY - D.y) > 8 || !sel) return; const t = targetAt(e.clientX, e.clientY, [0, 0]); const l = locate(sel.it); if (!t || !l || t.t === 'ground') return;
+      if (Math.hypot(e.clientX - D.x, e.clientY - D.y) > 8 || !sel) return; const t = targetAt(e.clientX, e.clientY, [0, 0]); const l = locate(sel.it); if (!t || !l || t.t === 'ground') { if (!(D.target && D.target.closest && D.target.closest('button'))) { sel = null; render(); } return; }
       if ((t.t === 'bag' || t.t === 'box') && gridOf(t.t).at(t.px, t.py) && gridOf(t.t).at(t.px, t.py).it !== sel.it && gridOf(t.t).at(t.px, t.py).it.k !== sel.it.k) return;
       move(sel.it, l, t); return;
     }
@@ -329,6 +347,14 @@ export function initUI(G) {
 
   // ---------- perfis e conta
   const esc = t => String(t).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+  // teclado do telemóvel aberto: as janelas encolhem para cima dele e o botão principal fica à vista (no iPhone o browser não o faz sozinho)
+  const nextBtn = el => { const box = el.closest('.pfbox, .ov'); return box ? [...box.querySelectorAll('button')].find(q => q.offsetParent && (el.compareDocumentPosition(q) & Node.DOCUMENT_POSITION_FOLLOWING)) : null; };
+  { const vv = window.visualViewport, kbSet = () => { const h = vv ? Math.max(0, Math.round(innerHeight - vv.height - vv.offsetTop)) : 0; document.documentElement.style.setProperty('--kb', h + 'px'); for (const o of document.querySelectorAll('.ov')) o.classList.toggle('kb', h > 80 && !!o.querySelector('input:focus, textarea:focus')); };
+    if (vv) { vv.addEventListener('resize', kbSet); vv.addEventListener('scroll', kbSet); }
+    document.addEventListener('focusin', e => { if (!/^(INPUT|TEXTAREA)$/.test(e.target.tagName)) return; setTimeout(() => { kbSet(); const b = nextBtn(e.target); e.target.scrollIntoView({ block: 'center' }); if (b) b.scrollIntoView({ block: 'nearest' }); }, 350); });
+    // Enter (ou «Ir» no teclado) carrega no botão que vem a seguir ao campo
+    document.addEventListener('keydown', e => { if (e.key !== 'Enter' || e.target.tagName !== 'INPUT') return; const b = nextBtn(e.target); if (b) { e.preventDefault(); b.click(); } });
+    document.addEventListener('focusout', () => setTimeout(kbSet, 100)); }
   const pfm = $('pfm'), pfB = $('pfB');
   const pfClose = () => { pfm.hidden = true; pfB.onclick = null; pfm.classList.remove('wide'); };
   let mnT = 0; const mnote = t => { const m = $('mnote'); m.textContent = t; m.hidden = false; clearTimeout(mnT); mnT = setTimeout(() => { m.hidden = true; }, 6000); };

@@ -15,6 +15,7 @@ import { makeBase } from './base.js';
 import { makeNav } from './nav.js';
 import { makeNet } from './net.js';
 import { makeCars } from './cars.js';
+import { track, push, sample } from './interp.js';
 
 const TOUCH = matchMedia('(pointer: coarse)').matches || ('ontouchstart' in window && navigator.maxTouchPoints > 0);
 const DEBUG = /debug/.test(location.hash) || window.__test;
@@ -85,7 +86,7 @@ async function boot() {
   const S = (o = {}) => new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.86, ...o });
   const mats = {
     v: S(), vf: S({ flatShading: true }), m: S({ roughness: 0.38, metalness: 0.55 }), win: S({ roughness: 0.18, metalness: 0.45, envMapIntensity: 1.6 }),
-    nwin: S({ roughness: 0.2, metalness: 0.3, emissive: 0xffc98a, emissiveIntensity: 0 }), nwin2: S({ roughness: 0.2, metalness: 0.3, emissive: 0xcfe3ff, emissiveIntensity: 0 }),
+    nwin: S({ roughness: 0.2, metalness: 0.3, emissive: 0xffc98a, emissiveIntensity: 0, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }), nwin2: S({ roughness: 0.2, metalness: 0.3, emissive: 0xcfe3ff, emissiveIntensity: 0, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }),
     gl: new THREE.MeshStandardMaterial({ color: 0x9ab8c8, transparent: true, opacity: 0.3, roughness: 0.05, metalness: 0.3, depthWrite: false }),
     lit: new THREE.MeshBasicMaterial({ vertexColors: true }),
     asph: S({ map: TX.asph, roughness: 0.95 }), tile: S({ map: TX.tile, roughness: 0.9 }), grass: S({ map: TX.grass, roughness: 1 }), dirt: S({ map: TX.dirt, roughness: 1 }), conc: S({ map: TX.conc, roughness: 0.95 }),
@@ -95,7 +96,7 @@ async function boot() {
 
   // ---------- mundo
   const atlasTex = A.texture();
-  mats.sign = new THREE.MeshStandardMaterial({ map: atlasTex, emissiveMap: atlasTex, emissive: 0xffffff, emissiveIntensity: 1.05, roughness: 0.5 });
+  mats.sign = new THREE.MeshStandardMaterial({ map: atlasTex, emissiveMap: atlasTex, emissive: 0xffffff, emissiveIntensity: 1.05, roughness: 0.5, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }); // placas e janelas acesas à frente da parede: sem tremer ao longe na luneta
   mats.paint = new THREE.MeshStandardMaterial({ map: atlasTex, roughness: 0.85, alphaTest: 0.4, polygonOffset: true, polygonOffsetFactor: -3, polygonOffsetUnits: -3 });
   const tW0 = performance.now(); const W = buildWorld(scene, mats, A); W.buildMs = Math.round(performance.now() - tW0);
   atlasTex.needsUpdate = true;
@@ -128,7 +129,7 @@ async function boot() {
   const collide = (o, rad) => {
     const lv = o.lv || 0, hh = o.h || 0;
     for (let it = 0; it < 2; it++) near(o.x - rad, o.z - rad, o.x + rad, o.z + rad, r => {
-      if ((r.lv || 0) !== lv || r.h <= hh + 0.35) return;
+      if ((r.lv || 0) !== lv || r.h <= hh + 0.35 || (r.yb || 0) > hh + 1.75) return; // o que está acima da cabeça (a parede por cima de uma porta) não trava
       const cx = clamp(o.x, r.x0, r.x1), cz = clamp(o.z, r.z0, r.z1), dx = o.x - cx, dz = o.z - cz, d2 = dx * dx + dz * dz;
       if (d2 >= rad * rad) return;
       if (d2 > 1e-9) { const d = Math.sqrt(d2), k = (rad - d) / d; o.x += dx * k; o.z += dz * k; }
@@ -290,15 +291,14 @@ async function boot() {
 
   // ---------- linha de vista: paredes altas e portas fechadas tapam; janelas e portas abertas deixam ver.
   // O que não vês fica mais escuro e os zombies e sacos lá não aparecem. De dentro de casa só vês para fora pelas janelas e portas, e de fora só vês para dentro por elas.
-  const VN = 512, VS = 2 * CAP; // máscara de VN×VN píxeis a cobrir VS metros à tua volta (sem limite de distância: fora dela vê-se tudo)
+  const VN = 384, VS = 2 * CAP; // máscara de VN×VN píxeis a cobrir VS metros à tua volta (sem limite de distância: fora dela vê-se tudo)
   const vcan = document.createElement('canvas'); vcan.width = vcan.height = VN; const vx = vcan.getContext('2d');
-  const vout = document.createElement('canvas'); vout.width = vout.height = VN; const vo = vout.getContext('2d');
-  const visTex = new THREE.CanvasTexture(vout); visTex.flipY = false; visTex.minFilter = visTex.magFilter = THREE.LinearFilter; visTex.generateMipmaps = false; visTex.wrapS = visTex.wrapT = THREE.ClampToEdgeWrapping;
+  const visTex = new THREE.CanvasTexture(vcan); visTex.flipY = false; visTex.minFilter = visTex.magFilter = THREE.LinearFilter; visTex.generateMipmaps = false; visTex.wrapS = visTex.wrapT = THREE.ClampToEdgeWrapping;
   const VU = { uVis: { value: visTex }, uVisO: { value: new THREE.Vector2() }, uVisS: { value: VS }, uVisK: { value: 1 } };
   const blocksSight = (r, lv, C) => !r.off && !r.edge && ((r.k === 's' && r.h >= 2.4) || r.door) && ((r.lv || 0) === lv || (lv > 0 && (r.lv || 0) === 0 && C && !(r.x0 >= C.x0 - 0.3 && r.x1 <= C.x1 + 0.3 && r.z0 >= C.z0 - 0.3 && r.z1 <= C.z1 + 0.3)));
   const VIS = { x: 1e9, z: 1e9, lv: -1, t: 0, key: '' };
   const visDirty = () => { VIS.x = 1e9; VIS.key = ''; VIS.t = 0; };
-  const drawVis = (px, pz, lv, C) => {
+  const drawVis = (px, pz, lv, C) => { const t0 = performance.now();
     const k = VN / VS, ox = px - VS / 2, oz = pz - VS / 2, T = (x, z) => [(x - ox) * k, (z - oz) * k];
     vx.globalCompositeOperation = 'source-over'; vx.fillStyle = '#fff'; vx.fillRect(0, 0, VN, VN);
     vx.fillStyle = '#000'; vx.beginPath();
@@ -311,8 +311,7 @@ async function boot() {
       if (pz > r.z0) edge(r.x0, r.z0, r.x1, r.z0); if (pz < r.z1) edge(r.x0, r.z1, r.x1, r.z1);
     });
     vx.fill();
-    vo.filter = 'blur(2.4px)'; vo.globalCompositeOperation = 'copy'; vo.drawImage(vcan, 0, 0); vo.filter = 'none';
-    visTex.needsUpdate = true; VU.uVisO.value.set(px, pz);
+    visTex.needsUpdate = true; VU.uVisO.value.set(px, pz); VIS.ms = (VIS.ms || 0) * 0.9 + (performance.now() - t0) * 0.1; VIS.n = (VIS.n || 0) + 1;
   };
   // linha de vista entre dois pontos (mesmas regras da máscara)
   const sees = (ax, az, bx, bz, lv, C) => { const dx = bx - ax, dz = bz - az; let ok = true; near(Math.min(ax, bx), Math.min(az, bz), Math.max(ax, bx), Math.max(az, bz), r => { if (!ok || !blocksSight(r, lv, C)) return; let t0 = 0, t1 = 1; for (const [o, d, lo, hi] of [[ax, dx, r.x0, r.x1], [az, dz, r.z0, r.z1]]) { if (Math.abs(d) < 1e-9) { if (o <= lo || o >= hi) return; } else { let ta = (lo - o) / d, tb = (hi - o) / d; if (ta > tb) [ta, tb] = [tb, ta]; t0 = Math.max(t0, ta); t1 = Math.min(t1, tb); if (t0 >= t1) return; } } if (t0 < 0.999 && t1 > 0.001) ok = false; }); return ok; };
@@ -322,7 +321,7 @@ async function boot() {
     const prev = m.onBeforeCompile;
     m.onBeforeCompile = (sh, r) => { if (prev) prev(sh, r); Object.assign(sh.uniforms, VU);
       sh.vertexShader = 'varying vec3 vVisW;\n' + sh.vertexShader.replace('#include <project_vertex>', '#include <project_vertex>\n vec4 vwp = vec4( transformed, 1.0 );\n#ifdef USE_INSTANCING\n vwp = instanceMatrix * vwp;\n#endif\n vVisW = ( modelMatrix * vwp ).xyz;');
-      sh.fragmentShader = 'uniform sampler2D uVis; uniform vec2 uVisO; uniform float uVisS; uniform float uVisK; varying vec3 vVisW;\n' + sh.fragmentShader.replace('#include <tonemapping_fragment>', ' { vec2 vuv = ( vVisW.xz - uVisO ) / uVisS + 0.5; float vv = ( vuv.x < 0.0 || vuv.y < 0.0 || vuv.x > 1.0 || vuv.y > 1.0 ) ? 1.0 : texture2D( uVis, vuv ).r; vec3 vc0 = gl_FragColor.rgb; float vl = dot( vc0, vec3( 0.299, 0.587, 0.114 ) ); gl_FragColor.rgb = mix( vec3( vl ) * uVisK * vec3( 0.9, 0.96, 1.1 ), vc0, vv ); }\n#include <tonemapping_fragment>'); };
+      sh.fragmentShader = 'uniform sampler2D uVis; uniform vec2 uVisO; uniform float uVisS; uniform float uVisK; varying vec3 vVisW;\nfloat visS( vec2 u ) { float o = 1.7 / 384.0; return ( texture2D( uVis, u ).r * 2.0 + texture2D( uVis, u + vec2( o, 0.0 ) ).r + texture2D( uVis, u - vec2( o, 0.0 ) ).r + texture2D( uVis, u + vec2( 0.0, o ) ).r + texture2D( uVis, u - vec2( 0.0, o ) ).r ) / 6.0; }\n' + sh.fragmentShader.replace('#include <tonemapping_fragment>', ' { vec2 vuv = ( vVisW.xz - uVisO ) / uVisS + 0.5; float vv = ( vuv.x < 0.0 || vuv.y < 0.0 || vuv.x > 1.0 || vuv.y > 1.0 ) ? 1.0 : visS( vuv ); vec3 vc0 = gl_FragColor.rgb; float vl = dot( vc0, vec3( 0.299, 0.587, 0.114 ) ); gl_FragColor.rgb = mix( vec3( vl ) * uVisK * vec3( 0.9, 0.96, 1.1 ), vc0, vv ); }\n#include <tonemapping_fragment>'); };
     const key = m.customProgramCacheKey ? m.customProgramCacheKey.bind(m) : () => ''; m.customProgramCacheKey = () => key() + '|vis'; m.needsUpdate = true;
   };
   const visifyScene = () => scene.traverse(o => { if (!o.isMesh || o.userData.sil || o === aimLine) return; (Array.isArray(o.material) ? o.material : [o.material]).forEach(visify); });
@@ -740,14 +739,14 @@ async function boot() {
       G.zs.push(zb); return true; } return false; };
   // online: um zombie que outro jogador simula — anda para onde ele diz (com 120 ms de atraso, para ficar suave)
   const ZST = ['wander', 'alert', 'chase', 'dead', 'chase'];
+  const wallFix = z => { const fx = Math.sin(z.yaw), fz = Math.cos(z.yaw), f = ray(z.x, z.z, fx, fz, 1.0, null, 's', z.lv || 0, 1.2); if (f < 0.4) { z.x -= fx * (0.4 - f); z.z -= fz * (0.4 - f); } z.wallK = clamp((0.95 - f) / 0.5, 0, 1); };
   const remoteZ = (z, dt, now) => {
     if (z.hitT > 0) z.hitT -= dt;
     if (z.state === 'dead') { z.deadT += dt; if (z.deadT > 25) z.sink = Math.min(0.6, z.sink + dt * 0.25); return; }
-    const B = z.buf; if (!B || !B.length) return; const tR = now - 120; let a = null, b = null;
-    for (let k = B.length - 1; k >= 0; k--) if (B[k].t <= tR) { a = B[k]; b = B[k + 1] || B[k]; break; } if (!a) a = b = B[0];
-    const f = b === a ? 1 : clamp((tR - a.t) / (b.t - a.t), 0, 1), nx = a.x + (b.x - a.x) * f, nz = a.z + (b.z - a.z) * f, moved = Math.hypot(nx - z.x, nz - z.z);
+    if (!z.T) return; const S = sample(z.T, now, z.o || (z.o = {})); if (!S) return; const nx = S.x, nz = S.z, moved = Math.hypot(nx - z.x, nz - z.z);
     if (moved > 8) { z.x = nx; z.z = nz; } else { z.x = nx; z.z = nz; z.phase += moved * 2.6; }
-    z.yaw = a.yaw + angDiff(b.yaw, a.yaw) * f; z.mv = a.mv + (b.mv - a.mv) * f; z.lv = b.lv;
+    const b = S.s; z.yaw = S.yaw; z.mv = b.mv; z.lv = b.lv;
+    if (!z.hide) { const f = ray(z.x, z.z, Math.sin(z.yaw), Math.cos(z.yaw), 1.0, null, 's', z.lv || 0, 1.2); z.wallK = clamp((0.95 - f) / 0.5, 0, 1); }
     if (b.st === 4 && z.lastSt !== 4) z.atkT = 0.6; z.lastSt = b.st; z.state = ZST[b.st] || 'wander'; if (z.atkT > 0) z.atkT -= dt;
     stairUpdate(z); z.y = (z.base || 0) + groundY(z.x, z.z, z.lv || 0);
   };
@@ -761,7 +760,7 @@ async function boot() {
       const z = G.zs[i];
       if (z.remote) { remoteZ(z, dt0, now); continue; }
       // testes: zombie parado no sítio (frz = velocidade a fingir, para a animação de andar)
-      if (z.frz !== undefined) { z.phase = (z.phase || 0) + dt0 * z.frz * 2.6; z.mv = z.frz / 3; continue; }
+      if (z.frz !== undefined) { z.phase = (z.phase || 0) + dt0 * z.frz * 2.6; z.mv = z.frz / 3; wallFix(z); continue; }
       // morto: o corpo fica, afunda devagar e o zombie volta a nascer na zona dele passados uns minutos, longe da tua vista (online, quem decide é o servidor)
       if (z.state === 'dead') { z.deadT += dt0; if (z.deadT > 25) z.sink = Math.min(0.6, z.sink + dt0 * 0.25); if (!onl && z.deadT > (z.reT || 480) && Math.hypot((z.hx ?? z.x) - me.x, (z.hz ?? z.z) - me.z) > 70) reviveZ(z); continue; }
       let p = me; if (tgts.length > 1) { let bq = 1e9; for (const t of tgts) { if (!t.alive) continue; const q = Math.hypot(t.x - z.x, t.z - z.z) + ((t.lv || 0) !== (z.lv || 0) ? 25 : 0); if (q < bq) { bq = q; p = t; } } }
@@ -813,6 +812,8 @@ async function boot() {
       mx = Math.sin(z.yaw) * z.v; mz = Math.cos(z.yaw) * z.v;
       for (const o of G.zs) { if (o === z || o.state === 'dead' || (o.lv || 0) !== zl) continue; const ox = z.x - o.x, oz = z.z - o.z, od = ox * ox + oz * oz; if (od < 0.5 && od > 1e-6) { const k = (0.7 - Math.sqrt(od)) * 1.6; mx += ox * k; mz += oz * k; } }
       const ox = z.x, oz = z.z; z.x += mx * dt; z.z += mz * dt; collide(z, 0.3);
+      // de frente para uma parede: não encosta o tronco inclinado nem estica os braços através dela
+      if (dMe < 45) wallFix(z); else z.wallK = 0;
       for (const t of tgts) if (sameLevel(z, t) && t.alive && t.h < 1) { const qx = z.x - t.x, qz = z.z - t.z, qd = Math.hypot(qx, qz); if (qd < 0.62 && qd > 1e-4) { z.x = t.x + qx / qd * 0.62; z.z = t.z + qz / qd * 0.62; } }
       const moved = Math.hypot(z.x - ox, z.z - oz);
       if (sp > 0.3 && moved < sp * dt * 0.3) { z.stuck += dt; if (z.stuck > 0.6) { z.stuck = 0; if (z.state === 'wander') z.wT = 0; else if (z.path) { z.path = null; z.navT = 0; z.det = 0.5; z.detDir = Math.random() < 0.5 ? -1 : 1; } else { z.det = 1.0; z.detDir = Math.random() < 0.5 ? -1 : 1; z.navT = 0; } } } else z.stuck = Math.max(0, z.stuck - dt);
@@ -824,7 +825,7 @@ async function boot() {
   };
   const hurtPlayer = (dmg, cause, raw) => {
     const p = G.p; if (!p || !p.alive) return; G.combatT = G.t; let arm = 0; if (!raw) for (const s in G.inv.eq) if (G.inv.eq[s]) arm += ITEMS[G.inv.eq[s].k].armor || 0;
-    const real = dmg * (1 - Math.min(0.6, arm)); p.hp -= real; p.hurtT = 0.4; if (cause !== 'queda') dmgLog.push({ t: G.t, d: dmg }); audio.play('dor'); G.ui.damage(); G.buzz(60);
+    const real = dmg * (1 - Math.min(0.6, arm)); p.hp -= real; p.hurtT = 0.4; p.hitAt = G.t; if (cause !== 'queda') dmgLog.push({ t: G.t, d: dmg }); audio.play('dor'); G.ui.damage(); G.buzz(60);
     if (Math.random() < 0.12 && !p.bleed) { p.bleed = 1; G.ui.toast('Estás a sangrar. Usa uma ligadura.'); }
     burst(p.x, 1.2, p.z, 5, 0x7a0e0a, 2.2);
     if (p.hp <= 0) die(cause);
@@ -878,19 +879,19 @@ async function boot() {
     // mundo novo: espalha os zombies pelas zonas do jogo e manda a lista ao servidor
     seed: () => { popWorld(); const L = G.zs.map(z => [+z.x.toFixed(1), +z.z.toFixed(1), KC[z.kind] || 0, z.helm || 0, z.vest || 0, Math.round(z.hp)]); zClear(); return L; },
     rows: U => { const now = performance.now();
-      for (const [i, x10, z10, lv, y100, mv10, st, hp, k, h, v, l10, own, hx10, hz10] of U) {
+      for (const [i, x10, z10, lv, y100, mv10, st, hp, k, h, v, l10, own, hx10, hz10, ts] of U) {
         const x = x10 / 10, zz = z10 / 10; let z = zById.get(i);
-        if (!z) { z = zAt(x, zz); Object.assign(z, { nid: i, hx: hx10 / 10, hz: hz10 / 10, kind: KIND[k] || undefined, helm: h, vest: v, lv, yaw: y100 / 100, hpMax: k === 1 ? 70 : k === 2 ? 75 : 80 }); armDur(z); z.helm = h; z.vest = v; z.hp = hp; z.limp = l10 / 10; z.remote = !own; z.buf = own ? null : [];
-          if (st === 3) { z.state = 'dead'; z.deadT = 60; z.sink = 0.6; } else z.state = ZST[st] || 'wander'; if (!own) z.buf.push({ t: now, x, z: zz, lv, yaw: z.yaw, mv: mv10 / 10, st });
+        if (!z) { z = zAt(x, zz); Object.assign(z, { nid: i, hx: hx10 / 10, hz: hz10 / 10, kind: KIND[k] || undefined, helm: h, vest: v, lv, yaw: y100 / 100, hpMax: k === 1 ? 70 : k === 2 ? 75 : 80 }); armDur(z); z.helm = h; z.vest = v; z.hp = hp; z.limp = l10 / 10; z.remote = !own; z.T = own ? null : track();
+          if (st === 3) { z.state = 'dead'; z.deadT = 60; z.sink = 0.6; } else z.state = ZST[st] || 'wander'; if (!own) push(z.T, ts || now, now, { x, z: zz, y: 0, lv, yaw: z.yaw, mv: mv10 / 10, st });
           stairUpdate(z); z.y = (z.base || 0) + groundY(z.x, z.z, z.lv || 0); zById.set(i, z); G.zs.push(z); continue; }
         // passa a ser simulado aqui, ou deixa de ser
-        if (own && z.remote) { Object.assign(z, { remote: false, buf: null, x, z: zz, lv, yaw: y100 / 100, tx: x, tz: zz, think: 0, path: null, v: 0, lost: 0 }); if (z.state !== 'dead') z.state = st === 3 ? 'dead' : ZST[st] || 'wander'; zSent.delete(i); }
-        else if (!own && !z.remote) { z.remote = true; z.buf = []; }
+        if (own && z.remote) { Object.assign(z, { remote: false, T: null, x, z: zz, lv, yaw: y100 / 100, tx: x, tz: zz, think: 0, path: null, v: 0, lost: 0 }); if (z.state !== 'dead') z.state = st === 3 ? 'dead' : ZST[st] || 'wander'; zSent.delete(i); }
+        else if (!own && !z.remote) { z.remote = true; z.T = track(); }
         z.helm = h; z.vest = v; z.limp = l10 / 10;
         if (st === 3) { if (z.state !== 'dead') zDie(z, false); z.hp = 0; z.predDead = 0; continue; }
         if (z.state === 'dead') { if (z.predDead && now - z.predDead < 2500) continue; // a morte que previmos ainda não chegou ao servidor
-          Object.assign(z, { state: ZST[st] || 'wander', deadT: 0, sink: 0, head: false, x, z: zz, lv, predDead: 0 }); armDur(z); z.helm = h; z.vest = v; if (z.remote) z.buf = []; }
-        z.hp = hp; if (z.remote) { z.buf.push({ t: now, x, z: zz, lv, yaw: y100 / 100, mv: mv10 / 10, st }); if (z.buf.length > 10) z.buf.shift(); }
+          Object.assign(z, { state: ZST[st] || 'wander', deadT: 0, sink: 0, head: false, x, z: zz, lv, predDead: 0 }); armDur(z); z.helm = h; z.vest = v; if (z.remote) z.T = track(); }
+        z.hp = hp; if (z.remote) push(z.T || (z.T = track()), ts || now, now, { x, z: zz, y: 0, lv, yaw: y100 / 100, mv: mv10 / 10, st });
       } },
     gone: ids => { for (const i of ids) { const z = zById.get(i); if (!z) continue; zById.delete(i); zSent.delete(i); const j = G.zs.indexOf(z); if (j >= 0) G.zs.splice(j, 1); } },
     // morte confirmada pelo servidor; se foste tu, conta e pode largar loot
@@ -1048,7 +1049,8 @@ async function boot() {
   const _sa = new THREE.Vector3(), _sb = new THREE.Vector3();
   const clearShot = z => { const p = G.p, lo = (G.aimS.lean || 0) * 0.45; _sa.set(p.x + Math.cos(p.yaw) * lo, p.y + 1.35, p.z - Math.sin(p.yaw) * lo); for (const h of [1.25, 1.62]) { _sb.set(z.x, (z.y || 0) + h, z.z); if (wallHit(_sa, _sb) > 0.995) return true; } return false; };
   G.dbgSpawn = () => spawnPoint(false);
-  G.dbg = { pick: (x, y) => { const r = pick(x, y, 1); return [r.zone || null, !!r.pl, +r.point.x.toFixed(2), +r.point.y.toFixed(2), +r.point.z.toFixed(2)]; }, plHit: (a, b) => plHit(new THREE.Vector3(...a), new THREE.Vector3(...b), true), cam: () => [cam.position.x, cam.position.y, cam.position.z], cols: (x, z, r) => { const out = []; near(x - r, z - r, x + r, z + r, R => { out.push(['r', R.k, +R.x0.toFixed(2), +R.z0.toFixed(2), +R.x1.toFixed(2), +R.z1.toFixed(2), R.h, R.yb || 0]); }, C => { out.push(['c', +C.x.toFixed(2), +C.z.toFixed(2), C.r, C.node ? C.node.kind + ':' + C.node.alive : (C.k || C.kind || '?'), C.on]); }); return out; }, scr: (x, y, z) => { const q = toScreen(new THREE.Vector3(x, y, z)); return [q.x, q.y, q.ok]; }, shoulder: () => { const p = G.p; return [p.x + Math.sin(p.yaw) * 0.15, p.y + 1.35, p.z + Math.cos(p.yaw) * 0.15]; }, aimA: () => [AIM.A.x, AIM.A.y, AIM.A.z, AIM.zone, !!AIM.lock], wallHit: (a, b) => wallHit(new THREE.Vector3(...a), new THREE.Vector3(...b)), item: (k, n) => mkItem(k, n), deplete: n => { n.hp = 0; n.alive = false; n.col.on = false; n.respawn = G.t + 180; hideNode(n); if (G.net.on && n.key) G.net.node(n.key); }, nodes: () => nodes, fire: () => { const it = held(), g = it && ITEMS[it.k].gun; return g ? fire(it, g) : false; }, canSee: (a, b) => canSee(a, b), clearShot: z => clearShot(z), zoneHit: (z, P, Q, k) => zoneHit(z, P, Q, k), horde: () => horde, hurt: (d, c) => hurtPlayer(d, c || 'zombie'), hitZ: (z, zone, k) => { const B = ITEMS[k].bal; hitZombie(z, zone, { dmg: B.dmg, pen: B.pen, pel: B.pel, v: new THREE.Vector3(B.v, 0, 0), v0: B.v, dist: 10, fall: B.fall || 1 }, { x: z.x, y: 1.3, z: z.z }); } }; G.V3 = THREE.Vector3; G.M4 = THREE.Matrix4; G.RC = new THREE.Raycaster();
+  G.wallAhead = (x, z, yaw, lv) => ray(x, z, Math.sin(yaw), Math.cos(yaw), 1.0, null, 's', lv || 0, 1.2);
+  G.dbg = { vis: () => [+(VIS.ms || 0).toFixed(2), VIS.n || 0], pick: (x, y) => { const r = pick(x, y, 1); return [r.zone || null, !!r.pl, +r.point.x.toFixed(2), +r.point.y.toFixed(2), +r.point.z.toFixed(2)]; }, plHit: (a, b) => plHit(new THREE.Vector3(...a), new THREE.Vector3(...b), true), cam: () => [cam.position.x, cam.position.y, cam.position.z], cols: (x, z, r) => { const out = []; near(x - r, z - r, x + r, z + r, R => { out.push(['r', R.k, +R.x0.toFixed(2), +R.z0.toFixed(2), +R.x1.toFixed(2), +R.z1.toFixed(2), R.h, R.yb || 0]); }, C => { out.push(['c', +C.x.toFixed(2), +C.z.toFixed(2), C.r, C.node ? C.node.kind + ':' + C.node.alive : (C.k || C.kind || '?'), C.on]); }); return out; }, scr: (x, y, z) => { const q = toScreen(new THREE.Vector3(x, y, z)); return [q.x, q.y, q.ok]; }, shoulder: () => { const p = G.p; return [p.x + Math.sin(p.yaw) * 0.15, p.y + 1.35, p.z + Math.cos(p.yaw) * 0.15]; }, aimA: () => [AIM.A.x, AIM.A.y, AIM.A.z, AIM.zone, !!AIM.lock], wallHit: (a, b) => wallHit(new THREE.Vector3(...a), new THREE.Vector3(...b)), item: (k, n) => mkItem(k, n), deplete: n => { n.hp = 0; n.alive = false; n.col.on = false; n.respawn = G.t + 180; hideNode(n); if (G.net.on && n.key) G.net.node(n.key); }, nodes: () => nodes, fire: () => { const it = held(), g = it && ITEMS[it.k].gun; return g ? fire(it, g) : false; }, canSee: (a, b) => canSee(a, b), clearShot: z => clearShot(z), zoneHit: (z, P, Q, k) => zoneHit(z, P, Q, k), horde: () => horde, hurt: (d, c) => hurtPlayer(d, c || 'zombie'), hitZ: (z, zone, k) => { const B = ITEMS[k].bal; hitZombie(z, zone, { dmg: B.dmg, pen: B.pen, pel: B.pel, v: new THREE.Vector3(B.v, 0, 0), v0: B.v, dist: 10, fall: B.fall || 1 }, { x: z.x, y: 1.3, z: z.z }); } }; G.V3 = THREE.Vector3; G.M4 = THREE.Matrix4; G.RC = new THREE.Raycaster();
   const lockable = z => { if (!inView(z) || !G.p) return false; if (z._lkT > G.t) return z._lk; z._lkT = G.t + 0.12; return (z._lk = canSee(G.p, z) && clearShot(z)); };
   const bestTarget = () => { const p = G.p, d = heldDef(), range = d.gun ? Math.min(d.gun.rng, 40) : 3; let best = null, bs = 1e9; for (const z of G.zs) { if (!inView(z)) continue; const dd = Math.hypot(z.x - p.x, z.z - p.z); if (dd > range) continue; const a = Math.abs(angDiff(Math.atan2(z.x - p.x, z.z - p.z), p.yaw)); if (dd > 3 && a > 1.25) continue; if (!lockable(z)) continue; const sc = dd + a * 3; if (sc < bs) { bs = sc; best = z; } } return best; };
   const _pv = new THREE.Vector3();
@@ -1218,7 +1220,7 @@ async function boot() {
       // entrar e sair da mira em primeira pessoa (a câmara desce até ao ombro e a mira abre)
       AIM.fpT = clamp(AIM.fpT + (AIM.scope && AIM.raise > 0.5 ? dt / 0.42 : -dt / 0.3), 0, 1);
       { const fpNow = AIM.fpT > 0.55 && p.alive; if (fpNow !== !!G.fp) { G.fp = fpNow; PROJ.dirty = true; } }
-      const scI = scopeItem(), swayA = (AIM.scope ? (scI && scI.mag >= 8 ? 0.0062 : scI && scI.rd ? 0.0017 : 0.004) : 0.0012) * (1 - 0.55 * AIM.steady) * (1 - 0.85 * AIM.breath) * (still ? 1 : 2.4) * (1 + (AIM.gasp || 0)) * (1 - 0.3 * sk('mira'));
+      const scI = scopeItem(), swayA = (AIM.scope ? (scI && scI.mag >= 8 ? 0.0062 : scI && scI.rd ? 0.0017 : 0.004) : 0.0012) * (1 - 0.55 * AIM.steady) * (1 - 0.85 * AIM.breath) * (still ? 1 : 2.4) * (1 + (AIM.gasp || 0)) * (1 - 0.3 * sk('mira')) * (G.dbgSway ?? 1);
       const swY = swayA * (Math.sin(G.t * 1.1) + 0.45 * Math.sin(G.t * 2.9 + 1)), swP = swayA * (0.8 * Math.sin(G.t * 0.83 + 2) + 0.35 * Math.sin(G.t * 3.7));
       { let want = 0; if (AIM.on && AIM.raise > 0.3 && cfg.autoLean !== false && p.onGround && !p.sprint && !p.climb) { AIM.leanT = (AIM.leanT || 0) - dt; if (AIM.leanT <= 0) { AIM.leanT = 0.1; AIM.leanW = leanPick(p); } want = AIM.leanW || 0; } else AIM.leanW = 0; AIM.lean = (AIM.lean || 0) + (want - (AIM.lean || 0)) * Math.min(1, dt * 9); if (Math.abs(AIM.lean) < 1e-3) AIM.lean = 0; }
       let aimYaw = null;
@@ -1269,7 +1271,11 @@ async function boot() {
       if (moving) spd *= 0.5 + 0.5 * Math.max(0, Math.cos(Math.min(Math.PI / 2, Math.abs(angDiff(moveYaw, p.root)) * (aimingNow ? 0.6 : 1))));
       if (over > 0) spd *= Math.max(0.62, 1 - over / 45);
       if (p.use) spd = 1.5; if (!p.alive || p.climb) spd = 0; if (!p.onGround) spd *= 0.9;
-      const tvx = moving ? wx / Math.max(il, 1e-6) * Math.min(il, 1) * spd : 0, tvz = moving ? wz / Math.max(il, 1e-6) * Math.min(il, 1) * spd : 0;
+      let tvx = moving ? wx / Math.max(il, 1e-6) * Math.min(il, 1) * spd : 0, tvz = moving ? wz / Math.max(il, 1e-6) * Math.min(il, 1) * spd : 0;
+      // a passar numa porta aberta: puxa-te devagar para o meio do vão, para não ficares preso no aro (no telemóvel o polegar raramente vai certinho)
+      if (moving && !p.climb && !G.car) { const v = Math.hypot(tvx, tvz); for (const D of W.doors) { if (D.t < 0.6 || (D.lv || 0) !== (p.lv || 0) || Math.abs(D.x - p.x) > 2 || Math.abs(D.z - p.z) > 2) continue;
+        const lat = D.horiz ? p.x - D.x : p.z - D.z, nrm = D.horiz ? p.z - D.z : p.x - D.x, vn = D.horiz ? tvz : tvx, half = (D.w || 1) / 2;
+        if (Math.abs(nrm) < 1.5 && Math.abs(lat) < half + 0.85 && Math.abs(lat) > 0.04 && vn * nrm < 0 && Math.abs(vn) > v * 0.35) { const pull = clamp(-lat * 3.2, -v * 0.8, v * 0.8); if (D.horiz) tvx += pull; else tvz += pull; break; } } }
       const k = 1 - Math.exp(-dt * (Math.hypot(tvx, tvz) > Math.hypot(p.vx, p.vz) ? 5.5 : 8.5)); p.vx += (tvx - p.vx) * k; p.vz += (tvz - p.vz) * k;
       const ox = p.x, oz = p.z;
       if (p.climb) { // trepar: sobe, passa para cima ou para o outro lado
@@ -1303,11 +1309,15 @@ async function boot() {
       if (p.alive) {
         const met = 1 - 0.15 * sk('res'); p.food = Math.max(0, p.food - dt * 100 / 1300 * met); p.water = Math.max(0, p.water - dt * 100 / (p.sprint ? 600 : 900) * met);
         if (p.bleed) p.hp -= dt * 0.6;
-        if (p.food <= 0 || p.water <= 0) p.hp -= dt * 0.55; else if (p.food > 50 && p.water > 50 && !p.bleed) p.hp = Math.min(100, p.hp + dt * 0.5);
+        // a vida volta sozinha, mas gasta comida e água: mais depressa de barriga cheia, parada logo a seguir a levar dano
+        p.regen = 0;
+        if (p.food <= 0 || p.water <= 0) p.hp -= dt * 0.55;
+        else if (p.hp < 100 && !p.bleed && p.food > 20 && p.water > 20 && G.t - (p.hitAt || -99) > 6) { const r = (p.food > 70 && p.water > 70 ? 0.6 : 0.3) * dt, h = Math.min(r, 100 - p.hp); p.hp += h; p.food = Math.max(0, p.food - h * 0.3); p.water = Math.max(0, p.water - h * 0.25); p.regen = 1; }
         if (p.hp <= 0) die(p.bleed ? 'sangue' : p.food <= 0 ? 'fome' : 'sede');
         const d = heldDef(), mode = d.gun ? (d.long ? 'rifle' : 'pistol') : (d.melee && held()) ? 'melee' : (p.swing >= 0 ? 'melee' : 'none');
         const uu = p.use && ITEMS[p.use.it.k] && ITEMS[p.use.it.k].use, ukind = uu ? ((uu.water || 0) > (uu.food || 0) ? 'drink' : uu.food ? 'eat' : 'heal') : null;
-        body.pose(dt, p.mv, mode, p.swing, p.recoil, twist, p.climb ? p.climb.t : -1, p.step, d.gun ? AIM.raise : 1, ukind ? { kind: ukind, t: Math.min(1, p.use.t / p.use.dur) } : null);
+        const wf = d.gun ? ray(p.x, p.z, Math.sin(p.yaw), Math.cos(p.yaw), 1.0, null, 's', p.lv || 0, 1.2) : 1; p.wallK = (p.wallK || 0) + (clamp((0.85 - wf) / 0.35, 0, 1) - (p.wallK || 0)) * Math.min(1, dt * 12);
+        body.pose(dt, p.mv, mode, p.swing, p.recoil, twist, p.climb ? p.climb.t : -1, p.step, d.gun ? AIM.raise * (1 - 0.85 * p.wallK) : 1, ukind ? { kind: ukind, t: Math.min(1, p.use.t / p.use.dur) } : null);
         { const l = AIM.lean || 0; body.root.position.set(p.x + Math.cos(p.root) * l * 0.14, p.y, p.z - Math.sin(p.root) * l * 0.14); body.root.rotation.set(0, p.root, -l * 0.2, 'YXZ'); }
       }
       p.hurtT -= dt;
@@ -1386,7 +1396,7 @@ async function boot() {
     if (G.fp && p) {
       cam.position.copy(AIM.eye); cam.lookAt(_c.copy(AIM.eye).add(AIM.dir)); if (AIM.lean) cam.rotateZ(-AIM.lean * 0.12);
       // a luneta mostra sempre o mesmo ângulo, em qualquer ecrã; o centro fica no meio da zona livre
-      const S = G.ui.scopeR(), SC = G.ui.scopeC(), sf = THREE.MathUtils.degToRad(scopeFov()); cam.near = 0.05; cam.far = 900; cam.aspect = innerWidth / innerHeight; cam.fov = THREE.MathUtils.radToDeg(2 * Math.atan(Math.tan(sf / 2) * innerHeight / (2 * S))); cam.updateProjectionMatrix();
+      const S = G.ui.scopeR(), SC = G.ui.scopeC(), sf = THREE.MathUtils.degToRad(scopeFov()); cam.near = 0.3; cam.far = 900; cam.aspect = innerWidth / innerHeight; cam.fov = THREE.MathUtils.radToDeg(2 * Math.atan(Math.tan(sf / 2) * innerHeight / (2 * S))); cam.updateProjectionMatrix();
       { const e = cam.projectionMatrix.elements; e[8] = -(SC.x / innerWidth * 2 - 1); e[9] = -(1 - SC.y / innerHeight * 2); cam.projectionMatrixInverse.copy(cam.projectionMatrix).invert(); } PROJ.mode = 'fp';
     } else {
       if (PROJ.dirty || PROJ.mode !== 'top') topProj();
@@ -1400,7 +1410,7 @@ async function boot() {
       sun.target.position.set(tx, ty, tz); sun.position.set(tx, ty, tz).addScaledVector(SUNDIR, 70); sun.target.updateMatrixWorld(); }
     // círculo de visão
     // máscara da linha de vista (refeita quando te mexes ou uma porta muda)
-    if (p && G.playing && p.alive && !G.fp) { VU.uVisK.value = 0.06 + 0.03 * (G.day ?? 1); VIS.t -= dt; const dk = W.doors.reduce((a, D) => a + (D.rc.off ? 1 : 0), 0) + ':' + p.lv + ':' + Math.round((AIM.lean || 0) * 4); VIS.cd = (VIS.cd || 0) - dt; if ((VIS.cd <= 0 && Math.hypot(p.x - VIS.x, p.z - VIS.z) > 0.1) || dk !== VIS.key || VIS.t <= 0) { VIS.x = p.x; VIS.z = p.z; VIS.key = dk; VIS.t = 0.5; VIS.cd = 0.12; const lo = (AIM.lean || 0) * LEAN; drawVis(p.x + Math.cos(p.yaw) * lo, p.z - Math.sin(p.yaw) * lo, p.lv, p.bld && p.lv > 0 ? p.bld : null); } }
+    if (p && G.playing && p.alive && !G.fp) { VU.uVisK.value = 0.06 + 0.03 * (G.day ?? 1); VIS.t -= dt; const dk = W.doors.reduce((a, D) => a + (D.rc.off ? 1 : 0), 0) + ':' + p.lv + ':' + Math.round((AIM.lean || 0) * 4); VIS.cd = (VIS.cd || 0) - dt; if ((VIS.cd <= 0 && Math.hypot(p.x - VIS.x, p.z - VIS.z) > 0.04) || dk !== VIS.key || VIS.t <= 0) { VIS.x = p.x; VIS.z = p.z; VIS.key = dk; VIS.t = 0.5; VIS.cd = G.cfg.lowres ? 1 / 15 : 1 / 30; const lo = (AIM.lean || 0) * LEAN; drawVis(p.x + Math.cos(p.yaw) * lo, p.z - Math.sin(p.yaw) * lo, p.lv, p.bld && p.lv > 0 ? p.bld : null); } }
     else VU.uVisK.value = 1;
     if (G0.xray) G0.xray.visible = !G.fp;
     body.root.visible = !!(p && G.playing && p.alive && !G.fp && !G.car);

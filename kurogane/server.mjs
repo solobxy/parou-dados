@@ -209,7 +209,7 @@ const boom = (c, p, m) => { const X = EXB[m.k]; if (!X) return; const ti = (p.th
 
 
 // ---------- carros: quem conduz manda a posição; o servidor guarda gasolina, estado e quem vai em cada lugar
-const cRow = (id, c) => [id, Math.round(c.x * 10), Math.round(c.z * 10), Math.round(c.yaw * 100), Math.round((c.v || 0) * 10), +(+c.fuel).toFixed(1), Math.round(c.hp), c.s[0] || 0, c.s[1] || 0, c.s[2] || 0, c.s[3] || 0];
+const cRow = (id, c) => [id, Math.round(c.x * 10), Math.round(c.z * 10), Math.round(c.yaw * 100), Math.round((c.v || 0) * 10), +(+c.fuel).toFixed(1), Math.round(c.hp), c.s[0] || 0, c.s[1] || 0, c.s[2] || 0, c.s[3] || 0, Math.round(c.ts || 0)];
 const carMsg = (c, p, m, now) => {
   const car = S.w.cars[String(m.id || '')];
   if (m.t === 'cin') { const seat = num(m.seat, 0, 3) | 0; const holder = car && car.s[seat] && players.get(car.s[seat]);
@@ -217,7 +217,7 @@ const carMsg = (c, p, m, now) => {
     for (const o of Object.values(S.w.cars)) { const i = o.s.indexOf(c.id); if (i >= 0) o.s[i] = 0; } car.s[seat] = c.id; return send(c, { t: 'cin', id: m.id, seat, ok: 1 }); }
   if (m.t === 'cout') { if (!car) return; const i = car.s.indexOf(c.id); if (i >= 0) { car.s[i] = 0; if (i === 0) car.v = 0; dirty = true; } return; }
   if (m.t === 'cu') { if (!Array.isArray(m.L)) return; for (const a of m.L.slice(0, 2)) { const o = S.w.cars[a[0]]; if (!o || o.s[0] !== c.id || o.hp <= 0) continue;
-      o.x = num(a[1], -41000, 41000) / 10; o.z = num(a[2], -41000, 41000) / 10; o.yaw = num(a[3], -100000, 100000) / 100; o.v = num(a[4], -300, 300) / 10; o.fuel = Math.min(o.fuel, num(a[5], 0, 40)); o.hp = Math.min(o.hp, num(a[6], 0, 400));
+      o.x = num(a[1], -41000, 41000) / 10; o.z = num(a[2], -41000, 41000) / 10; o.yaw = num(a[3], -100000, 100000) / 100; o.v = num(a[4], -300, 300) / 10; o.fuel = Math.min(o.fuel, num(a[5], 0, 40)); o.hp = Math.min(o.hp, num(a[6], 0, 400)); o.ts = num(a[7], 0, 1e13, 0);
       if (o.hp <= 0) { o.dead = now; o.s = [0, 0, 0, 0]; o.v = 0; } dirty = true; } return; }
   if (m.t === 'cf') { if (!car || Math.hypot(car.x - p.x, car.z - p.z) > 6) return; { const L = ledOf(p); if ((L.T.gasolina || 0) < 1) { send(c, { t: 'fix', T: L.T }); return; } addT(L.T, { gasolina: 1 }, -1); } car.fuel = Math.min(40, car.fuel + num(m.add, 0, 20)); dirty = true; return; }
   // atropelar outro jogador: quem conduz diz quem; o servidor confirma que o carro estava mesmo ao lado
@@ -228,7 +228,7 @@ const carMsg = (c, p, m, now) => {
 
 // ---------- zombies: o servidor guarda todos (posição, vida, proteção); quem está mais perto simula os que tem à volta
 // e manda para aqui; os outros veem o mesmo. Dano e mortes passam sempre por aqui.
-const zRow = (i, z, own) => [i, Math.round(z.x * 10), Math.round(z.z * 10), z.lv, Math.round(z.yaw * 100), Math.round((z.mv || 0) * 10), z.st, Math.round(z.hp), z.k, z.h, z.v, Math.round((z.limp || 0) * 10), own ? 1 : 0, Math.round(z.hx * 10), Math.round(z.hz * 10)];
+const zRow = (i, z, own) => [i, Math.round(z.x * 10), Math.round(z.z * 10), z.lv, Math.round(z.yaw * 100), Math.round((z.mv || 0) * 10), z.st, Math.round(z.hp), z.k, z.h, z.v, Math.round((z.limp || 0) * 10), own ? 1 : 0, Math.round(z.hx * 10), Math.round(z.hz * 10), Math.round(z.ts || 0)];
 // para quem o simula, a posição vem dele: só se volta a mandar quando muda a vida, a proteção ou morre
 const zSig = (z, own, row) => own ? 'o' + (z.st === 3 ? 3 : 0) + ',' + row[7] + ',' + z.h + ',' + z.v + ',' + row[11] : row.join();
 const zNear = (x, z, r) => { let n = 0; for (const c of players.values()) if (c.p && Math.hypot(c.p.x - x, c.p.z - z) < r) n++; return n; };
@@ -246,7 +246,7 @@ const onMsg = (c, m) => {
   if (m.t === 'hi') {
     if (c.p) return; const name = String(m.name || ''); if (!NAME.test(name)) return send(c, { t: 'erro', e: 'nome' });
     // jogo antigo (antes da 0.15, sem o servidor a contar o inventário): tem de recarregar, senão apagava o inventário guardado
-    if ((m.pv | 0) < 2) return send(c, { t: 'erro', e: 'versao' });
+    if ((m.pv | 0) < 3) return send(c, { t: 'erro', e: 'versao' });
     if ([...players.values()].some(o => o.p && o.p.name.toLowerCase() === name.toLowerCase())) return send(c, { t: 'erro', e: 'nome_em_uso' });
     // versão do mundo (casas, caixas, portas): se mudou e não está ninguém ligado, recomeça o mundo partilhado
     const wv = typeof m.wv === 'string' ? m.wv.slice(0, 40) : '';
@@ -281,7 +281,8 @@ const onMsg = (c, m) => {
     else if (p.lastSt && al0 && p.alive && !p.test) { const dt = (now - p.lastSt) / 1000, inCar = Object.values(S.w.cars).some(o => o.s.includes(c.id)), d = Math.hypot(nx - p.x, nz - p.z);
       if (d > (inCar ? 25 : 8) * dt + 4) { strike(c, p, 'salto ' + d.toFixed(1) + ' m em ' + dt.toFixed(2) + ' s'); send(c, { t: 'pos', x: p.x, z: p.z, lv: p.lv }); p.lastSt = now; return; } }
     p.lastSt = now; p.x = nx; p.z = nz; p.y = num(m.y, -5, 40); p.lv = num(m.lv, 0, 6) | 0;
-    { const H = p.hist || (p.hist = []); H.push([now, p.x, p.y, p.z]); while (H.length > 2 && now - H[0][0] > 500) H.shift(); } // onde esteve nos últimos 0,5 s (para o tiro de quem o via um pouco atrás) p.yaw = num(m.yaw, -10, 10); p.mv = num(m.mv, 0, 3); p.an = num(m.an, 0, 15) | 0; p.w = typeof m.w === 'string' ? m.w.slice(0, 12) : '';
+    { const H = p.hist || (p.hist = []); H.push([now, p.x, p.y, p.z]); while (H.length > 2 && now - H[0][0] > 500) H.shift(); } // onde esteve nos últimos 0,5 s (para o tiro de quem o via um pouco atrás)
+    p.ts = num(m.ts, 0, 1e13, 0); p.yaw = num(m.yaw, -10, 10); p.mv = num(m.mv, 0, 3); p.an = num(m.an, 0, 15) | 0; p.w = typeof m.w === 'string' ? m.w.slice(0, 12) : '';
     const al = !!m.al, hp = num(m.hp, 0, 100, p.hp); if (al && !p.alive) { p.hp = hp; p.hd = p.vd = null; } else p.hp = Math.min(hp, p.hp + 3); p.alive = al; // a vida que o servidor tirou não volta de repente
     if (Array.isArray(m.ar)) { const a = [num(m.ar[0], 0, 4) | 0, num(m.ar[1], 0, 4) | 0]; if (a[0] !== p.ar[0]) p.hd = null; if (a[1] !== p.ar[1]) p.vd = null; p.ar = a; } return; }
   if (m.t === 'inv') { if (m.bag || m.belt) invMsg(c, p, m); return; }
@@ -329,7 +330,7 @@ const onMsg = (c, m) => {
     dirty = true; return; }
   // quem simula manda a posição dos seus zombies
   if (m.t === 'zu') { if (!Array.isArray(m.L)) return; for (const a of m.L.slice(0, 400)) { const z = S.w.zs[a[0]]; if (!z || z.o !== c.id || z.st === 3) continue;
-      z.x = num(a[1], -41000, 41000) / 10; z.z = num(a[2], -41000, 41000) / 10; z.lv = num(a[3], 0, 6) | 0; z.yaw = num(a[4], -1000, 1000) / 100; z.mv = num(a[5], 0, 40) / 10; z.st = num(a[6], 0, 4) | 0; z.limp = num(a[7], 0, 20) / 10; } return; }
+      z.x = num(a[1], -41000, 41000) / 10; z.z = num(a[2], -41000, 41000) / 10; z.lv = num(a[3], 0, 6) | 0; z.yaw = num(a[4], -1000, 1000) / 100; z.mv = num(a[5], 0, 40) / 10; z.st = num(a[6], 0, 4) | 0; z.limp = num(a[7], 0, 20) / 10; z.ts = num(m.ts, 0, 1e13, 0); } return; }
   // dano a um zombie (de quem disparou ou bateu): a vida conta aqui
   if (m.t === 'zd') { for (const d of (Array.isArray(m.L) ? m.L : [m]).slice(0, 40)) zHit(c, p, d, now); return; }
   // ataque de um zombie a outro jogador (decidido por quem o simula)
@@ -397,24 +398,25 @@ const clan = (c, m) => {
 };
 const leave = p => { if (!p.clan) return; const C = S.clans[p.clan]; if (C) { C.membros = C.membros.filter(n => n !== p.name); if (!C.membros.length) delete S.clans[p.clan]; } if (S.tokens[p.tok]) delete S.tokens[p.tok].clan; p.clan = null; dirty = true; };
 
-// ---------- imagens do mundo: 10 por segundo, só o que está perto (o clã sempre, para o mapa)
+// ---------- imagens do mundo: jogadores 20 por segundo, zombies e carros 10 (só o que está perto; o clã sempre, para o mapa)
+let tickN = 0;
 const ZR = 300; // zombies que cada um recebe (metros): até onde a luneta deixa ver bem
 setInterval(() => {
-  const L = [...players.values()].filter(c => c.p);
+  const L = [...players.values()].filter(c => c.p), full = (++tickN & 1) === 0;
   for (const c of L) {
-    const out = []; for (const o of L) { if (o === c) continue; const d = Math.hypot(o.p.x - c.p.x, o.p.z - c.p.z), mate = c.p.clan && o.p.clan === c.p.clan; if (d > 320 && !mate) continue; out.push([o.id, +o.p.x.toFixed(2), +o.p.z.toFixed(2), +o.p.y.toFixed(2), o.p.lv, +o.p.yaw.toFixed(2), +o.p.mv.toFixed(2), o.p.an, o.p.w, Math.round(o.p.hp), o.p.alive ? 1 : 0, d > 320 ? 1 : 0, o.p.ar]); }
+    const out = []; for (const o of L) { if (o === c) continue; const d = Math.hypot(o.p.x - c.p.x, o.p.z - c.p.z), mate = c.p.clan && o.p.clan === c.p.clan; if (d > 320 && !mate) continue; out.push([o.id, +o.p.x.toFixed(2), +o.p.z.toFixed(2), +o.p.y.toFixed(2), o.p.lv, +o.p.yaw.toFixed(2), +o.p.mv.toFixed(2), o.p.an, o.p.w, Math.round(o.p.hp), o.p.alive ? 1 : 0, d > 320 ? 1 : 0, o.p.ar, Math.round(o.p.ts || 0)]); }
     const msg = { t: 's', ps: out };
     // zombies: só os que mudaram desde a última vez (e os que saíram de perto)
-    if (c.zc) { const u = [], seen = new Set(); const zs = S.w.zs;
+    if (full && c.zc) { const u = [], seen = new Set(); const zs = S.w.zs;
       for (let i = 0; i < zs.length; i++) { const z = zs[i], own = z.o === c.id; if (!own && Math.abs(z.x - c.p.x) > ZR) continue; if (!own && (Math.abs(z.z - c.p.z) > ZR || Math.hypot(z.x - c.p.x, z.z - c.p.z) > ZR)) continue;
         seen.add(i); const row = zRow(i, z, own), sig = zSig(z, own, row); if (c.zc.get(i) !== sig) { c.zc.set(i, sig); u.push(row); } }
       const g = []; for (const i of c.zc.keys()) if (!seen.has(i)) { c.zc.delete(i); g.push(i); }
       if (u.length) msg.zu = u; if (g.length) msg.zg = g; }
-    if (c.cc) { const u = [], seen = new Set(); for (const [id, car] of Object.entries(S.w.cars)) { if (Math.hypot(car.x - c.p.x, car.z - c.p.z) > 400 && car.s.indexOf(c.id) < 0) continue; seen.add(id); const row = cRow(id, car), drv = car.s[0] === c.id, sig = drv ? 'd' + row.slice(5).join() : row.join(); if (c.cc.get(id) !== sig) { c.cc.set(id, sig); u.push(row); } }
+    if (full && c.cc) { const u = [], seen = new Set(); for (const [id, car] of Object.entries(S.w.cars)) { if (Math.hypot(car.x - c.p.x, car.z - c.p.z) > 400 && car.s.indexOf(c.id) < 0) continue; seen.add(id); const row = cRow(id, car), drv = car.s[0] === c.id, sig = drv ? 'd' + row.slice(5, 11).join() : row.join(); if (c.cc.get(id) !== sig) { c.cc.set(id, sig); u.push(row); } }
       const g = []; for (const id of c.cc.keys()) if (!seen.has(id)) { c.cc.delete(id); g.push(id); } if (u.length) msg.cu = u; if (g.length) msg.cg = g; }
     send(c, msg);
   }
-}, 100);
+}, 50);
 // quem simula cada zombie: o jogador mais perto (até 100 m), e só muda quando outro fica bem mais perto
 setInterval(() => {
   const L = [...players.values()].filter(c => c.p); const now = Date.now();

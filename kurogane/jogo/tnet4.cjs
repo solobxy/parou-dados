@@ -3,7 +3,7 @@ const { chromium } = require('playwright');
 const http = require('http'), fs = require('fs'), path = require('path'), { spawn } = require('child_process');
 const root = path.join(__dirname, 'dist'), outDir = path.join(__dirname, 'shots');
 const ST = '/tmp/kgsrv-test4'; fs.rmSync(ST, { recursive: true, force: true });
-const gs = spawn('node', [process.env.KG_SERVER || path.join(__dirname, '../server.mjs')], { env: { ...process.env, PORT: '3191', STATE_DIRECTORY: ST }, stdio: 'inherit' });
+const gs = spawn('node', [process.env.KG_SERVER || path.join(__dirname, '../server.mjs')], { env: { ...process.env, PORT: '3191', STATE_DIRECTORY: ST, KG_TEST: '1' }, stdio: 'inherit' });
 const server = http.createServer((req, res) => { const u = req.url.split('?')[0]; const f = path.join(root, u === '/' ? 'index.html' : u); fs.readFile(f, (e, d) => { if (e) { res.writeHead(404); return res.end(); } res.writeHead(200, { 'Content-Type': f.endsWith('.html') ? 'text/html' : 'application/octet-stream' }); res.end(d); }); });
 const W = ms => new Promise(r => setTimeout(r, ms));
 let fails = 0; const ok = (c, m) => { console.log((c ? 'OK   ' : 'FALHA') + ' ' + m); if (!c) fails++; };
@@ -12,7 +12,7 @@ server.listen(0, async () => {
   const browser = await chromium.launch({ channel: 'chrome', headless: true, args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist', '--enable-webgl', '--autoplay-policy=no-user-gesture-required'] });
   const mk = async (nome, id) => {
     const ctx = await browser.newContext({ viewport: { width: 844, height: 390 }, deviceScaleFactor: 1, isMobile: true, hasTouch: true });
-    await ctx.addInitScript(([nome, id]) => { try { localStorage.setItem('kg.perfis', JSON.stringify({ ativo: id, lista: [{ id, nome, criado: 1 }] })); localStorage.setItem('kg.srv', 'ws://127.0.0.1:3191/ws'); sessionStorage.setItem('kgIntro', '1'); } catch (e) { } }, [nome, id]);
+    await ctx.addInitScript(([nome, id]) => { try { localStorage.setItem('kg.perfis', JSON.stringify({ ativo: id, lista: [{ id, nome, criado: 1 }] })); localStorage.setItem('kg.srv', 'ws://127.0.0.1:3191/ws'); localStorage.setItem('kg.test', '1'); sessionStorage.setItem('kgIntro', '1'); } catch (e) { } }, [nome, id]);
     const page = await ctx.newPage(); const errs = [];
     page.on('pageerror', e => { errs.push(String(e)); console.log('[' + nome + ' pageerror]', String(e.stack || e).slice(0, 700)); });
     page.on('console', m => { if (m.type() === 'error' && !/GPU|WebGL|swiftshader|CORS|ERR_FAILED|404/.test(m.text())) { errs.push(m.text()); console.log('[' + nome + ']', m.text().slice(0, 300)); } });
@@ -25,8 +25,8 @@ server.listen(0, async () => {
     for (const P of [A, B]) await P.ev(() => G.dbgKit());
     await W(3000);
     const X = 1000.5, Z = 600.5, I = 333, J = 200; // célula da base da Ana
-    await A.ev(s => { G.p.x = s[0]; G.p.z = s[1]; G.gain('madeira', 900); G.gain('pedraR', 400); G.net.start(); }, [X, Z]); await W(2000);
-    await B.ev(s => { G.p.x = s[0] + 7; G.p.z = s[1]; G.net.start(); }, [X, Z]); await W(2500);
+    await A.ev(s => { G.p.x = s[0]; G.p.z = s[1]; G.gain('madeira', 900); G.gain('pedraR', 400); G.gain('metal', 50); for (const k of ['bau', 'saco', 'fornalha']) G.inv.give(G.dbg.item(k, 1)); G.net.start(); }, [X, Z]); await W(2000);
+    await B.ev(s => { G.p.x = s[0] + 7; G.p.z = s[1]; G.gain('madeira', 300); G.inv.give(G.dbg.item('c4', 1)); G.inv.give(G.dbg.item('granada', 1)); G.net.start(); }, [X, Z]); await W(2500);
     // a Ana põe a fundação (pelo caminho normal do jogo) e uma porta
     const fk = await A.ev(() => { G.p.yaw = 0; G.base.setMode('fund'); const t = G.base.B; const r = G.base.place(); return r; }); await W(1000);
     const myF = await A.ev(() => [...G.base.pieces.keys()].filter(k => k[0] === 'f'));
@@ -70,7 +70,8 @@ server.listen(0, async () => {
     const fb = await B.ev(() => G.box && G.box.grid ? G.box.grid.list.map(e => e.it.k + 'x' + e.it.n) : null); console.log('fornalha para o Bruno:', JSON.stringify(fb)); ok(fb && fb.some(x => /carvao/.test(x)) && fb.some(x => /metalR/.test(x)), 'a fornalha trabalhou fechada: carvão e metal refinado');
     await B.ev(() => G.ui.closeInv()); await W(500);
     // explosão: o Bruno rebenta C4 junto à porta (de madeira) da Ana: parte-se para os dois
-    await B.ev(k => { const D = G.base.pieces.get(k).door; G.explodeAt('c4', D.x, D.z + 0.6); }, door); await W(1500);
+    await B.ev(k => { const D = G.base.pieces.get(k).door; G.p.x = D.x; G.p.z = D.z + 1.2; }, door); await W(700);
+    await B.ev(k => { const D = G.base.pieces.get(k).door; G.p.yaw = Math.PI; const i = G.inv.belt.findIndex(o => o && o.k === 'c4'); let it = G.inv.belt[i]; if (i < 0) { it = G.inv.all().find(o => o.k === 'c4'); G.inv.bag.remove(it); G.inv.belt[5] = it; } G.sel = G.inv.belt.indexOf(it); G.p.cd = 0; G.fireDown(); G.fireUp && G.fireUp(); G.p.x = D.x; G.p.z = D.z + 9; }, door); for (let i = 0; i < 40; i++) { await W(2000); if (!(await pk(A, door))) break; } await W(1500);
     const after = await Promise.all([pk(A, door), pk(B, door)]); console.log('porta depois do C4 (Ana, Bruno):', JSON.stringify(after)); ok(after[0] === null && after[1] === null, 'o C4 do Bruno partiu a porta da Ana para os dois');
     await A.page.screenshot({ path: path.join(outDir, 'net-base-A.png') });
     // clã: a Ana faz outra fundação com porta; o Bruno entra no clã dela e já abre a porta e constrói lá
@@ -83,10 +84,10 @@ server.listen(0, async () => {
     const cl = await Promise.all([pk(A, d2), pk(A, w2)]); console.log('no clã: porta', JSON.stringify(cl[0]), '· parede do Bruno', JSON.stringify(cl[1]));
     ok(cl[0] && cl[0][3] === 1 && cl[1] && cl[1][0] === 'parede', 'no mesmo clã, o Bruno abre a porta e constrói na base da Ana');
     // granada: o Bruno lança; a Ana vê-a a voar, e depois só a explosão
-    await A.ev(s => { G.p.x = s[0]; G.p.z = s[1]; }, [X, Z]); await B.ev(s => { G.p.x = s[0] + 8; G.p.z = s[1]; G.inv.belt[0] = G.dbg.item('granada', 1); G.sel = 0; G.p.cd = 0; }, [X, Z]); await W(800);
+    await A.ev(s => { G.p.x = s[0]; G.p.z = s[1]; }, [X, Z]); await B.ev(s => { G.p.x = s[0] + 8; G.p.z = s[1]; const it = G.inv.all().find(o => o.k === 'granada'); const w = G.inv.where(it); if (w.t === 'bag') { G.inv.bag.remove(it); G.inv.belt[4] = it; } G.sel = G.inv.belt.indexOf(it); G.p.cd = 0; }, [X, Z]); await W(800);
     await B.ev(() => { G.fireDown(); G.fireUp && G.fireUp(); }); await W(500);
     const gh = await A.ev(() => G.booms.filter(b => b.ghost).map(b => b.k)); console.log('a Ana vê no ar:', JSON.stringify(gh)); ok(gh.includes('gran'), 'a Ana vê a granada do Bruno a voar');
-    await W(14000); const gh2 = await A.ev(() => G.booms.filter(b => b.ghost).length); ok(gh2 === 0, 'depois da explosão a granada desaparece');
+    await W(14000); const gh2 = await A.ev(() => G.booms.filter(b => b.ghost && b.k === 'gran').length); ok(gh2 === 0, 'depois da explosão a granada desaparece');
     console.log('erros A:', A.errs.length, 'B:', B.errs.length);
   } catch (e) { console.log('ERRO', e.stack || e); fails++; }
   console.log(fails ? fails + ' falhas' : 'tudo bem');

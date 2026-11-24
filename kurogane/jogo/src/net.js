@@ -1,6 +1,7 @@
 // Modo online: liga ao servidor de jogo, mostra os outros jogadores, manda os teus tiros (o servidor decide
 // quem acerta), mostra quem está a dormir e as mochilas de quem morreu, e trata dos clãs.
 import * as THREE from 'three';
+import { track, push, sample } from './interp.js';
 
 const MODES = ['none', 'pistol', 'rifle', 'melee'];
 
@@ -16,7 +17,7 @@ export function makeNet({ G, scene, mkRemote, audio, Conta, enc, dec, hurt, die,
   const mate = c => !!(N.clan && c === N.clan);
   const addRemote = (id, name, look, clan) => {
     if (R.has(id)) return R.get(id); const b = mkRemote(look); b.root.visible = false;
-    const r = { id, name, clan, b, el: tag(name, mate(clan) ? 'mate' : ''), s0: null, s1: null, t0: 0, t1: 0, x: 0, z: 0, step: 0, w: null, ar: '' };
+    const r = { id, name, clan, b, el: tag(name, mate(clan) ? 'mate' : ''), s1: null, T: track(), o: {}, x: 0, z: 0, y: 0, step: 0, spd: 0, w: null, ar: '' };
     R.set(id, r); return r;
   };
   const delRemote = id => { const r = R.get(id); if (!r) return; scene.remove(r.b.root); r.el.remove(); R.delete(id); };
@@ -43,10 +44,10 @@ export function makeNet({ G, scene, mkRemote, audio, Conta, enc, dec, hurt, die,
       case 'left': { const r = R.get(m.id); if (r) G.ui.toast(r.name + ' saiu e ficou a dormir'); delRemote(m.id); return; }
       case 's': {
         const now = performance.now(), seen = new Set();
-        for (const a of m.ps) { const r = R.get(a[0]); if (!r) continue; seen.add(r.id); r.s0 = r.s1 || a; r.s1 = a; r.t0 = r.s0 === a ? now - 100 : r.t1; r.t1 = now;
+        for (const a of m.ps) { const r = R.get(a[0]); if (!r) continue; seen.add(r.id); if (r.s1 && (Math.hypot(a[1] - r.s1[1], a[2] - r.s1[2]) > 25 || a[4] !== r.s1[4])) r.T = track(); r.s1 = a; push(r.T, a[13] || now, now, { x: a[1], z: a[2], y: a[3], yaw: a[5], a });
           const ar = a[12] || [0, 0], ak = ar.join(); if (ak !== r.ar) { r.ar = ak; r.b.setGear({ head: ar[0] ? { k: 'capacete' } : null, vest: ar[1] ? { k: 'colete' } : null }); }
           if (r.w !== a[8]) { r.w = a[8]; r.b.setWeapon(a[8] || null, {}); } }
-        for (const r of R.values()) if (!seen.has(r.id)) { r.s1 = r.s0 = null; r.b.root.visible = false; r.el.style.display = 'none'; }
+        for (const r of R.values()) if (!seen.has(r.id)) { r.s1 = null; r.T = track(); r.b.root.visible = false; r.el.style.display = 'none'; }
         if (m.zu) world.z.rows(m.zu); if (m.zg) world.z.gone(m.zg); if (m.cu) G.cars.rows(m.cu); if (m.cg) G.cars.gone(m.cg);
         return;
       }
@@ -86,7 +87,7 @@ export function makeNet({ G, scene, mkRemote, audio, Conta, enc, dec, hurt, die,
     if (ws || !want) return; const a = Conta.ativo(); if (!a || !a.nome) return;
     try { tok = localStorage.getItem(tokKey()); } catch (e) { }
     let opened = false; try { ws = new WebSocket(url()); } catch (e) { ws = null; G.ui.toast('Sem ligação ao servidor. Continuas sozinho.'); return; }
-    ws.onopen = () => { opened = true; send({ t: 'hi', pv: 2, name: a.nome, look: a.look || {}, tok, wv: WV, x: G.p ? G.p.x : 0, z: G.p ? G.p.z : 0, cars: G.cars.spawnPoints(), ctab: G.W.containers.filter(c => c.wid != null).sort((a, b) => a.wid - b.wid).map(c => [c.table, c.slots[0], c.slots[1]]), fresh: !!G.freshStart, test: (() => { try { return localStorage.getItem('kg.test') === '1'; } catch (e) { return false; } })() }); G.freshStart = false; };
+    ws.onopen = () => { opened = true; send({ t: 'hi', pv: 3, name: a.nome, look: a.look || {}, tok, wv: WV, x: G.p ? G.p.x : 0, z: G.p ? G.p.z : 0, cars: G.cars.spawnPoints(), ctab: G.W.containers.filter(c => c.wid != null).sort((a, b) => a.wid - b.wid).map(c => [c.table, c.slots[0], c.slots[1]]), fresh: !!G.freshStart, test: (() => { try { return localStorage.getItem('kg.test') === '1'; } catch (e) { return false; } })() }); G.freshStart = false; };
     ws.onmessage = e => { try { onMsg(JSON.parse(e.data)); } catch (er) { console.error(er); } };
     ws.onclose = () => {
       const was = N.on; ws = null; N.on = false; clearAll(); offline();
@@ -128,22 +129,20 @@ export function makeNet({ G, scene, mkRemote, audio, Conta, enc, dec, hurt, die,
   N.frame = (dt, me, see) => {
     if (!N.on) return; const now = performance.now();
     { const hide = G.mapOpen || G.invOpen || G.paused || !G.playing; if (tags.hidden !== hide) tags.hidden = hide; }
-    sendT -= dt; if (sendT <= 0 && me) { sendT = 0.1; send({ t: 'st', ...me }); }
+    if (me && now - sendT >= 48) { sendT = now; send({ t: 'st', ...me, ts: Math.round(now) }); if (N.world) { const ca = G.cars.up(); if (ca) send({ t: 'cu', L: [ca] }); } }
     if (zdQ.length) { send({ t: 'zd', L: zdQ.splice(0, 40) }); }
-    zT -= dt; if (zT <= 0 && N.world) { zT = 0.1; const L = world.z.up(); if (L.length) send({ t: 'zu', L }); const ca = G.cars.up(); if (ca) send({ t: 'cu', L: [ca] }); }
+    zT -= dt; if (zT <= 0 && N.world) { zT = 0.1; const L = world.z.up(); if (L.length) send({ t: 'zu', L, ts: Math.round(now) }); }
     if (cur) { if (cur.open && G.box !== cur.c) closeBox(); else if (cur.open) { psT -= dt; if (psT <= 0) { psT = 0.4; const sg = sigOf(cur.c); if (sg !== cur.sig) { cur.sig = sg; send({ t: 'ps', c: cur.key, it: world.encG(cur.c.grid) }); } } } else if (performance.now() - cur.t > 4000) cur = null; }
     invT -= dt; if (invT <= 0) { invT = 3; N.sendInv(); }
     const lv = me ? me.lv : 0;
     for (const r of R.values()) {
-      const a = r.s0, b = r.s1; if (!b) continue;
-      const span = Math.max(40, r.t1 - r.t0), f = Math.min(1.25, (now - 100 - r.t0) / span);
-      const x = a[1] + (b[1] - a[1]) * f, z = a[2] + (b[2] - a[2]) * f, y = a[3] + (b[3] - a[3]) * Math.min(1, f);
-      let dy = b[5] - a[5]; while (dy > Math.PI) dy -= 2 * Math.PI; while (dy < -Math.PI) dy += 2 * Math.PI;
-      r.step += Math.hypot(x - r.x, z - r.z) * 2.6; r.x = x; r.z = z; r.y = y;
+      if (!r.s1) continue; const S = sample(r.T, now, r.o); if (!S) continue; const b = S.s.a, x = S.x, z = S.z, y = S.y;
+      const dd = Math.hypot(x - r.x, z - r.z); r.spd += (Math.min(9, dd / Math.max(dt, 1e-3)) - r.spd) * Math.min(1, dt * 8);
+      r.step += dd * 2.6; r.x = x; r.z = z; r.y = y;
       const vis = !b[11] && b[10] && !((b[7] | 0) & 8) && (b[4] || 0) === lv && see({ x, z, lv: b[4] || 0 });
       r.b.root.visible = vis; if (!vis) { r.el.style.display = 'none'; continue; }
-      r.b.root.position.set(x, y, z); r.b.root.rotation.set(0, a[5] + dy * Math.min(1, f), 0);
-      const an = b[7] | 0; r.b.pose(dt, b[6], MODES[an & 3], -1, 0, 0, -1, r.step, an & 4 ? 1 : 0.25, null);
+      r.b.root.position.set(x, y, z); r.b.root.rotation.set(0, S.yaw, 0);
+      const an = b[7] | 0; { r.wt = (r.wt || 0) - dt; if (r.wt <= 0 && G.wallAhead) { r.wt = 0.1; r.wk = Math.max(0, Math.min(1, (0.85 - G.wallAhead(x, z, S.yaw, b[4])) / 0.35)); } } r.b.pose(dt, Math.min(b[6], r.spd / 3 + 0.03), MODES[an & 3], -1, 0, 0, -1, r.step, (an & 4 ? 1 : 0.25) * (1 - 0.85 * (r.wk || 0)), null);
       place(r.el, x, y + 2.05, z);
     }
     for (const s of sleepers.values()) {

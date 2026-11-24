@@ -2,7 +2,7 @@
 <html lang="pt-PT">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover,interactive-widget=resizes-content">
 <meta name="theme-color" content="#121416">
 <link rel="icon" href="data:,">
 <title>Kurogane · protótipo</title>
@@ -123,9 +123,9 @@ svg{width:18px;height:18px;flex:none}
 #scope.rd .rdf{display:block;position:absolute;left:var(--cx);top:var(--cy);width:calc(var(--r) * 1.3);height:calc(var(--r) * .92);transform:translate(-50%,-46%);border:solid #111315;border-width:15px 10px 22px;border-radius:12px 12px 8px 8px;box-shadow:inset 0 0 0 2px #2b2f33,inset 0 0 40px rgba(110,160,200,.18),0 14px 40px rgba(0,0,0,.55);background:linear-gradient(180deg,rgba(130,180,220,.10),rgba(130,180,220,.03) 60%,rgba(255,255,255,.04));opacity:var(--ro)}
 #scope.rd .ret path,#scope.rd .ret .dots,#scope.rd .ret .hold,#scope.rd .ret .c{display:none}
 #scope.rd .rdot{display:block;fill:#ff3b2f;stroke:none}#scope.rd .rdg{display:block;fill:rgba(255,60,40,.22);stroke:none}#scope .breath i{display:block;height:100%;width:100%;background:#9DD47A}
-#dmg{position:absolute;inset:0;background:radial-gradient(ellipse at center,rgba(0,0,0,0) 45%,rgba(160,20,10,.55) 100%);opacity:0;transition:opacity .45s}
+#dmg{position:fixed;inset:0;z-index:120;pointer-events:none;background:radial-gradient(ellipse at center,rgba(0,0,0,0) 45%,rgba(160,20,10,.55) 100%);opacity:0;transition:opacity .45s}
 #dmg.on{opacity:1;transition:none}
-#lowhp{position:absolute;inset:0;background:radial-gradient(ellipse at center,rgba(0,0,0,0) 55%,rgba(120,10,6,.35) 100%);opacity:0;transition:opacity 1s}
+#lowhp{position:fixed;inset:0;z-index:119;pointer-events:none;background:radial-gradient(ellipse at center,rgba(0,0,0,0) 55%,rgba(120,10,6,.35) 100%);opacity:0;transition:opacity 1s}
 /* ---------- controlos tácteis: octógonos de ferro com legenda */
 #touch{position:absolute;inset:0;pointer-events:none;z-index:1}
 .pad{position:absolute;top:0;bottom:0;pointer-events:auto;touch-action:none}
@@ -190,6 +190,7 @@ body.touch #bottom{bottom:calc(8px + var(--sb))}
 #ins{position:fixed;left:0;top:0;width:0;height:0;padding:var(--st) var(--sr) var(--sb) var(--sl);pointer-events:none;visibility:hidden}
 /* ---------- ecrãs inteiros */
 .ov{position:fixed;inset:0;display:flex;align-items:center;justify-content:center}
+.ov.kb{bottom:var(--kb,0px);align-items:flex-end}
 /* menu: centrado quando cabe; quando não cabe (telemóvel deitado), desliza em vez de cortar o logótipo */
 #start{overflow-y:auto;overscroll-behavior:contain;align-items:flex-start}#start>.sp{margin-top:auto;margin-bottom:auto}
 @media (orientation:landscape) and (max-height:520px){#start>.sp{gap:8px}#start .lead,#start .keys{display:none}#start .logo .seal{width:54px;height:54px}#start .mi{padding:7px 14px 8px}#start .mi b{font-size:19px}#start .onl{padding:6px 14px}}
@@ -215,16 +216,16 @@ body.touch #bottom{bottom:calc(8px + var(--sb))}
 .iwt.heavy b,.iwt.heavy{color:var(--amb)}
 @media (max-width:400px){.tabs button{padding:0 8px;font-size:13px;letter-spacing:.04em}.iwt .ic{display:none}.iwt i{left:0}}.iwt.heavy u{background:var(--amb)}.iwt.over b,.iwt.over{color:#e5574a}.iwt.over u{background:#e5574a}
 .istat{margin-left:6px;font:600 13px "Barlow Condensed",sans-serif;letter-spacing:.06em;color:var(--tx2);text-transform:uppercase}
-.ibody{flex:1;min-height:0;display:grid;gap:8px 14px;padding-top:8px;grid-template-columns:auto minmax(200px,250px) auto;grid-template-rows:1fr auto auto;grid-template-areas:"box eq bag" "box belt bag" "box bar bag";justify-content:center;align-items:end}
+.ibody{flex:1;min-height:0;display:grid;gap:8px 14px;padding-top:8px;grid-template-columns:auto minmax(200px,250px) auto;grid-template-rows:1fr auto auto;grid-template-areas:"box eq bag" "box belt bag" "box hint bag";justify-content:center;align-items:end}
 .ipan{min-height:0}
 #cBox{grid-area:box;align-self:stretch;display:flex;flex-direction:column;justify-content:flex-end;min-width:calc(var(--cs) * 6 + 10px)}
 #cEq{grid-area:eq;align-self:end}
 #cBelt{grid-area:belt}
-#iBar{grid-area:bar}
+.ihint{grid-area:hint;margin:0;max-width:250px;font-size:13px;line-height:1.4;color:var(--tx2)}
 #cBag{grid-area:bag;align-self:end}
 .col{display:flex;flex-direction:column;gap:6px;min-height:0}
-#boxV,#craftV{flex:1;justify-content:flex-end}
-#craftV .scroll{display:flex;flex-direction:column;gap:6px;max-height:100%}
+#boxV{flex:1;justify-content:flex-end}#craftV{flex:1;justify-content:flex-start}
+#craftV .scroll{display:flex;flex-direction:column;gap:6px;flex:1;padding-bottom:10px}
 .ph{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:24px;font:700 12px "Barlow Condensed",sans-serif;letter-spacing:.1em;text-transform:uppercase;color:var(--tx2)}
 .ph .btn.sm{height:40px;padding:0 14px;font-size:14px}
 .ph em{font-style:normal;color:var(--tx2);font-weight:600;letter-spacing:.04em}
@@ -262,15 +263,21 @@ body.touch #bottom{bottom:calc(8px + var(--sb))}
 .item.rot img,#dragG.rot img{left:50%;top:50%;width:var(--bh);height:var(--bw);transform:translate(-50%,-50%) rotate(90deg)}
 #dragG img{position:absolute;left:0;top:0}
 /* objeto escolhido: nome, para que serve e as ações, ao alcance dos dois polegares */
-#iBar{background:#15181b;padding:10px 12px 12px;display:flex;flex-direction:column;gap:6px;clip-path:polygon(0 0,calc(100% - var(--cut)) 0,100% var(--cut),100% 100%,0 100%)}
-#iBar .t{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
-#iBar b{font:700 17px "Barlow Condensed",sans-serif;letter-spacing:.02em}
-#iBar .cat{font:600 11px "Barlow Condensed",sans-serif;letter-spacing:.08em;text-transform:uppercase;color:var(--tx2)}
+#iBar{position:fixed;z-index:30;left:0;top:0;width:300px;max-height:calc(100dvh - 16px);overflow:auto;overscroll-behavior:contain;background:#171a1e;border:1px solid rgba(255,255,255,.09);border-radius:4px;padding:10px 10px 10px 14px;display:flex;flex-direction:column;gap:8px;box-shadow:0 22px 56px rgba(0,0,0,.62),0 2px 8px rgba(0,0,0,.4)}
+#iBar[hidden]{display:none}
+#iBar .t{display:flex;align-items:flex-start;gap:8px}
+#iBar .tt{flex:1;min-width:0;padding-top:4px}
+#iBar b{display:block;font:700 19px/1.1 "Barlow Condensed",sans-serif;letter-spacing:.02em}
+#iBar .cat{display:block;margin-top:3px;font:600 11px "Barlow Condensed",sans-serif;letter-spacing:.08em;text-transform:uppercase;color:var(--tx2)}
 #iBar .cat.rare{color:var(--purple)}
-#iBar p{margin:0;color:var(--tx2);font-size:13px;line-height:1.35;max-height:5.4em;overflow:auto}
+#iBar .close{flex:none;width:44px;height:44px;margin:-4px -4px 0 0}
+#iBar p{margin:0;padding-right:4px;color:#C9C3B8;font-size:13.5px;line-height:1.4;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:4;overflow:hidden}
+#iBar p.open{display:block;-webkit-line-clamp:unset}
 #iBar p:empty{display:none}
-#iBar .acts{display:flex;gap:6px;flex-wrap:wrap}
-#iBar .acts .btn{flex:1 1 auto}
+#iBar .acts{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding-right:4px}
+#iBar .acts .btn{min-height:46px;height:auto;padding:6px 10px;white-space:normal;line-height:1.1;font-size:15px}
+#iBar .acts .btn.pri,#iBar .acts .btn.wide{grid-column:1/-1}
+#iBar .acts .btn.end{grid-column:1/-1;background:transparent;box-shadow:inset 0 0 0 1px rgba(255,255,255,.12);color:#E8A79C}
 .sk{background:#15181b;padding:10px 12px 12px;display:flex;flex-direction:column;gap:6px;border-radius:2px}
 .sk .t{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
 .sk b{font:700 17px "Barlow Condensed",sans-serif;letter-spacing:.02em}
@@ -487,14 +494,15 @@ input[type=range]{width:160px;accent-color:#F2A33A;height:30px}
 #gL{left:calc(124px + var(--sl));bottom:calc(206px + var(--sb))}#gR{display:none}
 #toast{top:calc(12px + var(--st) + var(--mmw) + 50px);max-width:calc(100vw - 32px)}
 /* inventário ao alto: equipamento em cima, o que tiras no meio, ações, cinto e mochila em baixo, perto do polegar */
-.ibody{grid-template-columns:1fr;grid-template-rows:auto minmax(0,1fr) auto auto auto;grid-template-areas:"eq" "box" "bar" "belt" "bag";justify-items:center;align-items:stretch;gap:8px}
+.ibody{grid-template-columns:1fr;grid-template-rows:auto minmax(0,1fr) auto auto;grid-template-areas:"eq" "box" "belt" "bag";justify-items:center;align-items:stretch;gap:8px}
+.ihint{display:none}
 #cBox{min-width:0;width:100%;justify-content:flex-start}
 #cBox .grid{margin:0 auto}
 #cEq{width:100%}#cEq .eqw{justify-content:center}
 #cBelt .beltI{grid-template-columns:repeat(6,var(--slot))}
 #cBelt .ph{display:none}
 .tabs button{padding:0 11px;font-size:14px}.ihead{gap:8px}
-#iBar{width:100%}
+#iBar{width:calc(100vw - 16px - var(--sl) - var(--sr));max-height:min(62dvh,560px)}
 #start{background:linear-gradient(0deg,rgba(9,10,12,.96) 48%,rgba(9,10,12,.35) 100%);align-items:flex-end;padding:calc(20px + var(--st)) calc(20px + var(--sr)) calc(18px + var(--sb)) calc(20px + var(--sl))}
 .seal{width:64px;height:64px}.menu{width:100%}.mi{padding:10px 14px 11px}.sp{gap:12px}
 }
@@ -506,8 +514,8 @@ input[type=range]{width:160px;accent-color:#F2A33A;height:30px}
 </head>
 <body>
 <canvas id="c"></canvas>
+<div id="dmg" aria-hidden="true"></div><div id="lowhp" aria-hidden="true"></div>
 <div id="hud" hidden>
-  <div id="dmg"></div><div id="lowhp"></div>
   <div id="tl"><div id="mm" data-h="mm" title="Abrir mapa"><canvas id="mmc"></canvas></div><div id="zone" data-h="zone"><b>—</b><span></span></div></div>
   <div id="tr" data-h="tr"><button class="hb" id="bSet" aria-label="Definições">{{settings}}</button><button class="hb" id="bMap" aria-label="Mapa">{{map}}<span class="lab">Mapa</span><kbd>M</kbd></button><button class="hb" id="bInv" aria-label="Inventário">{{backpack}}<span class="lab">Inventário</span><kbd>Tab</kbd></button></div>
   <div id="sind"></div><div id="feed" data-h="feed"></div><div id="fps" hidden></div>
@@ -551,7 +559,8 @@ input[type=range]{width:160px;accent-color:#F2A33A;height:30px}
     </section>
     <section class="ipan" id="cEq"><div class="ph"><span>Equipamento</span></div><div class="eqw"><img id="portrait" alt=""><div class="eqs"><div class="slot" data-eq="head"><span class="lb">Cabeça</span></div><div class="slot" data-eq="vest"><span class="lb">Colete</span></div><div class="slot" data-eq="back"><span class="lb">Costas</span></div></div></div></section>
     <section class="ipan" id="cBelt"><div class="ph"><span>Cinto</span></div><div class="beltI" id="beltI"></div></section>
-    <section class="ipan" id="iBar"><div class="t"><b id="iName">Toca num objeto</b><span class="cat" id="iCat"></span></div><p id="iDesc"></p><div class="acts" id="iAct"></div></section>
+    <p class="ihint" id="iHint"></p>
+    <section class="ipan" id="iBar" hidden role="dialog" aria-labelledby="iName"><div class="t"><div class="tt"><b id="iName"></b><span class="cat" id="iCat"></span></div><button class="close" id="iBarX" aria-label="Fechar">{{x}}</button></div><p id="iDesc"></p><div class="acts" id="iAct"></div></section>
     <section class="ipan" id="cBag"><div class="ph"><span>Mochila</span><em id="bagCap"></em></div><div class="grid" id="gBag"></div></section>
   </div>
 </div>
@@ -566,7 +575,7 @@ input[type=range]{width:160px;accent-color:#F2A33A;height:30px}
   <nav class="menu"><button class="mi pri" id="sCont" hidden><b>Continuar</b><em>Voltas onde ficaste</em></button><button class="mi pri" id="sPlay"><b>Jogar</b><em>Acordas perto de uma vila ou monumento</em></button><button class="mi" id="sSet"><b>Definições</b><em>Controlos, imagem e som</em></button></nav>
   <div class="onl" id="sOnl" role="status"><i class="dot" aria-hidden="true"></i><span><b>Servidor</b><em id="sOnT">A ver quem está a jogar…</em></span></div>
   <div class="keys" id="sKeys"></div>
-  <div class="foot">Protótipo 0.15.1 · um servidor para todos · quem sai fica a dormir no mundo</div>
+  <div class="foot">Protótipo 0.16 · um servidor para todos · quem sai fica a dormir no mundo</div>
 </div><button id="sMus" aria-label="Música do menu"><span class="on">{{volume-2}}</span><span class="off">{{volume-x}}</span></button><a class="credit" href="https://dinissousa.pt" target="_blank" rel="noopener">feito por dinissousa.pt</a></div>
 <div id="pfm" class="ov" hidden><div class="pfbox"><div class="pfh"><b id="pfT"></b><button class="close" id="pfX" aria-label="Fechar">{{x}}</button></div><div id="pfB" class="pfb"></div></div></div>
 <div id="set" class="ov" hidden><div class="sp2"><div class="ihead"><b class="cond" style="font-size:20px;letter-spacing:.06em;text-transform:uppercase">Definições</b><button class="close" id="setClose" aria-label="Fechar" style="margin-left:auto">{{x}}</button></div><div class="sbody" id="setBody"></div></div></div>

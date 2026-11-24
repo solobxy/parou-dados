@@ -6,6 +6,7 @@ import { ITEMS } from './items.js';
 import { Grid, mkItem } from './bag.js';
 
 export const CELL = 3, FH = 0.3, WH = 3.0; // lado da célula, altura da fundação, altura das paredes
+const DF = 0.85; // largura de cada lado do aro da porta: vão de 1,3 m (cabe bem um jogador de 0,6 m a entrar de lado)
 export const TIERS = [
   { n: 'Madeira', hp: 250, col: 0x8a6a48 },
   { n: 'Pedra', hp: 600, col: 0x9a958c },
@@ -77,6 +78,7 @@ export function makeBase({ scene, W, G, audio, addRect, removeRect, visDirty, in
 
   // ---------- peças
   const tierMat = t => MAT[t];
+  const CUT = 0.42; // altura das paredes baixas (42%: cerca de 1,3 m acima da fundação)
   const buildMesh = P => {
     if (P.g) { root.remove(P.g); P.g.traverse(o => o.geometry && o.geometry.dispose()); }
     const g = new THREE.Group(), m = tierMat(P.tier); P.g = g; root.add(g);
@@ -87,7 +89,7 @@ export function makeBase({ scene, W, G, audio, addRect, removeRect, visDirty, in
       const seg = (a0, a1, yb, yt) => { const L = a1 - a0, c = (a0 + a1) / 2, h = yt - yb; const b = E.horiz ? box(L, h, T, c, yb + h / 2, E.z, m, g) : box(T, h, L, E.x, yb + h / 2, c, m, g); uvScale(b, L, h); };
       const a0 = E.horiz ? E.x0 : E.z0, a1 = E.horiz ? E.x1 : E.z1;
       if (P.t === 'parede') seg(a0, a1, y0, y0 + H);
-      else if (P.t === 'porta') { seg(a0, a0 + 0.95, y0, y0 + H); seg(a1 - 0.95, a1, y0, y0 + H); seg(a0 + 0.95, a1 - 0.95, y0 + 2.25, y0 + H); }
+      else if (P.t === 'porta') { seg(a0, a0 + DF, y0, y0 + H); seg(a1 - DF, a1, y0, y0 + H); seg(a0 + DF, a1 - DF, y0 + 2.25, y0 + H); }
       else if (P.t === 'janela') { seg(a0, a0 + 0.9, y0, y0 + H); seg(a1 - 0.9, a1, y0, y0 + H); seg(a0 + 0.9, a1 - 0.9, y0, y0 + 1.0); seg(a0 + 0.9, a1 - 0.9, y0 + 2.1, y0 + H); const bars = 4; for (let k = 1; k <= bars; k++) { const c = a0 + 0.9 + (a1 - a0 - 1.8) * k / (bars + 1); if (E.horiz) box(0.04, 1.1, 0.04, c, y0 + 1.55, E.z, DARK, g); else box(0.04, 1.1, 0.04, E.x, y0 + 1.55, c, DARK, g); } }
     }
   };
@@ -99,13 +101,13 @@ export function makeBase({ scene, W, G, audio, addRect, removeRect, visDirty, in
     const E = edgeGeom(P.k), T = 0.24, add = (a0, a1, k, h, yb, extra) => { const r = E.horiz ? { x0: a0, x1: a1, z0: E.z - T / 2, z1: E.z + T / 2 } : { x0: E.x - T / 2, x1: E.x + T / 2, z0: a0, z1: a1 }; Object.assign(r, { k, h, yb: yb || 0, lv: 0, base: P }, extra || {}); addRect(r); P.rects.push(r); return r; };
     const a0 = E.horiz ? E.x0 : E.z0, a1 = E.horiz ? E.x1 : E.z1, top = FH + WH;
     if (P.t === 'parede') add(a0, a1, 's', top);
-    else if (P.t === 'porta') { add(a0, a0 + 0.95, 's', top); add(a1 - 0.95, a1, 's', top); add(a0 + 0.95, a1 - 0.95, 'g', top, FH + 2.25, { lintel: 1 }); }
+    else if (P.t === 'porta') { add(a0, a0 + DF, 's', top); add(a1 - DF, a1, 's', top); add(a0 + DF, a1 - DF, 'g', top, FH + 2.25, { lintel: 1 }); }
     else if (P.t === 'janela') { add(a0, a0 + 0.9, 's', top); add(a1 - 0.9, a1, 's', top); add(a0 + 0.9, a1 - 0.9, 'g', top, 0, { win: 1, sill: FH + 1.0 }); }
   };
   // porta de verdade (abre, fecha, trava zombies e balas), integrada no sistema de portas do mapa
   const doorGeo = new THREE.BoxGeometry(1, 2.2, 0.06); doorGeo.translate(0.5, 1.1, 0);
   const mkDoor = P => {
-    const E = edgeGeom(P.k), a0 = E.horiz ? E.x0 : E.z0, a1 = E.horiz ? E.x1 : E.z1, s0 = a0 + 0.95, s1 = a1 - 0.95, w = s1 - s0, fixed = E.horiz ? E.z : E.x;
+    const E = edgeGeom(P.k), a0 = E.horiz ? E.x0 : E.z0, a1 = E.horiz ? E.x1 : E.z1, s0 = a0 + DF, s1 = a1 - DF, w = s1 - s0, fixed = E.horiz ? E.z : E.x;
     const D = { base: P, x: E.horiz ? (s0 + s1) / 2 : fixed, z: E.horiz ? fixed : (s0 + s1) / 2, horiz: E.horiz, inward: 1, lv: 0, C: null, col: 0, w, leaves: [], ro: [], t: 0, target: 0, auto: false };
     D.rc = { x0: E.horiz ? s0 : fixed - 0.1, z0: E.horiz ? fixed - 0.1 : s0, x1: E.horiz ? s1 : fixed + 0.1, z1: E.horiz ? fixed + 0.1 : s1, k: 's', h: FH + 2.25, lv: 0, door: D, base: P };
     addRect(D.rc); W.doors.push(D);
@@ -217,6 +219,10 @@ export function makeBase({ scene, W, G, audio, addRect, removeRect, visDirty, in
       const inside = p && (p.lv || 0) === 0 && hasFund(Math.floor(p.x / CELL), Math.floor(p.z / CELL)) && !G.fp;
       for (const P of pieces.values()) if (P.t === 'teto' && P.g) P.g.visible = !inside;
       for (const P of pieces.values()) if (P.door) { const D = P.door, e = D.t * D.t * (3 - 2 * D.t); D.mesh.rotation.y = D.mesh.userData.a0 + e * Math.PI / 2 * 0.95; }
+      // paredes da base perto de ti ficam baixas (vista de cima vês o vão da porta e lá dentro); na primeira pessoa ficam inteiras
+      for (const P of pieces.values()) { if (P.t === 'fund' || P.t === 'teto' || !P.g) continue; const E = P.E || (P.E = edgeGeom(P.k)), mx = E.horiz ? (E.x0 + E.x1) / 2 : E.x, mz = E.horiz ? E.z : (E.z0 + E.z1) / 2;
+        const want = p && (p.lv || 0) === 0 && !G.fp && Math.hypot(mx - p.x, mz - p.z) < 6.5 ? CUT : 1; P.cut = (P.cut ?? 1) + (want - (P.cut ?? 1)) * 0.18; if (Math.abs(P.cut - want) < 0.005) P.cut = want;
+        P.g.scale.y = P.cut; P.g.position.y = FH * (1 - P.cut); if (P.door) { P.door.mesh.scale.y = P.cut; } }
       return k;
     },
     // pôr a peça escolhida
