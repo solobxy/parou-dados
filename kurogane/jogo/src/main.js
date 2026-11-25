@@ -99,6 +99,18 @@ async function boot() {
       for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) { const dx = (h(i + 1, j) - h(i - 1, j)) * 9, dy = (h(i, j + 1) - h(i, j - 1)) * 9, l = Math.hypot(dx, dy, 1), o = (j * N + i) * 4; im.data[o] = (-dx / l * 0.5 + 0.5) * 255; im.data[o + 1] = (-dy / l * 0.5 + 0.5) * 255; im.data[o + 2] = (1 / l * 0.5 + 0.5) * 255; im.data[o + 3] = 255; }
       x.putImageData(im, 0, 0); const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; return t; })(), normalScale: new THREE.Vector2(0.16, 0.16) }),
   };
+  // texturas realistas do chão (ficheiros ao lado da página; até chegarem, ficam as desenhadas aqui) e duas amostras misturadas
+  // com uma mancha larga, para não se ver a repetição dos quadrados
+  { const AT = new Set(['grass', 'dirt', 'asph']), BR = new Set(['grass', 'dirt', 'asph', 'conc', 'tile']);
+    for (const k of BR) { const m = mats[k]; m.onBeforeCompile = sh => { sh.fragmentShader = sh.fragmentShader.replace('#include <map_fragment>', `#ifdef USE_MAP
+      vec2 uA = vMapUv; float n1 = 0.5 + 0.5 * sin(uA.x * 1.31 + sin(uA.y * 0.83) * 2.1) * sin(uA.y * 1.17 + sin(uA.x * 0.71) * 1.9);
+      vec4 sampledDiffuseColor = texture2D(map, uA);
+      ${AT.has(k) ? 'vec2 uB = mat2(0.8, -0.6, 0.6, 0.8) * uA * 0.61 + vec2(0.37, 0.11); vec4 cB = texture2D(map, uB); sampledDiffuseColor = mix(sampledDiffuseColor, cB, smoothstep(0.3, 0.7, n1));' : ''}
+      float n2 = 0.5 + 0.5 * sin(uA.x * 0.23 + 1.7) * sin(uA.y * 0.19 + 0.4); sampledDiffuseColor.rgb *= 0.9 + 0.2 * n2;
+      diffuseColor *= sampledDiffuseColor;
+      #endif`); }; m.customProgramCacheKey = () => 'chao-' + k; }
+    const L = new THREE.TextureLoader();
+    for (const k of BR) L.load('tex/' + k + '.jpg', t => { t.wrapS = t.wrapT = THREE.RepeatWrapping; t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; const m = mats[k]; const old = m.map; m.map = t; m.needsUpdate = true; if (old && old.dispose) old.dispose(); }, undefined, () => {}); }
 
   // ---------- mundo
   const atlasTex = A.texture();
@@ -455,15 +467,18 @@ async function boot() {
   // hitboxes: as mesmas matrizes da pose que desenha o zombie (zombiePose), por isso acertas exatamente no que vês, em qualquer animação
   // cabeça: esfera; tronco e anca: caixas; pescoço, braços e pernas: cápsulas; pés: caixas. Capacete e colete alargam a zona que protegem
   const HP = [
-    ['torso', 'head', 's', [0, 0.89, 0], null, 0.152],
+    ['head', 'head', 's', [0, 0.145, 0.01], null, 0.152],
     ['torso', 'body', 'b', [0, 0.43, 0], [0.23, 0.25, 0.13], 0.09],
     ['torso', 'body', 'c', [0, 0.66, 0.0], [0, 0.76, 0.0], 0.07],
     ['torso', 'body', 'b', [0, 0.06, 0], [0.2, 0.1, 0.12], 0.06],
-    ['armL', 'arms', 'c', [0, 0, 0], [0, -0.55, 0], 0.07], ['armR', 'arms', 'c', [0, 0, 0], [0, -0.55, 0], 0.07],
-    ['legL', 'legs', 'c', [0, -0.12, 0], [0, -0.72, 0], 0.1], ['legR', 'legs', 'c', [0, -0.12, 0], [0, -0.72, 0], 0.1],
-    ['legL', 'legs', 'b', [0, -0.86, 0.05], [0.095, 0.06, 0.15], 0.04], ['legR', 'legs', 'b', [0, -0.86, 0.05], [0.095, 0.06, 0.15], 0.04]];
-  const HELM = [0, 0.9, 0], VESTC = [0, 0.44, 0], VESTH = [0.27, 0.22, 0.18], PK = ['torso', 'armL', 'armR', 'legL', 'legR'];
+    ['armL', 'arms', 'c', [0, 0, 0], [0, -0.3, 0], 0.07], ['armR', 'arms', 'c', [0, 0, 0], [0, -0.3, 0], 0.07],
+    ['foreL', 'arms', 'c', [0, 0, 0], [0, -0.36, 0], 0.06], ['foreR', 'arms', 'c', [0, 0, 0], [0, -0.36, 0], 0.06],
+    ['legL', 'legs', 'c', [0, -0.06, 0], [0, -0.44, 0], 0.1], ['legR', 'legs', 'c', [0, -0.06, 0], [0, -0.44, 0], 0.1],
+    ['shinL', 'legs', 'c', [0, 0, 0], [0, -0.38, 0], 0.085], ['shinR', 'legs', 'c', [0, 0, 0], [0, -0.38, 0], 0.085],
+    ['shinL', 'legs', 'b', [0, -0.435, 0.055], [0.065, 0.05, 0.14], 0.03], ['shinR', 'legs', 'b', [0, -0.435, 0.055], [0.065, 0.05, 0.14], 0.03]];
+  const HELM = [0, 0.16, 0], VESTC = [0, 0.44, 0], VESTH = [0.27, 0.22, 0.18], PK = ['torso', 'head', 'armL', 'armR', 'foreL', 'foreR', 'legL', 'legR', 'shinL', 'shinR'];
   const _lp = new THREE.Vector3(), _lq = new THREE.Vector3(), _l1 = new THREE.Vector3(), _l2 = new THREE.Vector3();
+  G.zHead = z => { const M = zombiePose(z, newPose()), v = new THREE.Vector3(0, 0.145, 0.01).applyMatrix4(M.head); return { x: v.x, y: v.y, z: v.z }; }; // testes: onde está a cabeça desenhada
   const poseInv = z => { if (z._pt !== G.t || !z._inv) { z._pose = zombiePose(z, z._pose || newPose()); const I = z._inv || (z._inv = {}); for (const k of PK) (I[k] || (I[k] = new THREE.Matrix4())).copy(z._pose[k]).invert(); z._pt = G.t; } return z._inv; };
   const segSph = (p, q, c, r) => { const dx = q.x - p.x, dy = q.y - p.y, dz = q.z - p.z, fx = p.x - c[0], fy = p.y - c[1], fz = p.z - c[2], a = dx * dx + dy * dy + dz * dz, b = 2 * (fx * dx + fy * dy + fz * dz), cc = fx * fx + fy * fy + fz * fz - r * r; if (cc <= 0) return 0; const disc = b * b - 4 * a * cc; if (disc < 0 || a < 1e-12) return null; const t = (-b - Math.sqrt(disc)) / (2 * a); return t >= 0 && t <= 1 ? t : null; };
   const segBox = (p, q, c, h, k) => { let t0 = 0, t1 = 1; for (const [o, d, lo, hi] of [[p.x, q.x - p.x, c[0] - h[0] * k, c[0] + h[0] * k], [p.y, q.y - p.y, c[1] - h[1] * k, c[1] + h[1] * k], [p.z, q.z - p.z, c[2] - h[2] * k, c[2] + h[2] * k]]) { if (Math.abs(d) < 1e-12) { if (o < lo || o > hi) return null; continue; } let ta = (lo - o) / d, tb = (hi - o) / d; if (ta > tb) { const x = ta; ta = tb; tb = x; } if (ta > t0) t0 = ta; if (tb < t1) t1 = tb; if (t0 > t1) return null; } return t0; };
