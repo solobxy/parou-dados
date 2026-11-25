@@ -438,7 +438,10 @@ async function boot() {
   const mkRemote = L => { const b = new Body(mats, lookCol(L && typeof L === 'object' ? L : {})); scene.add(b.root); return b; };
   const fauna = new Fauna(scene, mats.v, 160); // animais (veados, javalis, lobos, cães, galinhas)
   const _vf = new THREE.Frustum(), _vfM = new THREE.Matrix4();
-  const horde = new Horde(scene, mats, 900, null); // zombies sem silhueta vermelha: atrás de paredes simplesmente não se veem
+  // zombies feitos no Blender: uma textura com pele, roupa rasgada, sangue e sombra de canto (enquanto carrega, cor lisa parecida)
+  const zmat = new THREE.MeshStandardMaterial({ color: 0x7c8270, roughness: 0.9 });
+  new THREE.TextureLoader().load('tex/zombie.jpg', t => { t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; zmat.map = t; zmat.color.set(0xffffff); zmat.needsUpdate = true; }, undefined, () => { });
+  const horde = new Horde(scene, mats, 900, null, zmat); // zombies sem silhueta vermelha: atrás de paredes simplesmente não se veem
   const bagM = bagMesh(mats), bodyBagM = bagMesh(mats, true);
   // sacos no chão: contorno quente que pulsa quando estás perto (casca por trás do saco, sem custo de pós-processamento)
   const haloTex = (() => { const c = document.createElement('canvas'); c.width = c.height = 64; const x = c.getContext('2d'), g = x.createRadialGradient(32, 32, 4, 32, 32, 32); g.addColorStop(0, 'rgba(255,200,110,.9)'); g.addColorStop(0.45, 'rgba(242,170,70,.45)'); g.addColorStop(1, 'rgba(242,160,60,0)'); x.fillStyle = g; x.fillRect(0, 0, 64, 64); return new THREE.CanvasTexture(c); })();

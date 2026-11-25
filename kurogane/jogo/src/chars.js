@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import { Builder, mat4, shade } from './builder.js';
 import { ITEMS, TINTS } from './items.js';
 import { GUNS } from './guns.js';
+import { ZM } from './zmodel.js';
 
 export const HIP = 0.92, SHY = 1.42, SHX = 0.27;
 export const LONG = ['m4', 'ak', 'smg', 'cacadeira', 'caca', 'cheytac', 'barrett', 'm249', 'pkm'];
@@ -287,22 +288,28 @@ export class Body {
   lie() { this.root.rotation.x = -Math.PI / 2; this.root.position.y = 0.16; for (const l of this.legs) this.limb(l, 0, 0, 0); this.limb(this.arms[0], 0, 0.5, -0.2); this.limb(this.arms[1], 0, -0.5, -0.2); }
 }
 
+// partes do zombie feitas no Blender (blender/zombie.py): posição em 16 bits (±0,9 m), normal em 8 bits, UV para a textura tex/zombie.jpg
+const zbuf = s => { const b = atob(s), u = new Uint8Array(b.length); for (let i = 0; i < b.length; i++) u[i] = b.charCodeAt(i); return u.buffer; };
+const zGeo = k => { const d = ZM[k], g = new THREE.BufferGeometry(), P = new Int16Array(zbuf(d.p)), pos = new Float32Array(P.length); for (let i = 0; i < P.length; i++) pos[i] = P[i] / 32767 * 0.9;
+  g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); g.setAttribute('normal', new THREE.BufferAttribute(new Int8Array(zbuf(d.nm)), 3, true)); g.setAttribute('uv', new THREE.BufferAttribute(new Uint16Array(zbuf(d.uv)), 2, true)); g.setIndex(new THREE.BufferAttribute(new Uint16Array(zbuf(d.i)), 1)); g.computeBoundingSphere(); return { v: g }; };
+
 export class Horde {
   // zombies: cada parte é uma malha repetida por instância (tronco, cabeça, coxas, canelas, braços, antebraços)
-  constructor(scene, mats, max = 28, silMat = null) {
+  constructor(scene, mats, max = 28, silMat = null, zmat = null) {
     this.max = max;
-    const P = partGeos({ skin: 0x8f9a7e, top: 0x8a8274, legs: 0x3a3d44, shoes: 0x26221e, hair: 0x2a2520, blood: 0x5a0e0b, eye: 0xd8d0a0, zombie: true, torn: true, sleeve: 0x9a948a });
-    const mk = g => { const m = new THREE.InstancedMesh(g.v, mats.v, max); m.castShadow = true; m.receiveShadow = true; m.frustumCulled = false; m.count = 0; m.renderOrder = 3; scene.add(m); return m; };
+    // com o material da textura: as partes do Blender (≈3800 triângulos por zombie); sem ele, as antigas feitas de peças (≈9300)
+    const P = zmat ? { torso: zGeo('torso'), head: zGeo('head'), thighL: zGeo('thighL'), thighR: zGeo('thighR'), shin: zGeo('shin'), upper: zGeo('upper'), fore: zGeo('fore') } : partGeos({ skin: 0x8f9a7e, top: 0x8a8274, legs: 0x3a3d44, shoes: 0x26221e, hair: 0x2a2520, blood: 0x5a0e0b, eye: 0xd8d0a0, zombie: true, torn: true, sleeve: 0x9a948a });
+    const mk = (g, own) => { const m = new THREE.InstancedMesh(g.v, own ? mats.v : zmat || mats.v, max); m.castShadow = true; m.receiveShadow = true; m.frustumCulled = false; m.count = 0; m.renderOrder = 3; scene.add(m); return m; };
     this.K = ['torso', 'head', 'legL', 'legR', 'shinL', 'shinR', 'armL', 'armR', 'foreL', 'foreR']; const G = { torso: P.torso, head: P.head, legL: P.thighL, legR: P.thighR, shinL: P.shin, shinR: P.shin, armL: P.upper, armR: P.upper, foreL: P.fore, foreR: P.fore };
     this.parts = this.K.map(k => mk(G[k]));
     // proteção: capacete (na cabeça) e colete (no tronco), tingidos por zombie
     const arm = geoOf(b => { b.sph(0.165, 0, 0.16, 0.0, 0xffffff, { th: Math.PI * 0.5, ws: 14, hs: 7 }); b.box(0.34, 0.03, 0.04, 0, 0.16, 0.155, 0xd8d8d8); });
     const vst = geoOf(b => { b.rbox(0.52, 0.42, 0.33, 0.06, 0, 0.44, 0, 0xffffff); for (const x of [-0.13, 0, 0.13]) b.rbox(0.1, 0.12, 0.06, 0.02, x, 0.34, 0.17, 0xd0d0d0); });
-    this.helm = mk(arm); this.vest = mk(vst);
+    this.helm = mk(arm, true); this.vest = mk(vst, true);
     this.sil = silMat ? this.K.map(k => { const m = new THREE.InstancedMesh(G[k].v, silMat, max); m.frustumCulled = false; m.count = 0; m.renderOrder = 1; scene.add(m); return m; }) : null;
     const tints = [0xffffff, 0xb8c8e8, 0xe8d0b0, 0xc8e0c0, 0xd8c0c8, 0x9aa0b0, 0xf0e8d8];
     const c = new THREE.Color();
-    for (let i = 0; i < max; i++) { c.set(tints[i % tints.length]); for (const m of this.parts) m.setColorAt(i, c); }
+    const wt = new THREE.Color(0xffffff); for (let i = 0; i < max; i++) { c.set(tints[i % tints.length]); if (zmat) c.lerp(wt, 0.6); for (const m of this.parts) m.setColorAt(i, c); } // com textura, o tom varia pouco (senão a pele ficava cor de laranja ou azul)
     this._m = new THREE.Matrix4();
   }
   update(list, noSil = false, fr = null) {
