@@ -1,0 +1,113 @@
+// Localização do telemóvel desligada ao abrir a PAROU (o site já está autorizado): quando a pessoa a liga nas definições
+// rápidas (puxar a barra de cima, sem sair da app), a PAROU tem de mostrar logo onde ela está, sem tocar em nada
+// (pedido do Dinis, 25/11/2026; antes era preciso tocar em «Tentar outra vez» ou «Ativar localização»).
+// Simula-se o Chrome no Android: com a localização desligada, cada pedido dá erro logo; ligada, dá a posição.
+// Confirma também que a quem nunca autorizou o site a app não pergunta sozinha (só com um toque), e que com a página
+// escondida não se fazem pedidos.
+// Uso: BASE=http://127.0.0.1:3000 SAIDA=res node localizacao-automatica.mjs
+import { chromium } from 'playwright';
+import fs from 'fs';
+
+const BASE = process.env.BASE || 'http://127.0.0.1:3000';
+const SAIDA = process.env.SAIDA || 'res';
+fs.mkdirSync(SAIDA, { recursive: true });
+let falhas = 0;
+const ok = (nome, cond, extra = '') => { if (!cond) falhas++; console.log(cond ? 'OK     ' : 'FALHOU ', nome, extra); };
+const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGP4z8DwHwAFAAH/q842iQAAAABJRU5ErkJggg==', 'base64');
+const UA = 'Mozilla/5.0 (Linux; Android 14; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Mobile Safari/537.36';
+
+// estado: 'granted' (site autorizado) ou 'prompt' (nunca perguntado)
+const TELEMOVEL = (estado) => `(() => {
+  const G = { ligada: false, pedidos: 0, entregues: 0, watches: new Map(), id: 1 };
+  window.__geo = G;
+  const erro = { code: 1, PERMISSION_DENIED: 1, POSITION_UNAVAILABLE: 2, TIMEOUT: 3, message: 'User denied Geolocation' };
+  const pos = () => ({ coords: { latitude: 41.15054, longitude: -8.586245, accuracy: 12, heading: null, speed: null, altitude: null, altitudeAccuracy: null }, timestamp: Date.now() });
+  // como no Chrome (Blink): um seguimento que recebe «recusado» deixa de receber posições, mesmo que a localização volte
+  const responder = (n, id) => setTimeout(() => { try { if (G.ligada) { G.entregues++; n.okf(pos()); } else { if (id) G.watches.delete(id); n.err && n.err(erro); } } catch (e) {} }, 30);
+  const geo = {
+    getCurrentPosition(okf, err) { G.pedidos++; responder({ okf, err }); },
+    watchPosition(okf, err) { G.pedidos++; const n = { okf, err }; const id = G.id++; G.watches.set(id, n); responder(n, id); return id; },
+    clearWatch(id) { G.watches.delete(id); },
+  };
+  // quando a localização liga, os seguimentos abertos voltam a receber posições (como no telemóvel)
+  setInterval(() => { if (G.ligada) for (const n of G.watches.values()) try { n.okf(pos()); } catch (e) {} }, 1000);
+  Object.defineProperty(Navigator.prototype, 'geolocation', { get: () => geo, configurable: true });
+  const q = navigator.permissions.query.bind(navigator.permissions);
+  navigator.permissions.query = (d) => (d && d.name === 'geolocation') ? Promise.resolve({ state: '${estado}', onchange: null }) : q(d);
+  try {
+    localStorage.setItem('parou_aviso_instalar', '1'); localStorage.setItem('parou_bemvindo', 'visto');
+    if ('${estado}' === 'granted') localStorage.setItem('parou_localizacao_ok', '1');
+  } catch (e) {}
+})();`;
+
+const browser = await chromium.launch(process.env.CHROME ? { executablePath: process.env.CHROME, args: ['--no-sandbox'] } : {});
+async function contexto(estado) {
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 800 }, locale: 'pt-PT', timezoneId: 'Europe/Lisbon', hasTouch: true, isMobile: true, userAgent: UA, serviceWorkers: 'block' });
+  await ctx.addInitScript({ content: TELEMOVEL(estado) });
+  await ctx.route(/(tile|openstreetmap|arcgisonline|cartocdn|basemaps)\./i, (rt) => rt.fulfill({ status: 200, contentType: 'image/png', body: PNG }));
+  const p = await ctx.newPage();
+  const erros = [];
+  p.on('pageerror', (e) => erros.push(String(e).slice(0, 160)));
+  return { ctx, p, erros };
+}
+
+{ // site autorizado, localização do telemóvel desligada → a pessoa liga-a e não toca em nada
+  const { ctx, p, erros } = await contexto('granted');
+  await p.goto(BASE + '/', { waitUntil: 'load', timeout: 60000 });
+  await p.waitForSelector('[data-teste="ativar-localizacao"]:visible', { timeout: 45000 }).catch(() => {});
+  const pedeParaLigar = await p.locator('[data-teste="ativar-localizacao"]:visible').count();
+  ok('localização desligada: a app pede para a ligar', pedeParaLigar > 0);
+  await p.screenshot({ path: `${SAIDA}/localizacao-automatica-1-desligada.png` });
+  // sem tocar em nada: a app não pode ficar a pedir sem parar (no máximo ~1 por segundo e meio)
+  const a = await p.evaluate(() => window.__geo.pedidos);
+  await p.waitForTimeout(6000);
+  const b = await p.evaluate(() => window.__geo.pedidos);
+  ok('enquanto está desligada, pergunta em silêncio sem exagerar (≤ 6 pedidos em 6 s)', b - a >= 2 && b - a <= 6, `${b - a} pedidos`);
+  // a pessoa liga a localização nas definições rápidas (a página continua visível)
+  const t0 = Date.now();
+  await p.evaluate(() => { window.__geo.ligada = true; });
+  const apareceu = await p.waitForFunction(() => ![...document.querySelectorAll('[data-teste="ativar-localizacao"]')].some((e) => e.getBoundingClientRect().width > 0),
+    null, { timeout: 8000 }).then(() => true).catch(() => false);
+  const ms = Date.now() - t0;
+  ok('ao ligar a localização, a app mostra onde a pessoa está sem tocar em nada', apareceu, `${ms} ms`);
+  ok('e fá-lo depressa (menos de 3 s)', apareceu && ms < 3000, `${ms} ms`);
+  const entregues = await p.evaluate(() => window.__geo.entregues);
+  ok('a app pediu e recebeu a posição do telemóvel', entregues > 0, `${entregues} posições`);
+  await p.waitForTimeout(1500);
+  await p.screenshot({ path: `${SAIDA}/localizacao-automatica-2-ligada.png` });
+  ok('sem erros na página', erros.length === 0, erros.join(' | '));
+  await ctx.close();
+}
+
+{ // nunca autorizou o site: a app não pergunta sozinha (a pergunta do browser só com um toque)
+  const { ctx, p, erros } = await contexto('prompt');
+  await p.goto(BASE + '/', { waitUntil: 'load', timeout: 60000 });
+  await p.waitForSelector('[data-teste="ativar-localizacao"]:visible', { timeout: 45000 }).catch(() => {});
+  await p.evaluate(() => { window.__geo.ligada = true; });
+  await p.waitForTimeout(5000);
+  const pedidos = await p.evaluate(() => window.__geo.pedidos);
+  ok('site nunca autorizado: nenhum pedido de localização sem um toque', pedidos === 0, `${pedidos} pedidos`);
+  ok('sem erros na página (sem autorização)', erros.length === 0, erros.join(' | '));
+  await ctx.close();
+}
+
+{ // página escondida (outra app à frente): não se pergunta
+  const { ctx, p } = await contexto('granted');
+  await p.goto(BASE + '/', { waitUntil: 'load', timeout: 60000 });
+  await p.waitForSelector('[data-teste="ativar-localizacao"]:visible', { timeout: 45000 }).catch(() => {});
+  await p.evaluate(() => {
+    Object.defineProperty(document, 'visibilityState', { get: () => 'hidden', configurable: true });
+    document.dispatchEvent(new Event('visibilitychange'));
+  });
+  await p.waitForTimeout(500);
+  const a = await p.evaluate(() => window.__geo.pedidos);
+  await p.waitForTimeout(5000);
+  const b = await p.evaluate(() => window.__geo.pedidos);
+  ok('com a página escondida não se fazem pedidos', b === a, `${b - a} pedidos`);
+  await ctx.close();
+}
+
+await browser.close();
+console.log();
+console.log(falhas ? `${falhas} falha(s)` : 'Tudo OK');
+process.exit(falhas ? 1 : 0);

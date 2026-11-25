@@ -239,6 +239,14 @@ jobs:
           mkdir -p ../res
           SAIDA=../res RAPIDO=${{ inputs.rapido }} timeout 1800 node a-bordo.mjs 2>&1 | tee ../res/consola.txt | tail -250
 
+      - name: Testar a localização automática (ligar a localização do telemóvel com a app aberta, sem tocar em nada)
+        continue-on-error: true
+        working-directory: auditoria
+        run: |
+          mkdir -p ../res
+          SAIDA=../res timeout 300 node localizacao-automatica.mjs 2>&1 | tee ../res/localizacao-automatica.txt | tail -20
+          exit ${PIPESTATUS[0]}
+
       - name: Testar o bilhete Andante nas opções de viagem (320, 390 e 1280 px; temas Claro, Escuro e Âmbar)
         continue-on-error: true
         working-directory: auditoria
