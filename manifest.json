@@ -1,7 +1,7 @@
 {
-  "built_at": "2026-11-24T22:53:55.527049+00:00",
+  "built_at": "2026-11-24T23:59:33.117731+00:00",
   "db_bytes": 750186496,
-  "gz_bytes": 204655945,
+  "gz_bytes": 204655904,
   "totals": {
     "lines": 2838,
     "stops": 50688,
@@ -1007,12 +1007,12 @@
           "total": 385
         },
         "servicos_com_data_hoje": [
-          "CU",
           "AU",
           "DU",
-          "FU",
-          "EU",
           "BU",
+          "FU",
+          "CU",
+          "EU",
           "BexpU"
         ],
         "viagens_por_servico": [
@@ -1068,5 +1068,5 @@
       }
     }
   },
-  "duration_s": 301
+  "duration_s": 295
 }
