@@ -101,12 +101,34 @@ async function transitous(o, d, hora) {
         sai: minDe(it.startTime), chega: minDe(it.endTime),
         aPe: Math.round(it.legs.filter((l) => l.mode === 'WALK').reduce((s, l) => s + (l.duration || 0), 0) / 60), trocas: it.transfers ?? Math.max(0, it.legs.filter((l) => l.mode !== 'WALK').length - 1),
         linhas: it.legs.filter((l) => l.mode !== 'WALK').map((l) => `${l.routeShortName || l.mode}@${minDe(l.startTime) >= 0 ? hm(minDe(l.startTime)) : '?'} ${l.from?.name || ''} [${l.agencyName || ''}]`).join(' > '),
+        // troços com transporte: de onde, para onde e a que horas (para ver os transbordos)
+        trocos: it.legs.filter((l) => l.mode !== 'WALK').map((l) => ({ de: [l.from?.lat, l.from?.lon], para: [l.to?.lat, l.to?.lon], sai: minDe(l.startTime), chega: minDe(l.endTime) })),
       }));
       return { ok: true, ops };
     }
     await dorme(3000);
   }
   return { ok: false, ops: [] };
+}
+
+// ---------------------------------------------------------------- causa provável de a PAROU chegar depois
+// Regras da PAROU (planeadorIndice.ts): até 4 viagens (3 transbordos); num transbordo, 2 min de margem mais o caminho a pé
+// (linha reta × 1,3 a 75 m/min, pelo menos 1 min; até 300 m, ou 500 m numa estação). O percurso do outro que não cabe nestas
+// regras explica a diferença; se cabe, a diferença vem dos dados ou da pesquisa.
+const MARGEM_PAROU = 2, RAIO_PAROU = 500;
+function causaProvavel(P, T) {
+  const tr = T.trocos || [];
+  if (tr.length > 4) return 'mais de 3 transbordos';
+  for (let i = 1; i < tr.length; i++) {
+    const a = tr[i - 1], b = tr[i];
+    if (!a.para?.[0] || !b.de?.[0]) continue;
+    const m = distM(a.para[0], a.para[1], b.de[0], b.de[1]);
+    if (m > RAIO_PAROU) return 'transbordo a pé mais longo do que a PAROU aceita';
+    const precisa = MARGEM_PAROU + (m < 1 ? 0 : Math.max(1, Math.round((m * 1.3) / 75)));
+    if (b.sai - a.chega < precisa) return `transbordo mais apertado (${b.sai - a.chega} min; a PAROU pede ${precisa})`;
+  }
+  if (P && T.aPe > P.aPe + 10) return 'anda muito mais a pé';
+  return 'dados ou pesquisa';
 }
 
 // ---------------------------------------------------------------- comparação
@@ -125,7 +147,7 @@ for (const reg of REGIOES) {
       else classe = P.chega <= T.chega - 3 ? 'parou_melhor' : P.chega >= T.chega + 3 ? 'parou_pior' : 'empate';
       // o outro chega antes mas a andar muito mais ou com mais transbordos: diferença de "regras", não só de cálculo
       const esforco = classe === 'parou_pior' && (T.aPe > P.aPe + 10 || T.trocas > P.trocas + 1);
-      casos.push({ reg: reg.nome, hora, ...par, classe, esforco, difMin: P && T ? P.chega - T.chega : null, parou: P, outro: T });
+      casos.push({ reg: reg.nome, hora, ...par, classe, esforco, causa: classe === 'parou_pior' || classe === 'so_outro' ? causaProvavel(P, T) : undefined, difMin: P && T ? P.chega - T.chega : null, parou: P, outro: T });
     }
   }
 }
@@ -145,6 +167,9 @@ if (ambos.length) {
   const med = (a) => { const s = [...a].sort((x, y) => x - y); return s[Math.floor(s.length / 2)]; };
   linhas.push(`Mediana (viagens com os dois): diferença de chegada ${med(ambos.map((x) => x.difMin))} min (negativo = PAROU antes) · a pé PAROU ${med(ambos.map((x) => x.parou.aPe))} min vs ${med(ambos.map((x) => x.outro.aPe))} · transbordos ${med(ambos.map((x) => x.parou.trocas))} vs ${med(ambos.map((x) => x.outro.trocas))}`);
 }
+const causas = {};
+for (const x of casos) if (x.causa) { const k = x.causa.replace(/ \(.*\)$/, ''); causas[k] = (causas[k] || 0) + 1; }
+linhas.push(`Causa provável onde a PAROU perde: ${Object.entries(causas).sort((a, b) => b[1] - a[1]).map(([k, v]) => `${k} ${v}`).join(' · ') || '-'}`);
 linhas.push('', 'Por região:');
 for (const reg of REGIOES) {
   const r = casos.filter((x) => x.reg === reg.nome), rc = contar(r);
@@ -153,7 +178,7 @@ for (const reg of REGIOES) {
 const piores = casos.filter((x) => x.classe === 'parou_pior' || x.classe === 'so_outro').sort((a, b) => (b.difMin ?? 999) - (a.difMin ?? 999));
 linhas.push('', `Onde a PAROU perde (${piores.length}), da maior diferença para a menor:`);
 for (const x of piores) {
-  linhas.push(`- [${x.reg} ${x.hora}] ${x.o.join(',')} → ${x.d.join(',')} (${x.km} km): ${x.classe === 'so_outro' ? 'PAROU sem percurso' : `+${x.difMin} min${x.esforco ? ' (o outro anda mais ou troca mais)' : ''}`}`);
+  linhas.push(`- [${x.reg} ${x.hora}] ${x.o.join(',')} → ${x.d.join(',')} (${x.km} km): ${x.classe === 'so_outro' ? 'PAROU sem percurso' : `+${x.difMin} min${x.esforco ? ' (o outro anda mais ou troca mais)' : ''}`} — ${x.causa}`);
   if (x.parou) linhas.push(`    PAROU      ${hm(x.parou.sai)}→${hm(x.parou.chega)} a pé ${x.parou.aPe} min, ${x.parou.trocas} transb.: ${x.parou.linhas}`);
   linhas.push(`    Transitous ${hm(x.outro.sai)}→${hm(x.outro.chega)} a pé ${x.outro.aPe} min, ${x.outro.trocas} transb.: ${x.outro.linhas}`);
 }
