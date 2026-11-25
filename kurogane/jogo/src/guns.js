@@ -3,6 +3,16 @@
 // ficam onde já estavam, para o silenciador, as miras, a lanterna e as mãos continuarem certos.
 const BLK = 0x1c1e21, GUN = 0x26282b, PARK = 0x2f3236, POLY = 0x2a2c30, WOOD = 0x7a4a2a, WOOD2 = 0x8a5a32, TAN = 0x6f6650;
 const R2 = Math.PI / 2;
+import { GUNSDATA } from './gunsdata.js';
+// armas novas (Blender, tamanho real): descodificadas uma vez e juntadas ao Builder por cor e material
+const _gd = {};
+const gb64 = (s, T) => { const b = atob(s), u = new Uint8Array(b.length); for (let i = 0; i < b.length; i++) u[i] = b.charCodeAt(i); return new T(u.buffer); };
+const gunTpl = k => _gd[k] || (_gd[k] = GUNSDATA[k].g.map(G => { const S = GUNSDATA[k].s, P = gb64(G.p, Int16Array), N = gb64(G.n, Int8Array), I = gb64(G.i, G.w === 4 ? Uint32Array : Uint16Array), n = I.length;
+  const p = new Float32Array(n * 3), nn = new Float32Array(n * 3); for (let t = 0; t < n; t++) { const v = I[t]; for (let c = 0; c < 3; c++) { p[t * 3 + c] = P[v * 3 + c] / 32767 * S; nn[t * 3 + c] = N[v * 3 + c] / 127; } }
+  return { c: G.c, m: G.m, g: { tpl: true, p, n: nn, uv: new Float32Array(n * 2) } }; }));
+const blendGun = k => b => { for (const T of gunTpl(k)) b.add(T.g, T.c, T.m); };
+// pontos de encaixe das armas novas (boca do cano, calha, mira de ferro, lanterna, punho, guarda-mão)
+export const GUNA = k => GUNSDATA[k] ? GUNSDATA[k].a : null;
 
 // calha picatinny: barra com dentes
 const rail = (b, y, z0, z1, w = 0.028) => { const L = z1 - z0; b.box(w, 0.01, L, 0, y, (z0 + z1) / 2, BLK, { mat: 'm' }); for (let z = z0 + 0.008; z < z1 - 0.004; z += 0.02) b.box(w + 0.006, 0.007, 0.009, 0, y + 0.007, z, BLK, { mat: 'm' }); };
@@ -11,7 +21,7 @@ const trig = (b, y, z, s = 1) => { b.box(0.008, 0.006, 0.07 * s, 0, y - 0.03 * s
 // carregador curvo em segmentos
 const curvedMag = (b, y, z, w, d, segH, n, bend, col, mat = 'v') => { let cy = y, cz = z, a = 0.08; for (let i = 0; i < n; i++) { b.box(w, segH + 0.004, d, 0, cy - segH / 2, cz, col, { mat, rx: a }); cy -= Math.cos(a) * segH; cz += Math.sin(a) * segH; a += bend; } b.box(w + 0.006, 0.012, d + 0.01, 0, cy - 0.004, cz, BLK, { rx: a - bend }); };
 
-export const GUNS = {
+const GUNS0 = {
   m4: b => {
     b.box(0.058, 0.068, 0.26, 0, -0.03, 0.09, GUN, { mat: 'm' }); // corpo de baixo
     b.rbox(0.062, 0.058, 0.3, 0.008, 0, 0.03, 0.11, PARK, { mat: 'm' }); // corpo de cima
@@ -140,3 +150,4 @@ export const GUNS = {
     for (const s2 of [-1, 1]) { b.cyl(0.006, 0.006, 0.22, 6, s2 * 0.012, -0.016, 0.72, BLK, { rx: R2, mat: 'm' }); b.box(0.014, 0.008, 0.018, s2 * 0.012, -0.016, 0.83, BLK); }
   },
 };
+export const GUNS = { ...GUNS0 }; for (const k in GUNSDATA) GUNS[k] = blendGun(k);

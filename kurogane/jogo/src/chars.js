@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { Builder, mat4, shade } from './builder.js';
 import { ITEMS, TINTS } from './items.js';
-import { GUNS } from './guns.js';
+import { GUNS, GUNA } from './guns.js';
 import { ZBODY } from './zbody.js';
 import { PBODY } from './pbody.js';
 
@@ -145,6 +145,7 @@ export const gearKeys = eq => { const out = new Set(); for (const s in eq) { con
 // onde fica a mira de ponto vermelho em cada arma (altura e distância no espaço da arma); a vista na 1.ª pessoa usa o mesmo sítio
 export const RDP = { m4: [0.085, 0.12], ak: [0.085, 0.1], smg: [0.07, 0.06], caca: [0.075, 0.12], m249: [0.085, 0.06], pkm: [0.085, 0.06] };
 export const WPUSH = [0.07, SHY - HIP - 0.12, 0.16];
+for (const k of LONG) { const A = GUNA(k); if (!A) continue; if (RDP[k]) RDP[k] = [A.rail[0] + 0.026, A.rail[1] + 0.02]; } // ponto vermelho em cima da calha das armas novas
 export function weaponGeos() {
   const BLK = 0x1c1e21, WOOD = 0x7a5232, ST = 0x8f8d86;
   const inHand = fn => geoOf(b => { b.push(0, -0.56, 0, 0, Math.PI / 2, 0); fn(b); b.pop(); });
@@ -183,6 +184,20 @@ export function weaponGeos() {
       for (const k in RDP) o['rd_' + k] = rd(...RDP[k]);
       const lt = (y, z) => geoOf(b => { b.push(0.07, BY, 0.16); b.cyl(0.016, 0.016, 0.09, 10, 0, y, z, BLK, { rx: Math.PI / 2, mat: 'm' }); b.cyl(0.019, 0.016, 0.02, 10, 0, y, z + 0.05, BLK, { rx: Math.PI / 2, mat: 'm' }); b.cyl(0.015, 0.015, 0.003, 10, 0, y, z + 0.062, 0xfff4d8, { rx: Math.PI / 2, mat: 'lit' }); b.box(0.012, 0.02, 0.05, 0, y + 0.02, z, 0x2a2c2e); b.pop(); });
       o.lt_m4 = lt(-0.055, 0.6); o.lt_ak = lt(-0.05, 0.6); o.lt_smg = lt(-0.055, 0.28); o.lt_caca = lt(-0.035, 0.62); o.lt_cacadeira = lt(-0.05, 0.62); o.lt_m249 = lt(-0.06, 0.4); o.lt_pkm = lt(-0.06, 0.42);
+      // armas novas (tamanho real): acessórios também em tamanho real, postos nos pontos de encaixe exportados do Blender
+      const supR = A => geoOf(b => { b.push(0.07, BY, 0.16); const y = A.muzzle[0], z = A.muzzle[1] - 0.014, r = A.supR || 0.0195, l = A.supL || 0.17, Z = z + l / 2;
+        b.cyl(r, r, l, 20, 0, y, Z, 0x2c2e30, { rx: Math.PI / 2, mat: 'm' }); b.cyl(r + 0.0015, r + 0.0015, 0.026, 20, 0, y, z + 0.013, 0x1d1f21, { rx: Math.PI / 2, mat: 'm' }); b.cyl(r - 0.002, r, 0.01, 20, 0, y, z + l + 0.004, 0x1d1f21, { rx: Math.PI / 2, mat: 'm' });
+        for (let i = 0; i < 6; i++) b.cyl(r + 0.0006, r + 0.0006, 0.004, 20, 0, y, z + 0.05 + i * 0.016, 0x202224, { rx: Math.PI / 2, mat: 'm' });
+        b.cyl(0.0055, 0.0055, 0.002, 12, 0, y, z + l + 0.0095, 0x0a0a0b, { rx: Math.PI / 2 }); b.pop(); });
+      const scR = (A, big) => geoOf(b => { b.push(0.07, BY, 0.16); const ry = A.rail[0], z = A.rail[1] + (A.scz || 0), h = big ? 0.04 : 0.033, y = ry + h, tr = big ? 0.015 : 0.0127, ob = big ? 0.028 : 0.021, L = big ? 0.34 : 0.27, C = 0x1b1c1e;
+        b.cyl(tr, tr, L * 0.55, 18, 0, y, z, C, { rx: Math.PI / 2, mat: 'm' }); // tubo
+        b.cyl(ob, tr, 0.05, 20, 0, y, z + L * 0.275 + 0.025, C, { rx: Math.PI / 2, mat: 'm' }); b.cyl(ob, ob, 0.05, 20, 0, y, z + L * 0.275 + 0.075, C, { rx: Math.PI / 2, mat: 'm' }); b.cyl(ob * 0.86, ob * 0.86, 0.002, 20, 0, y, z + L * 0.275 + 0.1, 0x3a5a7a, { rx: Math.PI / 2, mat: 'm' }); // objetiva
+        b.cyl(tr + 0.002, 0.019, 0.03, 18, 0, y, z - L * 0.275 - 0.015, C, { rx: Math.PI / 2, mat: 'm' }); b.cyl(0.019, 0.019, 0.05, 18, 0, y, z - L * 0.275 - 0.055, C, { rx: Math.PI / 2, mat: 'm' }); for (let i = 0; i < 6; i++) b.box(0.002, 0.003, 0.04, Math.sin(i * 1.05) * 0.019, y + Math.cos(i * 1.05) * 0.019, z - L * 0.275 - 0.055, 0x0f1011, { rz: -i * 1.05 }); // ocular estriada
+        b.cyl(0.011, 0.011, 0.018, 14, 0, y + tr + 0.009, z + 0.005, C, { mat: 'm' }); b.cyl(0.011, 0.011, 0.018, 14, tr + 0.009, y, z + 0.005, C, { rz: Math.PI / 2, mat: 'm' }); // torres de ajuste
+        for (const dz of [-0.055, 0.06]) { b.cyl(tr + 0.004, tr + 0.004, 0.014, 18, 0, y, z + dz, 0x2a2c2e, { rx: Math.PI / 2, mat: 'm' }); b.box(0.016, h - tr, 0.014, 0, ry + (h - tr) / 2, z + dz, 0x2a2c2e, { mat: 'm' }); b.box(0.026, 0.008, 0.02, 0, ry + 0.004, z + dz, 0x2a2c2e, { mat: 'm' }); } // anéis e base na calha
+        b.pop(); });
+      const ltR = A => geoOf(b => { b.push(0.07, BY, 0.16); const y = A.light[0], z = A.light[1]; b.cyl(0.0125, 0.0125, 0.09, 16, 0, y - 0.004, z, BLK, { rx: Math.PI / 2, mat: 'm' }); b.cyl(0.016, 0.0125, 0.022, 16, 0, y - 0.004, z + 0.056, BLK, { rx: Math.PI / 2, mat: 'm' }); b.cyl(0.0145, 0.0145, 0.002, 16, 0, y - 0.004, z + 0.067, 0xfff4d8, { rx: Math.PI / 2, mat: 'lit' }); b.box(0.014, 0.012, 0.04, 0, y + 0.006, z, 0x2a2c2e, { mat: 'm' }); b.pop(); });
+      for (const k of Object.keys(o)) { const m = k.match(/^(sup|sc8|sc|lt)_(.+)$/); if (!m) continue; const A = GUNA(m[2]); if (!A || m[2] === 'pistola') continue; o[k] = m[1] === 'sup' ? supR(A) : m[1] === 'lt' ? ltR(A) : scR(A, m[1] === 'sc8'); }
       o.lt_pistola = inHand(b => { b.cyl(0.014, 0.014, 0.07, 10, 0, -0.035, 0.1, BLK, { rx: Math.PI / 2, mat: 'm' }); b.cyl(0.012, 0.012, 0.003, 10, 0, -0.035, 0.137, 0xfff4d8, { rx: Math.PI / 2, mat: 'lit' }); });
       return o; })(),
     katana: inHand(b => { b.cyl(0.02, 0.022, 0.25, 8, 0, 0, -0.02, 0x2a2230, { rx: Math.PI / 2 }); b.cyl(0.045, 0.045, 0.012, 14, 0, 0, 0.11, 0x3a3328, { rx: Math.PI / 2, mat: 'm' }); b.box(0.01, 0.045, 0.76, 0, 0, 0.5, 0xd6dade, { mat: 'm' }); }),
@@ -204,6 +219,7 @@ const _t = new THREE.Vector3(), _sh = new THREE.Vector3(), _pl = new THREE.Vecto
 // onde pegam as mãos em cada arma comprida (no espaço da arma, antes do empurrão para o ombro): punho e guarda-mão
 const GRIP = { m4: [[0, -0.1, -0.02], [0, -0.04, 0.36]], ak: [[0, -0.09, -0.06], [0, -0.035, 0.34]], smg: [[0, -0.07, 0.04], [0, -0.03, 0.26]], cacadeira: [[0, -0.06, 0.0], [0, -0.04, 0.36]], caca: [[0, -0.06, -0.12], [0, -0.03, 0.3]],
   cheytac: [[0, -0.1, -0.04], [0, -0.04, 0.38]], barrett: [[0, -0.11, -0.06], [0, -0.05, 0.36]], m249: [[0, -0.1, -0.04], [0, -0.06, 0.34]], pkm: [[0, -0.1, -0.04], [0, -0.06, 0.34]] };
+for (const k of LONG) { const A = GUNA(k); if (A) GRIP[k] = [[0, A.grip[1] - 0.012, A.grip[2] + 0.01], [0, A.fore[1] - 0.034, A.fore[2]]]; } // armas novas: mão no punho e mão de apoio por baixo do guarda-mão
 
 
 // ---------- corpo do jogador e dos comerciantes (Blender + MakeHuman): uma malha com pele por partes, presa aos mesmos

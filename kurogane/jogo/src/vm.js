@@ -3,6 +3,7 @@
 import * as THREE from 'three';
 import { Builder } from './builder.js';
 import { weaponGeos, RDP, WPUSH, LONG } from './chars.js';
+import { GUNA } from './guns.js';
 
 // onde pegam as mãos (no espaço da arma, antes do empurrão para o ombro): punho e guarda-mão
 // (x positivo da arma fica à esquerda no ecrã: a mão de apoio agarra o guarda-mão por esse lado)
@@ -47,9 +48,10 @@ export function makeVM() {
       for (const w of [k, att.sup && 'sup_' + k, att.light && 'lt_' + k, sk && sk + k]) if (w && W[w]) gun.add(meshOf(W[w]));
       const [ry, rz] = RDP[k] || [0.085, 0.1]; if (att.scope === 'reddot' && RDP[k]) gun.add(meshOf(rdGeo(ry, rz)));
       // arma virada para a frente (−z da câmara) e o vidro da mira no eixo da vista; mira de ferro: o olho um pouco acima, a ver por cima da arma
-      const S = new THREE.Vector3(WPUSH[0], WPUSH[1] + ry + (att.scope === 'reddot' ? 0.012 : 0.035), WPUSH[2] + rz);
+      const A = GUNA(k), S = A && att.scope !== 'reddot' && !(att.scope && att.scope !== 'iron') ? new THREE.Vector3(WPUSH[0], WPUSH[1] + A.iron, WPUSH[2] + A.eyez + EYE) : new THREE.Vector3(WPUSH[0], WPUSH[1] + ry + (att.scope === 'reddot' ? 0.012 : 0.035), WPUSH[2] + rz); // arma nova sem ótica: alinhar pelas miras de ferro
       gun.rotation.y = Math.PI; gun.position.set(S.x, -S.y, -EYE + S.z); rig.add(gun); gun.updateMatrix();
-      const hp = (HANDS[k] || HANDS.m4).map(h => new THREE.Vector3(WPUSH[0] + h[0], WPUSH[1] + h[1], WPUSH[2] + h[2]).applyMatrix4(gun.matrix));
+      const HH = A ? [[-0.032, A.grip[1] - 0.01, A.grip[2] + 0.012], [0.03, A.fore[1] - 0.03, A.fore[2] - 0.02]] : (HANDS[k] || HANDS.m4);
+      const hp = HH.map(h => new THREE.Vector3(WPUSH[0] + h[0], WPUSH[1] + h[1], WPUSH[2] + h[2]).applyMatrix4(gun.matrix));
       const b = new Builder(0); armTo(b, new THREE.Vector3(0.25, -0.3, -0.13), hp[0], look.top, look.skin); armTo(b, new THREE.Vector3(-0.2, -0.3, -0.3), hp[1], look.top, look.skin); // do cotovelo à mão
       arms = new THREE.Group(); for (const [kk] of b.buckets) arms.add(new THREE.Mesh(b.merged(kk), M.arm)); rig.add(arms); return;
     }
