@@ -249,7 +249,11 @@ jobs:
         run: |
           mkdir -p ../res
           SAIDA=../res timeout 300 node arranque-rapido.mjs 2>&1 | tee ../res/arranque-rapido.txt | tail -30
-          exit ${PIPESTATUS[0]}
+          a=${PIPESTATUS[0]}
+          # o mapa começa a carregar antes da app, e só os quadrados que vai mostrar
+          timeout 300 node mapa-cedo.mjs 2>&1 | tee ../res/mapa-cedo.txt | tail -30
+          b=${PIPESTATUS[0]}
+          exit $(( a || b ))
 
       - name: Testar o primeiro ecrã sem localização (pontos de partida, browser)
         continue-on-error: true
