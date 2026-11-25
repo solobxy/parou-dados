@@ -1,7 +1,7 @@
 name: Planeador — comparação com o Transitous
 
-# Toda a semana (e quando se pede): as mesmas viagens (Lisboa, Porto, Coimbra, Braga, Funchal e Faro, às 08:00 e às 17:30 da
-# próxima quarta-feira) na PAROU (app de main com os dados do dia) e no Transitous (planeador aberto europeu, MOTIS).
+# Toda a semana (e quando se pede): as mesmas viagens (Lisboa, Porto, Coimbra, Braga, Funchal e Faro, às 08:00 e às 17:30 do
+# próximo dia útil) na PAROU (app de main com os dados do dia) e no Transitous (planeador aberto europeu, MOTIS).
 # Diz em quantas a PAROU chega antes, igual ou depois, e mostra lado a lado os percursos onde perde.
 # Resultado no ramo "comparar-planeadores-resultado" (resumo.txt e casos.json).
 

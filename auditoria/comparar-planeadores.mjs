@@ -17,13 +17,17 @@ const UA = 'PAROU.PT comparacao/1.0 (+https://parou.pt)';
 const ESPACO_MS = Number(process.env.ESPACO_MS || 1500);
 const dorme = (ms) => new Promise((r) => setTimeout(r, ms));
 
-// ---------------------------------------------------------------- dia (próxima quarta-feira, a 2 ou mais dias) e fuso
-function proximaQuarta() {
-  const d = new Date(Date.now() + 2 * 86400_000);
-  while (d.getUTCDay() !== 3) d.setUTCDate(d.getUTCDate() + 1);
+// ---------------------------------------------------------------- dia (o próximo dia útil) e fuso
+// Amanhã ou o primeiro dia útil a seguir (sem fins de semana nem feriados nacionais fixos). Não mais longe: a base só tem 3 dias
+// dos horários da Carris Metropolitana (feed "cmh"), e uma data fora deles deixava Lisboa sem as linhas dela.
+const FERIADOS = ['01-01', '04-25', '05-01', '06-10', '08-15', '10-05', '11-01', '12-01', '12-08', '12-25'];
+function proximoDiaUtil() {
+  const d = new Date(Date.now() + 86400_000);
+  while (d.getUTCDay() === 0 || d.getUTCDay() === 6 || FERIADOS.includes(d.toISOString().slice(5, 10))) d.setUTCDate(d.getUTCDate() + 1);
   return d.toISOString().slice(0, 10);
 }
-const DATA = process.env.DATA || proximaQuarta();
+const DATA = process.env.DATA || proximoDiaUtil();
+const DIA_SEMANA = ['domingo', 'segunda-feira', 'terça-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira', 'sábado'][new Date(`${DATA}T12:00:00Z`).getUTCDay()];
 function desvioLisboa(dataIso) { // minutos à frente de UTC (0 no inverno, 60 no verão)
   const f = new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Lisbon', timeZoneName: 'longOffset' }).formatToParts(new Date(`${dataIso}T12:00:00Z`));
   const m = /GMT([+-])(\d{2}):(\d{2})/.exec(f.find((p) => p.type === 'timeZoneName')?.value || '');
@@ -159,7 +163,7 @@ const validos = casos.filter((c) => c.classe !== 'erro' && c.classe !== 'nenhum'
 const pct = (n) => (validos.length ? `${((100 * n) / validos.length).toFixed(1)}%` : '-');
 const c = contar(casos);
 const linhas = [];
-linhas.push(`Comparação PAROU × Transitous (MOTIS) — ${DATA} (quarta-feira), 08:00 e 17:30, ${casos.length} viagens (${validos.length} com percurso em pelo menos um)`);
+linhas.push(`Comparação PAROU × Transitous (MOTIS) — ${DATA} (${DIA_SEMANA}), 08:00 e 17:30, ${casos.length} viagens (${validos.length} com percurso em pelo menos um)`);
 linhas.push(`Chega 3+ min antes: PAROU ${c.parou_melhor || 0} (${pct(c.parou_melhor || 0)}) · empate ${c.empate || 0} (${pct(c.empate || 0)}) · Transitous ${c.parou_pior || 0} (${pct(c.parou_pior || 0)}; ${casos.filter((x) => x.esforco).length} delas a andar 10+ min a mais ou com mais transbordos)`);
 linhas.push(`Só a PAROU tem percurso: ${c.so_parou || 0} · só o Transitous: ${c.so_outro || 0} · nenhum: ${c.nenhum || 0} · erros: ${c.erro || 0}`);
 const ambos = casos.filter((x) => x.parou && x.outro);
