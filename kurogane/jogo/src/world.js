@@ -171,14 +171,14 @@ export function buildWorld(scene, mats, A) {
 
   // portas a sério: fechadas travam e tapam; abertas ficam encostadas para dentro (uma ou duas folhas)
   const door = (horiz, fixed, inward, s0, s1, t, L, C, cut, col) => {
-    const n = s1 - s0 >= 1.75 ? 2 : 1, lw = (s1 - s0 - 0.12) / n, face = fixed + inward * (t / 2 - 0.03);
+    const n = s1 - s0 >= 1.75 ? 2 : 1, lw = (s1 - s0 - 0.03) / n, face = fixed + inward * (t / 2 - 0.03);
     const th = (dx, dz) => Math.atan2(-dz, dx);
     const D = { x: horiz ? (s0 + s1) / 2 : fixed, z: horiz ? fixed : (s0 + s1) / 2, horiz, inward, lv: L, C, cut, col, w: s1 - s0, leaves: [], ro: [], t: 0, auto: false };
     D.t = D.target = rnd() < 0.2 ? 1 : 0;
     D.rc = { x0: horiz ? s0 : fixed - t / 2, z0: horiz ? fixed - t / 2 : s0, x1: horiz ? s1 : fixed + t / 2, z1: horiz ? fixed + t / 2 : s1, k: 's', h: 2.3, lv: L, door: D };
     W.rects.push(D.rc);
     for (let i = 0; i < n; i++) {
-      const sg = i === 0 ? 1 : -1, hs = i === 0 ? s0 + 0.06 : s1 - 0.06;
+      const sg = i === 0 ? 1 : -1, hs = i === 0 ? s0 + 0.012 : s1 - 0.012;
       const hx = horiz ? hs : face, hz = horiz ? face : hs;
       const cdx = horiz ? sg : 0, cdz = horiz ? 0 : sg, odx = horiz ? 0 : inward, odz = horiz ? inward : 0;
       const tc = th(cdx, cdz); let to = th(odx, odz); let d = to - tc; while (d > Math.PI) d -= 2 * Math.PI; while (d < -Math.PI) d += 2 * Math.PI;

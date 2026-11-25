@@ -13,6 +13,7 @@
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;height:100%;overflow:hidden;-webkit-touch-callout:none;-webkit-text-size-adjust:100%;background:#121110;color:var(--tx);font:500 15px/1.35 "Roboto Condensed",system-ui,sans-serif;-webkit-user-select:none;user-select:none;touch-action:none;overscroll-behavior:none}
 canvas#c{position:fixed;inset:0;width:100%;height:100%;display:block}
+#vig{position:fixed;inset:0;pointer-events:none;background:radial-gradient(ellipse 75% 70% at 50% 50%,rgba(0,0,0,0) 55%,rgba(14,10,6,.26) 100%)}body.menu #vig{display:none}
 button{font:inherit;color:inherit;border:0;background:none;cursor:pointer;padding:0}
 button:focus-visible{outline:2px solid var(--amb);outline-offset:2px}
 [hidden]{display:none!important}
@@ -508,7 +509,7 @@ input[type=range]{width:160px;accent-color:#E6E2DA;height:30px}
 #tScope{right:calc(168px + var(--sr));bottom:calc(122px + var(--sb))}
 #tLower{right:calc(18px + var(--sr));bottom:calc(274px + var(--sb))}
 #tBreath{left:calc(16px + var(--sl));bottom:calc(252px + var(--sb))}
-#tUse{left:50%;transform:translateX(-50%);bottom:calc(266px + var(--sb));max-width:calc(100vw - 170px)}#tSug{left:calc(16px + var(--sl));bottom:calc(252px + var(--sb))}#tLock{left:50%;transform:translateX(-50%);bottom:calc(322px + var(--sb))}
+#tUse{left:50%;transform:translateX(-50%);bottom:calc(266px + var(--sb));max-width:calc(100vw - 170px)}#tSug{left:calc(16px + var(--sl));top:calc(12px + var(--st) + var(--mmw) + 12px);bottom:auto}#tLock{left:50%;transform:translateX(-50%);bottom:calc(322px + var(--sb))}
 #tSprint{left:calc(16px + var(--sl));bottom:calc(186px + var(--sb))}
 #dUp{left:calc(20px + var(--sl));bottom:calc(222px + var(--sb))}#dDn{left:calc(20px + var(--sl));bottom:calc(126px + var(--sb))}#dL{right:calc(112px + var(--sr));bottom:calc(160px + var(--sb))}#dR{right:calc(18px + var(--sr));bottom:calc(160px + var(--sb))}
 #tLight{left:calc(16px + var(--sl));bottom:calc(118px + var(--sb))}
@@ -660,12 +661,12 @@ button:focus-visible{outline:2px solid #E6E2DA}
 /* comandos para canhotos: o lado dos comandos troca (o conteúdo dos botões volta ao normal) */
 body.mir #touch{transform:scaleX(-1)}
 body.mir #touch .tb>*,body.mir #touch .ghost{transform:scaleX(-1)}
-@media (orientation:landscape){#ammo{left:calc(50% + var(--slot) * 3 + 20px)}#ammo span{max-width:calc(50vw - var(--slot) * 3 - 132px - var(--sr));overflow:hidden;text-overflow:ellipsis}body.mir #ammo{left:auto;right:calc(50% + var(--slot) * 3 + 20px);align-items:flex-end;text-align:right}body.mir #ammo span{max-width:calc(50vw - var(--slot) * 3 - 132px - var(--sl))}}
+@media (orientation:landscape){#ammo{left:calc(50% + var(--slot) * 3 + 20px)}#ammo span{max-width:calc(50vw - var(--slot) * 3 - 132px - var(--sr));overflow:hidden;text-overflow:ellipsis}body.driving #ammo span{max-width:none}body.mir #ammo{left:auto;right:calc(50% + var(--slot) * 3 + 20px);align-items:flex-end;text-align:right}body.mir #ammo span{max-width:calc(50vw - var(--slot) * 3 - 132px - var(--sl))}}
 @media (orientation:portrait){body.mir #ammo{right:auto;left:calc(92px + var(--sl))}}
 </style>
 </head>
 <body>
-<canvas id="c"></canvas>
+<canvas id="c"></canvas><div id="vig" aria-hidden="true"></div>
 <div id="dmg" aria-hidden="true"></div><div id="lowhp" aria-hidden="true"></div>
 <div id="hud" hidden>
   <div id="tl"><div id="mm" data-h="mm" title="Abrir mapa"><canvas id="mmc"></canvas></div><div id="zone" data-h="zone"><b>—</b><span></span></div></div>
@@ -733,7 +734,7 @@ body.mir #touch .tb>*,body.mir #touch .ghost{transform:scaleX(-1)}
   <nav class="menu"><button class="mi pri" id="sCont" hidden><b>Continuar</b><em>Voltas onde ficaste</em></button><button class="mi pri" id="sPlay"><b>Jogar</b><em>Acordas perto de uma vila ou monumento</em></button><button class="mi" id="sSet"><b>Definições</b><em>Controlos, imagem e som</em></button></nav>
   <div class="onl" id="sOnl" role="status"><i class="dot" aria-hidden="true"></i><span><b>Servidor</b><em id="sOnT">A ver quem está a jogar…</em></span></div>
   <div class="keys" id="sKeys"></div>
-  <div class="foot">Protótipo 0.27 · um servidor para todos · quem sai fica a dormir no mundo</div>
+  <div class="foot">Protótipo 0.28 · um servidor para todos · quem sai fica a dormir no mundo</div>
 </div><button id="sMus" aria-label="Música do menu"><span class="on">{{volume-2}}</span><span class="off">{{volume-x}}</span></button><a class="credit" href="https://dinissousa.pt" target="_blank" rel="noopener">feito por dinissousa.pt</a></div>
 <div id="pfm" class="ov" hidden><div class="pfbox"><div class="pfh"><b id="pfT"></b><button class="close" id="pfX" aria-label="Fechar">{{x}}</button></div><div id="pfB" class="pfb"></div></div></div>
 <div id="adm" class="ov" hidden><div class="sp2"><div class="ihead"><b class="cond adh">Administração</b><span class="admr" id="admR"></span><div class="tabs" id="admTabs"><button data-t="p" class="on">Jogadores</button><button data-t="e">Eu</button><button data-t="b">Banidos</button><button data-t="c">Clãs</button></div><button class="close" id="admX" aria-label="Fechar">{{x}}</button></div><div class="sbody" id="admB"></div></div></div>

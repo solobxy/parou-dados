@@ -106,7 +106,7 @@ export function makeBase({ scene, W, G, audio, addRect, removeRect, visDirty, in
     else if (P.t === 'janela') { add(a0, a0 + 0.9, 's', top); add(a1 - 0.9, a1, 's', top); add(a0 + 0.9, a1 - 0.9, 'g', top, 0, { win: 1, sill: FH + 1.0 }); }
   };
   // porta de verdade (abre, fecha, trava zombies e balas), integrada no sistema de portas do mapa
-  const doorGeo = new THREE.BoxGeometry(1, 2.2, 0.06); doorGeo.translate(0.5, 1.1, 0);
+  const doorGeo = new THREE.BoxGeometry(1, 2.24, 0.06); doorGeo.translate(0.5, 1.12, 0);
   const mkDoor = P => {
     const E = edgeGeom(P.k), a0 = E.horiz ? E.x0 : E.z0, a1 = E.horiz ? E.x1 : E.z1, s0 = a0 + DF, s1 = a1 - DF, w = s1 - s0, fixed = E.horiz ? E.z : E.x;
     const D = { base: P, x: E.horiz ? (s0 + s1) / 2 : fixed, z: E.horiz ? fixed : (s0 + s1) / 2, horiz: E.horiz, inward: 1, lv: 0, C: null, col: 0, w, leaves: [], ro: [], t: 0, target: 0, auto: false };

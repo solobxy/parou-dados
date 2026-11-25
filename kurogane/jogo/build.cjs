@@ -29,7 +29,16 @@ html = html.replace('/*FONTS*/', () => fonts).replace('<script>/*JS*/</script>',
 fs.writeFileSync(path.join(OUT, 'index.html'), html);
 // versão para o servidor: com as estatísticas próprias (no artefacto a página não pode enviar dados)
 fs.mkdirSync(path.join(OUT, 'web'), { recursive: true });
-fs.writeFileSync(path.join(OUT, 'web', 'index.html'), html.replace('</head>', '<script>window.KG_ONLINE = 1</script>\n<script defer src="/_e.js" data-site="kurogane"></script>\n</head>'));
+const BUILD = require('crypto').createHash('sha256').update(html).digest('hex').slice(0, 12); // a página do site pergunta por versao.txt e, se mudar, pede para atualizar
+fs.writeFileSync(path.join(OUT, 'web', 'index.html'), html.replace('</head>', `<script>window.KG_ONLINE = 1; window.KG_BUILD = '${BUILD}'</script>\n<script defer src="/_e.js" data-site="kurogane"></script>\n</head>`));
+fs.writeFileSync(path.join(OUT, 'web', 'versao.txt'), BUILD + '\n');
 console.log('index.html', (fs.statSync(path.join(OUT, 'index.html')).size / 1024).toFixed(0) + ' KB', 'jp glyphs', cjk.size, 'jp font', (fs.statSync(jpOut).size / 1024).toFixed(1) + ' KB');
 // música do menu: ficheiro ao lado do index.html (no site e nos testes)
-for (const f of ['menu.mp3', 'fundo.mp3', 'perigo1.mp3', 'perigo2.mp3', 'perigo3.mp3']) { const a = path.join(fs.existsSync(path.join(__dirname, 'assets')) ? path.join(__dirname, 'assets') : path.join(__dirname, '../../sites/kurogane'), f); if (fs.existsSync(a)) { fs.copyFileSync(a, path.join(OUT, f)); fs.copyFileSync(a, path.join(OUT, 'web', f)); } }
+const findA = f => [path.join(__dirname, 'assets', f), path.join(__dirname, '../../sites/kurogane', f), path.join(__dirname, '../../parou-dados/sites/kurogane', f)].find(fs.existsSync);
+for (const f of ['menu.mp3', 'fundo.mp3', 'perigo1.mp3', 'perigo2.mp3', 'perigo3.mp3']) { const a = findA(f); if (a) { fs.copyFileSync(a, path.join(OUT, f)); fs.copyFileSync(a, path.join(OUT, 'web', f)); } }
+// texturas do chão (ficheiros ao lado: a página carrega-as depois de arrancar)
+for (const d of [path.join(OUT, 'tex'), path.join(OUT, 'web', 'tex')]) fs.mkdirSync(d, { recursive: true });
+for (const f of ['grass.jpg', 'asph.jpg', 'dirt.jpg', 'conc.jpg', 'tile.jpg']) { const a = findA('tex/' + f); if (a) { fs.copyFileSync(a, path.join(OUT, 'tex', f)); fs.copyFileSync(a, path.join(OUT, 'web', 'tex', f)); } else console.log('falta a textura', f); }
+// sons reais (CC0) ao lado da página
+for (const d of [path.join(OUT, 'sfx'), path.join(OUT, 'web', 'sfx')]) fs.mkdirSync(d, { recursive: true });
+{ const sd = findA('sfx'); if (sd) for (const f of fs.readdirSync(sd)) if (f.endsWith('.mp3')) { fs.copyFileSync(path.join(sd, f), path.join(OUT, 'sfx', f)); fs.copyFileSync(path.join(sd, f), path.join(OUT, 'web', 'sfx', f)); } else; else console.log('faltam os sons'); }

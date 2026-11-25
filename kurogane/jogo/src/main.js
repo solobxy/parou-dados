@@ -169,6 +169,8 @@ async function boot() {
     return best;
   };
   const los = (ax, az, bx, bz, ign, kinds = 's', lv = 0, hh = 1.2) => { const dx = bx - ax, dz = bz - az, d = Math.hypot(dx, dz); if (d < 0.01) return true; return ray(ax, az, dx / d, dz / d, d, ign, kinds, lv, hh) >= d - 0.05; };
+  // altura do que está construído à volta (telhados, torres): o helicóptero passa por cima
+  const tallAt = (x, z, m = 4) => { let h = 0; near(x - m, z - m, x + m, z + m, r => { if (x > r.x0 - m && x < r.x1 + m && z > r.z0 - m && z < r.z1 + m) h = Math.max(h, (r.h || 0) + (r.lv || 0) * 3.7); }, () => {}); return h; };
   const solidAt = (x, z, m = 0.4, lv = 0) => { let hit = false; near(x - m, z - m, x + m, z + m, r => { if ((r.lv || 0) === lv && x > r.x0 - m && x < r.x1 + m && z > r.z0 - m && z < r.z1 + m) hit = true; }, c => { if ((c.lv || 0) === lv && Math.hypot(x - c.x, z - c.z) < c.r + m) hit = true; }); return hit; };
   for (const r of W.rects) { const th = Math.min(r.x1 - r.x0, r.z1 - r.z0); r.top = !r.stairRail && !r.door && th >= 0.45 && r.h <= 2.9 && r.k !== 'g'; r.climb = !r.stairRail && !r.door && r.h > 0.35 && r.h <= 2.9; }
   // altura do que está por baixo dos pés (tejadilhos, caixas, muros largos)
@@ -242,7 +244,7 @@ async function boot() {
     const g = b.merged('v'); if (g) { const m = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ vertexColors: true, depthFunc: THREE.GreaterDepth, depthWrite: false, transparent: true, opacity: 0.5, fog: true })); m.renderOrder = 4; m.frustumCulled = false; scene.add(m); G0.xray = m; } }
   // ---------- portas: folhas de madeira que rodam na dobradiça; fechadas travam pessoas, zombies e balas
   const DN = W.doors.reduce((n, D) => n + D.leaves.length, 0);
-  const leafGeo = geo1(b => { b.box(1, 2.16, 0.05, 0.5, 1.1, 0, 0xffffff); for (const zz of [0.028, -0.028]) { b.box(0.78, 0.8, 0.008, 0.5, 1.6, zz, 0xd9d4cc); b.box(0.78, 0.86, 0.008, 0.5, 0.62, zz, 0xd9d4cc); } });
+  const leafGeo = geo1(b => { b.box(1, 2.275, 0.05, 0.5, 1.1475, 0, 0xffffff); for (const zz of [0.028, -0.028]) { b.box(0.78, 0.84, 0.008, 0.5, 1.68, zz, 0xd9d4cc); b.box(0.78, 0.9, 0.008, 0.5, 0.64, zz, 0xd9d4cc); } });
   const knobGeo = geo1(b => { for (const zz of [0.05, -0.05]) { b.box(0.12, 0.025, 0.025, 0.86, 1.02, zz, 0xc9c4b8); b.box(0.05, 0.07, 0.012, 0.9, 1.0, zz * 0.6, 0xb8b2a6); } });
   const leafM = new THREE.InstancedMesh(leafGeo, mats.v, Math.max(1, DN)), knobM = new THREE.InstancedMesh(knobGeo, mats.m, Math.max(1, DN)); leafM.renderOrder = knobM.renderOrder = 3;
   for (const m of [leafM, knobM]) { m.castShadow = true; m.receiveShadow = true; m.frustumCulled = false; scene.add(m); }
@@ -366,7 +368,7 @@ async function boot() {
   const glowBags = () => { const p = G.p; if (!p) return; glowMat.opacity = 0.5 + 0.3 * Math.sin(G.t * 4.2); haloMat.opacity = 0.45 + 0.2 * Math.sin(G.t * 4.2); for (const b of G.bags) { const m = b.mesh; if (!m) continue; const near = p.alive && (b.lv || 0) === (p.lv || 0) && Math.hypot(b.x - p.x, b.z - p.z) < 6; const g = m.userData.gl || (near ? addGlow(m) : null); if (g) g.visible = near; } };
 
   // ---------- estado
-  const G = window.G = {
+  const G = window.G = { audio,
     renderer,
     TOUCH, W, ITEMS, RECIPES, CAP, t: 0, playing: false, invOpen: false, mapOpen: false, paused: false,
     p: null, inv: new Inv(), sel: 0, zs: [], bags: [], box: null, prompt: null,
@@ -590,6 +592,9 @@ async function boot() {
   // até onde vai uma bala em linha reta: a primeira parede, ou o zombie que a segura (o servidor usa isto para não acertares num jogador escondido atrás de um zombie)
   const stopAt = (O, di, pen) => { _wq.copy(O).addScaledVector(di, 420); let s = wallHit(O, _wq), left = pen; const hs = []; for (const z of G.zs) { if (z.state === 'dead' || z.hide) continue; if (Math.abs(z.x - O.x) > 420 || Math.abs(z.z - O.z) > 420) continue; const r = zoneHit(z, O, _wq); if (r && r.s < s) hs.push(r); }
     hs.sort((a, b) => a.s - b.s); for (const r of hs) { const c = PENC[r.zone] || 0.9; if (left > c + 0.05) left -= c; else { s = r.s; break; } } return s * 420; };
+  // som de cada arma (gravações reais) e o som da recarga
+  const GSND = { pistola: 'pistola', revolver: 'revolver', smg: 'smg', m4: 'm4', ak: 'ak', cacadeira: 'cacadeira', caca: 'caca', cheytac: 'pesado', barrett: 'pesado', m249: 'm4', pkm: 'ak' };
+  const reloadSnd = k => k === 'pistola' || k === 'revolver' ? 'recarregar-pistola' : k === 'cacadeira' ? 'recarregar-caca' : k === 'caca' || k === 'cheytac' ? 'ferrolho' : 'recarregar';
   const fire = (it, g) => {
     const p = G.p; if (p.reload > 0 || p.cd > 0) return false;
     const AM = ammoOf(g); if (!it.ak || !AM.includes(it.ak)) it.ak = AM[0];
@@ -608,7 +613,7 @@ async function boot() {
     const ss = v0 > 343, nr = sup ? g.noise * (ss ? 0.5 : 0.2) : g.noise;
     const mx = p.x + Math.sin(p.yaw) * 0.85, my = p.y + 1.3, mz = p.z + Math.cos(p.yaw) * 0.85;
     vm.fire(); flash.position.set(mx, my, mz); flash.intensity = sup ? 0 : 6 + 14 * (1 - (G.day ?? 1)); G.flashT = 0.06; G.buzz(n > 1 ? 30 : 10);
-    if (sup) audio.play('abafado', ss ? 0.85 : 0.5); else audio.play(ITEMS[it.k].heavy ? 'grosso' : g.auto ? 'm4' : 'pistola', it.k === 'cacadeira' || it.k === 'caca' ? 1.3 : 1);
+    if (sup) audio.play('abafado', ss ? 0.85 : 0.5); else if (!audio.shot(GSND[it.k] || 'pistola', 1, 0, { vary: 0.04 })) audio.play(ITEMS[it.k].heavy ? 'grosso' : g.auto ? 'm4' : 'pistola', it.k === 'cacadeira' || it.k === 'caca' ? 1.3 : 1);
     noise(p.x, p.z, nr);
     if (G.net && G.net.on) { const far = G.net.near(O.x, O.z, 420), Ls = ds.map(di => far ? stopAt(O, di, B.bp ?? B.pen) : 420); G.net.shot(O, dir, it.ak, n, Math.max(...Ls), sup, ds, Ls); }
     G.ui.refresh(true); return true;
@@ -622,9 +627,9 @@ async function boot() {
     const pickAmmo = () => it.pref && AM.includes(it.pref) && G.inv.count(it.pref) > 0 ? it.pref : (G.inv.count(it.ak) > 0 ? it.ak : AM.find(k => G.inv.count(k) > 0));
     if (g.clip) {
       const cur = it.mg ? it.ammo : -1, best = clipsOf(g.clip).sort((a, b) => (b.am || 0) - (a.am || 0))[0];
-      if (best && ((best.am || 0) > Math.max(0, cur) || !it.mg)) { p.reload = g.reload; p.reloadDur = g.reload; p.reloadMode = 'swap'; p.reloadMag = best; audio.play('recarregar'); return; }
+      if (best && ((best.am || 0) > Math.max(0, cur) || !it.mg)) { p.reload = g.reload; p.reloadDur = g.reload; p.reloadMode = 'swap'; p.reloadMag = best; audio.play(reloadSnd(it.k)); return; }
       const want = pickAmmo();
-      if (it.mg && want && (it.ammo < capOf(it) || want !== it.ak)) { const t = g.reload * 1.8; p.reload = t; p.reloadDur = t; p.reloadMode = 'fill'; p.reloadK = want; audio.play('recarregar'); if (!quiet) G.ui.toast('Sem carregador cheio: a encher este à mão'); return; }
+      if (it.mg && want && (it.ammo < capOf(it) || want !== it.ak)) { const t = g.reload * 1.8; p.reload = t; p.reloadDur = t; p.reloadMode = 'fill'; p.reloadK = want; audio.play(reloadSnd(it.k)); if (!quiet) G.ui.toast('Sem carregador cheio: a encher este à mão'); return; }
       if (!it.mg) { G.ui.toast('Sem carregador para a ' + ITEMS[it.k].s); return; }
       if (it.ammo >= capOf(it)) return;
       G.ui.toast('Sem balas: ' + AM.map(k => ITEMS[k].s).join(' ou ')); return;
@@ -632,7 +637,7 @@ async function boot() {
     const want = pickAmmo();
     if (!want) { G.ui.toast('Sem balas: ' + AM.map(k => ITEMS[k].s).join(' ou ')); return; }
     if (it.ammo >= g.mag && want === it.ak) return;
-    p.reload = g.reload; p.reloadDur = g.reload; p.reloadMode = 'fill'; p.reloadK = want; audio.play('recarregar');
+    p.reload = g.reload; p.reloadDur = g.reload; p.reloadMode = 'fill'; p.reloadK = want; audio.play(reloadSnd(it.k));
   };
   // fim da recarga
   const doReload = () => { const p = G.p, it = held(); const g = it && ITEMS[it.k].gun; if (!g) return;
@@ -705,6 +710,7 @@ async function boot() {
   const lazyTick = (px, pz) => { let best = null, bd = 1e9; for (const L of W.lazy) { const d = Math.max(L.x0 - px, px - L.x1, L.z0 - pz, pz - L.z1, 0); if (L.meshes) { if (d > 430) W.lazyDrop(L); } else if (d < 250 && d < bd) { bd = d; best = L; } } if (best) { W.lazyBuild(best); return true; } return false; };
   G.lazyTick = lazyTick;
   // só para testes: vista de cima (ortográfica) de um quadrado de lado L à volta de (x, z), devolvida como imagem
+  G.dbgDoors = () => W.doors; G.vm = vm;
   G.dbgCam = (pos, at, fov = 30, w = 800, h = 600) => { const pc = new THREE.PerspectiveCamera(fov, w / h, 0.05, 300); pc.position.set(...pos); pc.lookAt(...at); const s0 = new THREE.Vector2(); renderer.getSize(s0); const r0 = renderer.getPixelRatio(); renderer.setPixelRatio(1); renderer.setSize(w, h, false); renderer.render(scene, pc); const url = renderer.domElement.toDataURL('image/jpeg', 0.88); renderer.setPixelRatio(r0); renderer.setSize(s0.x, s0.y, false); return url; }; // testes: vista de perto
   G.dbgTop = (x, z, L, px = 900) => { for (let i = 0; i < 80 && lazyTick(x, z); i++); const oc = new THREE.OrthographicCamera(-L / 2, L / 2, L / 2, -L / 2, 1, 400); oc.position.set(x, 200, z + 0.01); oc.lookAt(x, 0, z); const s0 = new THREE.Vector2(); renderer.getSize(s0); const r0 = renderer.getPixelRatio(); renderer.setPixelRatio(1); renderer.setSize(px, px, false); const fg = scene.fog; scene.fog = null; renderer.render(scene, oc); scene.fog = fg; const url = renderer.domElement.toDataURL('image/jpeg', 0.85); renderer.setPixelRatio(r0); renderer.setSize(s0.x, s0.y, false); return url; };
   G.weather = (on = true) => { G.rainT = on ? 1 : 0; WX.t = on ? 300 : 900; };
@@ -935,7 +941,7 @@ async function boot() {
   // ---------- online (servidor de jogo): outros jogadores, PvP, quem dorme, mochilas partilhadas e clãs
   const _wa = new THREE.Vector3(), _wb = new THREE.Vector3();
   // ---------- carros
-  G.cars = makeCars({ scene, G, W, collide, solidAt, groundY, addRect, removeRect, audio, hurtZombie, sameLevel });
+  G.cars = makeCars({ scene, G, W, collide, solidAt, tallAt, groundY, addRect, removeRect, audio, hurtZombie, sameLevel });
   // o mundo partilhado (online): aplicar o que vem do servidor
   const doorById = new Map(W.doors.filter(D => D.wid != null).map(D => [D.wid, D]));
   const nodeWait = new Map(); // chave → quando volta (ms), para setores que ainda não estão carregados
@@ -1407,6 +1413,8 @@ async function boot() {
         const uu = p.use && ITEMS[p.use.it.k] && ITEMS[p.use.it.k].use, ukind = uu ? ((uu.water || 0) > (uu.food || 0) ? 'drink' : uu.food ? 'eat' : 'heal') : null;
         const wf = d.gun ? ray(p.x, p.z, Math.sin(p.yaw), Math.cos(p.yaw), 1.0, null, 's', p.lv || 0, 1.2) : 1; p.wallK = (p.wallK || 0) + (clamp((0.85 - wf) / 0.35, 0, 1) - (p.wallK || 0)) * Math.min(1, dt * 12);
         body.pose(dt, p.mv, mode, p.swing, p.recoil, twist, p.climb ? p.climb.t : -1, p.step, d.gun ? AIM.raise * (1 - 0.85 * p.wallK) : 1, ukind ? { kind: ukind, t: Math.min(1, p.use.t / p.use.dur) } : null);
+        // passos: um som em cada pé que assenta (relva, betão ou madeira dentro de casa), mais forte a correr
+        { const ph = Math.floor(body.phase / Math.PI); if (ph !== G.stepPh) { if (G.stepPh != null && p.onGround && !p.swim && p.mv > 0.15 && !G.car) { const inside = (p.lv || 0) > 0 || !!G.inside; audio.step(inside ? 'madeira' : W.paved(p.x, p.z) ? 'betao' : 'relva', Math.min(1, 0.35 + p.mv * 0.45)); } G.stepPh = ph; } }
         p.swimY = (p.swimY || 0) + ((p.swim ? 0.95 : 0) - (p.swimY || 0)) * Math.min(1, dt * 5);
         { const l = AIM.lean || 0; body.root.position.set(p.x + Math.cos(p.root) * l * 0.14, p.y - p.swimY, p.z - Math.sin(p.root) * l * 0.14); body.root.rotation.set(0, p.root, -l * 0.2, 'YXZ'); }
       }
@@ -1476,6 +1484,7 @@ async function boot() {
       if (G.lampT <= 0) { G.lampT = 0.5; const cx = camT.x, cz = camT.z; const near3 = W.lamps.concat(G.base.lights()).map(l => [l, (l[0] - cx) ** 2 + (l[2] - cz) ** 2]).filter(a => a[1] < 1600).sort((a, b) => a[1] - b[1]).slice(0, lampL.length); lampL.forEach((L, i) => { const q = near3[i]; if (q) { L.position.set(q[0][0], q[0][1] - 0.4, q[0][2]); L.userData.on = 1; L.userData.big = q[0][1] > 9; } else L.userData.on = 0; }); }
       lampL.forEach(L => { L.intensity = L.userData.on ? nt * (L.userData.big ? 200 : 26) : 0; L.distance = L.userData.big ? 48 : 20; });
       G.base.night(nt); if (lampPools) lampPools.material.opacity = nt * 0.5;
+      G.ambT = (G.ambT || 0) - dt; if (G.ambT <= 0) { G.ambT = 0.5; audio.ambience(G.playing && p && p.alive ? D : 0, !!G.inside || !!G.car, 0.25 + 0.5 * (G.rain || 0)); } // pássaros de dia, grilos à noite, vento
     }
     // os zombies de pisos que não estás a ver não aparecem (a não ser que se vejam pelas escadas)
     // e fora do círculo de visão também não (igual para todos os ecrãs); na mira em primeira pessoa vês o que a mira vê

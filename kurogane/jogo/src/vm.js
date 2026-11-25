@@ -12,7 +12,7 @@ const EYE = 0.3; // distância do olho ao vidro da mira (m)
 const rdGeo = (y, z) => { const b = new Builder(0), BLK = 0x1c1e21; b.push(...WPUSH); b.box(0.045, 0.012, 0.07, 0, y - 0.02, z, 0x2a2c2e, { mat: 'm' }); for (const s of [-1, 1]) b.box(0.006, 0.05, 0.06, s * 0.022, y + 0.01, z, BLK, { mat: 'm' }); b.box(0.05, 0.008, 0.06, 0, y + 0.038, z, BLK, { mat: 'm' }); b.box(0.038, 0.04, 0.004, 0, y + 0.012, z + 0.028, 0xffffff, { mat: 'gl' }); b.pop(); const o = {}; for (const [k] of b.buckets) o[k] = b.merged(k); return o; };
 
 export function makeVM() {
-  const scene = new THREE.Scene(), cam = new THREE.PerspectiveCamera(46, 1, 0.01, 6);
+  const scene = new THREE.Scene(), cam = new THREE.PerspectiveCamera(46, 1, 0.09, 6); // a coronha encostada à cara não entra no ecrã
   const hemi = new THREE.HemisphereLight(0xdfe6ff, 0x3a332c, 1), key = new THREE.DirectionalLight(0xfff0dc, 1); key.position.set(-0.4, 1, 0.5); scene.add(hemi, key);
   // cores da arma um pouco mais claras do que no mundo: vista tão de perto, o preto puro fica um borrão
   const M = { v: new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.7 }), m: new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.38, metalness: 0.35 }), lit: new THREE.MeshBasicMaterial({ vertexColors: true }),
@@ -36,7 +36,7 @@ export function makeVM() {
     const [ry, rz] = RDP[k], S = new THREE.Vector3(WPUSH[0], WPUSH[1] + ry + 0.012, WPUSH[2] + rz);
     gun.rotation.y = Math.PI; gun.position.set(S.x, -S.y, -EYE + S.z); rig.add(gun); gun.updateMatrix();
     const hp = (HANDS[k] || HANDS.m4).map(h => new THREE.Vector3(WPUSH[0] + h[0], WPUSH[1] + h[1], WPUSH[2] + h[2]).applyMatrix4(gun.matrix));
-    const b = new Builder(0); armTo(b, new THREE.Vector3(0.16, -0.36, -0.02), hp[0], look.top, look.skin); armTo(b, new THREE.Vector3(-0.2, -0.3, -0.3), hp[1], look.top, look.skin); // do cotovelo à mão
+    const b = new Builder(0); armTo(b, new THREE.Vector3(0.25, -0.3, -0.13), hp[0], look.top, look.skin); armTo(b, new THREE.Vector3(-0.2, -0.3, -0.3), hp[1], look.top, look.skin); // do cotovelo à mão
     arms = new THREE.Group(); for (const [kk] of b.buckets) arms.add(new THREE.Mesh(b.merged(kk), M.arm)); rig.add(arms);
   };
   let kick = 0, bob = 0;
@@ -47,10 +47,12 @@ export function makeVM() {
     // a mesma projeção da câmara do mundo (o centro fica onde está a mira), luz do dia/noite, recuo e balanço
     update(dt, main, o) {
       if (!gun) return;
-      cam.aspect = main.aspect; cam.updateProjectionMatrix(); const e = cam.projectionMatrix.elements, f = main.projectionMatrix.elements; e[8] = f[8]; e[9] = f[9]; cam.projectionMatrixInverse.copy(cam.projectionMatrix).invert();
+      // ao alto (telemóvel em pé) abre o campo para a arma não encher o ecrã
+      cam.aspect = main.aspect; cam.fov = Math.max(46, 2 * Math.atan(Math.tan(31 * Math.PI / 180) / Math.max(0.2, main.aspect)) * 180 / Math.PI); cam.updateProjectionMatrix(); const e = cam.projectionMatrix.elements, f = main.projectionMatrix.elements; e[8] = f[8]; e[9] = f[9]; cam.projectionMatrixInverse.copy(cam.projectionMatrix).invert();
       const D = o.day ?? 1, nv = o.nv || 0; hemi.intensity = 0.4 + 1.1 * D + 1.2 * nv; key.intensity = 0.3 + 2.2 * D;
       kick *= Math.exp(-dt * 16); bob += dt * (o.mv || 0) * 7;
-      const sw = (o.mv || 0) * 0.004; rig.position.set(Math.sin(bob) * sw, Math.abs(Math.cos(bob)) * sw - 0.004 * (o.mv || 0), kick * 0.035); rig.rotation.set(kick * 0.05, 0, 0);
+      const sw = (o.mv || 0) * 0.004; const sc = 1; // ecrã ao alto: arma e braços mais pequenos à volta do vidro da mira (o vidro fica no mesmo sítio)
+      rig.scale.setScalar(sc); rig.position.set(Math.sin(bob) * sw, Math.abs(Math.cos(bob)) * sw - 0.004 * (o.mv || 0), kick * 0.035 - EYE * (1 - sc)); rig.rotation.set(kick * 0.05, 0, 0);
     },
   };
 }

@@ -1,0 +1,1 @@
+module.exports = async (page) => { await page.evaluate(() => { G.dbgKit(); Object.assign(G.p, { x: 1500, z: 900 }); }); await page.waitForTimeout(4000); const r = await page.evaluate(() => [G.dbg.cols(1499.5, 910.3, 1.5), G.dbg.wallHit([1500, 1.35, 900.15], [1499.5, 1.3, 911.07]), G.dbg.wallHit([1499.5, 1.35, 900], [1499.5, 1.35, 920])]); console.log(JSON.stringify(r)); };

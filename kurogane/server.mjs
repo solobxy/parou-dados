@@ -438,7 +438,7 @@ const shot = (c, m) => {
   const dl = Math.hypot(D[0], D[1], D[2]) || 1; D[0] /= dl; D[1] /= dl; D[2] /= dl;
   const k = String(m.k || ''), n = Math.min(8, num(m.n, 1, 8, 1) | 0), L = num(m.L, 0, 900, 300), sup = !!m.sup;
   // para os outros: o som e o rasto do tiro
-  bcast({ t: 'fx', id: c.id, o: O, d: D, sup, hv: HEAVY.has(k) ? 1 : 0 }, o => o !== c && Math.hypot(o.p.x - O[0], o.p.z - O[2]) < (sup ? 60 : 520));
+  bcast({ t: 'fx', id: c.id, o: O, d: D, sup, hv: HEAVY.has(k) ? 1 : 0, k: k.slice(0, 16) }, o => o !== c && Math.hypot(o.p.x - O[0], o.p.z - O[2]) < (sup ? 60 : 520));
   const myClan = p.clan; const tgt = [];
   // quem dispara vê os outros cerca de 0,1–0,3 s atrás (o caminho da rede e a suavização): conta onde o alvo está e onde esteve nesse tempo
   for (const o of players.values()) if (o !== c && o.p && o.p.alive && !o.p.invis && (o.p.lv || 0) === (p.lv || 0) && !(myClan && o.p.clan === myClan) && Math.hypot(o.p.x - O[0], o.p.z - O[2]) < L + 3) {

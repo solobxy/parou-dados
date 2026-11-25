@@ -5,6 +5,8 @@ import { track, push, sample } from './interp.js';
 import { ITEMS } from './items.js';
 
 const MODES = ['none', 'pistol', 'rifle', 'melee'];
+// som do tiro dos outros pelo calibre (gravações reais)
+const AMSND = { a9: 'pistola', a9s: 'pistola', a556: 'm4', a762: 'ak', a308: 'caca', a357: 'revolver', c12: 'cacadeira', c12s: 'cacadeira', a408: 'pesado', a50: 'pesado', a754: 'ak' };
 
 export function makeNet({ G, scene, mkRemote, audio, Conta, enc, dec, hurt, die, wallEnd, world, WV }) {
   let ws = null, tok = null, sendT = 0, invT = 0, retry = 0, want = false, off = 0, cyc0 = 0, cur = null, psT = 0, zT = 0; const zdQ = [];
@@ -64,7 +66,8 @@ export function makeNet({ G, scene, mkRemote, audio, Conta, enc, dec, hurt, die,
       }
       case 'fx': {
         const p = G.p, d = p ? Math.hypot(m.o[0] - p.x, m.o[2] - p.z) : 99;
-        audio.play(m.sup ? 'abafado' : m.hv ? 'grosso' : 'pistola', Math.max(0.04, 1 - d / (m.sup ? 70 : m.hv ? 480 : 320)) * (m.sup ? 0.6 : 1));
+        { const v = Math.max(0.04, 1 - d / (m.sup ? 70 : m.hv ? 480 : 320)) * (m.sup ? 0.6 : 1), far = Math.max(0, Math.min(1, (d - 35) / 220));
+          if (m.sup) audio.play('abafado', v); else if (!audio.shot(AMSND[m.k] || (m.hv ? 'pesado' : 'pistola'), v, far)) audio.play(m.hv ? 'grosso' : 'pistola', v); }
         wallEnd(m.o, m.d); if (G.noise) G.noise(m.o[0], m.o[2], m.sup ? 12 : 34); if (G.heardShot && d < 300) G.heardShot(); if (p && d > 2.5) G.ui.sound(m.o[0], m.o[2], 't', d); return;
       }
       case 'hit': hurt(m.dmg, m.by, m.zone, m.pop, m.car ? 'carro' : null); return;
@@ -153,6 +156,8 @@ export function makeNet({ G, scene, mkRemote, audio, Conta, enc, dec, hurt, die,
       if (!r.s1) continue; const S = sample(r.T, now, r.o); if (!S) continue; const b = S.s.a, x = S.x, z = S.z, y = S.y;
       const dd = Math.hypot(x - r.x, z - r.z); r.spd += (Math.min(9, dd / Math.max(dt, 1e-3)) - r.spd) * Math.min(1, dt * 8);
       r.step += dd * 2.6; r.x = x; r.z = z; r.y = y;
+      // passos dos outros: ouve-se quem anda perto (a correr de mais longe), mesmo sem o ver
+      if (me && r.spd > 0.9 && r.spd < 7.5 && !b[11] && b[10]) { const run = r.spd > 3.5; r.sd = (r.sd || 0) + dd; if (r.sd >= (run ? 1.7 : 1.15)) { r.sd = 0; const d = Math.hypot(x - me.x, z - me.z), q = 1 - d / (run ? 34 : 18); if (q > 0 && audio.sample) audio.sample('passo-' + (G.W.paved && G.W.paved(x, z) ? 'betao' : 'relva'), q * q * (run ? 0.8 : 0.45), { vary: 0.12, lp: d > 9 ? 2200 : 0, pan: Math.max(-0.8, Math.min(0.8, (x - me.x) / 14)) }); } }
       const vis = !b[11] && b[10] && !((b[7] | 0) & 8) && (b[4] || 0) === lv && see({ x, z, lv: b[4] || 0 });
       r.b.root.visible = vis; if (!vis) { r.el.style.display = 'none'; continue; }
       r.b.root.position.set(x, y, z); r.b.root.rotation.set(0, S.yaw, 0);

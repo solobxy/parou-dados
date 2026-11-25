@@ -1,0 +1,1 @@
+module.exports = async (page, shot) => { await page.waitForTimeout(2500); console.log(await page.evaluate(() => [document.getElementById('sOnl').hidden, document.querySelector('#start .foot').textContent, G.online])); await shot('menu-artefacto'); };
