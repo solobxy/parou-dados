@@ -128,7 +128,10 @@ jobs:
           # o autocarro sem previsão que passou na hora há 1–2 min aparece como "pode ainda não ter passado" (nunca recomendado)
           APP=$PWD node --import tsx ../auditoria/planeador-talvez-atrasado.mjs 2>&1 | grep -v "Experimental\|trace-warnings" | tee ../res/planeador-talvez-atrasado.txt | tail -20
           g=${PIPESTATUS[0]}
-          exit $(( a || b || c || d || e || f || g ))
+          # atrasos medidos de 5 em 5 min: dão a janela do "pode ainda não ter passado" a cada operador
+          APP=$PWD node --import tsx ../auditoria/atrasos-medidos.mjs 2>&1 | grep -v "Experimental\|trace-warnings" | tee ../res/atrasos-medidos.txt | tail -20
+          h=${PIPESTATUS[0]}
+          exit $(( a || b || c || d || e || f || g || h ))
 
       - name: Testes da pesquisa de destinos, da cache com limite e do idioma do aparelho
         continue-on-error: true

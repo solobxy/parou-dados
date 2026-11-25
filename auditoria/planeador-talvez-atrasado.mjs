@@ -79,6 +79,23 @@ const resumo = (r) => r.routes.map((o) => `${o.id === 'a-pe' ? 'a pé' : tr(o).m
   ok('[mais tarde] num pedido para outra hora não há "pode ainda não ter passado"', !r.routes.some((o) => o.possivelAtraso), resumo(r));
 }
 {
+  // A janela vem dos atrasos medidos de cada operador: com 40% dos autocarros a 4+ min de atraso, às 12:26 o das 12:23 (há 4 min
+  // de quem chega à paragem às 12:27) ainda aparece; sem medições (2 min) não aparecia
+  const A = await import(`${caminho}/src/server/atrasosMedidos.ts`);
+  const am = [];
+  for (let i = 0; i < 400; i++) am.push({ feed: 'teste', linha: 'teste:8019', atrasoS: i < 160 ? 250 : 30 });
+  A.registarAmostras(am);
+  const r = await P.planearViagem(O.lat, O.lon, D.lat, D.lon, 'Campanhã', new Date('2026-11-25T12:26:00Z'));
+  const talvez = r.routes.find((o) => o.possivelAtraso);
+  ok('[medido] com 4 min de janela medida, o 8019 das 12:23 ainda aparece às 12:26', !!talvez && tr(talvez)[0]?.departureTime === '12:23', resumo(r));
+  // Um operador que vem a horas não tem "pode ainda não ter passado"
+  const pont = [];
+  for (let i = 0; i < 2000; i++) pont.push({ feed: 'teste', linha: 'teste:8019', atrasoS: 0 });
+  A.registarAmostras(pont);
+  const r2 = await P.planearViagem(O.lat, O.lon, D.lat, D.lon, 'Campanhã', AGORA);
+  ok('[medido] operador pontual: não há "pode ainda não ter passado"', !r2.routes.some((o) => o.possivelAtraso), resumo(r2));
+}
+{
   const fonte = fs.readFileSync(`${caminho}/src/components/OpcaoRota.tsx`, 'utf8');
   ok('[ecrã] o cartão explica a opção', /possivelAtraso/.test(fonte));
 }
