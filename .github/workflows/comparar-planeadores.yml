@@ -1,0 +1,65 @@
+name: Planeador — comparação com o Transitous
+
+# Toda a semana (e quando se pede): as mesmas viagens (Lisboa, Porto, Coimbra, Braga, Funchal e Faro, às 08:00 e às 17:30 da
+# próxima quarta-feira) na PAROU (app de main com os dados do dia) e no Transitous (planeador aberto europeu, MOTIS).
+# Diz em quantas a PAROU chega antes, igual ou depois, e mostra lado a lado os percursos onde perde.
+# Resultado no ramo "comparar-planeadores-resultado" (resumo.txt e casos.json).
+
+on:
+  schedule:
+    - cron: "41 6 * * 1"
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "Commit ou ramo de solobxy/parou"
+        required: false
+        default: "main"
+      n:
+        description: "Viagens por região e hora"
+        required: false
+        default: "30"
+
+permissions:
+  contents: write
+
+jobs:
+  comparar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/checkout@v4
+        with:
+          repository: solobxy/parou
+          ref: ${{ inputs.ref || 'main' }}
+          path: app
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Instalar e arrancar a app
+        working-directory: app
+        run: |
+          npm ci --no-audit --no-fund --legacy-peer-deps >/dev/null 2>&1 || npm install --no-audit --no-fund --legacy-peer-deps >/dev/null 2>&1
+          mkdir -p dados
+          NODE_ENV=production PORT=3000 PAROU_DATA_DIR=$PWD/dados TZ=Europe/Lisbon nohup node --import tsx server.ts > app.log 2>&1 &
+          for i in $(seq 1 90); do curl -s -m 5 http://127.0.0.1:3000/api/transit/loading-status | grep -q '"isLoading":false' && break; sleep 5; done
+          curl -s -m 120 "http://127.0.0.1:3000/api/transit/plan-route?originLat=38.7369&originLon=-9.1546&destLat=38.7046&destLon=-9.1772" > /dev/null || true
+          mkdir -p ../ref && cp dados/gtfs.db ../ref/gtfs.db
+
+      - name: Comparar
+        working-directory: app
+        run: |
+          mkdir -p ../res
+          DB=$GITHUB_WORKSPACE/ref/gtfs.db BASE=http://127.0.0.1:3000 N="${{ inputs.n || '30' }}" SAIDA=../res node ../auditoria/comparar-planeadores.mjs 2>&1 | grep -v "Experimental\|trace-warnings" | tee ../res/consola.txt | tail -40
+
+      - name: Guardar
+        if: always()
+        run: |
+          tail -60 app/app.log > res/servidor.txt 2>/dev/null || true
+          mkdir -p pub && cp -r res/* pub/ 2>/dev/null || echo "sem resultados" > pub/vazio.txt
+          cd pub && git init -q -b comparar-planeadores-resultado
+          git config user.name "parou-dados"; git config user.email "actions@users.noreply.github.com"
+          git add -A && git commit -q -m "Comparação ${{ inputs.ref || 'main' }} $(date -u +%Y-%m-%dT%H:%MZ)" && git push -q -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" comparar-planeadores-resultado
