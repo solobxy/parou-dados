@@ -568,6 +568,7 @@ export function initUI(G) {
         grp('Equipa do jogo', [row('Código de administrador', 'Só para quem gere o servidor.', w)]); } }
     grp('Gráficos', [row('Sombras', 'Desligar ajuda telemóveis mais fracos.', tog(() => cfg.shadows, v => cfg.shadows = v)), row('Modo poupança', 'Menos resolução, mais fluidez e menos bateria.', tog(() => cfg.lowres, v => cfg.lowres = v)), row('Mostrar FPS', '', tog(() => cfg.fps, v => cfg.fps = v))]);
     grp('Som', [row('Volume geral', '', range(0, 1, 0.05, () => cfg.vol, v => cfg.vol = v)), row('Música do menu', '', range(0, 1, 0.05, () => cfg.musMenu, v => { cfg.musMenu = v; if (v > 0 && cfg.music === false) { cfg.music = true; musBtn(); } })), row('Música em jogo', 'Baixa no dia a dia; sobe quando há perigo.', range(0, 1, 0.05, () => cfg.musGame, v => { cfg.musGame = v; if (v > 0 && cfg.music === false) { cfg.music = true; musBtn(); } })), row('Ver os sons à volta do ecrã', 'Setas na borda mostram de onde vêm grunhidos, passos e tiros.', tog(() => cfg.soundViz, v => cfg.soundViz = v))]);
+    grp('Créditos', [row('Sons de animais', 'Freesound: newagesoup (rosnar), yottasounds (javali) e bonson.ca (galinha), licença CC BY 3.0; os outros em domínio público (CC0).', document.createElement('span'))]);
   };
   // ---------- painel da equipa (administrador e moderador): tudo é pedido ao servidor, que confirma o cargo
   const admEl = $('adm'), admB = $('admB'); let admTab = 'p', admData = null, admOpenUid = null, admQ = '', admBan = { h: 24, wipe: false, why: '' };

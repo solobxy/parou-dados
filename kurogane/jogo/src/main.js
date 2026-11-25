@@ -70,9 +70,11 @@ async function boot() {
     const mesh = new THREE.LineSegments(g, m); mesh.frustumCulled = false; mesh.renderOrder = 8; mesh.visible = false; scene.add(mesh); return { mesh, U }; })();
   const RAINFOG = new THREE.Color(0x6f7680);
   // noite: lanterna (com sombras, por isso as paredes tapam), luz fraca à volta de ti e candeeiros por perto
-  const torch = new THREE.SpotLight(0xfff0d8, 0, 28, 0.5, 0.55, 1.3); torch.castShadow = true; torch.shadow.camera.layers.enable(1); torch.shadow.mapSize.set(512, 512); torch.shadow.bias = -0.0008; torch.shadow.camera.near = 0.3; scene.add(torch, torch.target);
+  const torch = new THREE.SpotLight(0xfff0d8, 0, 28, 0.5, 0.55, 1.3); torch.castShadow = true; torch.shadow.camera.layers.enable(1); torch.shadow.mapSize.set(512, 512); torch.shadow.bias = -0.0008; torch.shadow.camera.near = 0.04; scene.add(torch, torch.target); // near pequeno: encostado a uma parede, a parede ainda entra no mapa de sombras (senão a luz passava para o outro lado)
   const glow = new THREE.PointLight(0xa8b8d8, 0, 4.5, 1.6); // luz fraca à volta do boneco de noite (curta, para não se notar através de paredes) scene.add(glow);
   const lampL = [0, 1, 2, 3, 4, 5].map(() => { const l = new THREE.PointLight(0xffc27a, 0, 20, 1.6); scene.add(l); return l; }); // os candeeiros mais perto da câmara acendem a sério
+  // o lume e os candeeiros da base mais perto: luz com sombra (as paredes da base, mesmo baixas, tapam-na; camada 1 = cópias inteiras das paredes)
+  const baseL = [0, 1].map(() => { const l = new THREE.PointLight(0xff9a4a, 0, 9, 1.7); l.castShadow = true; l.shadow.mapSize.set(256, 256); l.shadow.camera.near = 0.08; l.shadow.camera.far = 9; l.shadow.bias = -0.004; l.shadow.camera.layers.enable(1); scene.add(l); return l; });
   const FOGD = new THREE.Color(0xb7a991), FOGS = new THREE.Color(0x9a6a52), FOGN = new THREE.Color(0x0c1018), SUNC = new THREE.Color(0xffc896), MOONC = new THREE.Color(0x8aa2d8), _fc = new THREE.Color(), _rc = new THREE.Color();
   const sm = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
 
@@ -744,7 +746,7 @@ async function boot() {
   G.lazyTick = lazyTick;
   // só para testes: vista de cima (ortográfica) de um quadrado de lado L à volta de (x, z), devolvida como imagem
   G.TR = { PRICE, SELL, TRADERS }; G.trade = tradeFn; npcInit(); G.npcs = npcs; initPWA(G);
-  G.dbgDoors = () => W.doors; G.vm = vm; G.dbgHurtZ = (z, d) => hurtZombie(z, d, 0, 0, {});
+  G.dbgDoors = () => W.doors; G.vm = vm; G.dbgL = { torch, baseL }; G.dbgHurtZ = (z, d) => hurtZombie(z, d, 0, 0, {});
   G.dbgCam = (pos, at, fov = 30, w = 800, h = 600) => { const pc = new THREE.PerspectiveCamera(fov, w / h, 0.05, 300); pc.position.set(...pos); pc.lookAt(...at); const s0 = new THREE.Vector2(); renderer.getSize(s0); const r0 = renderer.getPixelRatio(); renderer.setPixelRatio(1); renderer.setSize(w, h, false); renderer.render(scene, pc); const url = renderer.domElement.toDataURL('image/jpeg', 0.88); renderer.setPixelRatio(r0); renderer.setSize(s0.x, s0.y, false); return url; }; // testes: vista de perto
   G.dbgTop = (x, z, L, px = 900) => { for (let i = 0; i < 80 && lazyTick(x, z); i++); const oc = new THREE.OrthographicCamera(-L / 2, L / 2, L / 2, -L / 2, 1, 400); oc.position.set(x, 200, z + 0.01); oc.lookAt(x, 0, z); const s0 = new THREE.Vector2(); renderer.getSize(s0); const r0 = renderer.getPixelRatio(); renderer.setPixelRatio(1); renderer.setSize(px, px, false); const fg = scene.fog; scene.fog = null; renderer.render(scene, oc); scene.fog = fg; const url = renderer.domElement.toDataURL('image/jpeg', 0.85); renderer.setPixelRatio(r0); renderer.setSize(s0.x, s0.y, false); return url; };
   G.weather = (on = true) => { G.rainT = on ? 1 : 0; WX.t = on ? 300 : 900; };
@@ -1563,11 +1565,15 @@ async function boot() {
         const wl = gunLight(), fy = p.yaw, fw = Math.max(0.04, Math.min(0.7, ray(p.x, p.z, Math.sin(fy), Math.cos(fy), 0.9, null, 's', p.lv) - 0.15)); // a lanterna nunca sai do outro lado de uma parede encostada
         if (wl) { torch.intensity = G.lightOn ? 95 : 0; torch.angle = 0.34; torch.distance = 36; if (G.fp && AIM.on) { torch.position.copy(AIM.eye).addScaledVector(AIM.dir, Math.min(0.5, fw)); torch.target.position.copy(AIM.eye).addScaledVector(AIM.dir, 20); } else { torch.position.set(p.x + Math.sin(fy) * fw, p.y + 1.32, p.z + Math.cos(fy) * fw); if (AIM.on && AIM.Aw) torch.target.position.copy(AIM.Aw); else torch.target.position.set(p.x + Math.sin(fy) * 12, p.y + 0.3, p.z + Math.cos(fy) * 12); } }
         else { torch.intensity = G.lightOn ? 70 : 0; torch.angle = 0.5; torch.distance = 28; torch.position.set(p.x + Math.sin(fy) * Math.min(0.3, fw), p.y + 1.45, p.z + Math.cos(fy) * Math.min(0.3, fw)); torch.target.position.set(p.x + Math.sin(fy) * 9, p.y + 0.2, p.z + Math.cos(fy) * 9); }
+        if (!renderer.shadowMap.enabled && torch.intensity > 0) { const tp = torch.position, tg = torch.target.position, ddx = tg.x - tp.x, ddz = tg.z - tp.z, dl = Math.hypot(ddx, ddz) || 1; torch.distance = Math.min(torch.distance, ray(tp.x, tp.z, ddx / dl, ddz / dl, torch.distance, null, 's', p.lv, 0.5) + 0.35); } // sem sombras, a luz acaba na primeira parede à frente
         torch.target.updateMatrixWorld();
       } else { glow.intensity = 0; torch.intensity = 0; }
       G.lampT = (G.lampT || 0) - dt;
-      if (G.lampT <= 0) { G.lampT = 0.5; const cx = camT.x, cz = camT.z; const near3 = W.lamps.concat(G.base.lights()).map(l => [l, (l[0] - cx) ** 2 + (l[2] - cz) ** 2]).filter(a => a[1] < 1600).sort((a, b) => a[1] - b[1]).slice(0, lampL.length); lampL.forEach((L, i) => { const q = near3[i]; if (q) { L.position.set(q[0][0], q[0][1] - 0.4, q[0][2]); L.userData.on = 1; L.userData.big = q[0][1] > 9; } else L.userData.on = 0; }); }
-      lampL.forEach(L => { L.intensity = L.userData.on ? nt * (L.userData.big ? 200 : 26) : 0; L.distance = L.userData.big ? 48 : 20; });
+      if (G.lampT <= 0) { G.lampT = 0.5; const cx = camT.x, cz = camT.z; const bl = G.base.lights().map(l => [l, (l[0] - cx) ** 2 + (l[2] - cz) ** 2]).filter(a => a[1] < 1600).sort((a, b) => a[1] - b[1]);
+        baseL.forEach((L, i) => { const q = bl[i]; if (q) { L.position.set(q[0][0], q[0][1], q[0][2]); L.userData.on = 1; L.userData.fire = q[0].fire; } else L.userData.on = 0; });
+        const near3 = W.lamps.concat(bl.slice(baseL.length).map(a => a[0])).map(l => [l, (l[0] - cx) ** 2 + (l[2] - cz) ** 2]).filter(a => a[1] < 1600).sort((a, b) => a[1] - b[1]).slice(0, lampL.length); lampL.forEach((L, i) => { const q = near3[i]; if (q) { L.position.set(q[0][0], q[0][1] - 0.4, q[0][2]); L.userData.on = 1; L.userData.big = q[0][1] > 9; L.userData.base = q[0].base; } else L.userData.on = 0; }); }
+      lampL.forEach(L => { L.intensity = L.userData.on ? nt * (L.userData.big ? 200 : 26) : 0; L.distance = L.userData.big ? 48 : L.userData.base ? 4 : 20; });
+      { const shOn = renderer.shadowMap.enabled; baseL.forEach((L, i) => { const f = L.userData.fire ? 0.85 + 0.1 * Math.sin(G.t * 11 + i) + 0.06 * Math.sin(G.t * 23.7 + i * 2) : 1; L.intensity = L.userData.on ? (0.35 + 0.65 * nt) * 16 * f : 0; L.color.setHex(L.userData.fire ? 0xff8a3a : 0xffc27a); L.distance = shOn ? 9 : 3; L.castShadow = shOn; L.shadow.autoUpdate = L.intensity > 0; }); torch.shadow.autoUpdate = torch.intensity > 0; } // sem sombras: alcance curto para não iluminar o lado de fora; as sombras só se calculam com a luz acesa (poupa o telemóvel)
       G.base.night(nt); if (lampPools) lampPools.material.opacity = nt * 0.5;
       G.ambT = (G.ambT || 0) - dt; if (G.ambT <= 0) { G.ambT = 0.5; audio.ambience(G.playing && p && p.alive ? D : 0, !!G.inside || !!G.car, 0.25 + 0.5 * (G.rain || 0)); } // pássaros de dia, grilos à noite, vento
     }
