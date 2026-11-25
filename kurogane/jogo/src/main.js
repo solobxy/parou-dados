@@ -6,6 +6,7 @@ import { buildWorld, MAP, CORE, CITY, inCity } from './world.js';
 import { makeSectors } from './sectors.js';
 import { Body, Horde, bagMesh, HIP, zombiePose, newPose, LOOK_OPTS, RDP } from './chars.js';
 import * as Conta from './conta.js';
+import { makeFire, fireFrame } from './fire.js';
 import { ITEMS, RECIPES, ammoOf } from './items.js';
 import { VT } from './vtypes.js';
 import { Grid, Inv, mkItem, rollLoot, capOf } from './bag.js';
@@ -747,7 +748,7 @@ async function boot() {
   // só para testes: vista de cima (ortográfica) de um quadrado de lado L à volta de (x, z), devolvida como imagem
   G.TR = { PRICE, SELL, TRADERS }; G.trade = tradeFn; npcInit(); G.npcs = npcs; initPWA(G);
   G.dbgDoors = () => W.doors; G.vm = vm; G.dbgL = { torch, baseL }; G.dbgHurtZ = (z, d) => hurtZombie(z, d, 0, 0, {});
-  G.dbgCam = (pos, at, fov = 30, w = 800, h = 600) => { const pc = new THREE.PerspectiveCamera(fov, w / h, 0.05, 300); pc.position.set(...pos); pc.lookAt(...at); const s0 = new THREE.Vector2(); renderer.getSize(s0); const r0 = renderer.getPixelRatio(); renderer.setPixelRatio(1); renderer.setSize(w, h, false); renderer.render(scene, pc); const url = renderer.domElement.toDataURL('image/jpeg', 0.88); renderer.setPixelRatio(r0); renderer.setSize(s0.x, s0.y, false); return url; }; // testes: vista de perto
+  G.dbgCam = (pos, at, fov = 30, w = 800, h = 600) => { const pc = new THREE.PerspectiveCamera(fov, w / h, 0.05, 300); pc.position.set(...pos); pc.lookAt(...at); const s0 = new THREE.Vector2(); renderer.getSize(s0); const r0 = renderer.getPixelRatio(); renderer.setPixelRatio(1); renderer.setSize(w, h, false); fireFrame(G.t, renderer, pc); renderer.render(scene, pc); const url = renderer.domElement.toDataURL('image/jpeg', 0.88); renderer.setPixelRatio(r0); renderer.setSize(s0.x, s0.y, false); return url; }; // testes: vista de perto
   G.dbgTop = (x, z, L, px = 900) => { for (let i = 0; i < 80 && lazyTick(x, z); i++); const oc = new THREE.OrthographicCamera(-L / 2, L / 2, L / 2, -L / 2, 1, 400); oc.position.set(x, 200, z + 0.01); oc.lookAt(x, 0, z); const s0 = new THREE.Vector2(); renderer.getSize(s0); const r0 = renderer.getPixelRatio(); renderer.setPixelRatio(1); renderer.setSize(px, px, false); const fg = scene.fog; scene.fog = null; renderer.render(scene, oc); scene.fog = fg; const url = renderer.domElement.toDataURL('image/jpeg', 0.85); renderer.setPixelRatio(r0); renderer.setSize(s0.x, s0.y, false); return url; };
   G.weather = (on = true) => { G.rainT = on ? 1 : 0; WX.t = on ? 300 : 900; };
   G.explodeAt = (k, x, z) => explode({ k, P: new THREE.Vector3(x, 0.5, z), lv: 0 });
@@ -805,19 +806,19 @@ async function boot() {
     add(new THREE.BoxGeometry(13, 0.3, 2.6), body, -6, 0.6, 1.5, 0, 0.2, 0.18); add(new THREE.BoxGeometry(0.3, 3.4, 2.6), M(0x8a2a22), 1.6, 2.8, -11, 0.2, 0.35, 0.3); add(new THREE.CylinderGeometry(0.8, 0.8, 2.6, 10), burnt, 4.5, 0.8, 4, Math.PI / 2, 0.6, 0);
     const sc = new THREE.Mesh(new THREE.CircleGeometry(13, 24), new THREE.MeshStandardMaterial({ color: 0x1e1c18, roughness: 1, transparent: true, opacity: 0.75, polygonOffset: true, polygonOffsetFactor: -2 })); sc.rotation.x = -Math.PI / 2; sc.position.y = 0.04; g.add(sc);
     const fire = new THREE.PointLight(0xff7a2a, 30, 22, 1.6); fire.position.set(0.5, 2.5, -3); g.add(fire);
-    const flames = []; for (let i = 0; i < 4; i++) { const f = new THREE.Mesh(new THREE.ConeGeometry(0.5 + i * 0.12, 1.6, 7), new THREE.MeshBasicMaterial({ color: new THREE.Color(2.4, 0.9, 0.2), transparent: true, opacity: 0.85 })); f.position.set(-1 + i * 0.9, 2.2, -4 + i * 1.4); g.add(f); flames.push(f); }
+    const flames = []; for (let i = 0; i < 4; i++) { const F = makeFire(2.6 + (i % 2) * 0.8, { smoke: 0, sparks: 14 }); F.g.position.set(-1 + i * 0.9, 2.75, -4 + i * 1.4); g.add(F.g); flames.push(F); }
     const puffs = []; for (let i = 0; i < 9; i++) { const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: puffTex, transparent: true, depthWrite: false })); s.userData.t = i / 9; g.add(s); puffs.push(s); }
     g.position.set(x, 0, z); g.rotation.y = yaw; scene.add(g);
     const c = Math.cos(yaw), s = Math.sin(yaw), R = []; for (const [lx, lz, hw, hd] of [[0, 2, 1.7, 5.5], [1.2, -8, 1.6, 3.5]]) { const wx = x + lx * c + lz * s, wz = z - lx * s + lz * c, a = Math.abs(c), b2 = Math.abs(s), ex = hw * a + hd * b2, ez = hw * b2 + hd * a, r = { x0: wx - ex, z0: wz - ez, x1: wx + ex, z1: wz + ez, k: 's', h: 3, lv: 0 }; addRect(r); R.push(r); }
     return { g, fire, flames, puffs, R, x, z }; };
-  const wreckDrop = () => { if (!wreck) return; scene.remove(wreck.g); wreck.g.traverse(o => { if (o.geometry) o.geometry.dispose(); }); wreck.R.forEach(removeRect); wreck = null; };
+  const wreckDrop = () => { if (!wreck) return; scene.remove(wreck.g); wreck.flames.forEach(F => F.dispose()); wreck.g.traverse(o => { if (o.geometry) o.geometry.dispose(); }); wreck.R.forEach(removeRect); wreck = null; };
   G.drop = { warn: null, cur: null };
   G.airdrop = m => { const D = G.drop, now = Date.now();
     if (m.ph === 9) { D.warn = m.warn ? { mx: m.warn.mx, mz: m.warn.mz, at: now + (m.warn.at - m.warn.now) } : null; D.cur = m.cur || null; wreckDrop(); if (D.cur) wreck = wreckMake(D.cur.x, D.cur.z, D.cur.yaw); return; }
     if (m.ph === 1) { D.warn = { mx: m.mx, mz: m.mz, at: now + (m.at - m.now) }; const s = Math.round((m.at - m.now) / 1000), p = G.p, d = p ? Math.round(Math.hypot(m.mx - p.x, m.mz - p.z) / 100) / 10 : 0; G.ui.toast('Um avião vai cair daqui a ' + s + ' s, a ' + String(d).replace('.', ',') + ' km. A zona está no mapa.'); audio.play('bip'); return; }
     if (m.ph === 2) { D.warn = null; D.cur = { x: m.x, z: m.z, yaw: m.yaw, t: now }; wreckDrop(); wreck = wreckMake(m.x, m.z, m.yaw); const p = G.p, d = p ? Math.hypot(m.x - p.x, m.z - p.z) : 1e9; audio.play('explosao', clamp(1.1 - d / 900, 0.12, 1)); if (d < 400) { G.shakeT = Math.max(G.shakeT || 0, 0.5 * (1 - d / 400)); } G.ui.toast('O avião caiu. Há caixas com loot militar no sítio marcado no mapa.'); return; }
     if (m.ph === 0) { D.cur = null; wreckDrop(); } };
-  const wreckTick = dt => { if (!wreck) return; const t = G.t; wreck.fire.intensity = 24 + Math.sin(t * 13) * 6 + Math.sin(t * 7.3) * 5; wreck.flames.forEach((f, i) => { f.scale.y = 0.8 + 0.3 * Math.sin(t * 9 + i * 2); f.rotation.y = t * (1 + i * 0.3); });
+  const wreckTick = dt => { if (!wreck) return; const t = G.t; wreck.fire.intensity = 24 + Math.sin(t * 13) * 6 + Math.sin(t * 7.3) * 5; 
     for (const s of wreck.puffs) { const u = s.userData; u.t = (u.t + dt / 7) % 1; const k = u.t; s.position.set(-1 + Math.sin(k * 5 + u.t) * 0.8 + k * 4, 2 + k * 18, -4 + k * 3); s.scale.setScalar(2 + k * 9); s.material.opacity = (1 - k) * 0.55 * Math.min(1, k * 6); } };
   G.dropGrid = (x, z, g) => dropBag(x, z, g);
   G.dropItem = it => { const g = new Grid(6, 4); g.insert(it); const p = G.p; dropBag(p.x + Math.sin(p.yaw) * 0.6, p.z + Math.cos(p.yaw) * 0.6, g, { lv: p.lv, y: p.base + groundY(p.x, p.z, p.lv) }); };
@@ -1573,7 +1574,7 @@ async function boot() {
         baseL.forEach((L, i) => { const q = bl[i]; if (q) { L.position.set(q[0][0], q[0][1], q[0][2]); L.userData.on = 1; L.userData.fire = q[0].fire; } else L.userData.on = 0; });
         const near3 = W.lamps.concat(bl.slice(baseL.length).map(a => a[0])).map(l => [l, (l[0] - cx) ** 2 + (l[2] - cz) ** 2]).filter(a => a[1] < 1600).sort((a, b) => a[1] - b[1]).slice(0, lampL.length); lampL.forEach((L, i) => { const q = near3[i]; if (q) { L.position.set(q[0][0], q[0][1] - 0.4, q[0][2]); L.userData.on = 1; L.userData.big = q[0][1] > 9; L.userData.base = q[0].base; } else L.userData.on = 0; }); }
       lampL.forEach(L => { L.intensity = L.userData.on ? nt * (L.userData.big ? 200 : 26) : 0; L.distance = L.userData.big ? 48 : L.userData.base ? 4 : 20; });
-      { const shOn = renderer.shadowMap.enabled; baseL.forEach((L, i) => { const f = L.userData.fire ? 0.85 + 0.1 * Math.sin(G.t * 11 + i) + 0.06 * Math.sin(G.t * 23.7 + i * 2) : 1; L.intensity = L.userData.on ? (0.35 + 0.65 * nt) * 16 * f : 0; L.color.setHex(L.userData.fire ? 0xff8a3a : 0xffc27a); L.distance = shOn ? 9 : 3; L.castShadow = shOn; L.shadow.autoUpdate = L.intensity > 0; }); torch.shadow.autoUpdate = torch.intensity > 0; } // sem sombras: alcance curto para não iluminar o lado de fora; as sombras só se calculam com a luz acesa (poupa o telemóvel)
+      { const shOn = renderer.shadowMap.enabled; baseL.forEach((L, i) => { const f = L.userData.fire ? 0.85 + 0.1 * Math.sin(G.t * 11 + i) + 0.06 * Math.sin(G.t * 23.7 + i * 2) : 1; L.intensity = L.userData.on ? (L.userData.fire ? 0.1 + 0.9 * nt : 0.35 + 0.65 * nt) * 16 * f * (L.userData.fire || 1) : 0; L.color.setHex(L.userData.fire ? 0xff8a3a : 0xffc27a); L.distance = shOn ? (L.userData.fire ? 6.5 : 9) : 3; L.castShadow = shOn; L.shadow.autoUpdate = L.intensity > 0; }); torch.shadow.autoUpdate = torch.intensity > 0; } // sem sombras: alcance curto para não iluminar o lado de fora; as sombras só se calculam com a luz acesa (poupa o telemóvel)
       G.base.night(nt); if (lampPools) lampPools.material.opacity = nt * 0.5;
       G.ambT = (G.ambT || 0) - dt; if (G.ambT <= 0) { G.ambT = 0.5; audio.ambience(G.playing && p && p.alive ? D : 0, !!G.inside || !!G.car, 0.25 + 0.5 * (G.rain || 0)); } // pássaros de dia, grilos à noite, vento
     }
@@ -1653,7 +1654,7 @@ async function boot() {
     doorMats();
     G.vmOn = G.fp && vm.on;
     G.ui.frame(dt);
-    renderer.render(scene, cam);
+    fireFrame(G.t, renderer, cam); renderer.render(scene, cam);
     if (G.vmOn) { renderer.autoClear = false; renderer.clearDepth(); renderer.render(vm.scene, vm.cam); renderer.autoClear = true; }
   };
   body.root.visible = false;
