@@ -97,7 +97,7 @@ jobs:
           openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -pass env:HCLOUD_TOKEN -in ../copia.tgz.enc | tar xzf -
           python3 - <<'PY'
           import sqlite3, glob, sys, os
-          tabelas = {'comunidade': ['utilizadores', 'publicacoes', 'ocorrencias', 'visitantes'], 'utilizadores': ['dados_utilizador'], 'push': []}
+          tabelas = {'comunidade': ['utilizadores', 'publicacoes', 'ocorrencias', 'visitantes'], 'utilizadores': ['dados_utilizador'], 'push': [], 'historico': ['avisos', 'avisos_versoes', 'noticias'], 'atrasos': ['atrasos']}
           resumo = []
           falhou = False
           for nome, lista in tabelas.items():
