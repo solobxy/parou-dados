@@ -122,7 +122,10 @@ jobs:
           # a UNIR com horários (GTFS da TMP) entra nos percursos normais, com tempo real
           APP=$PWD node --import tsx ../auditoria/planeador-unir.mjs 2>&1 | grep -v "Experimental\|trace-warnings" | tee ../res/planeador-unir.txt | tail -40
           e=${PIPESTATUS[0]}
-          exit $(( a || b || c || d || e ))
+          # o castigo de andar muito a pé não pode fazer perder autocarros (achado na comparação com o Transitous)
+          APP=$PWD node --import tsx ../auditoria/planeador-castigo-a-pe.mjs 2>&1 | grep -v "Experimental\|trace-warnings" | tee ../res/planeador-castigo-a-pe.txt | tail -20
+          f=${PIPESTATUS[0]}
+          exit $(( a || b || c || d || e || f ))
 
       - name: Testes da pesquisa de destinos, da cache com limite e do idioma do aparelho
         continue-on-error: true
