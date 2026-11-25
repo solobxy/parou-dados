@@ -10,7 +10,7 @@ const COLS = [0x8a2a22, 0x2a5a8a, 0xd8d6d0, 0x3a3d40, 0x4a5a3a, 0xc8a23a];
 const angDiff = (a, b) => { let d = a - b; while (d > Math.PI) d -= 2 * Math.PI; while (d < -Math.PI) d += 2 * Math.PI; return d; };
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 
-export function makeCars({ scene, G, W, collide, solidAt, tallAt = () => 0, groundY, addRect, removeRect, audio, hurtZombie, sameLevel }) {
+export function makeCars({ scene, G, W, collide, solidAt, tallAt = () => 0, groundY, addRect, removeRect, audio, hurtZombie, sameLevel, roofAt = () => null }) {
   const list = [], byId = new Map();
   const M = (hex, o = {}) => new THREE.MeshStandardMaterial({ color: hex, roughness: o.r ?? 0.55, metalness: o.m ?? 0.25, emissive: o.e ?? 0x000000, emissiveIntensity: o.ei ?? 0 });
   const glass = M(0x1c242a, { r: 0.15, m: 0.6 }), tyre = M(0x1b1b1c, { r: 0.9, m: 0 }), rim = M(0x8a8e92, { r: 0.4, m: 0.7 }), lamp = M(0xfff4d8, { e: 0xfff1c8, ei: 0.2, r: 0.3 }), tail = M(0x7a1410, { e: 0xc02010, ei: 0.3 }), dark = M(0x26282a, { r: 0.8 });
@@ -73,33 +73,35 @@ export function makeCars({ scene, G, W, collide, solidAt, tallAt = () => 0, grou
   // controlado até aterrar. Virar só roda o aparelho (com inércia e inclinação para dentro da curva), nunca mexe na altura. Ao arrancar,
   // o rotor ganha rotação durante uns segundos antes de levantar. Sem gasolina ou desfeito, desce em autorrotação.
   const CRU = 22;
+  const padOf = c => { const RF = roofAt(c.x, c.z, 2.0); return RF && (c.alt || 0) >= RF.roofY - 0.6 ? RF.roofY : 0; }; // altura do telhado onde o helicóptero está pousado (0 = chão)
   const fly = (c, T, dt, inp) => {
     let f = 0, s = 0;
     if (inp.kb) { f = inp.t; s = inp.s; }
     // a pairar: trava sozinho e fica à mesma altura até carregares em avançar ou descer (virar continua a dar)
-    if (c.hov) { if (Math.abs(f) > 0.2 || !(c.alt > 1)) { c.hov = false; if (G.hovSet) G.hovSet(false); } else f = Math.hypot(c.vx || 0, c.vz || 0) > 0.4 ? -0.7 : 0; }
+    const RF = roofAt(c.x, c.z, 2.0), pad = padOf(c); c.pad = pad; // em cima de um telhado plano: o «chão» é o telhado
+    if (c.hov) { if (Math.abs(f) > 0.2 || !(c.alt - pad > 1)) { c.hov = false; if (G.hovSet) G.hovSet(false); } else f = Math.hypot(c.vx || 0, c.vz || 0) > 0.4 ? -0.7 : 0; }
     else if (inp.m > 0.15) { const d = angDiff(inp.yaw, c.yaw); f = inp.m * Math.max(0, Math.cos(d)); s = clamp(d * 1.2, -1, 1); }
     const ok = c.hp > 0 && c.fuel > 0, alt0 = c.alt || 0, to = (a, b, r) => a + clamp(b - a, -r, r);
     c.cf = to(c.cf || 0, f, dt * 2.2); c.cs = to(c.cs || 0, s, dt * 2.6); // cíclico e pedais: chegam devagar, sem saltos
     c.rot = clamp((c.rot || 0) + (ok ? dt / 2.6 : -dt * 0.25), 0, 1); // o rotor demora a ganhar rotação
-    const wet = W.wet(c.x, c.z, 3), canLand = !wet && !solidAt(c.x, c.z, 3.2);
+    const wet = !pad && W.wet(c.x, c.z, 3), canLand = pad ? !solidAt(c.x, c.z, 2.0, RF.n) : !wet && !solidAt(c.x, c.z, 3.2);
     const fx = Math.sin(c.yaw), fz = Math.cos(c.yaw); let vx = c.vx || 0, vz = c.vz || 0;
     let vf = vx * fx + vz * fz, vl = vx * fz - vz * fx; const sp0 = Math.hypot(vx, vz);
     // altura: sobe sozinho até à altura de cruzeiro quando pedes para andar; parado e a travar, desce; a virar não muda nada
     if (!c.air && ok && c.rot > 0.92 && f > 0.2) c.air = true;
     // c.uAlt = a altura que o piloto pede (cruzeiro, ou a descer devagar enquanto trava parado); c.tAlt = essa ou mais, se houver prédios
     const below = tallAt(c.x, c.z, 4); let ahead = below; for (let k = 1; k <= 3; k++) ahead = Math.max(ahead, tallAt(c.x + vx * k, c.z + vz * k, 5));
-    const floor = canLand ? 0 : wet ? 3 : Math.max(3, below + 2.5);
+    const floor = canLand ? pad : wet ? 3 : Math.max(3, below + 2.5);
     if (c.air) { if (f < -0.2 && sp0 < 2.5 && !c.hov) c.uAlt = Math.max(floor, Math.min(c.uAlt ?? alt0, alt0 + 1) - dt * 4.5); else if (f > 0.05) c.uAlt = CRU; else c.uAlt = Math.max(floor, c.uAlt ?? alt0); }
     else c.uAlt = 0;
     if (c.air && !c.hov && f < -0.2 && sp0 < 2.5 && !canLand && c.uAlt <= floor + 0.01 && !(c.nlT > 0)) { c.nlT = 4; G.ui.toast(wet ? 'Não dá para aterrar na água' : 'Aqui não dá para aterrar: procura um sítio livre'); } c.nlT = (c.nlT || 0) - dt;
-    c.tAlt = !ok ? 0 : c.air && c.uAlt > 0.5 ? Math.max(c.uAlt, ahead + 6) : c.uAlt;
+    c.tAlt = !ok ? pad : c.air && c.uAlt > pad + 0.5 && !(pad && canLand && sp0 < 3) ? Math.max(c.uAlt, ahead + 6) : c.uAlt; // devagar por cima de um telhado livre: deixa descer até ele
     const blocked = ok && ahead + 2.5 > alt0;
-    let vy = c.vy || 0; const want = !ok ? (alt0 > 0.2 ? -5 : 0) : clamp((c.tAlt - alt0) * 0.9, -3.5, blocked ? 7 : 4.2);
-    vy += (want - vy) * (1 - Math.exp(-dt * 2.4)); c.alt = Math.max(0, alt0 + vy * dt);
-    if (c.alt <= 0) { if (vy < -6 && c.hp > 0) { c.hp = Math.max(1, c.hp - (-vy - 6) * 60); audio.play('partir', 0.7); G.shakeT = 0.4; } vy = 0; if (c.air && c.tAlt <= 0.01) c.air = false; }
+    let vy = c.vy || 0; const want = !ok ? (alt0 > pad + 0.2 ? -5 : 0) : clamp((c.tAlt - alt0) * 0.9, -3.5, blocked ? 7 : 4.2);
+    vy += (want - vy) * (1 - Math.exp(-dt * 2.4)); c.alt = Math.max(pad, alt0 + vy * dt);
+    if (c.alt <= pad) { if (vy < -6 && c.hp > 0) { c.hp = Math.max(1, c.hp - (-vy - 6) * 60); audio.play('partir', 0.7); G.shakeT = 0.4; } vy = 0; if (c.air && c.tAlt <= pad + 0.01) c.air = false; }
     c.vy = vy;
-    const air = c.alt > 1.2;
+    const air = c.alt - pad > 1.2;
     // à frente: força do cíclico menos o arrasto (a velocidade máxima sai daqui); travar puxa o nariz para cima e corta a velocidade, sem passar para trás
     const A = T.acc * 0.75, drag = A / T.vmax;
     if (air && ok) { vf += (Math.max(0, c.cf) * A - vf * drag * (0.6 + 0.4 * Math.abs(vf) / T.vmax) - (c.cf < 0.05 ? vf * 0.22 : 0)) * dt; if (c.cf < 0 && vf > 0) vf = Math.max(0, vf + c.cf * 11 * dt); }
@@ -108,7 +110,7 @@ export function makeCars({ scene, G, W, collide, solidAt, tallAt = () => 0, grou
     if (blocked && air && vf > 3) vf *= Math.exp(-dt * 2.5); // obstáculo à frente mais alto do que o helicóptero
     vl *= Math.exp(-dt * (air ? 1.1 : 6)); // o deslize de lado morre aos poucos (dá aquele arrasto ao sair das curvas)
     // pedais: rodar com inércia; em velocidade roda menos (o aparelho prefere seguir a direito)
-    const yrT = air || c.alt > 0.3 ? c.cs * (1.25 - 0.5 * Math.min(1, vf / T.vmax)) : 0;
+    const yrT = air || c.alt - pad > 0.3 ? c.cs * (1.25 - 0.5 * Math.min(1, vf / T.vmax)) : 0;
     c.yr = (c.yr || 0) + (yrT - (c.yr || 0)) * (1 - Math.exp(-dt * 2.2)); c.yaw += c.yr * dt;
     { const da = c.yr * dt * (air ? 0.9 : 0), ca = Math.cos(da), sa = Math.sin(da), nf = vf * ca - vl * sa; vl = vf * sa + vl * ca; vf = nf; } // curva coordenada: a inclinação leva quase toda a velocidade para o rumo novo
     // de volta ao mundo; o que sobra de lado escorrega e morre aos poucos
@@ -119,7 +121,7 @@ export function makeCars({ scene, G, W, collide, solidAt, tallAt = () => 0, grou
     const rlT = air ? clamp(-c.yr * (0.12 + 0.3 * vf / T.vmax), -0.35, 0.35) : 0;
     const kk = 1 - Math.exp(-dt * 3); c.pt = (c.pt || 0) + (ptT - (c.pt || 0)) * kk; c.rl = (c.rl || 0) + (rlT - (c.rl || 0)) * kk;
     const sp = Math.hypot(vx, vz); c.x = clamp(c.x + vx * dt, -3990, 3990); c.z = clamp(c.z + vz * dt, -3990, 3990); c.v = sp;
-    if (c.alt < 6) { const o = { x: c.x, z: c.z, lv: 0, h: 0 }; collide(o, 2.4); if (Math.abs(o.x - c.x) + Math.abs(o.z - c.z) > 1e-3) { c.x = o.x; c.z = o.z; if (sp > 6) { c.hp = Math.max(1, c.hp - sp); audio.play('partir', 0.6); G.shakeT = 0.3; } c.vx *= -0.2; c.vz *= -0.2; } }
+    if (!pad && c.alt < 6) { const o = { x: c.x, z: c.z, lv: 0, h: 0 }; collide(o, 2.4); if (Math.abs(o.x - c.x) + Math.abs(o.z - c.z) > 1e-3) { c.x = o.x; c.z = o.z; if (sp > 6) { c.hp = Math.max(1, c.hp - sp); audio.play('partir', 0.6); G.shakeT = 0.3; } c.vx *= -0.2; c.vz *= -0.2; } }
     if (ok) c.fuel = Math.max(0, c.fuel - dt * (c.rot > 0.1 ? 0.05 + sp * 0.002 : 0)); c.spin += c.rot * dt * 40;
   };
   // um veículo parado aqui consegue sair para longe? procura em largura numa grelha de 2 m, com a largura de um carro;
@@ -149,14 +151,16 @@ export function makeCars({ scene, G, W, collide, solidAt, tallAt = () => 0, grou
     clear() { G.car = null; for (const c of [...list]) del(c); },
     dbgAdd(k, x, z, yaw) { return add('T' + Math.random().toString(36).slice(2, 7), x, z, yaw, { k, fuel: 30 }); }, dbgDel(c) { del(c); }, // só para testes
     // perto de um carro (para entrar ou pôr gasolina)
-    nearest(p, r = 3.2) { let best = null, bd = r; for (const c of list) { if (c.hp <= 0) continue; const d = Math.hypot(c.x - p.x, c.z - p.z) - (VT[c.k].two ? 0.4 : 1.2); if (d < bd) { bd = d; best = c; } } return best; },
+    nearest(p, r = 3.2) { let best = null, bd = r; for (const c of list) { if (c.hp <= 0 || Math.abs((p.y || 0) - groundY(c.x, c.z, 0) - (c.alt || 0)) > 2.5) continue; /* noutro andar ou no telhado: não chega */ const d = Math.hypot(c.x - p.x, c.z - p.z) - (VT[c.k].two ? 0.4 : 1.2); if (d < bd) { bd = d; best = c; } } return best; },
     seatFree(c) { return c.seats.findIndex(s => !s); },
     // entrar: o primeiro lugar livre (o do condutor primeiro)
     enter(c) { const i = this.seatFree(c); if (i < 0) { G.ui.toast(VT[c.k].two ? 'Já não cabe mais ninguém' : 'O carro está cheio'); return; } if (G.net && G.net.world) { G.net.raw({ t: 'cin', id: c.id, seat: i }); return; } this.seated(c, i); },
     seated(c, i) { c.seats[i] = me(); G.car = c; G.carSeat = i; if (i === 0) c.idle = 99; /* o helicóptero só levanta quando mexes o polegar */ G.aimEnd && G.aimEnd(); G.setAuto && G.setAuto(false); audio.play('porta', 0.7); if (i === 0) { const T = VT[c.k]; G.ui.toast(T.fuel === false ? T.n + ' · a pedalar' : c.fuel > 0.5 ? T.n + ' · gasolina ' + Math.round(c.fuel) + ' L' : 'Sem gasolina: precisas de um galão'); if (c.rc) { removeRect(c.rc); c.rc = null; } } else G.ui.toast(VT[c.k].two ? 'Vais à pendura · aponta para disparar' : 'Vais de passageiro · aponta para disparar da janela'); },
-    exit(net = true) { const c = G.car; if (!c) return; if (net && (c.alt || 0) > 0.8) { G.ui.toast('Aterra primeiro'); return; } G.leanOut = false; G.aimEnd && G.aimEnd(); const p = G.p, s = G.carSeat; c.seats[s] = 0; G.car = null; if (net && G.net && G.net.world) G.net.raw({ t: 'cout', id: c.id });
+    exit(net = true) { const c = G.car; if (!c) return; if (net && (c.alt || 0) - padOf(c) > 0.8) { G.ui.toast('Aterra primeiro'); return; } G.leanOut = false; G.aimEnd && G.aimEnd(); const p = G.p, s = G.carSeat; c.seats[s] = 0; G.car = null; if (net && G.net && G.net.world) G.net.raw({ t: 'cout', id: c.id });
       const fx = Math.sin(c.yaw), fz = Math.cos(c.yaw), lx = Math.cos(c.yaw), lz = -Math.sin(c.yaw); // lado esquerdo do carro
-      for (const [a, b] of [[1.5, 0], [-1.5, 0], [0, -2.8], [0, 2.8], [2.4, 1], [-2.4, 1]]) { const x = c.x + lx * a * (s % 2 ? -1 : 1) + fx * b, z = c.z + lz * a * (s % 2 ? -1 : 1) + fz * b; if (!solidAt(x, z, 0.4)) { p.x = x; p.z = z; break; } }
+      const RF = padOf(c) > 0 ? roofAt(c.x, c.z, 2.0) : null; // aterrado num telhado: sais para cima do telhado
+      for (const [a, b] of [[1.5, 0], [-1.5, 0], [0, -2.8], [0, 2.8], [2.4, 1], [-2.4, 1], [1.2, -1.5], [-1.2, -1.5]]) { const x = c.x + lx * a * (s % 2 ? -1 : 1) + fx * b, z = c.z + lz * a * (s % 2 ? -1 : 1) + fz * b; if (RF ? roofAt(x, z, 0.35) === RF && !solidAt(x, z, 0.4, RF.n) : !solidAt(x, z, 0.4)) { p.x = x; p.z = z; break; } }
+      if (RF) { p.lv = RF.n; p.bld = RF; p.base = RF.roofY - 0.05; p.h = 0; p.vy = 0; p.y = RF.roofY; } else { p.lv = 0; p.base = 0; p.bld = null; p.h = 0; p.y = groundY(p.x, p.z, 0); }
       p.vx = p.vz = 0; audio.play('portaF', 0.7); if (!c.seats[0] && Math.abs(c.v) < 0.5) { c.v = 0; setRect(c); } },
     refuel(c, it) { const T = VT[c.k]; if (T.fuel === false) { G.ui.toast('As bicicletas não levam gasolina'); return false; } const add = Math.min(T.tank - c.fuel, 20); if (add < 0.5) { G.ui.toast('O depósito está cheio'); return false; } c.fuel += add; if (G.net && G.net.world) G.net.raw({ t: 'cf', id: c.id, add }); G.ui.toast('Gasolina: ' + Math.round(c.fuel) + ' L'); audio.play('apanhar'); return true; },
     // conduzir: polegar = para onde queres ir no ecrã (para trás faz marcha-atrás); no PC, W/S acelera e trava, A/D vira
@@ -222,7 +226,7 @@ export function makeCars({ scene, G, W, collide, solidAt, tallAt = () => 0, grou
       const T = VT[c.k], [sx0, , sz] = T.seats[G.carSeat] || T.seats[0]; const cs = Math.cos(c.yaw), sn = Math.sin(c.yaw);
       // passageiro a apontar: debruça-se pela janela (fica à mostra, fora da carroçaria); quem conduz não dispara
       G.leanOut = G.carSeat > 0 && c.hp > 0 && !!(G.aimS && G.aimS.on); const sx = G.leanOut && !T.open ? Math.sign(sx0 || 1) * (T.wid / 2 + 0.4) : sx0;
-      p.x = c.x + sx * cs + sz * sn; p.z = c.z - sx * sn + sz * cs; p.vx = p.vz = 0; if (!G.leanOut) p.root = p.yaw = p.aim = c.yaw; p.lv = 0; p.base = c.alt || 0; p.y = groundY(c.x, c.z, 0) + (c.alt || 0);
+      p.x = c.x + sx * cs + sz * sn; p.z = c.z - sx * sn + sz * cs; p.vx = p.vz = 0; if (!G.leanOut) p.root = p.yaw = p.aim = c.yaw; const RF = padOf(c) > 0 ? roofAt(c.x, c.z, 2.0) : null; p.lv = RF ? RF.n : 0; if (RF) p.bld = RF; p.base = c.alt || 0; p.y = groundY(c.x, c.z, 0) + (c.alt || 0);
       audio.engine && audio.engine((G.carSeat === 0 || VT[c.k].fly) && VT[c.k].fuel !== false && c.fuel > 0 && c.hp > 0 && (!VT[c.k].fly || (c.rot || 0) > 0.05) ? (VT[c.k].fly ? c.rot || 0 : 1) : 0, VT[c.k].fly ? Math.min(1, Math.hypot(c.vx || 0, c.vz || 0) / VT[c.k].vmax + (c.alt || 0) / 60) : Math.abs(c.v) / VT[c.k].vmax, VT[c.k].fly ? 1 : 0);
     },
     // online: os carros que o servidor manda (e quem vai em cada lugar)
@@ -237,7 +241,7 @@ export function makeCars({ scene, G, W, collide, solidAt, tallAt = () => 0, grou
         if (hp <= 0) wreck(c); }
     },
     gone(ids) { for (const id of ids) { const c = byId.get(id); if (c && c !== G.car) del(c); } },
-    up() { const c = G.car; if (!c || G.carSeat !== 0) return null; const a = [c.id, Math.round(c.x * 10), Math.round(c.z * 10), Math.round(c.yaw * 100), Math.round(c.v * 10), +c.fuel.toFixed(1), Math.round(c.hp), Math.round((c.alt || 0) * 10)], sg = a.join(); if (sg === c.sent) return null; c.sent = sg; a.push(Math.round(performance.now())); return a; },
+    up() { const c = G.car; if (!c || G.carSeat !== 0) return null; const a = [c.id, Math.round(c.x * 10), Math.round(c.z * 10), Math.round(c.yaw * 100), Math.round(c.v * 10), +c.fuel.toFixed(1), Math.round(c.hp), Math.round((c.alt || 0) * 10)], sg = a.join(); if (sg === c.sent) return null; c.sent = sg; a.push(Math.round(performance.now()), Math.round((c.pad || 0) * 10)); return a; },
   };
   return C;
 }

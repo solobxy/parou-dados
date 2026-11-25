@@ -68,6 +68,10 @@ export function makeBase({ scene, W, G, audio, addRect, removeRect, visDirty, in
   const edgeKey = (i, j, s) => s === 0 ? 'h:' + i + ':' + j : s === 2 ? 'h:' + i + ':' + (j + 1) : s === 3 ? 'v:' + i + ':' + j : 'v:' + (i + 1) + ':' + j;
   const edgeGeom = k => { const [t, a, b] = k.split(':'); const i = +a, j = +b; return t === 'h' ? { horiz: true, x0: i * CELL, x1: i * CELL + CELL, z: j * CELL, c: [[i, j - 1], [i, j]] } : { horiz: false, z0: j * CELL, z1: j * CELL + CELL, x: i * CELL, c: [[i - 1, j], [i, j]] }; };
   const hasFund = (i, j) => pieces.has('f:' + cellKey(i, j));
+  // de outro jogador (nem meu nem do meu clã): o servidor é que manda; aqui é só para o fantasma ficar vermelho e dizer porquê
+  const theirs = o => !!(NET && o && o.u && o.u !== NET.uid && !(o.cid && NET.clan && o.cid === NET.clan));
+  const distCell = (x, z, i, j) => Math.hypot(Math.max(i * CELL - x, 0, x - (i + 1) * CELL), Math.max(j * CELL - z, 0, z - (j + 1) * CELL));
+  const griefWhy = (x, z, gapF, gapD) => { for (const P of pieces.values()) if (P.t === 'fund' && theirs(P) && distCell(x, z, P.i, P.j) < gapF) return 'Muito perto da base de outro jogador'; for (const d of deps) if (theirs(d) && Math.hypot(d.x - x, d.z - z) < gapD) return 'Muito perto das coisas de outro jogador'; return null; };
 
   // ---------- validação do terreno
   const groundOk = (x0, z0, x1, z1) => {
@@ -139,15 +143,18 @@ export function makeBase({ scene, W, G, audio, addRect, removeRect, visDirty, in
     if (mode === 'fund') { const [fx, fz] = front(2.6); const i = Math.floor(fx / CELL), j = Math.floor(fz / CELL), x0 = i * CELL, z0 = j * CELL;
       if (hasFund(i, j)) return { bad: 'Já tem fundação', i, j, x0, z0 };
       if (Math.max(Math.abs(x0), Math.abs(z0), Math.abs(x0 + CELL), Math.abs(z0 + CELL)) > MAPL - 4) return { bad: 'Fora do mapa', i, j, x0, z0 };
+      for (const P of pieces.values()) if (P.t === 'fund' && theirs(P) && Math.max(Math.abs(P.i - i), Math.abs(P.j - j)) <= 3) return { bad: 'Muito perto da base de outro jogador', i, j, x0, z0 };
+      for (const d of deps) if (theirs(d) && distCell(d.x, d.z, i, j) < 4) return { bad: 'Muito perto das coisas de outro jogador', i, j, x0, z0 };
       return { i, j, x0, z0, bad: groundOk(x0 + 0.05, z0 + 0.05, x0 + CELL - 0.05, z0 + CELL - 0.05) }; }
     if (mode === 'teto') { const [fx, fz] = front(1.2); const i = Math.floor(fx / CELL), j = Math.floor(fz / CELL), x0 = i * CELL, z0 = j * CELL;
-      if (!hasFund(i, j)) return { bad: 'Precisa de fundação', i, j, x0, z0 }; if (pieces.has('t:' + cellKey(i, j))) return { bad: 'Já tem teto', i, j, x0, z0 };
+      if (!hasFund(i, j)) return { bad: 'Precisa de fundação', i, j, x0, z0 }; if (theirs(pieces.get('f:' + cellKey(i, j)))) return { bad: 'Esta base não é tua', i, j, x0, z0 }; if (pieces.has('t:' + cellKey(i, j))) return { bad: 'Já tem teto', i, j, x0, z0 };
       const walls = [0, 1, 2, 3].filter(s => pieces.has(edgeKey(i, j, s))).length; return { i, j, x0, z0, bad: walls < 2 ? 'Precisa de pelo menos 2 paredes' : null }; }
     // paredes: a aresta mais perto do ponto à frente, de uma célula com fundação
     const [fx, fz] = front(1.6); let best = null, bd = 2.2;
     for (let i = Math.floor(fx / CELL) - 1; i <= Math.floor(fx / CELL) + 1; i++) for (let j = Math.floor(fz / CELL) - 1; j <= Math.floor(fz / CELL) + 1; j++) { if (!hasFund(i, j)) continue;
       for (let s = 0; s < 4; s++) { const k = edgeKey(i, j, s), E = edgeGeom(k), mx = E.horiz ? (E.x0 + E.x1) / 2 : E.x, mz = E.horiz ? E.z : (E.z0 + E.z1) / 2, d = Math.hypot(mx - fx, mz - fz); if (d < bd) { bd = d; best = { k, E, mx, mz }; } } }
     if (!best) return { bad: 'Põe primeiro uma fundação' };
+    if (best.E.c.some(([a, b]) => theirs(pieces.get('f:' + cellKey(a, b))))) return { ...best, bad: 'Esta base não é tua' };
     if (pieces.has(best.k)) return { ...best, bad: 'Já tem ' + PIECES[pieces.get(best.k).t].n.toLowerCase() };
     const p2 = G.p, E = best.E, inLine = E.horiz ? Math.abs(p2.z - E.z) < 0.45 && p2.x > E.x0 - 0.3 && p2.x < E.x1 + 0.3 : Math.abs(p2.x - E.x) < 0.45 && p2.z > E.z0 - 0.3 && p2.z < E.z1 + 0.3;
     return { ...best, bad: inLine ? 'Estás no caminho' : null };
@@ -218,6 +225,8 @@ export function makeBase({ scene, W, G, audio, addRect, removeRect, visDirty, in
     if ((p.lv || 0) !== 0) return 'Só no chão';
     const onF = hasFund(Math.floor(x / CELL), Math.floor(z / CELL)); PL.y = onF ? FH : 0;
     if (inCity(x, z)) return 'Na cidade não';
+    if (onF && theirs(pieces.get('f:' + cellKey(Math.floor(x / CELL), Math.floor(z / CELL))))) return 'Esta base não é tua';
+    if (!onF) { const gw = griefWhy(x, z, 8, 4); if (gw) return gw; } // nem objetos nem camas à porta da base de outro
     if (k !== 'fogueira') for (const zn of W.zones) if (Math.hypot(x - zn.x, z - zn.z) < zn.r + 10) return 'Muito perto de ' + zn.name; // a fogueira faz-se em qualquer lado fora da cidade
     if (!onF && W.paved(x, z)) return 'Só em terreno natural';
     if (Math.abs(p.x - x) < hw + 0.15 && Math.abs(p.z - z) < hl2 + 0.15) return 'Estás em cima do sítio';
@@ -298,7 +307,7 @@ export function makeBase({ scene, W, G, audio, addRect, removeRect, visDirty, in
     // segue para onde estás virado ou fica no sítio onde tocaste no chão; o botão Colocar (ou o de bater) põe-no lá
     deploy(it) { if (!it || !ITEMS[it.k] || !ITEMS[it.k].deploy) return false; PL.it = it; PL.src = G.inv.belt[G.sel] === it ? 'held' : 'inv'; PL.sel = G.sel; PL.pin = null; PL.t = 0; if (!PL.tip) { PL.tip = 1; toast('Vira-te ou toca no chão para escolher o sítio · depois Colocar'); } return false; },
     placing() { return !!PL.it; },
-    placeOk() { return !!(PL.it && PL.ok); },
+    placeOk() { return !!(PL.it && PL.ok); }, placeInfo() { return { ok: !!PL.ok, why: PL.why || "" }; },
     cancelPlace() { PL.it = null; PL.pin = null; ghost.visible = false; },
     pin(pt) { if (!PL.it || !pt) return; const p = G.p; if (Math.hypot(pt.x - p.x, pt.z - p.z) > PIN_R) { toast('Mais perto'); return; } PL.pin = { x: pt.x, z: pt.z }; PL.t = 0; },
     placeNow() { const it = PL.it; if (!it) return false; PL.t = 0; placeCheck(); if (!PL.ok) { toast(PL.why); audio.play('vazio', 0.6); return false; }
@@ -348,15 +357,15 @@ export function makeBase({ scene, W, G, audio, addRect, removeRect, visDirty, in
     online(net) { NET = net; pend.clear(); },
     // do servidor: peças e objetos novos ou mudados, e os que saíram
     applyNet(m) {
-      for (const [k, t, tier, hp, open, u, cl] of m.p || []) { let P = pieces.get(k);
+      for (const [k, t, tier, hp, open, u, cl, cid] of m.p || []) { let P = pieces.get(k);
         if (!P) { const [ty, a, b] = k.split(':'); P = add(t, k, ty === 'f' || ty === 't' ? { i: +a, j: +b } : {}); }
         if (P.tier !== tier) { P.tier = tier; buildMesh(P); if (P.door) P.door.mesh.material = MAT[P.tier]; }
-        P.hp = hp; P.u = u; P.cl = cl || 0; if (P.door && P.door.target !== open) { P.door.target = open; audio.play(open ? 'porta' : 'portaF', G.p ? Math.max(0, 1 - Math.hypot(P.door.x - G.p.x, P.door.z - G.p.z) / 30) : 0.5); }
+        P.hp = hp; P.u = u; P.cl = cl || 0; P.cid = cid || 0; if (P.door && P.door.target !== open) { P.door.target = open; audio.play(open ? 'porta' : 'portaF', G.p ? Math.max(0, 1 - Math.hypot(P.door.x - G.p.x, P.door.z - G.p.z) / 30) : 0.5); }
         const c = pend.get('bp:' + k) || pend.get('bu:' + k); if (c) { pend.delete('bp:' + k); pend.delete('bu:' + k); } }
       for (const k of m.rp || []) { const P = pieces.get(k); if (P) remove(P); }
-      for (const [id, k, x, z, yaw, y, hp, on, u, name, cd, cl] of m.d || []) { let d = deps.find(e => e.nid === id);
+      for (const [id, k, x, z, yaw, y, hp, on, u, name, cd, cl, cid] of m.d || []) { let d = deps.find(e => e.nid === id);
         if (!d) d = placeDep(k, x, z, yaw, { y, hp, on, nid: id, u, name, cd, grid: null });
-        d.hp = hp; d.u = u; d.cd = cd; d.cl = cl || 0; if (G.box !== d.c) d.on = !!on; if (name && d.name !== name) { d.name = name; if (d.c) d.c.label = bedLabel(d); } }
+        d.hp = hp; d.u = u; d.cd = cd; d.cl = cl || 0; d.cid = cid || 0; if (G.box !== d.c) d.on = !!on; if (name && d.name !== name) { d.name = name; if (d.c) d.c.label = bedLabel(d); } }
       for (const id of m.rd || []) { const d = deps.find(e => e.nid === id); if (d) { if (G.box === d.c) { G.box = null; G.ui.closeInv(); } removeDep(d); } }
     },
     // o servidor recusou: devolve o que pagaste

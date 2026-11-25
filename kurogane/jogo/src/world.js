@@ -121,11 +121,12 @@ export function buildWorld(scene, mats, A) {
   const winS = (x, y, z, w, h, frame = 0xd9d6cf) => { b.box(w + 0.12, h + 0.12, 0.06, x, y, z + 0.02, frame); b.box(w, h, 0.06, x, y, z + 0.05, 0x40505e, { mat: litW(), jit: 0.15 }); b.box(w + 0.16, 0.07, 0.16, x, y - h / 2 - 0.06, z + 0.08, frame); };
   const winE = (x, y, z, w, h, frame = 0xd9d6cf) => { b.box(0.06, h + 0.12, w + 0.12, x + 0.02, y, z, frame); b.box(0.06, h, w, x + 0.05, y, z, 0x40505e, { mat: litW(), jit: 0.15 }); };
   const ac = (x, y, z, f = 's') => { if (f === 's') { b.box(0.8, 0.55, 0.3, x, y, z + 0.15, 0xdcdad4); b.cyl(0.2, 0.2, 0.02, 12, x - 0.1, y, z + 0.31, 0x5a5a58, { rx: Math.PI / 2 }); } else { b.box(0.3, 0.55, 0.8, x + 0.15, y, z, 0xdcdad4); } };
-  const roofKit = (x0, z0, x1, z1, y) => {
+  const roofKit = (x0, z0, x1, z1, y, R = null) => { // R: telhado onde se pode estar (o que lá está em cima trava quem anda)
+    const rr2 = (cx, cz, hw, hd, h) => { if (R) W.rects.push({ x0: cx - hw, z0: cz - hd, x1: cx + hw, z1: cz + hd, k: 's', h, lv: R.lv, yb: R.yb, roof: 1 }); };
     b.box(x1 - x0, 0.45, 0.18, (x0 + x1) / 2, y + 0.22, z1 - 0.09, 0x9a968e); b.box(x1 - x0, 0.45, 0.18, (x0 + x1) / 2, y + 0.22, z0 + 0.09, 0x9a968e);
     b.box(0.18, 0.45, z1 - z0, x0 + 0.09, y + 0.22, (z0 + z1) / 2, 0x9a968e); b.box(0.18, 0.45, z1 - z0, x1 - 0.09, y + 0.22, (z0 + z1) / 2, 0x9a968e);
-    const n = ri(1, 3); for (let i = 0; i < n; i++) { const ax = rr(x0 + 1.2, x1 - 1.2), az = rr(z0 + 1.2, z1 - 1.2); b.box(1.1, 0.7, 0.8, ax, y + 0.35, az, 0xcfcbc2); b.cyl(0.28, 0.28, 0.04, 12, ax, y + 0.72, az, 0x555); }
-    if (rnd() < 0.5) { const tx = rr(x0 + 1.5, x1 - 1.5), tz = rr(z0 + 1.5, z1 - 1.5); b.cyl(0.8, 0.8, 1.6, 12, tx, y + 1.6, tz, 0xc9c4b8); for (const s of [-0.5, 0.5]) b.box(0.08, 0.9, 0.08, tx + s, y + 0.45, tz, 0x555); }
+    const n = ri(1, 3); for (let i = 0; i < n; i++) { const ax = rr(x0 + 1.2, x1 - 1.2), az = rr(z0 + 1.2, z1 - 1.2); b.box(1.1, 0.7, 0.8, ax, y + 0.35, az, 0xcfcbc2); b.cyl(0.28, 0.28, 0.04, 12, ax, y + 0.72, az, 0x555); rr2(ax, az, 0.57, 0.42, 0.75); }
+    if (rnd() < 0.5) { const tx = rr(x0 + 1.5, x1 - 1.5), tz = rr(z0 + 1.5, z1 - 1.5); b.cyl(0.8, 0.8, 1.6, 12, tx, y + 1.6, tz, 0xc9c4b8); for (const s of [-0.5, 0.5]) b.box(0.08, 0.9, 0.08, tx + s, y + 0.45, tz, 0x555); rr2(tx, tz, 0.8, 0.8, 2.4); }
     if (rnd() < 0.4) { b.cyl(0.03, 0.03, 3, 5, rr(x0 + 1, x1 - 1), y + 1.5, rr(z0 + 1, z1 - 1), 0x555); }
   };
   const vsign = (x, y0, z, text, bg, fg, ry = 0, w = 0.7, h = 3.2) => { // letreiro vertical saliente, perpendicular à fachada
@@ -284,13 +285,13 @@ export function buildWorld(scene, mats, A) {
       b.box(x1 - x0 + 0.1, 0.12, z1 - z0 + 0.1, cx, h + 0.06, cz, wall);
     } else {
       b.box(x1 - x0 + 0.2, 0.28, z1 - z0 + 0.2, (x0 + x1) / 2, h + 0.14, (z0 + z1) / 2, o.roofC ?? 0x8f8b84);
-      if (!o.upper && x1 - x0 > 7) roofKit(x0, z0, x1, z1, h + 0.28);
+      if (!o.upper) { C.roofY = top + 0.28; if (x1 - x0 > 7) roofKit(x0, z0, x1, z1, h + 0.28, { lv: n, yb: C.roofY }); } // telhado plano: dá para estar lá em cima (o helicóptero aterra)
     }
     if (o.upper) {
       const ufh = 3.2, H = h + o.upper * ufh, col2 = o.upperCol ?? pick(PAL);
       b.box(x1 - x0, H - h, z1 - z0, (x0 + x1) / 2, h + (H - h) / 2 + 0.28, (z0 + z1) / 2, col2, { jit: 0.03 });
       for (let f = 0; f < o.upper; f++) { const y = h + 0.28 + f * ufh + ufh * 0.52; for (let x = x0 + 1.1; x < x1 - 0.7; x += 2.0) winS(x, y, z1, 1.2, 1.5); for (let z = z0 + 1.2; z < z1 - 0.7; z += 2.2) winE(x1, y, z, 1.1, 1.5); }
-      roofKit(x0, z0, x1, z1, H + 0.28);
+      C.roofY = top - h + H + 0.28; roofKit(x0, z0, x1, z1, H + 0.28, { lv: n, yb: C.roofY });
       C.y1 = H + 2;
     }
     if (o.cutExtra) o.cutExtra();

@@ -88,6 +88,7 @@ export function makeFire(s = 1, o = {}) {
   return { g, flame, smoke, parts,
     set(on) { g.visible = !!on; },
     // fumo sozinho (ex.: a chaminé da fornalha) ou chama mais baixa
+    fade(k) { if (smoke) smoke.material.uniforms.uDark.value = 0.38 * (o.smoke ?? 1) * k; },
     dim(k) { flame.material.uniforms.uOn.value = k; core.material.uniforms.uOn.value = k; spark.material.uniforms.uOn.value = k; },
     dispose() { for (const p of parts) { p.geometry.dispose(); p.material.dispose(); } } };
 }

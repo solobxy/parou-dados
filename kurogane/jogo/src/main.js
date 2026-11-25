@@ -186,9 +186,12 @@ async function boot() {
     const lv = o.lv || 0; let s = null;
     for (const st of W.stairs) if ((lv === st.lv || lv === st.lv + 1) && o.x > st.x0 && o.x < st.x1 && o.z > st.z0 && o.z < st.z1) { s = st; break; }
     if (s) { const a = s.ax ? o.x : o.z, len = s.ax ? s.x1 - s.x0 : s.z1 - s.z0, t = clamp((a - s.bot) * s.dir / len, 0, 1); o.st = s; o.stT = t; o.lv = t > 0.5 ? s.lv + 1 : s.lv; o.fhb = s.fh; o.bld = s.b; o.base = (s.lv + t) * s.fh; }
-    else { o.st = null; o.base = (o.lv || 0) * (o.fhb || 3.3); }
+    else { o.st = null; o.base = o.bld && o.bld.roofY && (o.lv || 0) >= o.bld.n ? o.bld.roofY - 0.05 : (o.lv || 0) * (o.fhb || 3.3); } // no telhado: a altura do telhado
   };
   const inShell = (C, x, z) => x > C.ix0 && x < C.ix1 && z > C.iz0 && z < C.iz1;
+  // telhado plano onde cabe um quadrado de meia-largura m (o helicóptero aterra lá e quem sai fica em cima): devolve o edifício
+  const roofAt = (x, z, m = 0) => { for (const C of W.cuts) if (C.roofY && x - m > C.ix0 && x + m < C.ix1 && z - m > C.iz0 && z + m < C.iz1) return C; return null; };
+  const onRoof = p => !!(p && p.bld && p.bld.roofY && (p.lv || 0) >= p.bld.n);
   // mesmo piso (ou a passar um pelo outro na escada)
   const sameLevel = (a, b) => (a.lv || 0) === (b.lv || 0) ? Math.abs((a.base || 0) - (b.base || 0)) < 1.7 || !(a.st || b.st) : !!(a.st || b.st) && Math.abs((a.base || 0) - (b.base || 0)) < 1.7;
   // escadas: quem está junto à abertura vê e é visto por quem está em baixo (ou em cima) junto às escadas — sempre nos dois sentidos
@@ -718,10 +721,12 @@ async function boot() {
     if (onl && !B0.remote) G.net.raw({ t: 'boom', k: B0.k, x: +P.x.toFixed(2), y: +P.y.toFixed(2), z: +P.z.toFixed(2), lv, lk });
     // efeito: clarão, fogo, fumo, marca no chão e muito barulho
     flash.position.set(P.x, P.y + 1, P.z); flash.intensity = 60; G.flashT = 0.18; burst(P.x, P.y + 0.3, P.z, 50, 0xffb040, 9, 0.5); burst(P.x, P.y + 0.3, P.z, 40, 0x3a3632, 5, 1.6); burst(P.x, P.y, P.z, 30, 0x6a5a44, 7, 0.9);
+    { const F = makeFire(B0.k === 'c4' ? 4.5 : 3.2, { sparks: 30, smokeH: 3 }); F.g.position.set(P.x, (B0.base || 0) + groundY(P.x, P.z, lv) + 0.05, P.z); scene.add(F.g); FIREB.push({ F, t: 0 }); } // bola de fogo que se apaga e deixa fumo
     const sc = new THREE.Mesh(scorchGeo, scorchMat.clone()); sc.scale.setScalar(B0.k === 'c4' ? 1.8 : 1.3); sc.position.set(P.x, (B0.base || 0) + groundY(P.x, P.z, lv) + 0.03, P.z); sc.renderOrder = 2; scene.add(sc); setTimeout(() => scene.remove(sc), 90000);
     audio.play('explosao', p ? clamp(1.1 - Math.hypot(p.x - P.x, p.z - P.z) / 120, 0.15, 1) : 1); noise(P.x, P.z, B0.k === 'c4' ? 120 : 70); G.buzz(B0.k === 'c4' ? 120 : 70); G.combatT = G.t; if (G.heardShot) G.heardShot();
   };
-  const updBooms = dt => { for (let i = BOOMS.length - 1; i >= 0; i--) { const B0 = BOOMS[i]; B0.t -= dt;
+  const FIREB = [];
+  const updBooms = dt => { for (let i = FIREB.length - 1; i >= 0; i--) { const q = FIREB[i]; q.t += dt; q.F.dim(Math.max(0, 1 - q.t / 1.3) ** 0.7); q.F.fade(q.t < 2 ? 1 : Math.max(0, 1 - (q.t - 2) / 2.5)); if (q.t > 4.5) { scene.remove(q.F.g); q.F.dispose(); FIREB.splice(i, 1); } } for (let i = BOOMS.length - 1; i >= 0; i--) { const B0 = BOOMS[i]; B0.t -= dt;
       if (B0.V) { B0.V.y -= 9.8 * dt; const Q = B0.P.clone().addScaledVector(B0.V, dt); const h = wallHit(B0.P, Q); if (h < 1) { B0.V.x *= -0.35; B0.V.z *= -0.35; Q.copy(B0.P); } const gy = (B0.base || 0) + groundY(Q.x, Q.z, B0.lv) + 0.07; if (Q.y < gy) { Q.y = gy; B0.V.y = Math.abs(B0.V.y) * 0.3; B0.V.x *= 0.55; B0.V.z *= 0.55; if (Math.abs(B0.V.y) < 0.6) B0.V.y = 0; } B0.P.copy(Q); B0.m.position.copy(B0.P); B0.m.rotation.x += dt * 8; }
       else if (B0.led) { B0.beep -= dt; const fast = B0.t < 3; if (B0.beep <= 0) { B0.beep = fast ? 0.25 : 1; const p = G.p; audio.play('bip', p ? clamp(1 - Math.hypot(p.x - B0.P.x, p.z - B0.P.z) / 30, 0, 1) : 0.5); B0.led.visible = true; } else if (B0.beep < (fast ? 0.15 : 0.8)) B0.led.visible = false; }
       if (B0.t <= 0) { scene.remove(B0.m); BOOMS.splice(i, 1); if (!B0.ghost) explode(B0); } } };
@@ -1014,7 +1019,7 @@ async function boot() {
   // ---------- online (servidor de jogo): outros jogadores, PvP, quem dorme, mochilas partilhadas e clãs
   const _wa = new THREE.Vector3(), _wb = new THREE.Vector3();
   // ---------- carros
-  G.cars = makeCars({ scene, G, W, collide, solidAt, tallAt, groundY, addRect, removeRect, audio, hurtZombie, sameLevel });
+  G.cars = makeCars({ scene, G, W, collide, solidAt, tallAt, groundY, addRect, removeRect, audio, hurtZombie, sameLevel, roofAt });
   // o mundo partilhado (online): aplicar o que vem do servidor
   const doorById = new Map(W.doors.filter(D => D.wid != null).map(D => [D.wid, D]));
   const nodeWait = new Map(); // chave → quando volta (ms), para setores que ainda não estão carregados
@@ -1574,7 +1579,7 @@ async function boot() {
         baseL.forEach((L, i) => { const q = bl[i]; if (q) { L.position.set(q[0][0], q[0][1], q[0][2]); L.userData.on = 1; L.userData.fire = q[0].fire; } else L.userData.on = 0; });
         const near3 = W.lamps.concat(bl.slice(baseL.length).map(a => a[0])).map(l => [l, (l[0] - cx) ** 2 + (l[2] - cz) ** 2]).filter(a => a[1] < 1600).sort((a, b) => a[1] - b[1]).slice(0, lampL.length); lampL.forEach((L, i) => { const q = near3[i]; if (q) { L.position.set(q[0][0], q[0][1] - 0.4, q[0][2]); L.userData.on = 1; L.userData.big = q[0][1] > 9; L.userData.base = q[0].base; } else L.userData.on = 0; }); }
       lampL.forEach(L => { L.intensity = L.userData.on ? nt * (L.userData.big ? 200 : 26) : 0; L.distance = L.userData.big ? 48 : L.userData.base ? 4 : 20; });
-      { const shOn = renderer.shadowMap.enabled; baseL.forEach((L, i) => { const f = L.userData.fire ? 0.85 + 0.1 * Math.sin(G.t * 11 + i) + 0.06 * Math.sin(G.t * 23.7 + i * 2) : 1; L.intensity = L.userData.on ? (L.userData.fire ? 0.1 + 0.9 * nt : 0.35 + 0.65 * nt) * 16 * f * (L.userData.fire || 1) : 0; L.color.setHex(L.userData.fire ? 0xff8a3a : 0xffc27a); L.distance = shOn ? (L.userData.fire ? 6.5 : 9) : 3; L.castShadow = shOn; L.shadow.autoUpdate = L.intensity > 0; }); torch.shadow.autoUpdate = torch.intensity > 0; } // sem sombras: alcance curto para não iluminar o lado de fora; as sombras só se calculam com a luz acesa (poupa o telemóvel)
+      { const shOn = renderer.shadowMap.enabled; baseL.forEach((L, i) => { const f = L.userData.fire ? 0.85 + 0.1 * Math.sin(G.t * 11 + i) + 0.06 * Math.sin(G.t * 23.7 + i * 2) : 1; L.intensity = L.userData.on ? (L.userData.fire ? 0.1 + 0.9 * nt : 0.35 + 0.65 * nt) * 16 * f * (L.userData.fire || 1) : 0; L.color.setHex(L.userData.fire ? 0xff8a3a : 0xffc27a); L.distance = shOn ? (L.userData.fire ? 6.5 : 9) : (L.userData.fire ? 2.4 : 3); L.castShadow = shOn; L.shadow.autoUpdate = L.intensity > 0; }); torch.shadow.autoUpdate = torch.intensity > 0; } // sem sombras: alcance curto para não iluminar o lado de fora; as sombras só se calculam com a luz acesa (poupa o telemóvel)
       G.base.night(nt); if (lampPools) lampPools.material.opacity = nt * 0.5;
       G.ambT = (G.ambT || 0) - dt; if (G.ambT <= 0) { G.ambT = 0.5; audio.ambience(G.playing && p && p.alive ? D : 0, !!G.inside || !!G.car, 0.25 + 0.5 * (G.rain || 0)); } // pássaros de dia, grilos à noite, vento
     }
@@ -1617,7 +1622,7 @@ async function boot() {
     // máscara da linha de vista (refeita quando te mexes ou uma porta muda)
     if (p && G.playing && p.alive && !G.fp) { VU.uVisK.value = 0.06 + 0.03 * (G.day ?? 1); VIS.t -= dt; const dk = W.doors.reduce((a, D) => a + (D.rc.off ? 1 : 0), 0) + ':' + p.lv + ':' + Math.round((AIM.lean || 0) * 4); VIS.cd = (VIS.cd || 0) - dt; if ((VIS.cd <= 0 && Math.hypot(p.x - VIS.x, p.z - VIS.z) > 0.04) || dk !== VIS.key || VIS.t <= 0) { VIS.x = p.x; VIS.z = p.z; VIS.key = dk; VIS.t = 0.5; VIS.cd = G.cfg.lowres ? 1 / 15 : 1 / 30; const lo = (AIM.lean || 0) * LEAN; drawVis(p.x + Math.cos(p.yaw) * lo, p.z - Math.sin(p.yaw) * lo, p.lv, p.bld && p.lv > 0 ? p.bld : null); } }
     else VU.uVisK.value = 1;
-    if (G0.xray) G0.xray.visible = !G.fp;
+    if (G0.xray) G0.xray.visible = !G.fp && !onRoof(G.p); // em cima de um telhado, os contornos das portas lá de baixo atravessavam-no
     body.root.visible = !!(p && G.playing && p.alive && !G.fp && (!G.car || G.leanOut));
     // onde fica o círculo no ecrã (para os sons à volta e a mira)
     if (p && G.playing && !G.fp) { const c0 = toScreen(_c.set(vc.x, p.y + 0.9, vc.z)), S = G.ui.safe(); G.view = { cx: c0.x, cy: c0.y, rx: Math.max(60, Math.min(c0.x - S.x0, S.x1 - c0.x) - 34), ry: Math.max(60, Math.min(c0.y - S.y0, S.y1 - c0.y) - 34), fp: false }; }
@@ -1637,6 +1642,7 @@ async function boot() {
       G.inside = null;
       for (const c of W.cuts) {
         if (!c.shell) { const h = hid(c); c.group.visible = !(h || occ(c)); continue; }
+        if (p.bld === c && onRoof(p)) { for (let L = 0; L < c.n; L++) { c.gt[L].visible = true; if (L) { c.g[L].visible = true; if (c.fv[L] < 1) fade(c, L, 1); } } c.gR.visible = true; continue; } // em cima do telhado: o prédio todo à vista
         const inside = inShell(c, p.x, p.z) && (p.lv === 0 || p.bld === c || (p.st && p.st.b === c));
         if (inside) G.inside = c;
         if (!inside && p.lv === 0 && peekAt(c)) { for (let L = 0; L < c.n; L++) { c.gt[L].visible = L > 0 ? false : false; if (L) c.g[L].visible = false; } c.gR.visible = false; continue; }

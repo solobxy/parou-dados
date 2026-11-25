@@ -66,7 +66,7 @@ const drop = c => {
   if (c.dead) return; c.dead = true; players.delete(c.id); try { c.sock.destroy(); } catch (e) { }
   for (const [k, L] of LK) if (L.c === c.id) LK.delete(k);
   for (const z of S.w.zs) if (z.o === c.id) z.o = 0;
-  for (const car of Object.values(S.w.cars)) { const i = car.s.indexOf(c.id); if (i >= 0) { car.s[i] = 0; if (i === 0) { car.v = 0; car.alt = 0; } } }
+  for (const car of Object.values(S.w.cars)) { const i = car.s.indexOf(c.id); if (i >= 0) { car.s[i] = 0; if (i === 0) { car.v = 0; car.alt = vt(car.k).fly ? (car.pad || 0) : 0; } } } /* helicóptero num telhado fica lá */
   const p = c.p; if (!p) return; if (S.tokens[p.tok]) S.tokens[p.tok].t = Date.now();
   // quem sai fica a dormir onde estava (com o que tinha), a não ser que já estivesse morto
   if (p.alive && p.tok) { S.sleepers[p.tok] = { x: p.x, z: p.z, y: p.y, lv: p.lv, yaw: p.yaw, name: p.name, look: p.look, inv: p.inv || [], hp: p.hp, ar: p.ar, clan: p.clan || null, t: Date.now(), hid: p.invis ? 1 : 0 }; dirty = true; bcast({ t: 'sleep', list: sleepList() }); }
@@ -161,12 +161,26 @@ const EXB = { gran: { br: 1.8, bdmg: 40 }, c4: { br: 1.7, bdmg: 560 } };
 const uidOf = tok => 'u' + crypto.createHash('sha1').update(tok).digest('hex').slice(0, 10);
 const ally = (a, b) => a === b || !!(S.tokens[a] && S.tokens[a].clan && S.tokens[b] && S.tokens[a].clan === S.tokens[b].clan);
 const BK = /^(f|t|h|v):(-?\d{1,4}):(-?\d{1,4})$/;
-const pRow = (k, P) => [k, P.t, P.tier, Math.round(P.hp), P.o ? 1 : 0, P.u, P.cl ? (P.cl.h ? 1 : 2) : 0]; // último: 0 sem fechadura, 1 com código, 2 antiga (só dono e clã)
-const dRow = (id, d) => [id, d.k, +d.x.toFixed(2), +d.z.toFixed(2), +d.yaw.toFixed(3), +d.y.toFixed(2), Math.round(d.hp), d.on ? 1 : 0, d.u, d.name || null, d.cd || 0, d.cl ? (d.cl.h ? 1 : 2) : 0];
+const clanTok = tok => (S.tokens[tok] && S.tokens[tok].clan) || 0;
+const pRow = (k, P) => [k, P.t, P.tier, Math.round(P.hp), P.o ? 1 : 0, P.u, P.cl ? (P.cl.h ? 1 : 2) : 0, clanTok(P.tok)]; // último: 0 sem fechadura, 1 com código, 2 antiga (só dono e clã)
+const dRow = (id, d) => [id, d.k, +d.x.toFixed(2), +d.z.toFixed(2), +d.yaw.toFixed(3), +d.y.toFixed(2), Math.round(d.hp), d.on ? 1 : 0, d.u, d.name || null, d.cd || 0, d.cl ? (d.cl.h ? 1 : 2) : 0, clanTok(d.tok)];
 const baseRows = () => ({ p: Object.entries(S.w.base.p).map(([k, P]) => pRow(k, P)), d: Object.entries(S.w.base.d).map(([id, d]) => dRow(id, d)) });
 const bb = o => { dirty = true; bcast({ t: 'bb', ...o }); };
 const no = (c, a, k, e) => send(c, { t: 'bno', a, k, e });
 const fundAt = (i, j) => S.w.base.p['f:' + i + ':' + j];
+// ---------- proteção contra grief: ninguém constrói colado à base de outro, nem a cerca, nem lhe põe objetos ou camas à porta
+const GAP_F = 3, GAP_D = 8, GAP_DD = 4; // casas livres entre bases de donos diferentes; metros entre um objeto solto e a base de outro; e entre objetos de donos diferentes
+const fundsNear = (x, z, r) => { const out = [], i0 = Math.floor((x - r) / CELL), i1 = Math.floor((x + r) / CELL), j0 = Math.floor((z - r) / CELL), j1 = Math.floor((z + r) / CELL); for (let i = i0; i <= i1; i++) for (let j = j0; j <= j1; j++) { const F = fundAt(i, j); if (F) out.push([i, j, F]); } return out; };
+const distCell = (x, z, i, j) => Math.hypot(Math.max(i * CELL - x, 0, x - (i + 1) * CELL), Math.max(j * CELL - z, 0, z - (j + 1) * CELL));
+// a nova fundação (ni, nj) do dono tok fecharia alguma base vizinha? (caminho a pé, sem diagonais, de lá até longe)
+const wouldEnclose = (ni, nj, tok) => { const RW = 30, done = new Map();
+  const reach = (vi, vj, vtok, extra) => { const blocked = (i, j) => { if (extra && i === ni && j === nj) return true; const F = fundAt(i, j); return !!F && !ally(F.tok, vtok); };
+    const q = [[vi, vj]], vis = new Set([vi + ':' + vj]); while (q.length) { const [i, j] = q.pop(); if (Math.abs(i - vi) >= RW || Math.abs(j - vj) >= RW) return [true, vis]; for (const [a, b] of [[i + 1, j], [i - 1, j], [i, j + 1], [i, j - 1]]) { const kk = a + ':' + b; if (vis.has(kk) || blocked(a, b)) continue; vis.add(kk); q.push([a, b]); } } return [false, vis]; };
+  for (const [vi, vj, V] of fundsNear(ni * CELL + 1.5, nj * CELL + 1.5, RW * CELL)) { if (ally(V.tok, tok)) continue; const D = done.get(V.tok); if (D && D.has(vi + ':' + vj)) continue;
+    const [ok, vis] = reach(vi, vj, V.tok, true); done.set(V.tok, D ? new Set([...D, ...vis]) : vis);
+    if (!ok && reach(vi, vj, V.tok, false)[0]) return true; } // só conta se for esta fundação a fechar o caminho
+  return false; };
+const depNearOther = (x, z, tok) => { for (const [i, j, F] of fundsNear(x, z, GAP_D + CELL)) if (!ally(F.tok, tok) && distCell(x, z, i, j) < GAP_D) return 'Muito perto da base de outro jogador'; for (const d of Object.values(S.w.base.d)) if (!ally(d.tok, tok) && Math.hypot(d.x - x, d.z - z) < GAP_DD) return 'Muito perto das coisas de outro jogador'; return null; };
 // onde se pode construir: o mapa vem de mapa.json (exportado do jogo); só vale se for da mesma versão do mundo
 let MAPA = null; try { MAPA = JSON.parse(fs.readFileSync(new URL('./mapa.json', import.meta.url), 'utf8')); MAPA.grid = new Map(); for (const r of [...MAPA.rects, ...MAPA.pads]) for (let ix = Math.floor((r[0] - 2) / 16); ix <= Math.floor((r[2] + 2) / 16); ix++) for (let iz = Math.floor((r[1] - 2) / 16); iz <= Math.floor((r[3] + 2) / 16); iz++) { const k = ix * 1000 + iz; if (!MAPA.grid.has(k)) MAPA.grid.set(k, []); MAPA.grid.get(k).push(r); } } catch (e) { console.log('mapa.json:', e.message); }
 const mapOk = () => !!MAPA && S.w.wv === MAPA.wv;
@@ -222,7 +236,9 @@ const baseMsg = (c, p, m, now) => {
     if (!(ty === 'f' ? t === 'fund' : ty === 't' ? t === 'teto' : ['parede', 'porta', 'janela'].includes(t))) return;
     if (Math.hypot(i * CELL + 1.5 - p.x, j * CELL + 1.5 - p.z) > 14) return no(c, 'bp', k, 'Estás longe demais');
     if (B.p[k]) return no(c, 'bp', k, 'Já há aí uma peça');
-    if (ty === 'f') { for (let a = i - 2; a <= i + 2; a++) for (let b = j - 2; b <= j + 2; b++) { const F = fundAt(a, b); if (F && !ally(F.tok, tok)) return no(c, 'bp', k, 'Muito perto da base de outro jogador'); } // nem colado nem a menos de 2 casas (6 m)
+    if (ty === 'f') { for (let a = i - GAP_F; a <= i + GAP_F; a++) for (let b = j - GAP_F; b <= j + GAP_F; b++) { const F = fundAt(a, b); if (F && !ally(F.tok, tok)) return no(c, 'bp', k, 'Muito perto da base de outro jogador'); } // nem colado nem a menos de 3 casas (9 m)
+      for (const d of Object.values(B.d)) if (!ally(d.tok, tok) && distCell(d.x, d.z, i, j) < GAP_DD) return no(c, 'bp', k, 'Muito perto das coisas de outro jogador');
+      if (wouldEnclose(i, j, tok)) return no(c, 'bp', k, 'Assim fechavas a base de outro jogador');
       if (mapOk()) { const bad = groundBad(i * CELL + 0.05, j * CELL + 0.05, i * CELL + CELL - 0.05, j * CELL + CELL - 0.05); if (bad) return no(c, 'bp', k, bad); } }
     else if (ty === 't') { const F = fundAt(i, j); if (!F) return no(c, 'bp', k, 'Precisa de fundação'); if (!ally(F.tok, tok)) return no(c, 'bp', k, 'Esta base não é tua'); }
     else { const fs2 = edgeCells(ty, i, j).map(([a, b]) => fundAt(a, b)).filter(Boolean); if (!fs2.length) return no(c, 'bp', k, 'Precisa de fundação'); if (fs2.some(F => !ally(F.tok, tok))) return no(c, 'bp', k, 'Esta base não é tua'); }
@@ -235,6 +251,7 @@ const baseMsg = (c, p, m, now) => {
   if (m.t === 'bdo') { const k = String(m.k || ''), P = B.p[k]; if (!P || P.t !== 'porta') return; const [dx, dz] = doorXZ(k); if (Math.hypot(dx - p.x, dz - p.z) > 4) return no(c, 'bdo', k, 'Chega-te à porta'); if (!lkOk(P.cl, P.tok, tok, p.uid)) return send(c, { t: 'bno', a: 'bdo', k, e: P.cl.h ? 'Trancada com código' : 'Trancada', lk: P.cl.h ? 1 : 0 }); P.o = m.o ? 1 : 0; bb({ p: [pRow(k, P)] }); return; }
   if (m.t === 'bd') { const k = String(m.k || ''); if (!DEP[k]) return; const x = num(m.x, -4100, 4100), z = num(m.z, -4100, 4100); if (Math.hypot(x - p.x, z - p.z) > 6) return no(c, 'bd', k, 'Estás longe demais');
     const F = fundAt(Math.floor(x / CELL), Math.floor(z / CELL)); if (F && !ally(F.tok, tok)) return no(c, 'bd', k, 'Esta base não é tua');
+    if (!F) { const w = depNearOther(x, z, tok); if (w) return no(c, 'bd', k, w); let n = 0; for (const e of Object.values(B.d)) if (e.tok === tok && !fundAt(Math.floor(e.x / CELL), Math.floor(e.z / CELL))) n++; if (n >= 8) return no(c, 'bd', k, 'Já tens 8 objetos fora da base: apanha um primeiro'); } // fora da base, poucos: não dá para fazer muros de baús
     if (!F && mapOk()) { if (inCityS(x, z)) return no(c, 'bd', k, 'Na cidade não'); for (const zn of MAPA.zones) if (Math.hypot(x - zn[0], z - zn[1]) < zn[2] + 9.9) return no(c, 'bd', k, 'Muito perto de ' + zn[4]); if (hardAt(x, z)) return no(c, 'bd', k, 'Só em terreno natural'); }
     { const L = ledOf(p); if ((L.T[k] || 0) < 1) return no(c, 'bd', k, 'Não tens isso'); addT(L.T, { [k]: 1 }, -1); }
     const id = rid(6); B.d[id] = { k, x, z, yaw: num(m.yaw, -10, 10), y: num(m.y, 0, 5), hp: DEP[k], on: 0, u: p.uid, tok, name: typeof m.name === 'string' ? m.name.replace(/[<>]/g, '').slice(0, 24) : null, cd: 0 };
@@ -294,9 +311,9 @@ const carMsg = (c, p, m, now) => {
   if (m.t === 'cin') { const seat = num(m.seat, 0, car ? car.s.length - 1 : 0) | 0; const holder = car && car.s[seat] && players.get(car.s[seat]);
     if (!car || car.hp <= 0 || (holder && holder.p) || Math.hypot(car.x - p.x, car.z - p.z) > 6) return send(c, { t: 'cin', id: m.id, seat, ok: 0 });
     for (const o of Object.values(S.w.cars)) { const i = o.s.indexOf(c.id); if (i >= 0) o.s[i] = 0; } car.s[seat] = c.id; return send(c, { t: 'cin', id: m.id, seat, ok: 1 }); }
-  if (m.t === 'cout') { if (!car) return; const i = car.s.indexOf(c.id); if (i >= 0) { car.s[i] = 0; if (i === 0) { car.v = 0; car.alt = 0; } dirty = true; } return; }
+  if (m.t === 'cout') { if (!car) return; const i = car.s.indexOf(c.id); if (i >= 0) { car.s[i] = 0; if (i === 0) { car.v = 0; car.alt = vt(car.k).fly ? (car.pad || 0) : 0; } dirty = true; } return; }
   if (m.t === 'cu') { if (!Array.isArray(m.L)) return; for (const a of m.L.slice(0, 2)) { const o = S.w.cars[a[0]]; if (!o || o.s[0] !== c.id || o.hp <= 0) continue;
-      o.x = num(a[1], -41000, 41000) / 10; o.z = num(a[2], -41000, 41000) / 10; o.yaw = num(a[3], -100000, 100000) / 100; o.v = num(a[4], -300, 300) / 10; o.fuel = Math.min(o.fuel, num(a[5], 0, 200)); o.hp = Math.min(o.hp, num(a[6], 0, 5000)); o.alt = vt(o.k).fly ? num(a[7], 0, 600) / 10 : 0; o.ts = num(a[8], 0, 1e13, 0);
+      o.x = num(a[1], -41000, 41000) / 10; o.z = num(a[2], -41000, 41000) / 10; o.yaw = num(a[3], -100000, 100000) / 100; o.v = num(a[4], -300, 300) / 10; o.fuel = Math.min(o.fuel, num(a[5], 0, 200)); o.hp = Math.min(o.hp, num(a[6], 0, 5000)); o.alt = vt(o.k).fly ? num(a[7], 0, 600) / 10 : 0; o.ts = num(a[8], 0, 1e13, 0); o.pad = vt(o.k).fly ? Math.min(o.alt, num(a[9], 0, 600, 0) / 10) : 0;
       if (o.hp <= 0) { o.dead = now; o.s = o.s.map(() => 0); o.v = 0; o.alt = 0; } dirty = true; } return; }
   if (m.t === 'cf') { if (!car || Math.hypot(car.x - p.x, car.z - p.z) > 6 || !vt(car.k).tank) return; { const L = ledOf(p); if ((L.T.gasolina || 0) < 1) { send(c, { t: 'fix', T: L.T }); return; } addT(L.T, { gasolina: 1 }, -1); } car.fuel = Math.min(vt(car.k).tank, car.fuel + num(m.add, 0, 20)); dirty = true; return; }
   // atropelar outro jogador: quem conduz diz quem; o servidor confirma que o carro estava mesmo ao lado
