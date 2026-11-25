@@ -116,7 +116,10 @@ jobs:
           # os minutos e metros a pé contam-se pelas ruas (paragem do outro lado da linha do comboio não é "2 min")
           APP=$PWD node --import tsx ../auditoria/planeador-a-pe-ruas.mjs 2>&1 | grep -v "Experimental\|trace-warnings" | tee ../res/planeador-a-pe-ruas.txt | tail -40
           c=${PIPESTATUS[0]}
-          exit $(( a || b || c ))
+          # tempo real no cálculo: viagens suprimidas, atrasos, transbordos que já não dão, autocarros que já passaram
+          APP=$PWD node --import tsx ../auditoria/planeador-tempo-real.mjs 2>&1 | grep -v "Experimental\|trace-warnings" | tee ../res/planeador-tempo-real.txt | tail -40
+          d=${PIPESTATUS[0]}
+          exit $(( a || b || c || d ))
 
       - name: Testes da pesquisa de destinos, da cache com limite e do idioma do aparelho
         continue-on-error: true

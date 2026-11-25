@@ -92,6 +92,10 @@ jobs:
           if [ -s ../tub-real/vehicle_positions.pb ] && [ -s ../tub-real/trip_updates.pb ]; then REAIS="$(cd ../tub-real && pwd)"; fi
           FICHEIROS_TUB="$REAIS" APP=$PWD node --import tsx ../auditoria/tub-leitor.mjs 2>&1 | tail -40; exit ${PIPESTATUS[0]}
 
+      - name: Planeador (tempo real no cálculo dos percursos)
+        working-directory: app
+        run: APP=$PWD node --import tsx ../auditoria/planeador-tempo-real.mjs 2>&1 | grep -v "Experimental\|trace-warnings" | tail -40; exit ${PIPESTATUS[0]}
+
       - name: Planeador (metro, comboio e barco nas opções de viagem)
         working-directory: app
         run: APP=$PWD node --import tsx ../auditoria/planeador-modos.mjs 2>&1 | grep -v "Experimental\|trace-warnings" | tail -50; exit ${PIPESTATUS[0]}
