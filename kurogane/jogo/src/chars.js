@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { Builder, mat4, shade } from './builder.js';
 import { ITEMS, TINTS } from './items.js';
 import { GUNS } from './guns.js';
-import { ZM } from './zmodel.js';
+import { ZBODY } from './zbody.js';
 
 export const HIP = 0.92, SHY = 1.42, SHX = 0.27;
 export const LONG = ['m4', 'ak', 'smg', 'cacadeira', 'caca', 'cheytac', 'barrett', 'm249', 'pkm'];
@@ -288,18 +288,12 @@ export class Body {
   lie() { this.root.rotation.x = -Math.PI / 2; this.root.position.y = 0.16; for (const l of this.legs) this.limb(l, 0, 0, 0); this.limb(this.arms[0], 0, 0.5, -0.2); this.limb(this.arms[1], 0, -0.5, -0.2); }
 }
 
-// partes do zombie feitas no Blender (blender/zombie.py): posição em 16 bits (±0,9 m), normal em 8 bits, UV para a textura tex/zombie.jpg
-const zbuf = s => { const b = atob(s), u = new Uint8Array(b.length); for (let i = 0; i < b.length; i++) u[i] = b.charCodeAt(i); return u.buffer; };
-const zGeo = k => { const d = ZM[k], g = new THREE.BufferGeometry(), P = new Int16Array(zbuf(d.p)), pos = new Float32Array(P.length); for (let i = 0; i < P.length; i++) pos[i] = P[i] / 32767 * 0.9;
-  g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); g.setAttribute('normal', new THREE.BufferAttribute(new Int8Array(zbuf(d.nm)), 3, true)); g.setAttribute('uv', new THREE.BufferAttribute(new Uint16Array(zbuf(d.uv)), 2, true)); g.setIndex(new THREE.BufferAttribute(new Uint16Array(zbuf(d.i)), 1)); g.computeBoundingSphere(); return { v: g }; };
-
 export class Horde {
   // zombies: cada parte é uma malha repetida por instância (tronco, cabeça, coxas, canelas, braços, antebraços)
-  constructor(scene, mats, max = 28, silMat = null, zmat = null) {
+  constructor(scene, mats, max = 28, silMat = null) {
     this.max = max;
-    // com o material da textura: as partes do Blender (≈3800 triângulos por zombie); sem ele, as antigas feitas de peças (≈9300)
-    const P = zmat ? { torso: zGeo('torso'), head: zGeo('head'), thighL: zGeo('thighL'), thighR: zGeo('thighR'), shin: zGeo('shin'), upper: zGeo('upper'), fore: zGeo('fore') } : partGeos({ skin: 0x8f9a7e, top: 0x8a8274, legs: 0x3a3d44, shoes: 0x26221e, hair: 0x2a2520, blood: 0x5a0e0b, eye: 0xd8d0a0, zombie: true, torn: true, sleeve: 0x9a948a });
-    const mk = (g, own) => { const m = new THREE.InstancedMesh(g.v, own ? mats.v : zmat || mats.v, max); m.castShadow = true; m.receiveShadow = true; m.frustumCulled = false; m.count = 0; m.renderOrder = 3; scene.add(m); return m; };
+    const P = partGeos({ skin: 0x8f9a7e, top: 0x8a8274, legs: 0x3a3d44, shoes: 0x26221e, hair: 0x2a2520, blood: 0x5a0e0b, eye: 0xd8d0a0, zombie: true, torn: true, sleeve: 0x9a948a });
+    const mk = (g, own) => { const m = new THREE.InstancedMesh(g.v, mats.v, max); m.castShadow = true; m.receiveShadow = true; m.frustumCulled = false; m.count = 0; m.renderOrder = 3; scene.add(m); return m; };
     this.K = ['torso', 'head', 'legL', 'legR', 'shinL', 'shinR', 'armL', 'armR', 'foreL', 'foreR']; const G = { torso: P.torso, head: P.head, legL: P.thighL, legR: P.thighR, shinL: P.shin, shinR: P.shin, armL: P.upper, armR: P.upper, foreL: P.fore, foreR: P.fore };
     this.parts = this.K.map(k => mk(G[k]));
     // proteção: capacete (na cabeça) e colete (no tronco), tingidos por zombie
@@ -309,7 +303,7 @@ export class Horde {
     this.sil = silMat ? this.K.map(k => { const m = new THREE.InstancedMesh(G[k].v, silMat, max); m.frustumCulled = false; m.count = 0; m.renderOrder = 1; scene.add(m); return m; }) : null;
     const tints = [0xffffff, 0xb8c8e8, 0xe8d0b0, 0xc8e0c0, 0xd8c0c8, 0x9aa0b0, 0xf0e8d8];
     const c = new THREE.Color();
-    const wt = new THREE.Color(0xffffff); for (let i = 0; i < max; i++) { c.set(tints[i % tints.length]); if (zmat) c.lerp(wt, 0.6); for (const m of this.parts) m.setColorAt(i, c); } // com textura, o tom varia pouco (senão a pele ficava cor de laranja ou azul)
+    for (let i = 0; i < max; i++) { c.set(tints[i % tints.length]); for (const m of this.parts) m.setColorAt(i, c); }
     this._m = new THREE.Matrix4();
   }
   update(list, noSil = false, fr = null) {
@@ -337,3 +331,81 @@ export function bagMesh(mats, body = false) {
   const g = geoOf(b => { if (body) { b.rbox(0.7, 0.28, 1.7, 0.12, 0, 0.14, 0, 0x2a2b2c); b.box(0.05, 0.02, 1.5, 0, 0.29, 0, 0x6a6e72); } else { b.sph(0.26, 0, 0.18, 0, 0x5a4a32, { sy: 0.75, ws: 10, hs: 7 }); b.cyl(0.07, 0.1, 0.12, 8, 0, 0.38, 0, 0x4a3a28); } });
   return meshOf(g, mats);
 }
+
+// ---------- zombies com corpo realista (blender/human.py, malha base do MakeHuman, CC0) ----------
+// Um só corpo com pele: cada vértice segue até 4 das 10 partes que o jogo anima (as mesmas matrizes de zombiePose), por isso
+// não há juntas à vista. Todos os zombies desenham-se numa chamada por nível de detalhe: as matrizes de cada um vão numa textura
+// (uma linha por zombie, 3 texels por parte). Perto: ~5200 triângulos; longe: ~1500.
+const zbuf = s => { const b = atob(s), u = new Uint8Array(b.length); for (let i = 0; i < b.length; i++) u[i] = b.charCodeAt(i); return u.buffer; };
+export function bodyGeo(D) {
+  const g = new THREE.BufferGeometry(), P = new Int16Array(zbuf(D.p)), pos = new Float32Array(P.length);
+  for (let i = 0; i < P.length; i++) pos[i] = P[i] / 32767 * 2;
+  g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); g.setAttribute('normal', new THREE.BufferAttribute(new Int8Array(zbuf(D.nm)), 3, true));
+  g.setAttribute('tangent', new THREE.BufferAttribute(new Int8Array(zbuf(D.tg)), 4, true)); g.setAttribute('uv', new THREE.BufferAttribute(new Uint16Array(zbuf(D.uv)), 2, true));
+  g.setAttribute('segI', new THREE.BufferAttribute(new Uint8Array(zbuf(D.si)), 4)); g.setAttribute('segW', new THREE.BufferAttribute(new Uint8Array(zbuf(D.sw)), 4, true));
+  g.setIndex(new THREE.BufferAttribute(D.n < 65536 ? new Uint16Array(zbuf(D.i)) : new Uint32Array(zbuf(D.i)), 1));
+  g.boundingSphere = new THREE.Sphere(new THREE.Vector3(0, 0.9, 0), 1.2); return g;
+}
+// injeta a pele no shader (material normal, sombra do sol e sombra das luzes de ponto)
+export function skinPatch(m, uni, key) {
+  m.onBeforeCompile = sh => {
+    sh.uniforms.boneTex = uni.boneTex;
+    sh.vertexShader = `uniform highp sampler2D boneTex;\nattribute vec4 segI;\nattribute vec4 segW;
+mat4 zbm(float s) { int c = int(s + 0.5) * 3; int r = gl_InstanceID; vec4 a = texelFetch(boneTex, ivec2(c, r), 0), b = texelFetch(boneTex, ivec2(c + 1, r), 0), d = texelFetch(boneTex, ivec2(c + 2, r), 0);
+  return mat4(a.x, b.x, d.x, 0., a.y, b.y, d.y, 0., a.z, b.z, d.z, 0., a.w, b.w, d.w, 1.); }
+mat4 zskin() { return zbm(segI.x) * segW.x + zbm(segI.y) * segW.y + zbm(segI.z) * segW.z + zbm(segI.w) * segW.w; }\n` + sh.vertexShader;
+    sh.vertexShader = sh.vertexShader.replace('#include <beginnormal_vertex>', `#include <beginnormal_vertex>
+  mat3 zN = mat3(zskin()); objectNormal = normalize(zN * objectNormal);
+#ifdef USE_TANGENT
+  objectTangent = normalize(zN * objectTangent);
+#endif`).replace('#include <begin_vertex>', '#include <begin_vertex>\n  transformed = (zskin() * vec4(transformed, 1.0)).xyz;');
+  };
+  m.customProgramCacheKey = () => 'zskin-' + key;
+  return m;
+}
+const _zi = new THREE.Matrix4(), _zk = new THREE.Matrix4();
+export class ZHorde {
+  constructor(scene, mat, vmat, caps = [96, 420]) {
+    const D = ZBODY; this.seg = D.seg; this.Ginv = D.seg.map(s => new THREE.Matrix4().makeTranslation(-D.bind[s][0], -D.bind[s][1], -D.bind[s][2]));
+    this.lods = [D.lod0, D.lod1].map((L, li) => {
+      const cap = caps[li], data = new Float32Array(30 * cap * 4), tex = new THREE.DataTexture(data, 30, cap, THREE.RGBAFormat, THREE.FloatType); tex.needsUpdate = true;
+      const uni = { boneTex: { value: tex } };
+      const m = skinPatch(mat.clone(), uni, 'm' + li); m.map = mat.map; m.normalMap = mat.normalMap;
+      const mesh = new THREE.InstancedMesh(bodyGeo(L), m, cap); mesh.frustumCulled = false; mesh.castShadow = true; mesh.receiveShadow = true; mesh.count = 0; mesh.renderOrder = 3;
+      mesh.customDepthMaterial = skinPatch(new THREE.MeshDepthMaterial({ depthPacking: THREE.RGBADepthPacking }), uni, 'd' + li);
+      mesh.customDistanceMaterial = skinPatch(new THREE.MeshDistanceMaterial(), uni, 'p' + li);
+      const c = new THREE.Color(), tints = [0xffffff, 0xd8dcec, 0xeee2d0, 0xdce8d6, 0xe6d8dc, 0xc8ccd6, 0xf2ece0];
+      for (let i = 0; i < cap; i++) mesh.setColorAt(i, c.set(tints[i % tints.length]));
+      scene.add(mesh); return { mesh, tex, data, cap, m };
+    });
+    this.mat = mat; this.M = newPose();
+    // capacete e colete (provisórios, ajustados à cabeça e ao tronco novos; o equipamento a sério vem depois)
+    const hc = ZBODY.headC, hr = ZBODY.headR;
+    const arm = geoOf(b => { b.sph(hr + 0.024, hc[0], hc[1] + 0.02, hc[2] - 0.005, 0xffffff, { th: Math.PI * 0.52, ws: 18, hs: 9, sy: 1.05 }); b.box(0.2, 0.024, 0.03, 0, hc[1] + 0.035, hc[2] + hr + 0.012, 0xd8d8d8); });
+    const vst = geoOf(b => { b.rbox(0.4, 0.4, 0.28, 0.06, 0, 0.36, 0.01, 0xffffff); for (const x of [-0.1, 0, 0.1]) b.rbox(0.085, 0.11, 0.05, 0.018, x, 0.27, 0.15, 0xd0d0d0); });
+    const mk = g => { const m = new THREE.InstancedMesh(g.v, vmat, 400); m.castShadow = true; m.receiveShadow = true; m.frustumCulled = false; m.count = 0; m.renderOrder = 3; scene.add(m); return m; };
+    this.helm = mk(arm); this.vest = mk(vst); this._c = new THREE.Color();
+  }
+  // a textura chegou depois de criar os materiais: passa-a às cópias
+  setMaps(map, nmap) { for (const L of this.lods) { L.m.map = map; L.m.normalMap = nmap; L.m.color.set(0xffffff); L.m.needsUpdate = true; } }
+  update(list, fr, near) {
+    const sp = this._sp || (this._sp = new THREE.Sphere(new THREE.Vector3(), 3.5)), n = [0, 0], K = this.seg, P = this.M; let nh = 0, nv = 0;
+    for (const z of list) {
+      if (z.hide || z.an) continue;
+      if (fr) { sp.center.set(z.x, (z.base || 0) + 1, z.z); if (!fr.intersectsSphere(sp)) continue; }
+      let li = near(z) ? 0 : 1; if (n[li] >= this.lods[li].cap) li = 1; if (n[li] >= this.lods[li].cap) continue; // cheio: os de perto passam para a versão leve
+      const LL = this.lods[li], r = n[li]++;
+      const M = zombiePose(z, P); LL.mesh.setMatrixAt(r, M.r); _zi.copy(M.r).invert();
+      const d = LL.data, o0 = r * 120;
+      for (let k = 0; k < K.length; k++) {
+        _zk.multiplyMatrices(_zi, M[K[k]]).multiply(this.Ginv[k]); const e = _zk.elements, o = o0 + k * 12;
+        d[o] = e[0]; d[o + 1] = e[4]; d[o + 2] = e[8]; d[o + 3] = e[12]; d[o + 4] = e[1]; d[o + 5] = e[5]; d[o + 6] = e[9]; d[o + 7] = e[13]; d[o + 8] = e[2]; d[o + 9] = e[6]; d[o + 10] = e[10]; d[o + 11] = e[14];
+      }
+      z.inst = r;
+      if (z.state !== 'dead') { if (z.helm && nh < 400) { this.helm.setMatrixAt(nh, M.head); this.helm.setColorAt(nh++, this._c.set(z.kind === 'pol' ? 0x2a3442 : 0x55603e)); } if (z.vest && nv < 400) { this.vest.setMatrixAt(nv, M.torso); this.vest.setColorAt(nv++, this._c.set(z.kind === 'pol' ? 0x2c3a52 : 0x6a6448)); } }
+    }
+    for (let li = 0; li < 2; li++) { const L = this.lods[li]; L.mesh.count = n[li]; L.mesh.visible = n[li] > 0; if (n[li]) { L.mesh.instanceMatrix.needsUpdate = true; L.tex.needsUpdate = true; } }
+    for (const [m, k] of [[this.helm, nh], [this.vest, nv]]) { m.count = k; m.visible = k > 0; m.instanceMatrix.needsUpdate = true; if (m.instanceColor) m.instanceColor.needsUpdate = true; }
+  }
+}
+export const ZHEAD = { c: ZBODY.headC, r: ZBODY.headR };

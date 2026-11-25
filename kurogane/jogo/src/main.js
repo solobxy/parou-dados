@@ -4,7 +4,7 @@ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { Builder, Atlas, ctex, mat4, FONT_JP } from './builder.js';
 import { buildWorld, MAP, CORE, CITY, inCity } from './world.js';
 import { makeSectors } from './sectors.js';
-import { Body, Horde, bagMesh, HIP, zombiePose, newPose, LOOK_OPTS, RDP } from './chars.js';
+import { Body, ZHorde, ZHEAD, bagMesh, HIP, zombiePose, newPose, LOOK_OPTS, RDP } from './chars.js';
 import * as Conta from './conta.js';
 import { makeFire, fireFrame } from './fire.js';
 import { ITEMS, RECIPES, ammoOf } from './items.js';
@@ -438,10 +438,12 @@ async function boot() {
   const mkRemote = L => { const b = new Body(mats, lookCol(L && typeof L === 'object' ? L : {})); scene.add(b.root); return b; };
   const fauna = new Fauna(scene, mats.v, 160); // animais (veados, javalis, lobos, cães, galinhas)
   const _vf = new THREE.Frustum(), _vfM = new THREE.Matrix4();
-  // zombies feitos no Blender: uma textura com pele, roupa rasgada, sangue e sombra de canto (enquanto carrega, cor lisa parecida)
-  const zmat = new THREE.MeshStandardMaterial({ color: 0x7c8270, roughness: 0.9 });
-  new THREE.TextureLoader().load('tex/zombie.jpg', t => { t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; zmat.map = t; zmat.color.set(0xffffff); zmat.needsUpdate = true; }, undefined, () => { });
-  const horde = new Horde(scene, mats, 900, null, zmat); // zombies sem silhueta vermelha: atrás de paredes simplesmente não se veem
+  // zombies com corpo realista (Blender + MakeHuman): textura de cor e de relevo; enquanto carregam, cor lisa parecida
+  const zmat = new THREE.MeshStandardMaterial({ color: 0x7c8270, roughness: 0.88 });
+  const horde = new ZHorde(scene, zmat, mats.v);
+  { const TL = new THREE.TextureLoader(); let cm = null, nm = null; const done = () => { if (cm && nm) { zmat.color.set(0xffffff); horde.setMaps(cm, nm); } };
+    TL.load('tex/zombie.jpg', t => { t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; cm = t; done(); }, undefined, () => { });
+    TL.load('tex/zombie_n.jpg', t => { t.anisotropy = 4; nm = t; done(); }, undefined, () => { }); }
   const bagM = bagMesh(mats), bodyBagM = bagMesh(mats, true);
   // sacos no chão: contorno quente que pulsa quando estás perto (casca por trás do saco, sem custo de pós-processamento)
   const haloTex = (() => { const c = document.createElement('canvas'); c.width = c.height = 64; const x = c.getContext('2d'), g = x.createRadialGradient(32, 32, 4, 32, 32, 32); g.addColorStop(0, 'rgba(255,200,110,.9)'); g.addColorStop(0.45, 'rgba(242,170,70,.45)'); g.addColorStop(1, 'rgba(242,160,60,0)'); x.fillStyle = g; x.fillRect(0, 0, 64, 64); return new THREE.CanvasTexture(c); })();
@@ -555,18 +557,18 @@ async function boot() {
   // hitboxes: as mesmas matrizes da pose que desenha o zombie (zombiePose), por isso acertas exatamente no que vês, em qualquer animação
   // cabeça: esfera; tronco e anca: caixas; pescoço, braços e pernas: cápsulas; pés: caixas. Capacete e colete alargam a zona que protegem
   const HP = [
-    ['head', 'head', 's', [0, 0.145, 0.01], null, 0.152],
-    ['torso', 'body', 'b', [0, 0.43, 0], [0.23, 0.25, 0.13], 0.09],
-    ['torso', 'body', 'c', [0, 0.66, 0.0], [0, 0.76, 0.0], 0.07],
+    ['head', 'head', 's', ZHEAD.c.slice(), null, ZHEAD.r * 1.12], // a cabeça desenhada (corpo novo)
+    ['torso', 'body', 'b', [0, 0.33, 0], [0.19, 0.2, 0.12], 0.08], // tronco do corpo novo (mais baixo e estreito do que o antigo)
+    ['torso', 'body', 'c', [0, 0.5, 0.0], [0, 0.6, 0.02], 0.055], // pescoço: acaba onde a cabeça começa
     ['torso', 'body', 'b', [0, 0.06, 0], [0.2, 0.1, 0.12], 0.06],
     ['armL', 'arms', 'c', [0, 0, 0], [0, -0.3, 0], 0.07], ['armR', 'arms', 'c', [0, 0, 0], [0, -0.3, 0], 0.07],
     ['foreL', 'arms', 'c', [0, 0, 0], [0, -0.36, 0], 0.06], ['foreR', 'arms', 'c', [0, 0, 0], [0, -0.36, 0], 0.06],
     ['legL', 'legs', 'c', [0, -0.06, 0], [0, -0.44, 0], 0.1], ['legR', 'legs', 'c', [0, -0.06, 0], [0, -0.44, 0], 0.1],
     ['shinL', 'legs', 'c', [0, 0, 0], [0, -0.38, 0], 0.085], ['shinR', 'legs', 'c', [0, 0, 0], [0, -0.38, 0], 0.085],
     ['shinL', 'legs', 'b', [0, -0.435, 0.055], [0.065, 0.05, 0.14], 0.03], ['shinR', 'legs', 'b', [0, -0.435, 0.055], [0.065, 0.05, 0.14], 0.03]];
-  const HELM = [0, 0.16, 0], VESTC = [0, 0.44, 0], VESTH = [0.27, 0.22, 0.18], PK = ['torso', 'head', 'armL', 'armR', 'foreL', 'foreR', 'legL', 'legR', 'shinL', 'shinR'];
+  const HELM = [ZHEAD.c[0], ZHEAD.c[1] + 0.02, ZHEAD.c[2]], VESTC = [0, 0.36, 0.01], VESTH = [0.21, 0.2, 0.15], PK = ['torso', 'head', 'armL', 'armR', 'foreL', 'foreR', 'legL', 'legR', 'shinL', 'shinR'];
   const _lp = new THREE.Vector3(), _lq = new THREE.Vector3(), _l1 = new THREE.Vector3(), _l2 = new THREE.Vector3();
-  G.zHead = z => { const M = zombiePose(z, newPose()), v = new THREE.Vector3(0, 0.145, 0.01).applyMatrix4(M.head); return { x: v.x, y: v.y, z: v.z }; }; // testes: onde está a cabeça desenhada
+  G.zHead = z => { const M = zombiePose(z, newPose()), v = new THREE.Vector3(...ZHEAD.c).applyMatrix4(M.head); return { x: v.x, y: v.y, z: v.z }; }; // testes: onde está a cabeça desenhada
   const poseInv = z => { if (z.an) { if (z._pt !== G.t || !z._inv) { const P = z._pose || (z._pose = { an: new THREE.Matrix4() }), I = z._inv || (z._inv = { an: new THREE.Matrix4() }); fauna.root({ ...z, state: 'live' }, P.an); I.an.copy(P.an).invert(); z._pt = G.t; } return z._inv; }
     if (z._pt !== G.t || !z._inv) { z._pose = zombiePose(z, z._pose || newPose()); const I = z._inv || (z._inv = {}); for (const k of PK) (I[k] || (I[k] = new THREE.Matrix4())).copy(z._pose[k]).invert(); z._pt = G.t; } return z._inv; };
   const segSph = (p, q, c, r) => { const dx = q.x - p.x, dy = q.y - p.y, dz = q.z - p.z, fx = p.x - c[0], fy = p.y - c[1], fz = p.z - c[2], a = dx * dx + dy * dy + dz * dz, b = 2 * (fx * dx + fy * dy + fz * dz), cc = fx * fx + fy * fy + fz * fz - r * r; if (cc <= 0) return 0; const disc = b * b - 4 * a * cc; if (disc < 0 || a < 1e-12) return null; const t = (-b - Math.sqrt(disc)) / (2 * a); return t >= 0 && t <= 1 ? t : null; };
@@ -583,7 +585,7 @@ async function boot() {
     if (z.an) { _lp.copy(P).applyMatrix4(I.an); _lq.copy(Q).applyMatrix4(I.an); const r = anHit(z.an, _lp, _lq, segSph, segRBox, inflate); if (!r) return null; r.i = r.zone === 'head' ? -2 : -1; r.c = new THREE.Vector3().copy(P).lerp(Q, r.s); return r; }
     for (let hi = 0; hi < HP.length; hi++) { const [mk, zone, ty, a, bb, r0] = HP[hi];
       _lp.copy(P).applyMatrix4(I[mk]); _lq.copy(Q).applyMatrix4(I[mk]); let t = null;
-      if (ty === 's') t = segSph(_lp, _lq, z.helm ? HELM : a, (z.helm ? 0.185 : r0) * inflate);
+      if (ty === 's') t = segSph(_lp, _lq, z.helm ? HELM : a, (z.helm ? ZHEAD.r + 0.035 : r0) * inflate);
       else if (ty === 'b') t = zone === 'body' && z.vest && a[1] > 0.3 ? segRBox(_lp, _lq, VESTC, VESTH, 0.06, inflate) : segRBox(_lp, _lq, a, bb, r0, inflate);
       else { _l1.set(a[0], a[1], a[2]); _l2.set(bb[0], bb[1], bb[2]); const r = r0 * inflate, [d2, sg] = segSeg(_lp, _lq, _l1, _l2); if (d2 <= r * r) { const L = _lp.distanceTo(_lq) || 1; t = Math.max(0, sg - Math.sqrt(r * r - d2) / L); } }
       if (t !== null && (!best || t < best.s - 1e-5)) best = { s: t, zone, i: hi };
@@ -803,7 +805,7 @@ async function boot() {
   G.lazyTick = lazyTick;
   // só para testes: vista de cima (ortográfica) de um quadrado de lado L à volta de (x, z), devolvida como imagem
   G.TR = { PRICE, SELL, TRADERS }; G.trade = tradeFn; npcInit(); G.npcs = npcs; initPWA(G);
-  G.dbgDoors = () => W.doors; G.dbgDie = c => die(c || 'teste'); G.vm = vm; G.dbgL = { torch, baseL, scene, cam }; G.dbgHurtZ = (z, d) => hurtZombie(z, d, 0, 0, {});
+  G.dbgDoors = () => W.doors; G.dbgDie = c => die(c || 'teste'); G.vm = vm; G.horde = horde; G.dbgL = { torch, baseL, scene, cam }; G.dbgHurtZ = (z, d) => hurtZombie(z, d, 0, 0, {});
   G.dbgCam = (pos, at, fov = 30, w = 800, h = 600) => { const pc = new THREE.PerspectiveCamera(fov, w / h, 0.05, 300); pc.position.set(...pos); pc.lookAt(...at); const s0 = new THREE.Vector2(); renderer.getSize(s0); const r0 = renderer.getPixelRatio(); renderer.setPixelRatio(1); renderer.setSize(w, h, false); fireFrame(G.t, renderer, pc); renderer.render(scene, pc); const url = renderer.domElement.toDataURL('image/jpeg', 0.88); renderer.setPixelRatio(r0); renderer.setSize(s0.x, s0.y, false); return url; }; // testes: vista de perto
   G.dbgTop = (x, z, L, px = 900) => { for (let i = 0; i < 80 && lazyTick(x, z); i++); const oc = new THREE.OrthographicCamera(-L / 2, L / 2, L / 2, -L / 2, 1, 400); oc.position.set(x, 200, z + 0.01); oc.lookAt(x, 0, z); const s0 = new THREE.Vector2(); renderer.getSize(s0); const r0 = renderer.getPixelRatio(); renderer.setPixelRatio(1); renderer.setSize(px, px, false); const fg = scene.fog; scene.fog = null; renderer.render(scene, oc); scene.fog = fg; const url = renderer.domElement.toDataURL('image/jpeg', 0.85); renderer.setPixelRatio(r0); renderer.setSize(s0.x, s0.y, false); return url; };
   G.weather = (on = true) => { G.rainT = on ? 1 : 0; WX.t = on ? 300 : 900; };
@@ -1677,7 +1679,7 @@ async function boot() {
     { const pa = trGeo.attributes.position, ca = trGeo.attributes.color; for (let i = 0; i < TRN; i++) { const o = trl[i]; if (o) { o.t -= dt; const f = Math.max(0, o.t / 0.07) * o.k; pa.setXYZ(i * 2, ...o.a); pa.setXYZ(i * 2 + 1, ...o.b); ca.setXYZ(i * 2, 0.6 * f, 0.45 * f, 0.2 * f); ca.setXYZ(i * 2 + 1, 1.6 * f, 1.3 * f, 0.7 * f); } else { pa.setXYZ(i * 2, 0, -9, 0); pa.setXYZ(i * 2 + 1, 0, -9, 0); } } pa.needsUpdate = true; ca.needsUpdate = true; while (trl.length && trl[0].t <= 0) trl.shift(); }
     for (const s of smoke) { s.userData.t = (s.userData.t + dt * 0.12) % 1; const t = s.userData.t; s.position.set(W.smoke[0] + t * 5, W.smoke[1] + t * 11, W.smoke[2] - t * 2.5); const sc = 1.4 + t * 5; s.scale.set(sc, sc, 1); s.material.opacity = 0.55 * (1 - t) * Math.min(1, t * 6); }
     { cam.updateMatrixWorld(); _vfM.multiplyMatrices(cam.projectionMatrix, cam.matrixWorldInverse); _vf.setFromProjectionMatrix(_vfM); } // o que a câmara vê: zombies e animais fora disto não se desenham
-    horde.update(G.zs, G.fp, _vf); fauna.update(G.zs, camT, _vf);
+    { const p = G.p, nr = G.fp ? 22 : 8; horde.update(G.zs, _vf, z => !!p && Math.abs(z.x - p.x) < nr && Math.abs(z.z - p.z) < nr); } // perto do jogador: o corpo com mais detalhe fauna.update(G.zs, camT, _vf);
     // árvores ao longe (só na 1.ª pessoa, que vê até à neblina): a versão simples a partir de ~65 m
     G.lodT = (G.lodT || 0) - dt; if (G.lodT <= 0) { G.lodT = 0.25; const c = cam.position, fpL = !!G.fp; for (const T of TLOD) { const far = fpL && Math.hypot(T.x - c.x, T.z - c.z) > 65; if (T.hi.visible === far) { T.hi.visible = !far; T.lo.visible = far; } } }
     // comerciantes: respiram parados e viram-se para quem chega perto
