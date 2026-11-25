@@ -136,9 +136,9 @@ def carris_metropolitana():
             'autocarros_em_servico_max_por_hora': {str(k): max(v) for k, v in sorted(frota.items())}}
 
 
-def tub():
+def tub(fonte='tub'):
     ult = {}
-    for r in ler('tub'):
+    for r in ler(fonte):
         if 'atraso_s' in r and abs(r['atraso_s']) < 3 * 3600:
             ult[(r['trip'], r.get('data'), r['stop'])] = r
     if not ult:
@@ -169,7 +169,7 @@ def stcp():
 def main():
     res = {'dia': DIA, 'gerado': datetime.now(LIS).isoformat(timespec='seconds'),
            'definicoes': 'adiantado < -1 min; a horas -1 a +5 min; atrasado > +5 min; muito atrasado > +10 min',
-           'carris_metropolitana': carris_metropolitana(), 'tub_braga': tub(), 'stcp': stcp(),
+           'carris_metropolitana': carris_metropolitana(), 'tub_braga': tub(), 'unir': tub('unir'), 'stcp': stcp(),
            'erros': dict(collections.Counter(r.get('fonte') for r in ler('erros')))}
     os.makedirs(os.path.join(PASTA, 'dias'), exist_ok=True)
     destino = os.path.join(PASTA, 'dias', DIA + '.json')
@@ -184,7 +184,7 @@ def main():
                 d = json.load(open(os.path.join(PASTA, 'dias', nome)))
             except ValueError:
                 continue
-            ind[d['dia']] = {k: (d[k] or {}).get('passagens', {}) for k in ('carris_metropolitana', 'tub_braga', 'stcp')}
+            ind[d['dia']] = {k: (d[k] or {}).get('passagens', {}) for k in ('carris_metropolitana', 'tub_braga', 'unir', 'stcp')}
     with open(os.path.join(PASTA, 'dias', 'indice.json.tmp'), 'w') as f:
         json.dump(ind, f, ensure_ascii=False)
     os.replace(os.path.join(PASTA, 'dias', 'indice.json.tmp'), os.path.join(PASTA, 'dias', 'indice.json'))
@@ -201,7 +201,7 @@ def main():
                             break
                         fo.write(b)
                 os.remove(p)
-    print(json.dumps({k: (res[k] or {}).get('passagens') for k in ('carris_metropolitana', 'tub_braga', 'stcp')}, ensure_ascii=False))
+    print(json.dumps({k: (res[k] or {}).get('passagens') for k in ('carris_metropolitana', 'tub_braga', 'unir', 'stcp')}, ensure_ascii=False))
 
 
 if __name__ == '__main__':

@@ -5,6 +5,7 @@ Corre como serviço próprio (parou-pontualidade.service), separado da app: não
 Só lê fontes públicas que a app já usa, com pausas largas:
   Carris Metropolitana  /v2/vehicles (todos os autocarros num só pedido)      de 30 em 30 s
   TUB (Braga)           GTFS-Realtime trip_updates (um ficheiro)              de 60 em 60 s
+  UNIR (Grande Porto)   GTFS-Realtime da plataforma GO da TML (TMP 53JAZ)    de 60 em 60 s
   STCP (Porto)          stcp.pt, chegadas de 40 paragens de referência        de 5 em 5 min, 06h-01h30
 Grava tudo em bruto em <pasta>/bruto/AAAA-MM-DD/<fonte>.jsonl (um registo por mudança, não por pedido) e,
 para a Carris Metropolitana e a TUB, junta logo o atraso em segundos, calculado com a base de horários da app
@@ -175,9 +176,18 @@ def _txt(v):
     return bytes(v).decode('utf-8', 'replace')
 
 ult_tub = {}
+ult_unir = {}
 
 def tub():
-    feed = pedir('https://mobibus-gateway.fleetaware.pt/gtfs-rt/feed/trip_updates.pb')
+    rt_proximas('https://mobibus-gateway.fleetaware.pt/gtfs-rt/feed/trip_updates.pb', 'tub', 'tub_braga:', 'tub_braga:', ult_tub)
+
+def unir():
+    # UNIR (TMP, Grande Porto): previsões em direto da plataforma GO da TML; horários da base no feed "unirh"
+    rt_proximas('https://go.tmlmobilidade.pt/hub/api/v1/53JAZ/eta/gtfs.pb', 'unir', 'unirh:', 'unirh:', ult_unir)
+
+def rt_proximas(url, fonte, pref_viagem, pref_paragem, ult):
+    """GTFS-Realtime trip_updates: a próxima paragem de cada viagem (um registo quando a previsão muda mais de 20 s)."""
+    feed = pedir(url)
     agora = int(time.time())
     for f, ent in campos(feed):
         if f != 2:
@@ -210,18 +220,18 @@ def tub():
             st = prox[0]
             chave = (trip, data, st['stop'])
             # um registo por viagem e paragem, atualizado só quando a previsão muda mais de 20 s
-            ant = ult_tub.get(chave)
+            ant = ult.get(chave)
             if ant is not None and abs(ant - st['hora']) < 20:
                 continue
-            ult_tub[chave] = st['hora']
+            ult[chave] = st['hora']
             reg = {'t': agora, 'trip': trip, 'data': data, 'route': route, 'veic': veic, 'stop': st['stop'],
                    'seq': st.get('seq'), 'hora': st['hora']}
-            a = atraso('tub_braga:' + trip, 'tub_braga:' + st['stop'], st['hora'])
+            a = atraso(pref_viagem + trip, pref_paragem + st['stop'], st['hora'])
             if a is not None:
                 reg['atraso_s'] = a
-            escrever('tub', reg)
-    if len(ult_tub) > 50000:
-        ult_tub.clear()
+            escrever(fonte, reg)
+    if len(ult) > 50000:
+        ult.clear()
 
 
 # ---------- STCP (chegadas das paragens de referência)
@@ -275,7 +285,7 @@ def ciclo(nome, intervalo, fn, quando=None):
 def main():
     os.makedirs(PASTA, exist_ok=True)
     fios = [threading.Thread(target=ciclo, args=a, daemon=True) for a in
-            (('cm', 30, cm), ('tub', 60, tub), ('stcp', 300, stcp, horas_stcp), ('estado', 60, estado))]
+            (('cm', 30, cm), ('tub', 60, tub), ('unir', 60, unir), ('stcp', 300, stcp, horas_stcp), ('estado', 60, estado))]
     for f in fios:
         f.start()
     while all(f.is_alive() for f in fios):

@@ -116,6 +116,13 @@ jobs:
         working-directory: app
         run: APP=$PWD node --import tsx ../auditoria/atrasos-medidos.mjs 2>&1 | grep -v "Experimental\|trace-warnings" | tail -20; exit ${PIPESTATUS[0]}
 
+      - name: Pontualidade (a UNIR também fica gravada em bruto)
+        run: python3 auditoria/test_pontualidade_unir.py
+
+      - name: CP (greve só do bar a bordo não é greve dos comboios)
+        working-directory: app
+        run: APP=$PWD node --import tsx ../auditoria/cp-greve-servicos.mjs 2>&1 | grep -v "Experimental\|trace-warnings" | tail -20; exit ${PIPESTATUS[0]}
+
       - name: Arquivo permanente (avisos, greves e notícias com todas as versões)
         working-directory: app
         run: APP=$PWD node --import tsx ../auditoria/historico-arquivo.mjs 2>&1 | grep -v "Experimental\|trace-warnings" | tail -20; exit ${PIPESTATUS[0]}
