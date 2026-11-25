@@ -128,6 +128,21 @@ const C = {};
   const a = paragem('tub', 4, 'O', ponto(c, 0.05, 0)), b = paragem('tub', 4, 'D', ponto(c, 5.05, 0));
   C.jaPassou = { O, D, v27: linha('tub', '27', [[a, 0], [b, 15]], 10, 3) };
 }
+// 5) Transbordo de 1 min entre duas viagens com previsões em direto (Carris Metropolitana): o A5 chega ao H às 12:20 e o B5
+//    sai do mesmo sítio às 12:21. Com o horário (2 min de margem) não dá; com as duas em direto, dá.
+{
+  const c = CIDADE(5), O = ponto(c, 0, 0), D = ponto(c, 8, 0);
+  const a = paragem('cm', 5, 'O', ponto(c, 0.05, 0)), h = paragem('cm', 5, 'H', ponto(c, 4, 0));
+  const d = paragem('cm', 5, 'D', ponto(c, 8.05, 0)), ao = paragem('cm', 5, 'OC', ponto(c, 0.07, 0.02)), ad = paragem('cm', 5, 'DC', ponto(c, 8.07, 0.02));
+  C.direto2 = { O, D, vA: linha('cm', 'A5', [[a, 0], [h, 15]], 30, 5), vB: linha('cm', 'B5', [[h, 0], [d, 10]], 30, 21), vC: linha('cm', 'C5', [[ao, 0], [ad, 50]], 60, 10) };
+}
+// 6) O mesmo, mas só a primeira viagem tem previsões: fica a margem normal
+{
+  const c = CIDADE(6), O = ponto(c, 0, 0), D = ponto(c, 8, 0);
+  const a = paragem('cm', 6, 'O', ponto(c, 0.05, 0)), h = paragem('cm', 6, 'H', ponto(c, 4, 0));
+  const d = paragem('cm', 6, 'D', ponto(c, 8.05, 0)), ao = paragem('cm', 6, 'OC', ponto(c, 0.07, 0.02)), ad = paragem('cm', 6, 'DC', ponto(c, 8.07, 0.02));
+  C.direto1 = { O, D, vA: linha('cm', 'A6', [[a, 0], [h, 15]], 30, 5), vB: linha('cm', 'B6', [[h, 0], [d, 10]], 30, 21), vC: linha('cm', 'C6', [[ao, 0], [ad, 50]], 60, 10) };
+}
 B.batchInsertStops(paragens);
 
 for (let i = 0; i < 400 && !I.indicePronto(); i++) await new Promise((r) => setTimeout(r, 50));
@@ -137,6 +152,10 @@ const agoraS = () => Math.floor(Date.now() / 1000);
 const previsoesCm = (horaFicheiro) => ficheiroRt([
   { id: C.suprimida.v1A(12, 5), cancelada: true },
   { id: C.transbordo.vA(12, 5), paragens: [{ seq: 1, paragem: '3O', hora: hora(12, 11) }, { seq: 2, paragem: '3H', hora: hora(12, 26) }] },
+  // a horas (atraso 0), mas em direto
+  { id: C.direto2.vA(12, 5), paragens: [{ seq: 1, paragem: '5O', hora: hora(12, 5) }, { seq: 2, paragem: '5H', hora: hora(12, 20) }] },
+  { id: C.direto2.vB(12, 21), paragens: [{ seq: 1, paragem: '5H', hora: hora(12, 21) }, { seq: 2, paragem: '5D', hora: hora(12, 31) }] },
+  { id: C.direto1.vA(12, 5), paragens: [{ seq: 1, paragem: '6O', hora: hora(12, 5) }, { seq: 2, paragem: '6H', hora: hora(12, 20) }] },
 ], horaFicheiro);
 const previsoesTub = () => ficheiroRt([
   { id: C.atraso.v7(12, 5), paragens: [{ seq: 1, paragem: '1O', hora: hora(12, 17) }, { seq: 2, paragem: '1D', hora: hora(12, 32) }] },
@@ -161,6 +180,8 @@ RT.limparTempoRealPlaneador();
   const p = await plano('jaPassou');
   ok('[controlo] sem previsões, o 27 das 12:03 é o melhor', transito(maisCedo(p) || { legs: [] })[0]?.departureTime === '12:03', resumo(p));
   ok('[controlo] sem previsões, nada aparece como "em direto"', !r.routes.some((o) => o.realtimeStatus === 'TEMPO_REAL'));
+  const m = await plano('direto2');
+  ok('[controlo] sem previsões, o transbordo de 1 min (A5 → B5 das 12:21) não se propõe', !m.routes.some((o) => transito(o).some((l) => l.lineCode === 'B5' && l.departureTime === '12:21')), resumo(m));
 }
 
 // ---------------------------------------------------------------- com previsões frescas
@@ -196,6 +217,14 @@ await new Promise((r) => setTimeout(r, 12_000)); // a TUB guarda o último fiche
   const r = await plano('jaPassou');
   ok('[já passou] não manda apanhar o 27 das 12:03, que já saiu da paragem', !r.routes.some((o) => transito(o).some((l) => l.lineCode === '27' && l.departureTime === '12:03')), resumo(r));
   ok('[já passou] o melhor é o 27 das 12:13', transito(maisCedo(r) || { legs: [] })[0]?.departureTime === '12:13', resumo(r));
+}
+{
+  const r = await plano('direto2');
+  const op = r.routes.find((o) => transito(o).map((l) => `${l.lineCode}@${l.departureTime}`).join('>') === 'A5@12:05>B5@12:21');
+  ok('[margem curta] com as duas viagens em direto, propõe o transbordo de 1 min (A5 → B5 das 12:21)', !!op, resumo(r));
+  ok('[margem curta] e é o que chega primeiro (12:31 e pouco)', !!op && maisCedo(r) === op, resumo(r));
+  const s = await plano('direto1');
+  ok('[margem curta] só com uma das viagens em direto, não (fica a margem de 2 min)', !s.routes.some((o) => transito(o).some((l) => l.lineCode === 'B6' && l.departureTime === '12:21')), resumo(s));
 }
 ok('as previsões foram pedidas poucas vezes (um pedido partilhado)', pedidos.cm >= 1 && pedidos.cm <= 3, JSON.stringify(pedidos));
 
