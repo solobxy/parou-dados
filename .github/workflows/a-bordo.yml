@@ -125,7 +125,10 @@ jobs:
           # o castigo de andar muito a pé não pode fazer perder autocarros (achado na comparação com o Transitous)
           APP=$PWD node --import tsx ../auditoria/planeador-castigo-a-pe.mjs 2>&1 | grep -v "Experimental\|trace-warnings" | tee ../res/planeador-castigo-a-pe.txt | tail -20
           f=${PIPESTATUS[0]}
-          exit $(( a || b || c || d || e || f ))
+          # o autocarro sem previsão que passou na hora há 1–2 min aparece como "pode ainda não ter passado" (nunca recomendado)
+          APP=$PWD node --import tsx ../auditoria/planeador-talvez-atrasado.mjs 2>&1 | grep -v "Experimental\|trace-warnings" | tee ../res/planeador-talvez-atrasado.txt | tail -20
+          g=${PIPESTATUS[0]}
+          exit $(( a || b || c || d || e || f || g ))
 
       - name: Testes da pesquisa de destinos, da cache com limite e do idioma do aparelho
         continue-on-error: true
