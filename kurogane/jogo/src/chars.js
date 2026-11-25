@@ -308,7 +308,7 @@ export class Horde {
     const { _m } = this; let n = 0, ns = 0, nh = 0, nv = 0; const c = this._c || (this._c = new THREE.Color()), K = this.K, PT = this.parts;
     for (const z of list) {
       if (n >= this.max) break;
-      if (z.hide) continue;
+      if (z.hide || z.an) continue; // os animais têm desenho próprio (animals.js)
       const dead = z.state === 'dead', M = zombiePose(z, this.M || (this.M = newPose()));
       for (let k = 0; k < K.length; k++) PT[k].setMatrixAt(n, M[K[k]]);
       z.inst = n;

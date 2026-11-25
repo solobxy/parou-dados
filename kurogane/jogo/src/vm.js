@@ -30,10 +30,10 @@ export function makeVM() {
     const key = k + ':' + (att.scope || '') + ':' + (att.sup || '') + ':' + (att.light || '') + ':' + look.top + ':' + look.skin;
     if (key === cur) return; cur = key;
     if (gun) { rig.remove(gun); gun = null; } if (arms) { rig.remove(arms); arms.traverse(o => o.geometry && o.geometry.dispose()); arms = null; }
-    if (!RDP[k] || att.scope !== 'reddot') return;
-    gun = new THREE.Group(); for (const w of [k, att.sup && 'sup_' + k, att.light && 'lt_' + k]) if (w && W[w]) gun.add(meshOf(W[w])); gun.add(meshOf(rdGeo(...RDP[k])));
+    if (!RDP[k] || (att.scope !== 'reddot' && att.scope !== 'iron')) return;
+    gun = new THREE.Group(); for (const w of [k, att.sup && 'sup_' + k, att.light && 'lt_' + k]) if (w && W[w]) gun.add(meshOf(W[w])); if (att.scope === 'reddot') gun.add(meshOf(rdGeo(...RDP[k])));
     // arma virada para a frente (−z da câmara) e o vidro da mira no eixo da vista
-    const [ry, rz] = RDP[k], S = new THREE.Vector3(WPUSH[0], WPUSH[1] + ry + 0.012, WPUSH[2] + rz);
+    const [ry, rz] = RDP[k], S = new THREE.Vector3(WPUSH[0], WPUSH[1] + ry + (att.scope === 'iron' ? 0.035 : 0.012), WPUSH[2] + rz); // mira de ferro: o olho um pouco acima, a ver por cima da arma
     gun.rotation.y = Math.PI; gun.position.set(S.x, -S.y, -EYE + S.z); rig.add(gun); gun.updateMatrix();
     const hp = (HANDS[k] || HANDS.m4).map(h => new THREE.Vector3(WPUSH[0] + h[0], WPUSH[1] + h[1], WPUSH[2] + h[2]).applyMatrix4(gun.matrix));
     const b = new Builder(0); armTo(b, new THREE.Vector3(0.25, -0.3, -0.13), hp[0], look.top, look.skin); armTo(b, new THREE.Vector3(-0.2, -0.3, -0.3), hp[1], look.top, look.skin); // do cotovelo à mão

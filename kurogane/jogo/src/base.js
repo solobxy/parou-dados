@@ -32,7 +32,9 @@ export const DEPLOY = {
   cama: { n: 'Cama', bed: 1, hp: 200, r: [1.1, 2.1], h: 0.5 },
   saco: { n: 'Saco-cama', bed: 1, hp: 80, r: [0.85, 2.0], h: 0.15 },
   candeeiro: { n: 'Candeeiro', light: 1, hp: 150, r: [0.45, 0.45], h: 2.3 },
+  fogueira: { n: 'Fogueira', slots: [3, 2], hp: 100, r: [0.9, 0.9], h: 0.25, fire: 1 },
 };
+export const FIRE = { fornalha: 1, fogueira: 1 }; // fazem lume: queimam madeira, cozem carne (e a fornalha refina metal)
 
 const canvasTex = (base, draw) => { const c = document.createElement('canvas'); c.width = c.height = 256; const x = c.getContext('2d'); x.fillStyle = base; x.fillRect(0, 0, 256, 256); draw(x); const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; return t; };
 const R = Math.random;
@@ -185,6 +187,9 @@ export function makeBase({ scene, W, G, audio, addRect, removeRect, visDirty, in
     else if (k === 'candeeiro') { const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.07, 2.2, 8), iron); pole.position.y = 1.1; g.add(pole); box(0.36, 0.06, 0.36, 0, 0.03, 0, iron, g); box(0.07, 0.07, 0.42, 0, 2.15, 0.17, iron, g);
       const cage = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.13, 0.26, 8), iron); cage.position.set(0, 1.98, 0.36); g.add(cage); const glass = new THREE.Mesh(new THREE.CylinderGeometry(0.095, 0.11, 0.2, 8), LAMPM); glass.position.set(0, 1.97, 0.36); g.add(glass);
       const pool = new THREE.Mesh(POOLG, POOLM); pool.rotation.x = -Math.PI / 2; pool.position.set(0, 0.07, 0.36); pool.renderOrder = 3; g.add(pool); g.userData.light = [0, 2.2, 0.36]; }
+    else if (k === 'fogueira') { const rock = new THREE.MeshStandardMaterial({ color: 0x7a7670, roughness: 1, flatShading: true }), log = new THREE.MeshStandardMaterial({ color: 0x5a3e26, roughness: 0.95 }); for (let i = 0; i < 9; i++) { const a = i / 9 * Math.PI * 2, r = new THREE.Mesh(new THREE.DodecahedronGeometry(0.12, 0), rock); r.position.set(Math.sin(a) * 0.38, 0.06, Math.cos(a) * 0.38); r.rotation.set(i, i * 2, 0); g.add(r); } for (let i = 0; i < 4; i++) { const l = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.06, 0.6, 7), log); l.rotation.set(1.15, i * Math.PI / 2 + 0.4, 0); l.position.set(Math.sin(i * Math.PI / 2 + 0.4) * 0.1, 0.16, Math.cos(i * Math.PI / 2 + 0.4) * 0.1); g.add(l); }
+      const fl = new THREE.Group(); for (let i = 0; i < 3; i++) { const f = new THREE.Mesh(new THREE.ConeGeometry(0.13 - i * 0.03, 0.5 - i * 0.08, 7), new THREE.MeshBasicMaterial({ color: new THREE.Color(1.5, 0.42 + i * 0.18, 0.08), transparent: true, opacity: 0.9, depthWrite: false })); f.position.set((i - 1) * 0.06, 0.32, (i % 2) * 0.05); fl.add(f); } fl.visible = false; g.add(fl); g.userData.flames = fl;
+      const pool = new THREE.Mesh(POOLG, POOLM.clone()); pool.rotation.x = -Math.PI / 2; pool.position.y = 0.05; pool.scale.setScalar(0.8); pool.renderOrder = 3; pool.material.opacity = 0; g.add(pool); g.userData.pool = pool; g.userData.light = [0, 0.6, 0]; }
     else if (k === 'saco') { box(0.8, 0.1, 1.85, 0, 0.05, 0, new THREE.MeshStandardMaterial({ color: 0x4f6a3a, roughness: 1 }), g); const r = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.14, 0.8, 12), new THREE.MeshStandardMaterial({ color: 0x5a7544, roughness: 1 })); r.rotation.z = Math.PI / 2; r.position.set(0, 0.14, -0.85); r.castShadow = true; g.add(r); }
     g.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
     return g;
@@ -196,7 +201,7 @@ export function makeBase({ scene, W, G, audio, addRect, removeRect, visDirty, in
     d.g.position.set(x, y, z); d.g.rotation.y = yaw; root.add(d.g);
     const [w, l] = D.r, c = Math.abs(Math.cos(yaw)), s = Math.abs(Math.sin(yaw)), hw = (w * c + l * s) / 2, hl2 = (w * s + l * c) / 2;
     if (D.h > 0.3) { d.rc = { x0: x - hw, x1: x + hw, z0: z - hl2, z1: z + hl2, k: 's', h: y + D.h, lv: 0, base: d, dep: 1 }; addRect(d.rc); }
-    if (D.slots) { d.c = { id: 'b' + Math.random().toString(36).slice(2, 8), did: o.nid, x, z, y: y + 0.6, lv: 0, own: true, dep: d, label: (k === 'fornalha' ? 'Abrir ' : 'Abrir ') + D.n.toLowerCase(), slots: D.slots, grid: o.grid || new Grid(D.slots[0], D.slots[1]) }; W.containers.push(d.c); }
+    if (D.slots) { d.c = { id: 'b' + Math.random().toString(36).slice(2, 8), did: o.nid, x, z, y: y + 0.6, lv: 0, own: true, dep: d, label: 'Abrir ' + D.n.toLowerCase(), slots: D.slots, grid: o.grid || new Grid(D.slots[0], D.slots[1]) }; W.containers.push(d.c); }
     else if (D.lvl) { d.c = { id: 'b' + Math.random().toString(36).slice(2, 8), x, z, y: y + 0.9, lv: 0, own: true, dep: d, bench: D.lvl, label: 'Usar ' + D.n.toLowerCase(), slots: [0, 0], grid: null }; W.containers.push(d.c); }
     else if (D.bed) { d.c = { id: 'b' + Math.random().toString(36).slice(2, 8), x, z, y: y + 0.3, lv: 0, own: true, dep: d, bed: 1, label: bedLabel(d), slots: [0, 0], grid: null }; W.containers.push(d.c); }
     else if (D.light) { d.c = { id: 'b' + Math.random().toString(36).slice(2, 8), x, z, y: y + 1.0, lv: 0, own: true, dep: d, lamp: 1, label: 'Apanhar candeeiro', slots: [0, 0], grid: null }; W.containers.push(d.c); }
@@ -212,7 +217,7 @@ export function makeBase({ scene, W, G, audio, addRect, removeRect, visDirty, in
     if ((p.lv || 0) !== 0) return 'Só no chão';
     const onF = hasFund(Math.floor(x / CELL), Math.floor(z / CELL)); PL.y = onF ? FH : 0;
     if (inCity(x, z)) return 'Na cidade não';
-    for (const zn of W.zones) if (Math.hypot(x - zn.x, z - zn.z) < zn.r + 10) return 'Muito perto de ' + zn.name;
+    if (k !== 'fogueira') for (const zn of W.zones) if (Math.hypot(x - zn.x, z - zn.z) < zn.r + 10) return 'Muito perto de ' + zn.name; // a fogueira faz-se em qualquer lado fora da cidade
     if (!onF && W.paved(x, z)) return 'Só em terreno natural';
     if (Math.abs(p.x - x) < hw + 0.15 && Math.abs(p.z - z) < hl2 + 0.15) return 'Estás em cima do sítio';
     for (const r of W.rects) { if ((r.lv || 0) !== 0 || r.off || r.k === 'l') continue;
@@ -306,21 +311,24 @@ export function makeBase({ scene, W, G, audio, addRect, removeRect, visDirty, in
     // interagir com o que foi colocado
     use(c) { const d = c.dep; if (c.bed) { G.ui.bedMenu(d); return true; } if (c.lamp) { this.pickBed(d); return true; } return false; },
     // candeeiros postos: onde está a luz de cada um (para as luzes perto da câmara) e o brilho conforme a noite
-    lights() { const out = []; for (const d of deps) if (d.k === 'candeeiro' && d.g) { const L = d.g.userData.light, c = Math.cos(d.yaw), s = Math.sin(d.yaw); out.push([d.x + L[2] * s, d.y + L[1], d.z + L[2] * c]); } return out; },
+    lights() { const out = []; for (const d of deps) if ((d.k === 'candeeiro' || (d.k === 'fogueira' && d.on)) && d.g) { const L = d.g.userData.light, c = Math.cos(d.yaw), s = Math.sin(d.yaw); out.push([d.x + L[2] * s, d.y + L[1], d.z + L[2] * c]); } return out; },
     night(nt) { LAMPM.emissiveIntensity = 0.2 + nt * 2.6; POOLM.opacity = nt * 0.55; },
     // bancada mais alta a menos de 4 m
     benchNear() { const p = G.p; let lv = 0; if (!p) return 0; for (const d of deps) { const D = DEPLOY[d.k]; if (D.lvl && Math.hypot(d.x - p.x, d.z - p.z) < 4 && (p.lv || 0) === 0) lv = Math.max(lv, D.lvl); } return lv; },
     // fornalha: com madeira acesa, cada 2,5 s queima 1 de madeira (dá carvão) e refina 1 de minério de metal
-    tick(dt) { for (const d of deps) { if (d.k !== 'fornalha' || !d.c) continue; const mouth0 = d.g.userData.mouth; if (NET && G.box !== d.c) { if (mouth0) mouth0.material.emissiveIntensity = d.on ? 1.6 + Math.sin(G.t * 9) * 0.3 : 0; continue; } const g = d.c.grid, mouth = mouth0; if (!g) continue;
+    tick(dt) { for (const d of deps) { if (!FIRE[d.k] || !d.c) continue; const U = d.g.userData, glow = () => { const f = d.on ? 1.6 + Math.sin(G.t * 9) * 0.3 : 0; if (U.mouth) U.mouth.material.emissiveIntensity = f; if (U.flames) { U.flames.visible = d.on; U.flames.children.forEach((c, i) => { c.scale.y = 0.75 + 0.35 * Math.sin(G.t * (9 + i * 2.3) + i); c.rotation.y = G.t * (1 + i); }); } if (U.pool) U.pool.material.opacity = d.on ? 0.55 + 0.1 * Math.sin(G.t * 11) : 0; };
+      if (NET && G.box !== d.c) { glow(); continue; } const g = d.c.grid; if (!g) continue;
       if (d.on && g.count('madeira') <= 0) { d.on = false; }
-      if (mouth) mouth.material.emissiveIntensity = d.on ? 1.6 + Math.sin(G.t * 9) * 0.3 : 0;
-      if (!d.on) continue; d.burn += dt; while (d.burn >= 2.5) { d.burn -= 2.5; g.take('madeira', 1); const out = [['carvao', 1]]; if (g.count('metal') > 0) { g.take('metal', 1); out.push(['metalR', 1]); }
-        for (const [k, n] of out) { const it = mkItem(k, n); const left = g.insert(it); if (left) { d.on = false; toast('A fornalha está cheia'); } } if (g.count('madeira') <= 0) { d.on = false; } } } },
-    toggleFurnace(c) { const d = c.dep; if (!d || d.k !== 'fornalha') return; if (!d.on && c.grid.count('madeira') <= 0) { toast('Põe madeira na fornalha'); return; } d.on = !d.on; audio.play(d.on ? 'fogo' : 'ui'); if (NET && d.nid) NET.send({ t: 'fu', id: d.nid, on: d.on ? 1 : 0, until: Base.furnUntil(d) }); },
+      glow();
+      // fornalha: cada 2,5 s queima 1 de madeira (dá carvão), refina 1 de minério e coze 1 de carne; fogueira: cada 4 s queima 1 de madeira e coze 1 de carne
+      const per = d.k === 'fogueira' ? 4 : 2.5;
+      if (!d.on) continue; d.burn += dt; while (d.burn >= per) { d.burn -= per; g.take('madeira', 1); const out = d.k === 'fornalha' ? [['carvao', 1]] : []; if (d.k === 'fornalha' && g.count('metal') > 0) { g.take('metal', 1); out.push(['metalR', 1]); } if (g.count('carneC') > 0) { g.take('carneC', 1); out.push(['carneA', 1]); }
+        for (const [k, n] of out) { const it = mkItem(k, n); const left = g.insert(it); if (left) { d.on = false; toast(d.k === 'fogueira' ? 'A fogueira está cheia' : 'A fornalha está cheia'); } } if (g.count('madeira') <= 0) { d.on = false; } } } },
+    toggleFurnace(c) { const d = c.dep; if (!d || !FIRE[d.k]) return; if (!d.on && c.grid.count('madeira') <= 0) { toast('Põe madeira na ' + d.k); return; } d.on = !d.on; audio.play(d.on ? 'fogo' : 'ui'); if (NET && d.nid) NET.send({ t: 'fu', id: d.nid, on: d.on ? 1 : 0, until: Base.furnUntil(d) }); },
     // até quando a fornalha arde com a madeira que tem (para os outros a verem acesa)
-    furnUntil(d) { return d.on && d.c && d.c.grid ? Date.now() + (d.c.grid.count('madeira') * 2.5 - (d.burn || 0)) * 1000 : 0; },
+    furnUntil(d) { return d.on && d.c && d.c.grid ? Date.now() + (d.c.grid.count('madeira') * (d.k === 'fogueira' ? 4 : 2.5) - (d.burn || 0)) * 1000 : 0; },
     // a fornalha ardeu enquanto ninguém a tinha aberta: faz agora o que fez nesse tempo
-    catchUp(d, sec) { if (!d || d.k !== 'fornalha' || !d.on || sec <= 0) return; const box = G.box; G.box = d.c; Base.tick(Math.min(sec, 3600)); G.box = box; },
+    catchUp(d, sec) { if (!d || !FIRE[d.k] || !d.on || sec <= 0) return; const box = G.box; G.box = d.c; Base.tick(Math.min(sec, 3600)); G.box = box; },
     // dano (explosivos): a peça perde vida e cai quando chega a zero
     damage(x, z, r, dmg) { let n = 0; for (const P of [...pieces.values()]) { let mx, mz; if (P.t === 'fund' || P.t === 'teto') { mx = P.i * CELL + CELL / 2; mz = P.j * CELL + CELL / 2; } else { const E = edgeGeom(P.k); mx = E.horiz ? (E.x0 + E.x1) / 2 : E.x; mz = E.horiz ? E.z : (E.z0 + E.z1) / 2; }
         const d = Math.hypot(mx - x, mz - z) - (P.t === 'fund' || P.t === 'teto' ? 1.2 : 0.9); if (d > r) continue; const f = d <= 0 ? 1 : (1 - d / r) * (1 - d / r); P.hp -= dmg * f * (P.t === 'fund' ? 0.5 : 1); n++; if (P.hp <= 0) remove(P); }

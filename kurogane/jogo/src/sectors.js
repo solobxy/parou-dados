@@ -33,6 +33,9 @@ export function makeSectors({ scene, W, nodes, addCirc, removeCirc, iMesh, geos,
     // rochas com minério
     const rocks = { stone: [], sulfur: [], metal: [] }; const nr = 2 + Math.floor(R() * 4);
     for (let i = 0; i < nr * 3 && rocks.stone.length + rocks.sulfur.length + rocks.metal.length < nr; i++) { const x = x0 + 4 + R() * (SECT - 8), z = z0 + 4 + R() * (SECT - 8); if (!freeAt(x, z, 2) || close(x, z, 5)) continue; add(x, z); const q = R(), kind = q < 0.55 ? 'stone' : q < 0.78 ? 'sulfur' : 'metal'; rocks[kind].push({ x, z, kind, s: 0.9 + R() * 0.35, ry: R() * 6.28 }); }
+    // pedras soltas e plantas de fibra (apanham-se com um toque: pedra para bater; a planta dá tecido)
+    const picks = { seixo: [], fibra: [] };
+    for (let i = 0; i < 14; i++) { const x = x0 + 3 + R() * (SECT - 6), z = z0 + 3 + R() * (SECT - 6), kind = R() < 0.5 ? 'seixo' : 'fibra'; if (picks[kind].length >= 4 || !freeAt(x, z, 0.8) || close(x, z, 2) || W.wet(x, z, 0.5) || W.paved(x, z)) continue; add(x, z); picks[kind].push({ x, z, kind, s: 0.85 + R() * 0.4, ry: R() * 6.28 }); }
     // arbustos e erva
     const bushes = [], grass = [];
     for (let i = 0; i < 40; i++) { const x = x0 + R() * SECT, z = z0 + R() * SECT; if (!freeAt(x, z, 0.5) || close(x, z, 1.4)) continue; bushes.push({ x, z, s: 0.7 + R() * 0.6, ry: R() * 6.28 }); }
@@ -41,6 +44,7 @@ export function makeSectors({ scene, W, nodes, addCirc, removeCirc, iMesh, geos,
     const mat4 = (x, y, z, ry, s) => new THREE.Matrix4().compose(new THREE.Vector3(x, y, z), new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), ry), new THREE.Vector3(s, s, s));
     trees.forEach((l, v) => { if (!l.length) return; for (const t of l) { t.kind = 'tree'; t.r = 0.32 * t.s; t.hp = t.max = Math.round(150 * t.s); t.alive = true; t.sec = S; nodes.push(t); S.nodes.push(t); t.col = { x: t.x, z: t.z, r: t.r, k: 's', on: true, node: t }; addCirc(t.col); S.circs.push(t.col); } S.meshes.push(...iMesh(v ? geos.broad : geos.cedar, mats.tree, l, t => mat4(t.x, 0, t.z, t.ry, t.s), true, SECT)); });
     for (const kind in rocks) { const l = rocks[kind]; if (!l.length) continue; for (const r of l) { r.r = 0.95 * r.s; r.hp = r.max = kind === 'stone' ? 220 : 130; r.alive = true; r.sec = S; nodes.push(r); S.nodes.push(r); r.col = { x: r.x, z: r.z, r: r.r * 0.85, k: 's', on: true, node: r }; addCirc(r.col); S.circs.push(r.col); } S.meshes.push(...iMesh(geos.rock[kind], mats.tree, l, r => mat4(r.x, 0, r.z, r.ry, r.s), true, SECT)); }
+    for (const kind in picks) { const l = picks[kind]; if (!l.length || !geos[kind]) continue; for (const r of l) { r.r = 0.25; r.hp = r.max = 1; r.alive = true; r.pick = 1; r.sec = S; nodes.push(r); S.nodes.push(r); r.col = { on: true }; } S.meshes.push(...iMesh(geos[kind], mats.tree, l, r => mat4(r.x, 0, r.z, r.ry, r.s), false, SECT)); }
     if (bushes.length) S.meshes.push(...iMesh(geos.bush, mats.tree, bushes, b => mat4(b.x, 0, b.z, b.ry, b.s), true, SECT));
     if (grass.length) S.meshes.push(...iMesh(geos.grass, mats.grass, grass, g => mat4(g.x, 0, g.z, g.ry, g.s), false, SECT));
     S.trees = trees[0].concat(trees[1]); S.rocks = [...rocks.stone, ...rocks.sulfur, ...rocks.metal];

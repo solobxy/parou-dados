@@ -38,7 +38,7 @@ export function makeNet({ G, scene, mkRemote, audio, Conta, enc, dec, hurt, die,
         clearAll(); for (const [id, name, look, clan] of m.players) addRemote(id, name, look, clan); setSleepers(m.sleep); N.clan = m.clan ? m.clan.id : null; N.clanInfo = m.clan;
         if (G.airdrop) G.airdrop({ ph: 9, ...(m.drop || {}) });
         N.role = m.role || null; G.admF = { r: N.role, inv: 0, god: 0, spec: 0 }; G.frozen = false; G.ui.admRole && G.ui.admRole(N.role);
-        off = m.w.now - Date.now(); cyc0 = m.w.cyc0; N.uid = m.uid; N.world = true; cur = null; world.reset(m.w); if (m.inv && !m.killed && G.loadInv) G.loadInv(m.inv); invSig = '';
+        off = m.w.now - Date.now(); cyc0 = m.w.cyc0; N.uid = m.uid; N.vapid = m.vapid || null; N.world = true; if (G.pushResub) G.pushResub(); cur = null; world.reset(m.w); if (m.inv && !m.killed && G.loadInv) G.loadInv(m.inv); invSig = '';
         const n = m.players.length; G.ui.toast(n ? `Online · ${n} ${n === 1 ? 'jogador ligado' : 'jogadores ligados'}` : 'Online · estás sozinho no servidor por agora');
         if (m.killed) { G.ui.toast('Mataram-te enquanto dormias'); die('dormir'); }
         else if (m.resume && G.p && m.resume.hp != null && m.resume.hp < G.p.hp) G.p.hp = Math.max(1, m.resume.hp);
@@ -85,6 +85,7 @@ export function makeNet({ G, scene, mkRemote, audio, Conta, enc, dec, hurt, die,
       case 'pos': if (G.p) { G.p.x = m.x; G.p.z = m.z; G.p.vx = G.p.vz = 0; } return;
       case 'boxfix': if (cur && cur.key === m.c && cur.c.grid) { const g = cur.c.grid; for (const e of [...g.list]) g.remove(e.it); for (const o of m.it || []) { const it = world.dec(o); if (it) { if (g.fits(it, o.x, o.y)) g.add(it, o.x, o.y); else g.insert(it); } } cur.sig = sigOf(cur.c); G.ui.refresh(true); } return;
       case 'zseed': if (N.world) N.zseed(world.z.seed()); return;
+      case 'aseed': if (N.world) send({ t: 'as', L: world.z.aseed() }); return;
       case 'bb': world.base(m); return;
       case 'bno': if (m.a === 'lkc') { G.ui.codeErr(m.e); return; } if (m.lk && m.a === 'bdo') { const P = G.base.pieces.get(m.k); if (P) { G.ui.codeAsk({ door: P }); return; } } G.ui.toast(m.e || 'Não deu'); G.base.refused(m.a, m.k); return;
       case 'lkok': G.base.lockOk(m); G.ui.codeDone(m); return;
@@ -133,7 +134,7 @@ export function makeNet({ G, scene, mkRemote, audio, Conta, enc, dec, hurt, die,
   // caixas e sacos: pede ao servidor (só uma pessoa de cada vez); enquanto estiver aberta vai mandando o que tem; ao fechar manda o fim
   const keyOf = c => c.nid ? 'b' + c.nid : c.did ? 'd' + c.did : 'w' + c.wid;
   const sigOf = c => c.grid ? JSON.stringify(world.encG(c.grid)) : '';
-  const closeBox = () => { if (!cur) return; if (cur.open && cur.c.grid) { const d = cur.c.dep, o = { t: 'cl', c: cur.key, it: world.encG(cur.c.grid) }; if (d && d.k === 'fornalha') o.fu = { on: d.on ? 1 : 0, until: G.base.furnUntil(d) }; send(o); } cur = null; };
+  const closeBox = () => { if (!cur) return; if (cur.open && cur.c.grid) { const d = cur.c.dep, o = { t: 'cl', c: cur.key, it: world.encG(cur.c.grid) }; if (d && (d.k === 'fornalha' || d.k === 'fogueira')) o.fu = { on: d.on ? 1 : 0, until: G.base.furnUntil(d) }; send(o); } cur = null; };
   N.open = c => { closeBox(); cur = { key: keyOf(c), c, open: false, t: performance.now() }; send({ t: 'op', c: cur.key }); };
   N.clanCmd = (a, v) => send({ t: 'clan', a, nome: v, codigo: v });
   N.adm = (a, o = {}) => send({ ...o, t: 'adm', a }); N.admClaim = code => send({ t: 'admclaim', code }); N.lb = () => send({ t: 'lb' });

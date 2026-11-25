@@ -4,7 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover,interactive-widget=resizes-content">
 <meta name="theme-color" content="#121416">
-<link rel="icon" href="data:,">
+<link rel="icon" href="icon-192.png">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="Kurogane">
 <title>Kurogane · protótipo</title>
 <style>
 /*FONTS*/
@@ -128,6 +134,7 @@ svg{width:18px;height:18px;flex:none}
 #scope.rd .ret path,#scope.rd .ret .dots,#scope.rd .ret .hold,#scope.rd .ret .c{display:none}
 #scope.vm .hole,#scope.vm .rdf,#scope.vm .rdg{display:none}
 #scope.rd .rdot{display:block;fill:#ff3b2f;stroke:none}#scope.rd .rdg{display:block;fill:rgba(255,60,40,.22);stroke:none}#scope .breath i{display:block;height:100%;width:100%;background:#A9C46E}
+#scope.ir .rdot{fill:rgba(240,236,226,.9)}#scope.ir .rdg{display:none}#scope.ir .rdf{display:none}#scope.ir .hole{display:none}
 #dmg{position:fixed;inset:0;z-index:120;pointer-events:none;background:radial-gradient(ellipse at center,rgba(0,0,0,0) 45%,rgba(160,20,10,.55) 100%);opacity:0;transition:opacity .45s}
 #dmg.on{opacity:1;transition:none}
 #lowhp{position:fixed;inset:0;z-index:119;pointer-events:none;background:radial-gradient(ellipse at center,rgba(0,0,0,0) 55%,rgba(120,10,6,.35) 100%);opacity:0;transition:opacity 1s}
@@ -149,7 +156,7 @@ svg{width:18px;height:18px;flex:none}
 #tFire{--sz:78px;--bd:rgba(230,226,218,.6);--fill:rgba(30,22,15,.92)}
 /* a conduzir: pedais à esquerda, volante à direita (os botões grandes, para não falhar com o polegar) */
 .dv{--sz:84px;display:none}.dv svg{width:30px;height:30px}.dv.dn{--fill:#3b4046;--bd:rgba(230,226,218,.55)}
-body.driving.touch .dv{display:flex}body.driving .pad,body.driving #gL,body.driving #gR{display:none}
+body.driving.touch .dv{display:flex}body.driving .hv,body.driving.touch .hv{display:none}body.driving.touch.heliAir .hv{display:flex}.hv[aria-pressed=true]{--fill:#4a5a3a;--bd:rgba(200,230,170,.7)}body.driving .pad,body.driving #gL,body.driving #gR{display:none}
 body.driving #bottom,body.driving #tLight{display:none}body.driving #ammo{left:50%;right:auto;transform:translateX(-50%);bottom:calc(14px + var(--sb));max-width:none}
 #tFire svg{width:28px;height:28px;color:var(--amb)}
 #tFire .ic-m,#tFire .ic-b,#tFire .ic-x{display:none}#tFire.boom .ic-g,#tFire.boom .ic-m{display:none}#tFire.boom .ic-x{display:block}#tFire.melee .ic-g{display:none}#tFire.melee .ic-m{display:block}#tFire.build .ic-g,#tFire.build .ic-m{display:none}#tFire.build .ic-b{display:block}
@@ -262,7 +269,7 @@ canvas.nvg{filter:grayscale(1) sepia(1) hue-rotate(50deg) saturate(2.4) brightne
 .cell{position:absolute;width:var(--cs);height:var(--cs);background:rgba(255,255,255,.035);border-radius:2px}
 .cell.off{background:repeating-linear-gradient(135deg,rgba(255,255,255,.025) 0 4px,transparent 4px 8px)}
 .item{position:absolute;overflow:hidden;cursor:grab;touch-action:none;border-radius:2px;box-shadow:inset 0 1px 0 rgba(255,255,255,.08)}
-.item img{position:absolute;left:0;top:0;width:100%;height:100%;object-fit:contain;pointer-events:none}
+.item img{position:absolute;left:0;top:12px;width:100%;height:calc(100% - 13px);object-fit:contain;pointer-events:none}
 .item .nm{position:absolute;left:4px;top:3px;right:4px;overflow:hidden;text-overflow:ellipsis;font:600 11px/1.05 "Roboto Condensed",sans-serif;letter-spacing:0;color:rgba(238,233,224,.92);white-space:normal;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;hyphens:auto;text-shadow:0 1px 2px rgba(0,0,0,.95);pointer-events:none}
 .item .ct{position:absolute;right:3px;bottom:3px;font:700 12px/1 "Roboto Condensed",sans-serif;padding:2px 4px;background:rgba(0,0,0,.7);font-variant-numeric:tabular-nums;pointer-events:none}
 .item .ct.am{color:var(--amb)}
@@ -490,7 +497,7 @@ input[type=range]{width:160px;accent-color:#E6E2DA;height:30px}
 #tBreath{right:calc(176px + var(--sr));bottom:calc(196px + var(--sb))}
 #tUse{right:calc(16px + var(--sr));bottom:calc(254px + var(--sb));max-width:min(260px,calc(50vw - 190px))}#tSug{left:50%;transform:translateX(-50%);bottom:calc(124px + var(--sb))}#tLock{right:calc(16px + var(--sr));bottom:calc(312px + var(--sb))}
 #tSprint{left:calc(16px + var(--sl));bottom:calc(214px + var(--sb))}
-#dUp{left:calc(26px + var(--sl));bottom:calc(112px + var(--sb))}#dDn{left:calc(26px + var(--sl));bottom:calc(16px + var(--sb))}#dL{right:calc(118px + var(--sr));bottom:calc(30px + var(--sb))}#dR{right:calc(22px + var(--sr));bottom:calc(30px + var(--sb))}
+#dUp{left:calc(26px + var(--sl));bottom:calc(112px + var(--sb))}#dHov{right:calc(22px + var(--sr));bottom:calc(126px + var(--sb))}#dDn{left:calc(26px + var(--sl));bottom:calc(16px + var(--sb))}#dL{right:calc(118px + var(--sr));bottom:calc(30px + var(--sb))}#dR{right:calc(22px + var(--sr));bottom:calc(30px + var(--sb))}
 #tLight{left:calc(16px + var(--sl));bottom:calc(148px + var(--sb))}
 #gL{left:calc(80px + var(--sl));bottom:calc(52px + var(--sb))}#gR{right:calc(170px + var(--sr));bottom:calc(150px + var(--sb))}
 #toast{top:auto;bottom:calc(84px + var(--sb))}
@@ -511,7 +518,7 @@ input[type=range]{width:160px;accent-color:#E6E2DA;height:30px}
 #tBreath{left:calc(16px + var(--sl));bottom:calc(252px + var(--sb))}
 #tUse{left:50%;transform:translateX(-50%);bottom:calc(266px + var(--sb));max-width:calc(100vw - 170px)}#tSug{left:calc(16px + var(--sl));top:calc(12px + var(--st) + var(--mmw) + 12px);bottom:auto}#tLock{left:50%;transform:translateX(-50%);bottom:calc(322px + var(--sb))}
 #tSprint{left:calc(16px + var(--sl));bottom:calc(186px + var(--sb))}
-#dUp{left:calc(20px + var(--sl));bottom:calc(222px + var(--sb))}#dDn{left:calc(20px + var(--sl));bottom:calc(126px + var(--sb))}#dL{right:calc(112px + var(--sr));bottom:calc(160px + var(--sb))}#dR{right:calc(18px + var(--sr));bottom:calc(160px + var(--sb))}
+#dUp{left:calc(20px + var(--sl));bottom:calc(222px + var(--sb))}#dHov{right:calc(18px + var(--sr));bottom:calc(256px + var(--sb))}#dDn{left:calc(20px + var(--sl));bottom:calc(126px + var(--sb))}#dL{right:calc(112px + var(--sr));bottom:calc(160px + var(--sb))}#dR{right:calc(18px + var(--sr));bottom:calc(160px + var(--sb))}
 #tLight{left:calc(16px + var(--sl));bottom:calc(118px + var(--sb))}
 #gL{left:calc(124px + var(--sl));bottom:calc(206px + var(--sb))}#gR{display:none}
 #toast{top:calc(12px + var(--st) + var(--mmw) + 50px);max-width:calc(100vw - 32px)}
@@ -638,7 +645,11 @@ button:focus-visible{outline:2px solid #E6E2DA}
 #adm .ihead,#lbw .ihead{gap:14px}#adm .ihead .close,#lbw .ihead .close{margin-left:auto;flex:none}
 .adh{font-size:19px;letter-spacing:.06em;text-transform:uppercase;white-space:nowrap}
 .admr{font:700 11px "Roboto Condensed",sans-serif;letter-spacing:.1em;text-transform:uppercase;padding:3px 7px;background:#7d2519;color:#F3D2CC;border-radius:2px}.admr.mod{background:#33658d;color:#D3E4F3}
-#admB,#lbB{display:flex;flex-direction:column;gap:2px;padding-top:8px}
+#admB,#lbB,#trB{display:flex;flex-direction:column;gap:2px;padding-top:8px}
+#trw{background:#0e0d0c;align-items:stretch;justify-content:center;padding:calc(8px + var(--st)) calc(12px + var(--sr)) calc(8px + var(--sb)) calc(12px + var(--sl));z-index:56}#trw .ihead{gap:14px}#trw .ihead .close{margin-left:auto;flex:none}
+.trm{font:700 17px 'Roboto Condensed',sans-serif;color:#E6C46A;font-variant-numeric:tabular-nums;white-space:nowrap}
+.trr{display:grid;grid-template-columns:52px 1fr auto auto;align-items:center;gap:12px;min-height:58px;padding:4px 10px;background:#1b1a18;border-radius:2px}.trr img{width:48px;height:48px;object-fit:contain}.trr .n{min-width:0}.trr .n b{display:block;font-weight:700;font-size:15.5px;line-height:1.2}.trr .n span{font-size:12.5px;color:var(--tx2)}.trr .p{font:700 16px 'Roboto Condensed',sans-serif;color:#E6C46A;font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}.trr .btn{min-width:96px}.trr.no .p{color:#8a8278}.trsub{font:700 12px 'Roboto Condensed',sans-serif;letter-spacing:.1em;text-transform:uppercase;color:var(--tx2);padding:12px 2px 4px}
+@media (orientation:portrait),(max-width:560px){#trw .ihead{flex-wrap:wrap;height:auto;row-gap:4px}#trTabs{order:3;width:100%}.trr{grid-template-columns:40px 1fr auto auto;gap:8px;padding:4px 8px}.trr img{width:40px;height:40px}.trr .n span{display:none}.trr .btn{min-width:0;padding-left:10px;padding-right:10px}.trr .p{font-size:15px}}
 .aq{display:flex;gap:8px;align-items:center;margin-bottom:6px}.aq input{flex:1;height:44px;padding:0 12px;background:#1b1a18;border:1px solid rgba(255,250,240,.1);color:var(--tx);font:500 15px "Roboto Condensed",sans-serif;border-radius:2px}
 .ap{display:flex;flex-direction:column;background:#1b1a18;border-radius:2px}
 .ap>button{display:flex;align-items:center;gap:12px;min-height:54px;padding:8px 12px;text-align:left;width:100%}
@@ -697,6 +708,7 @@ body.mir #touch .tb>*,body.mir #touch .ghost{transform:scaleX(-1)}
     <button class="tb dv" id="dDn" aria-label="Travar e marcha-atrás">{{chevron-down}}<em>Travar</em></button>
     <button class="tb dv" id="dL" aria-label="Virar à esquerda">{{chevron-left}}</button>
     <button class="tb dv" id="dR" aria-label="Virar à direita">{{chevron-right}}</button>
+    <button class="tb dv hv" id="dHov" aria-label="Pairar: o helicóptero fica parado no ar" aria-pressed="false">{{circle-pause}}<em>Pairar</em></button>
     <button class="tb" id="tLight" data-h="light" aria-label="Lanterna">{{flashlight}}<em>Luz</em></button>
   </div>
   <div id="vit" data-h="vit"><div id="status"></div>
@@ -734,10 +746,11 @@ body.mir #touch .tb>*,body.mir #touch .ghost{transform:scaleX(-1)}
   <nav class="menu"><button class="mi pri" id="sCont" hidden><b>Continuar</b><em>Voltas onde ficaste</em></button><button class="mi pri" id="sPlay"><b>Jogar</b><em>Acordas perto de uma vila ou monumento</em></button><button class="mi" id="sSet"><b>Definições</b><em>Controlos, imagem e som</em></button></nav>
   <div class="onl" id="sOnl" role="status"><i class="dot" aria-hidden="true"></i><span><b>Servidor</b><em id="sOnT">A ver quem está a jogar…</em></span></div>
   <div class="keys" id="sKeys"></div>
-  <div class="foot">Protótipo 0.28 · um servidor para todos · quem sai fica a dormir no mundo</div>
+  <div class="foot">Protótipo 0.29 · um servidor para todos · quem sai fica a dormir no mundo</div>
 </div><button id="sMus" aria-label="Música do menu"><span class="on">{{volume-2}}</span><span class="off">{{volume-x}}</span></button><a class="credit" href="https://dinissousa.pt" target="_blank" rel="noopener">feito por dinissousa.pt</a></div>
 <div id="pfm" class="ov" hidden><div class="pfbox"><div class="pfh"><b id="pfT"></b><button class="close" id="pfX" aria-label="Fechar">{{x}}</button></div><div id="pfB" class="pfb"></div></div></div>
 <div id="adm" class="ov" hidden><div class="sp2"><div class="ihead"><b class="cond adh">Administração</b><span class="admr" id="admR"></span><div class="tabs" id="admTabs"><button data-t="p" class="on">Jogadores</button><button data-t="e">Eu</button><button data-t="b">Banidos</button><button data-t="c">Clãs</button></div><button class="close" id="admX" aria-label="Fechar">{{x}}</button></div><div class="sbody" id="admB"></div></div></div>
+<div id="trw" class="ov" hidden><div class="sp2"><div class="ihead"><b class="cond adh" id="trT">Comerciante</b><div class="tabs" id="trTabs"><button data-t="b" class="on">Comprar</button><button data-t="s">Vender</button></div><span class="trm" id="trM"></span><button class="close" id="trX" aria-label="Fechar">{{x}}</button></div><div class="sbody" id="trB"></div></div></div>
 <div id="lbw" class="ov" hidden><div class="sp2"><div class="ihead"><b class="cond adh">Classificações</b><div class="tabs" id="lbTabs"><button data-t="pvp" class="on">PvP</button><button data-t="z">Zombies</button><button data-t="clans">Clãs</button></div><button class="close" id="lbX" aria-label="Fechar">{{x}}</button></div><div class="sbody" id="lbB"></div></div></div>
 <div id="set" class="ov" hidden><div class="sp2"><div class="ihead"><b class="cond" style="font-size:20px;letter-spacing:.06em;text-transform:uppercase">Definições</b><button class="close" id="setClose" aria-label="Fechar" style="margin-left:auto">{{x}}</button></div><div class="sbody" id="setBody"></div></div></div>
 <div id="hedit" hidden><div class="het"><b id="heName">Toca num elemento</b><span>Arrasta para mudar de sítio</span></div><button class="btn sm" id="heMinus" aria-label="Mais pequeno">{{minus}}</button><button class="btn sm" id="hePlus" aria-label="Maior">{{plus}}</button><button class="btn sm" id="heVis">Esconder</button><button class="btn sm" id="heReset">Repor tudo</button><button class="btn sm pri" id="heDone">Concluir</button></div>

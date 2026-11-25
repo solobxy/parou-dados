@@ -2,12 +2,14 @@
 // quando saem (dá para as matar e levar o que tinham), mochilas no chão partilhadas e clãs.
 // Só módulos do Node (sem dependências). WebSocket feito à mão (RFC 6455, mensagens de texto pequenas).
 import http from 'node:http';
+import https from 'node:https';
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { ITEMS, LOOT, RECIPES, ammoOf } from './jogo/src/items.js';
 import { Grid, mkItem, rollLoot } from './jogo/src/bag.js';
 import { VT, vt } from './jogo/src/vtypes.js';
+import { TRADERS, PRICE, SELL, TRADE_R } from './jogo/src/traders.js';
 
 const PORT = +process.env.PORT || 3190, DIR = process.env.STATE_DIRECTORY || path.join(process.cwd(), 'dados');
 const FILE = path.join(DIR, 'estado.json'), SLEEP_MS = 72 * 3600e3, BAG_MS = 45 * 60e3, MAXP = 60;
@@ -110,7 +112,7 @@ const invMsg = (c, p, m) => { const L = ledOf(p), inv = cleanInv(m), C = tally(f
   if (L.pend && Date.now() - L.pend.t < 8000) { for (const k in L.pend.k) if ((C[k] || 0) < (L.T[k] || 0)) C[k] = L.T[k]; } else L.pend = null; // o que a equipa deu há pouco ainda pode não ter chegado ao inventário que o jogo mandou
   L.T = C; L.inv = inv; p.inv = flat(inv).map(({ x, y, ...r }) => r); dirty = true; };
 // juntar recursos (árvores e rochas): no máximo o que dá para apanhar a bater sem parar
-const GATHER = { madeira: 1, pedraR: 1, metal: 1, enxofre: 1 };
+const GATHER = { madeira: 1, pedraR: 1, metal: 1, enxofre: 1, pedra: 1, tecido: 1 };
 const NODEY = new Map(); // quanto já saiu de cada árvore ou rocha (volta a crescer em 3 min)
 const gather = (c, p, m) => { const k = String(m.k || ''), n = num(m.n, 0, 200) | 0, nk = String(m.nk || ''); if (!GATHER[k] || !n) return; const now = Date.now(), b = p.gb || (p.gb = { v: 3000, t: now }); b.v = Math.min(3000, b.v + (now - b.t) / 60000 * 3000); b.t = now;
   if (!/^[cs][0-9,:-]{1,24}$/.test(nk)) { strike(c, p, 'recursos sem árvore'); return; }
@@ -123,7 +125,7 @@ const craft = (c, p, m) => { const r = RECIPES[m.i | 0]; if (!r) return; const L
   addT(L.T, r.need, -1); addT(L.T, { [r.k]: r.n || 1 }); dirty = true; };
 // caixas: o que sai vai para quem a tem aberta; o que entra tem de ser dele. Na fornalha, a madeira vira carvão e o minério metal.
 const boxDelta = (c, p, k, oldIt, newIt) => { const O = tally(oldIt), N = tally(newIt); const out = diffT(O, N), inn = diffT(N, O);
-  if (k[0] === 'd') { const d = S.w.base.d[k.slice(1)]; if (d && d.k === 'fornalha') for (const [a, b] of [['carvao', 'madeira'], ['metalR', 'metal']]) { const q = Math.min(inn[a] || 0, out[b] || 0); if (q) { inn[a] -= q; out[b] -= q; if (!inn[a]) delete inn[a]; if (!out[b]) delete out[b]; } } }
+  if (k[0] === 'd') { const d = S.w.base.d[k.slice(1)]; if (d && (d.k === 'fornalha' || d.k === 'fogueira')) for (const [a, b] of d.k === 'fornalha' ? [['carvao', 'madeira'], ['metalR', 'metal'], ['carneA', 'carneC']] : [['carneA', 'carneC']]) { const q = Math.min(inn[a] || 0, out[b] || 0); if (q) { inn[a] -= q; out[b] -= q; if (!inn[a]) delete inn[a]; if (!out[b]) delete out[b]; } } }
   const L = ledOf(p); if (!fits(inn, L.T)) { strike(c, p, 'caixa ' + JSON.stringify(diffT(inn, L.T))); return false; }
   addT(L.T, inn, -1); addT(L.T, out); dirty = true; return true; };
 // loot das caixas do mundo: gerado aqui (com as tabelas do jogo), não no telemóvel
@@ -154,7 +156,7 @@ const mkBag = (x, z, y, lv, it, o = {}) => {
 // ---------- bases partilhadas: peças (fundação, paredes, portas, janelas, tetos) e objetos (baús, fornalha, bancadas, camas)
 // Só o dono e o clã dele mexem numa base (construir ao lado, melhorar, demolir, abrir as portas); os explosivos partem tudo.
 const CELL = 3, TIER_HP = [250, 600, 1200], BED_CD = { cama: 120e3, saco: 300e3 };
-const DEP = { bau: 300, bauG: 500, fornalha: 500, bancada1: 400, bancada2: 600, bancada3: 900, cama: 200, saco: 80, candeeiro: 150 };
+const DEP = { bau: 300, bauG: 500, fornalha: 500, bancada1: 400, bancada2: 600, bancada3: 900, cama: 200, saco: 80, candeeiro: 150, fogueira: 100 };
 const EXB = { gran: { br: 1.8, bdmg: 40 }, c4: { br: 1.7, bdmg: 560 } };
 const uidOf = tok => 'u' + crypto.createHash('sha1').update(tok).digest('hex').slice(0, 10);
 const ally = (a, b) => a === b || !!(S.tokens[a] && S.tokens[a].clan && S.tokens[b] && S.tokens[a].clan === S.tokens[b].clan);
@@ -252,20 +254,37 @@ const baseMsg = (c, p, m, now) => {
     if (!T.cl) { if (!ally(T.tok, tok)) return no(c, 'lkset', key, 'Não é da tua base'); const L = ledOf(p); if ((L.T.fechadura || 0) < 1) return no(c, 'lkset', key, 'Precisas de uma fechadura'); addT(L.T, { fechadura: 1 }, -1); T.cl = { h: null, a: [] }; }
     else if (!lkOk(T.cl, T.tok, tok, p.uid)) return no(c, 'lkset', key, 'Não sabes o código');
     T.cl.s = rid(8); T.cl.h = lkHash(T.cl.s, code); T.cl.a = [p.uid]; dirty = true; if (isD) bb({ d: [dRow(id, T)] }); else bb({ p: [pRow(k, T)] }); send(c, { t: 'lkok', k: key, set: 1 }); return; }
-  if (m.t === 'fu') { if (!d || d.k !== 'fornalha' || Math.hypot(d.x - p.x, d.z - p.z) > 6) return; d.on = m.on ? 1 : 0; d.last = now; d.until = num(m.until, 0, 1e15, 0); bb({ d: [dRow(id, d)] }); return; }
+  if (m.t === 'fu') { if (!d || (d.k !== 'fornalha' && d.k !== 'fogueira') || Math.hypot(d.x - p.x, d.z - p.z) > 6) return; d.on = m.on ? 1 : 0; d.last = now; d.until = num(m.until, 0, 1e15, 0); bb({ d: [dRow(id, d)] }); return; }
 };
 // explosão: quem a fez manda onde foi; aqui partem-se as peças e os objetos, e os outros veem e ouvem
+// ---------- alarme de raid: notificação no telemóvel mesmo com o jogo fechado (Web Push sem bibliotecas: VAPID ES256 e aes128gcm, RFC 8291/8292)
+if (!S.vapid) { const k = crypto.generateKeyPairSync('ec', { namedCurve: 'prime256v1' }); S.vapid = { pub: k.publicKey.export({ format: 'jwk' }), priv: k.privateKey.export({ format: 'jwk' }) }; dirty = true; }
+if (!S.push) S.push = {};
+const b64u = b => Buffer.from(b).toString('base64url');
+const VPUB = Buffer.concat([Buffer.from([4]), Buffer.from(S.vapid.pub.x, 'base64url'), Buffer.from(S.vapid.pub.y, 'base64url')]), VKEY = crypto.createPrivateKey({ key: S.vapid.priv, format: 'jwk' });
+const vapidJWT = aud => { const h = b64u(JSON.stringify({ typ: 'JWT', alg: 'ES256' })), pl = b64u(JSON.stringify({ aud, exp: Math.floor(Date.now() / 1000) + 12 * 3600, sub: 'https://kurogane.2-31-13-85.sslip.io' })); return h + '.' + pl + '.' + b64u(crypto.sign('sha256', Buffer.from(h + '.' + pl), { key: VKEY, dsaEncoding: 'ieee-p1363' })); };
+const wpEncrypt = (sub, text) => { const ua = Buffer.from(sub.keys.p256dh, 'base64url'), auth = Buffer.from(sub.keys.auth, 'base64url'), E = crypto.createECDH('prime256v1'); E.generateKeys(); const as = E.getPublicKey(), sh = E.computeSecret(ua), salt = crypto.randomBytes(16);
+  const hk = (sa, ikm, info, n) => Buffer.from(crypto.hkdfSync('sha256', ikm, sa, info, n));
+  const ikm = hk(auth, sh, Buffer.concat([Buffer.from('WebPush: info\0'), ua, as]), 32), cek = hk(salt, ikm, Buffer.from('Content-Encoding: aes128gcm\0'), 16), nonce = hk(salt, ikm, Buffer.from('Content-Encoding: nonce\0'), 12);
+  const ci = crypto.createCipheriv('aes-128-gcm', cek, nonce), body = Buffer.concat([ci.update(Buffer.concat([Buffer.from(text), Buffer.from([2])])), ci.final(), ci.getAuthTag()]);
+  const head = Buffer.alloc(21); salt.copy(head, 0); head.writeUInt32BE(4096, 16); head.writeUInt8(65, 20); return Buffer.concat([head, as, body]); };
+const pushTo = (uid, data) => { for (const sub of (S.push[uid] || []).slice()) { try { const u = new URL(sub.endpoint), body = wpEncrypt(sub, JSON.stringify(data));
+    const rq = https.request(u, { method: 'POST', timeout: 15000, headers: { 'Content-Encoding': 'aes128gcm', 'Content-Type': 'application/octet-stream', TTL: '3600', Urgency: 'high', Authorization: 'vapid t=' + vapidJWT(u.origin) + ', k=' + b64u(VPUB), 'Content-Length': body.length } }, res => { if (res.statusCode === 404 || res.statusCode === 410) { S.push[uid] = (S.push[uid] || []).filter(q => q.endpoint !== sub.endpoint); dirty = true; } res.resume(); });
+    rq.on('error', () => { }); rq.on('timeout', () => rq.destroy()); rq.end(body); } catch (e) { } } };
+const RAIDT = new Map(); // no máximo um aviso a cada 5 min por pessoa
+const raidAlarm = (toks, who, x, z) => { const uids = new Set(); for (const t of toks) { const T = S.tokens[t]; if (!T) continue; uids.add(uidOf(t)); if (T.clan) for (const [t2, T2] of Object.entries(S.tokens)) if (T2.clan === T.clan) uids.add(uidOf(t2)); }
+  const now = Date.now(), on = new Set([...players.values()].filter(o => o.p).map(o => o.p.uid)); for (const u of uids) { if (on.has(u) || !S.push[u] || now - (RAIDT.get(u) || 0) < 300e3) continue; RAIDT.set(u, now); pushTo(u, { title: 'Estão a atacar a tua base', body: 'Explosão em ' + Math.round(x) + ', ' + Math.round(z) + ' (' + who + '). Entra para defender.', tag: 'raid' }); } };
 const boom = (c, p, m) => { const X = EXB[m.k]; if (!X) return; const ti = (p.thr || []).findIndex(q => q.k === m.k && Date.now() - q.t < 120000); if (ti < 0) { strike(c, p, 'explosão sem lançar'); return; } p.thr.splice(ti, 1); const x = num(m.x, -4100, 4100), z = num(m.z, -4100, 4100), y = num(m.y, -5, 40), lv = num(m.lv, 0, 6) | 0; if (Math.hypot(x - p.x, z - p.z) > 60) return;
   bcast({ t: 'boom', k: m.k, x, y, z, lv }, o => o !== c && Math.hypot(o.p.x - x, o.p.z - z) < 300);
   if (Array.isArray(m.lk)) for (const [w, hp] of m.lk.slice(0, 4)) { const i = num(w, 0, 20000, -1) | 0; if (i < 0) continue; const L = S.w.locks[i] || {}; L.hp = Math.min(L.hp ?? 1e9, num(hp, 0, 5000)); if (L.hp <= 0) { L.hp = 0; L.broke = Date.now(); S.w.doors[i] = 1; } S.w.locks[i] = L; dirty = true; bcast({ t: 'lk', i, hp: L.hp, broke: L.broke || 0 }); }
   if (lv !== 0) return; for (const car of Object.values(S.w.cars)) { const q = Math.hypot(car.x - x, car.z - z); if (q > 5 || car.hp <= 0) continue; car.hp = Math.max(0, car.hp - (m.k === 'c4' ? 700 : 160) * (1 - q / 5) * (car.k === 'humvee' ? 0.6 : 1)); if (car.hp <= 0) { car.dead = Date.now(); car.s = car.s.map(() => 0); car.v = 0; } dirty = true; }
-  const B = S.w.base, upd = [], rp = [], dd = [], rd = [];
+  const B = S.w.base, upd = [], rp = [], dd = [], rd = [], hitT = new Set();
   for (const [k, P] of Object.entries(B.p)) { if (!B.p[k]) continue; const mm = BK.exec(k); if (!mm) continue; const i = +mm[2], j = +mm[3]; let mx, mz;
     if (mm[1] === 'f' || mm[1] === 't') { mx = i * CELL + CELL / 2; mz = j * CELL + CELL / 2; } else if (mm[1] === 'h') { mx = i * CELL + CELL / 2; mz = j * CELL; } else { mx = i * CELL; mz = j * CELL + CELL / 2; }
     const d = Math.hypot(mx - x, mz - z) - (mm[1] === 'f' || mm[1] === 't' ? 1.2 : 0.9); if (d > X.br) continue; const f = d <= 0 ? 1 : (1 - d / X.br) * (1 - d / X.br);
-    P.hp -= X.bdmg * f * (P.t === 'fund' ? 0.5 : 1); if (P.hp <= 0) { delete B.p[k]; rp.push(k); } else upd.push(pRow(k, P)); }
-  for (const [id, d] of Object.entries(B.d)) { const q = Math.hypot(d.x - x, d.z - z); if (q > X.br) continue; d.hp -= X.bdmg * (1 - q / X.br); if (d.hp <= 0) dDel(id, rd); else dd.push(dRow(id, d)); }
-  if (upd.length || rp.length || dd.length || rd.length) bb({ p: upd, rp, d: dd, rd }); };
+    if (P.tok && P.tok !== p.tok) hitT.add(P.tok); P.hp -= X.bdmg * f * (P.t === 'fund' ? 0.5 : 1); if (P.hp <= 0) { delete B.p[k]; rp.push(k); } else upd.push(pRow(k, P)); }
+  for (const [id, d] of Object.entries(B.d)) { const q = Math.hypot(d.x - x, d.z - z); if (q > X.br) continue; if (d.tok && d.tok !== p.tok) hitT.add(d.tok); d.hp -= X.bdmg * (1 - q / X.br); if (d.hp <= 0) dDel(id, rd); else dd.push(dRow(id, d)); }
+  if (upd.length || rp.length || dd.length || rd.length) bb({ p: upd, rp, d: dd, rd }); if (hitT.size) raidAlarm(hitT, m.k === 'c4' ? 'C4' : 'granada', x, z); };
 
 
 // ---------- carros: quem conduz manda a posição; o servidor guarda gasolina, estado e quem vai em cada lugar
@@ -288,15 +307,21 @@ const carMsg = (c, p, m, now) => {
 
 // ---------- zombies: o servidor guarda todos (posição, vida, proteção); quem está mais perto simula os que tem à volta
 // e manda para aqui; os outros veem o mesmo. Dano e mortes passam sempre por aqui.
-const zRow = (i, z, own) => [i, Math.round(z.x * 10), Math.round(z.z * 10), z.lv, Math.round(z.yaw * 100), Math.round((z.mv || 0) * 10), z.st, Math.round(z.hp), z.k, z.h, z.v, Math.round((z.limp || 0) * 10), own ? 1 : 0, Math.round(z.hx * 10), Math.round(z.hz * 10), Math.round(z.ts || 0)];
+const zRow = (i, z, own) => [i, Math.round(z.x * 10), Math.round(z.z * 10), z.lv, Math.round(z.yaw * 100), Math.round((z.mv || 0) * 10), z.st, Math.round(z.hp), z.k, z.h, z.v, Math.round((z.limp || 0) * 10), own ? 1 : 0, Math.round(z.hx * 10), Math.round(z.hz * 10), Math.round(z.ts || 0), z.pet || ''];
 // para quem o simula, a posição vem dele: só se volta a mandar quando muda a vida, a proteção ou morre
-const zSig = (z, own, row) => own ? 'o' + (z.st === 3 ? 3 : 0) + ',' + row[7] + ',' + z.h + ',' + z.v + ',' + row[11] : row.join();
+const zSig = (z, own, row) => own ? 'o' + (z.st === 3 ? 3 : 0) + ',' + row[7] + ',' + z.h + ',' + z.v + ',' + row[11] + ',' + (z.pet || '') : row.join();
+// animais (k 3–7): veado, javali, lobo, cão, galinha; o que deixam quando morrem
+const ANLOOT = { 3: [['carneC', 5], ['couro', 2]], 4: [['carneC', 6], ['couro', 2]], 5: [['carneC', 3], ['couro', 2]], 6: [['carneC', 2], ['couro', 1]], 7: [['carneC', 1]] };
+const FOOD = ['carneC', 'carneA', 'lata', 'sardinhas', 'racao', 'onigiri'];
 const zNear = (x, z, r) => { let n = 0; for (const c of players.values()) if (c.p && Math.hypot(c.p.x - x, c.p.z - z) < r) n++; return n; };
 
 // dano num zombie: conta aqui; quem o simula recebe o empurrão (e o zombie vira-se para quem disparou)
 const zHit = (c, p, m, now) => { const z = S.w.zs[m.i | 0]; if (!z || z.st === 3 || Math.hypot(z.x - p.x, z.z - p.z) > 900) return;
-  z.hp -= num(m.dmg, 0, 2000); if (typeof m.h === 'number') z.h = num(m.h, 0, 4) | 0; if (typeof m.v === 'number') z.v = num(m.v, 0, 4) | 0; if (typeof m.hd === 'number') z.hd = m.hd; if (typeof m.vd === 'number') z.vd = m.vd;
+  // anti-batota: cada golpe no máximo 600 de dano e, no total, o que a arma mais forte dá por segundo (reserva de 3000, volta 1500 por segundo)
+  const zb = p.zdb || (p.zdb = { v: 3000, t: now }); zb.v = Math.min(3000, zb.v + (now - zb.t) / 1000 * 1500); zb.t = now; const dm = Math.min(600, num(m.dmg, 0, 2000)); if (zb.v < dm) { p.zdOver = (p.zdOver || 0) + 1; if (p.zdOver % 50 === 1) strike(c, p, 'dano em zombies a mais'); return; } zb.v -= dm;
+  z.hp -= dm; if (typeof m.h === 'number') z.h = num(m.h, 0, 4) | 0; if (typeof m.v === 'number') z.v = num(m.v, 0, 4) | 0; if (typeof m.hd === 'number') z.hd = m.hd; if (typeof m.vd === 'number') z.vd = m.vd;
   if (m.limp) z.limp = Math.min(2, (z.limp || 0) + num(m.limp, 0, 2));
+  if (z.hp <= 0 && z.k >= 3) { z.hp = 0; z.st = 3; z.dt = now; z.mv = 0; dirty = true; const g = new Grid(6, 4); for (const [k, n] of ANLOOT[z.k] || []) g.insert(mkItem(k, n)); mkBag(z.x, z.z, 0, z.lv || 0, g.list.map(e => encSrv(e.it, e.x, e.y))); bcast({ t: 'zk', i: m.i | 0, by: c.id, head: m.zone === 'head' ? 1 : 0 }, o => o.p && Math.hypot(o.p.x - z.x, o.p.z - z.z) < 200); return; }
   if (z.hp <= 0) { z.hp = 0; z.st = 3; z.dt = now; z.mv = 0; dirty = true; stat(p, 'z'); if (Math.random() < 0.32) { const g = new Grid(6, 4); rollLoot(z.k === 1 ? 'militar' : 'zombie', g); mkBag(z.x, z.z, 0, z.lv || 0, g.list.map(e => encSrv(e.it, e.x, e.y))); } bcast({ t: 'zk', i: m.i | 0, by: c.id, head: m.zone === 'head' ? 1 : 0 }, o => o.p && Math.hypot(o.p.x - z.x, o.p.z - z.z) < 200); return; }
   if (z.o && z.o !== c.id) { const o = players.get(z.o); if (o) send(o, { t: 'zh', i: m.i | 0, dx: num(m.dx, -1, 1), dz: num(m.dz, -1, 1), by: c.id }); } };
 
@@ -334,7 +359,7 @@ const onMsg = (c, m) => {
     if (Array.isArray(m.cars) && S.w.carv !== CARV && !Object.values(S.w.cars).some(o => o.s.some(Boolean))) { for (const id of Object.keys(S.w.cars)) if (!S.w.cars[id].adm) delete S.w.cars[id]; for (const o of players.values()) if (o.cc) o.cc.clear(); m.cars.slice(0, 160).forEach((a, i) => { const x = num(a[0], -4100, 4100), z = num(a[1], -4100, 4100), yaw = num(a[2], -10, 10), k = VT[a[3]] ? a[3] : 'sedan', T = VT[k]; S.w.cars['c' + i] = { k, x, z, yaw, v: 0, fuel: T.tank ? +(T.tank * (0.2 + Math.random() * 0.45)).toFixed(1) : 0, hp: T.hp, sx: x, sz: z, syaw: yaw, s: T.seats.map(() => 0), dead: 0 }; }); S.w.carv = CARV; dirty = true; }
     const zseed = !S.w.zs.length && ![...players.values()].some(o => o !== c && o.zseed && now - (o.zseedT || 0) < 15000); if (zseed) { c.zseed = true; c.zseedT = now; }
     send(c, { t: 'ok', id: c.id, tok, killed, resume, drop: dropInfo(), role: S.roles[c.p.uid] || null, players: [...players.values()].filter(o => o.p && o !== c).map(o => [o.id, o.p.name, o.p.look, o.p.clan]), sleep: sleepList(), clan: clanInfo(clan),
-      uid: c.p.uid, inv: !m.fresh && !killed && S.led[tok] && !S.led[tok].g ? S.led[tok].inv : null, w: { cyc0: S.w.cyc0, now, wx: S.w.wx.r, base: baseRows(), locks: Object.entries(S.w.locks).map(([i, L]) => [+i, L.hp, L.broke || 0]), doors: Object.entries(S.w.doors).map(([i, o]) => [+i, o]), nodes: Object.entries(S.w.nodes).map(([k, u]) => [k, u - now]).filter(a => a[1] > 0), bags: bagRows(), zseed } });
+      uid: c.p.uid, vapid: b64u(VPUB), inv: !m.fresh && !killed && S.led[tok] && !S.led[tok].g ? S.led[tok].inv : null, w: { cyc0: S.w.cyc0, now, wx: S.w.wx.r, base: baseRows(), locks: Object.entries(S.w.locks).map(([i, L]) => [+i, L.hp, L.broke || 0]), doors: Object.entries(S.w.doors).map(([i, o]) => [+i, o]), nodes: Object.entries(S.w.nodes).map(([k, u]) => [k, u - now]).filter(a => a[1] > 0), bags: bagRows(), zseed } });
     bcast({ t: 'join', id: c.id, name, look, clan }, o => o !== c);
     return;
   }
@@ -381,7 +406,7 @@ const onMsg = (c, m) => {
     const old = k[0] === 'b' ? (S.bags[k.slice(1)] || {}).it || [] : (S.w.ct[k] || {}).it || [];
     if (!boxDelta(c, p, k, old, it)) { send(c, { t: 'fix', T: ledOf(p).T }); send(c, { t: 'boxfix', c: k, it: old }); if (m.t === 'cl') LK.delete(k); return; }
     store(k, it); L.t = now;
-    if (k[0] === 'd') { const d = S.w.base.d[k.slice(1)]; if (d && d.k === 'fornalha') { d.last = now; if (m.fu && typeof m.fu === 'object') { const on = m.fu.on ? 1 : 0, ch = on !== d.on; d.on = on; d.until = num(m.fu.until, 0, 1e15, 0); if (ch) bb({ d: [dRow(k.slice(1), d)] }); } } }
+    if (k[0] === 'd') { const d = S.w.base.d[k.slice(1)]; if (d && (d.k === 'fornalha' || d.k === 'fogueira')) { d.last = now; if (m.fu && typeof m.fu === 'object') { const on = m.fu.on ? 1 : 0, ch = on !== d.on; d.on = on; d.until = num(m.fu.until, 0, 1e15, 0); if (ch) bb({ d: [dRow(k.slice(1), d)] }); } } }
     if (m.t === 'cl') { LK.delete(k); if (k[0] === 'b' && !it.length) bagDel(k.slice(1)); } return; }
   if (m.t === 'bag') { const x = num(m.x, -4100, 4100), z = num(m.z, -4100, 4100); if (Math.hypot(x - p.x, z - p.z) > 12) return; const it = cleanIt(m.it), t = tally(it), L = ledOf(p); if (!fits(t, L.T)) { strike(c, p, 'largar'); send(c, { t: 'fix', T: L.T }); return; } addT(L.T, t, -1); dirty = true; mkBag(x, z, num(m.y, -5, 40), num(m.lv, 0, 6) | 0, it); return; }
   if (['bp', 'bu', 'bx', 'bdo', 'bd', 'bdr', 'bdn', 'bdc', 'fu', 'lkc', 'lkset'].includes(m.t)) { baseMsg(c, p, m, now); return; }
@@ -395,15 +420,33 @@ const onMsg = (c, m) => {
   if (m.t === 'zs') { if (!c.zseed || S.w.zs.length || !Array.isArray(m.L)) return; c.zseed = false;
     if (S.drop) S.drop.zi = [];
     S.w.zs = m.L.slice(0, 3000).map(a => { const x = num(a[0], -4100, 4100), z = num(a[1], -4100, 4100), h = num(a[3], 0, 4) | 0, v = num(a[4], 0, 4) | 0, hp = num(a[5], 1, 300, 80);
-      return { x, z, lv: 0, yaw: Math.random() * 6.28, hp, mx: hp, k: num(a[2], 0, 2) | 0, h, v, h0: h, v0: v, hd: null, vd: null, hx: x, hz: z, st: 0, mv: 0, limp: 0, dt: 0, re: (360 + Math.random() * 300) * 1000, o: 0 }; });
+      return { x, z, lv: 0, yaw: Math.random() * 6.28, hp, mx: hp, k: num(a[2], 0, 7) | 0, h, v, h0: h, v0: v, hd: null, vd: null, hx: x, hz: z, st: 0, mv: 0, limp: 0, dt: 0, re: (360 + Math.random() * 300) * 1000, o: 0 }; });
     dirty = true; return; }
+  // animais num mundo que já tinha zombies: quem o servidor escolheu manda a lista (só uma vez)
+  if (m.t === 'as') { if (!c.aseed || !Array.isArray(m.L) || S.w.zs.some(z => z.k >= 3)) return; c.aseed = false;
+    for (const a of m.L.slice(0, 600)) { const x = num(a[0], -4100, 4100), z = num(a[1], -4100, 4100), k = num(a[2], 3, 7) | 0, hp = num(a[5], 1, 300, 80); S.w.zs.push({ x, z, lv: 0, yaw: Math.random() * 6.28, hp, mx: hp, k, h: 0, v: 0, h0: 0, v0: 0, hd: null, vd: null, hx: x, hz: z, st: 0, mv: 0, limp: 0, dt: 0, re: (300 + Math.random() * 300) * 1000, o: 0, pk: num(a[6], 0, 99, 0) | 0 }); }
+    dirty = true; return; }
+  // alarme de raid: guardar onde avisar este jogador (até 3 aparelhos); manda já um aviso de teste
+  if (m.t === 'psub') { const sb = m.sub; if (!sb || typeof sb.endpoint !== 'string' || !/^https:\/\/[\w.-]+\//.test(sb.endpoint) || sb.endpoint.length > 600 || !sb.keys || typeof sb.keys.p256dh !== 'string' || typeof sb.keys.auth !== 'string' || sb.keys.p256dh.length > 120 || sb.keys.auth.length > 40) return;
+    const L = (S.push[p.uid] || []).filter(q => q.endpoint !== sb.endpoint); L.push({ endpoint: sb.endpoint, keys: { p256dh: sb.keys.p256dh, auth: sb.keys.auth } }); S.push[p.uid] = L.slice(-3); dirty = true; if (!m.q) pushTo(p.uid, { title: 'Alarme de raid ligado', body: 'Vais receber um aviso aqui quando atacarem a tua base.', tag: 'raid-ok' }); return; }
+  if (m.t === 'punsub') { S.push[p.uid] = (S.push[p.uid] || []).filter(q => q.endpoint !== m.endpoint); dirty = true; return; }
+  // comerciantes: comprar com ienes e vender o que tens, sempre contra as contas do servidor
+  if (m.t === 'tr') { const T = TRADERS[m.id | 0], k = String(m.k || ''); if (!T || !ITEMS[k] || !PRICE[k] || Math.hypot(T.x - p.x, T.z - p.z) > TRADE_R + 3) return; const n = num(m.n, 1, 500, 1) | 0, L = ledOf(p);
+    if (m.s) { if ((L.T[k] || 0) < n) { send(c, { t: 'fix', T: L.T }); return; } addT(L.T, { [k]: n }, -1); addT(L.T, { iene: SELL(k) * n }); }
+    else { const cost = PRICE[k] * n; if (!T.sells.includes(k) || (L.T.iene || 0) < cost) { send(c, { t: 'fix', T: L.T }); return; } addT(L.T, { iene: cost }, -1); addT(L.T, { [k]: n }); }
+    dirty = true; return; }
+  // adotar um cão vadio: dás-lhe comida (do que tens mesmo) e passa a seguir-te; no máximo 2
+  if (m.t === 'adopt') { const z = S.w.zs[m.i | 0]; if (!z || z.k !== 6 || z.pet || z.st === 3 || Math.hypot(z.x - p.x, z.z - p.z) > 4.5) return;
+    if (S.w.zs.filter(o => o.pet === p.uid && o.st !== 3).length >= 2) { send(c, { t: 'admmsg', e: 'Já tens dois cães' }); return; }
+    const L = ledOf(p), f = FOOD.find(k => (L.T[k] || 0) >= 1); if (!f) { send(c, { t: 'fix', T: L.T }); return; } addT(L.T, { [f]: 1 }, -1);
+    z.pet = p.uid; z.o = c.id; z.st = 0; dirty = true; return; }
   // quem simula manda a posição dos seus zombies
   if (m.t === 'zu') { if (!Array.isArray(m.L)) return; for (const a of m.L.slice(0, 400)) { const z = S.w.zs[a[0]]; if (!z || z.o !== c.id || z.st === 3) continue;
       z.x = num(a[1], -41000, 41000) / 10; z.z = num(a[2], -41000, 41000) / 10; z.lv = num(a[3], 0, 6) | 0; z.yaw = num(a[4], -1000, 1000) / 100; z.mv = num(a[5], 0, 40) / 10; z.st = num(a[6], 0, 4) | 0; z.limp = num(a[7], 0, 20) / 10; z.ts = num(m.ts, 0, 1e13, 0); } return; }
   // dano a um zombie (de quem disparou ou bateu): a vida conta aqui
   if (m.t === 'zd') { for (const d of (Array.isArray(m.L) ? m.L : [m]).slice(0, 40)) zHit(c, p, d, now); return; }
   // ataque de um zombie a outro jogador (decidido por quem o simula)
-  if (m.t === 'za') { const z = S.w.zs[m.i | 0], o = players.get(m.to | 0); if (!z || z.o !== c.id || !o || !o.p || o.p.god || Math.hypot(o.p.x - z.x, o.p.z - z.z) > 3) return; send(o, { t: 'zat', dmg: num(m.dmg, 0, 30) }); return; }
+  if (m.t === 'za') { const z = S.w.zs[m.i | 0], o = players.get(m.to | 0); if (!z || z.o !== c.id || !o || !o.p || o.p.god || Math.hypot(o.p.x - z.x, o.p.z - z.z) > 3) return; if (Object.values(S.w.cars).some(car => vt(car.k).fly && car.s.includes(o.id))) return; /* dentro do helicóptero ninguém é atacado */ send(o, { t: 'zat', dmg: num(m.dmg, 0, 30) }); return; }
 };
 
 // ---------- tiros entre jogadores: trajetória com gravidade e arrasto, até à parede que o cliente viu
@@ -555,7 +598,8 @@ setInterval(() => {
 setInterval(() => {
   const L = [...players.values()].filter(c => c.p); const now = Date.now();
   for (const z of S.w.zs) {
-    if (z.st === 3) { z.o = 0; if (now - z.dt > z.re && zNear(z.hx, z.hz, 70) === 0) { Object.assign(z, { x: z.hx, z: z.hz, lv: 0, hp: z.mx, st: 0, mv: 0, limp: 0, dt: 0, h: z.h0, v: z.v0, hd: null, vd: null, re: (360 + Math.random() * 300) * 1000 }); dirty = true; } continue; }
+    if (z.st === 3) { z.o = 0; if (now - z.dt > z.re && zNear(z.hx, z.hz, 70) === 0) { Object.assign(z, { x: z.hx, z: z.hz, lv: 0, hp: z.mx, st: 0, mv: 0, limp: 0, dt: 0, h: z.h0, v: z.v0, hd: null, vd: null, re: (360 + Math.random() * 300) * 1000, pet: null }); dirty = true; } continue; }
+    if (z.pet) { const own = L.find(c => c.p.uid === z.pet && c.p.alive && Math.hypot(c.p.x - z.x, c.p.z - z.z) < 500); if (own) { z.o = own.id; continue; } if (z.o) { z.o = 0; z.st = 0; z.mv = 0; } continue; } // cão de alguém: só o dono o mexe; sem dono por perto, fica à espera
     let best = null, bd = 1e9, cur = null, cd = 1e9;
     for (const c of L) { const d = Math.hypot(c.p.x - z.x, c.p.z - z.z); if (d < bd) { bd = d; best = c; } if (c.id === z.o) { cur = c; cd = d; } }
     if (cur && cd < 110 && cd < bd + 25) continue;
@@ -565,6 +609,9 @@ setInterval(() => {
 }, 500);
 // fornalhas: apagam-se quando acaba a madeira (quem a fechou disse até quando dava)
 setInterval(() => { const now = Date.now(), up = []; for (const [id, d] of Object.entries(S.w.base.d)) if (d.on && d.until && now > d.until && !lockOf('d' + id)) { d.on = 0; up.push(dRow(id, d)); } if (up.length) bb({ d: up }); }, 5000);
+// mundo com zombies mas sem animais (antes da 0.29): pede a lista a um jogador ligado (os jogos antigos ignoram o pedido)
+setInterval(() => { if (!S.w.zs.length || S.w.zs.some(z => z.k >= 3)) return; const now = Date.now(), L = [...players.values()].filter(c => c.p); if (!L.length || L.some(c => c.aseed && now - (c.aseedT || 0) < 20000)) return;
+  for (const c of L) c.aseed = false; const c = L[Math.floor(Math.random() * L.length)]; c.aseed = true; c.aseedT = now; send(c, { t: 'aseed' }); }, 6000);
 // mundo sem zombies (por exemplo, quem os devia espalhar tinha o jogo antigo): pede a outro jogador ligado
 setInterval(() => { if (S.w.zs.length) return; const now = Date.now(), L = [...players.values()].filter(c => c.p); if (!L.length || L.some(c => c.zseed && now - (c.zseedT || 0) < 15000)) return;
   for (const c of L) c.zseed = false; const c = L[Math.floor(Math.random() * L.length)]; c.zseed = true; c.zseedT = now; send(c, { t: 'zseed' }); }, 5000);

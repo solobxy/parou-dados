@@ -39,6 +39,8 @@ for (const f of ['menu.mp3', 'fundo.mp3', 'perigo1.mp3', 'perigo2.mp3', 'perigo3
 // texturas do chão (ficheiros ao lado: a página carrega-as depois de arrancar)
 for (const d of [path.join(OUT, 'tex'), path.join(OUT, 'web', 'tex')]) fs.mkdirSync(d, { recursive: true });
 for (const f of ['grass.jpg', 'asph.jpg', 'dirt.jpg', 'conc.jpg', 'tile.jpg']) { const a = findA('tex/' + f); if (a) { fs.copyFileSync(a, path.join(OUT, 'tex', f)); fs.copyFileSync(a, path.join(OUT, 'web', 'tex', f)); } else console.log('falta a textura', f); }
+// app (manifesto, avisos e ícones) ao lado da página
+{ const pd = findA('pwa'); if (pd) for (const f of fs.readdirSync(pd)) { fs.copyFileSync(path.join(pd, f), path.join(OUT, 'web', f)); fs.copyFileSync(path.join(pd, f), path.join(OUT, f)); } else console.log('falta a pasta pwa'); }
 // sons reais (CC0) ao lado da página
 for (const d of [path.join(OUT, 'sfx'), path.join(OUT, 'web', 'sfx')]) fs.mkdirSync(d, { recursive: true });
 { const sd = findA('sfx'); if (sd) for (const f of fs.readdirSync(sd)) if (f.endsWith('.mp3')) { fs.copyFileSync(path.join(sd, f), path.join(OUT, 'sfx', f)); fs.copyFileSync(path.join(sd, f), path.join(OUT, 'web', 'sfx', f)); } else; else console.log('faltam os sons'); }

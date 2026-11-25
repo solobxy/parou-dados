@@ -125,7 +125,7 @@ export function initUI(G) {
     $('boxName').textContent = B ? B.label.replace(/^(Abrir|Revistar) /, '').replace(/^./, c => c.toUpperCase()) : 'Perto de ti';
     renderGrid(gBox, B ? B.grid : null, B && B.grid ? B.grid.rows : 0, 'box');
     $('boxEmpty').hidden = !!(B && B.grid && !B.grid.empty); if (B && B.grid && B.grid.empty) $('boxEmpty').textContent = 'Vazio. Volta mais tarde: as coisas reaparecem.'; else if (!B) $('boxEmpty').textContent = 'Nada aberto. Aproxima-te de um armário, caixa, carro ou saco e revista.';
-    $('takeAll').hidden = !(B && B.grid && !B.grid.empty); { const fu = $('furn'), F = B && B.dep && B.dep.k === 'fornalha' ? B.dep : null; fu.hidden = !F; if (F) { fu.textContent = F.on ? 'Apagar' : 'Acender'; fu.classList.toggle('pri', !F.on); } }
+    $('takeAll').hidden = !(B && B.grid && !B.grid.empty); { const fu = $('furn'), F = B && B.dep && (B.dep.k === 'fornalha' || B.dep.k === 'fogueira') ? B.dep : null; fu.hidden = !F; if (F) { fu.textContent = F.on ? 'Apagar' : 'Acender'; fu.classList.toggle('pri', !F.on); } }
     if (tab === 'craft') renderCraft();
     renderBar();
     { const L = G.load ? G.load() : { kg: 0, cap: 28 }; $('iKgN').textContent = L.kg.toFixed(1).replace('.', ','); $('iKgC').textContent = '/' + Math.round(L.cap) + ' kg'; $('iKgB').style.width = Math.min(100, L.kg / (L.cap + 18) * 100) + '%'; const el = $('iKg'); el.classList.toggle('heavy', L.kg > L.cap && L.kg <= L.cap + 18); el.classList.toggle('over', L.kg > L.cap + 18); el.title = L.kg > L.cap + 18 ? 'Pesado demais: não consegues correr' : L.kg > L.cap ? 'Pesado: andas mais devagar e cansas-te mais' : 'Peso'; }
@@ -140,7 +140,11 @@ export function initUI(G) {
     const attTxt = d.gun && it.att ? Object.values(it.att).filter(Boolean).map(k => ITEMS[k].s).join(', ') : '';
     ds.textContent = d.desc + (d.gun ? (d.gun.clip && !it.mg ? ' Sem carregador.' : ` Carregada: ${it.ammo}/${capOf(it)} de ${ITEMS[it.ak || ammoOf(d.gun)[0]].s}.`) + (attTxt ? ' Tem: ' + attTxt.replace(/\.$/, '') + '.' : '') : '') + (d.clip ? ` Tem ${it.am || 0}/${d.clip.cap}` + (it.am ? ` de ${ITEMS[it.ak].s}.` : '.') : '') + (d.bal ? ` Perfuração ${d.bal.pen}: os coletes de nível igual ou maior travam-na.` : '');
     const add = (label, fn, pri, cls) => { const b = document.createElement('button'); b.className = 'btn sm' + (pri ? ' pri' : '') + (cls ? ' ' + cls : ''); b.textContent = label; b.onclick = () => { audio.play('ui'); fn(); G.refresh(); }; ac.appendChild(b); };
-    if (loc.t === 'box') { add('Tirar', () => takeToMe(it, loc), true); }
+    // tirar só as balas (de uma arma ou de um carregador), direto para a mochila; a arma ou o carregador ficam onde estão
+    const unload = () => { const q = d.gun ? it.ammo | 0 : it.am | 0, k = it.ak || (d.gun ? ammoOf(d.gun)[0] : d.clip && d.clip.ammo[0]); if (!q || !k) return; const a = mkItem(k, q); const left = G.inv.give(a); const got = q - (left || 0); if (!got) return toast('Mochila cheia');
+      if (d.gun) it.ammo = q - got; else it.am = q - got; feed(k, got); audio.play('recarregar', 0.5); if (left) toast('Mochila cheia: ficaram ' + left + ' balas'); };
+    const loaded = (d.gun && (it.ammo | 0) > 0) || (d.clip && (it.am | 0) > 0);
+    if (loc.t === 'box') { add('Tirar', () => takeToMe(it, loc), true); if (loaded) add('Descarregar (' + (d.gun ? it.ammo : it.am) + ' balas)', unload); }
     else {
       if (d.use) add('Usar', () => { G.use(it); if (G.TOUCH) closeInv(); });
       if (d.deploy) add('Colocar', () => { G.base.deploy(it); sel = null; closeInv(); }, true); // escolhe-se o sítio no mundo (fantasma) e depois Colocar
@@ -150,9 +154,11 @@ export function initUI(G) {
       if (loc.t === 'belt') add('Para a mochila', () => toBag(it, loc));
       if (G.box) add('Pôr na caixa', () => toBox(it, loc));
       // acessórios: montar numa arma compatível, ou tirar
-      if (d.att) { const guns = [...G.inv.belt.filter(Boolean), ...G.inv.bag.list.map(e => e.it)].filter(g => { const gd = ITEMS[g.k].gun; if (!gd || (g.att && g.att[d.att])) return false; return d.att === 'sup' ? gd.sup === it.k : d.att === 'light' ? !!gd.light : d.rd ? !!(gd.scope || gd.rd) : !!gd.scope && (it.k !== 'mira8' || gd.scope >= 2); });
+      if (d.att) { const guns = [...G.inv.belt.filter(Boolean), ...G.inv.bag.list.map(e => e.it)].filter(g => { const gd = ITEMS[g.k].gun; if (!gd || (g.att && g.att[d.att] === it.k)) return false; return d.att === 'sup' ? gd.sup === it.k : d.att === 'light' ? !!gd.light : d.rd ? !!(gd.scope || gd.rd) : !!gd.scope && (it.k !== 'mira8' || gd.scope >= 2); });
         if (!guns.length) add('Sem arma compatível', () => toast(d.att === 'sup' ? 'Este silenciador não serve nas armas que tens' : d.att === 'light' ? 'Não tens arma onde a montar' : 'Esta mira não serve nas armas que tens'));
-        for (const g of guns.slice(0, 3)) add('Montar: ' + ITEMS[g.k].s, () => { removeAt(it, loc); g.att = g.att || {}; g.att[d.att] = it.k; audio.play('recarregar', 0.6); sel = null; }, true); }
+        // se a arma já tem uma peça nesse encaixe, troca e a antiga vai para a mochila
+        const SLOT = { scope: 'mira', sup: 'cano', light: 'calha' };
+        for (const g of guns.slice(0, 3)) { const old = g.att && g.att[d.att]; add((old ? 'Trocar na ' : 'Pôr na ') + ITEMS[g.k].s + ' (' + SLOT[d.att] + ')' + (old ? ' · substitui ' + ITEMS[old].s : ''), () => { removeAt(it, loc); g.att = g.att || {}; if (old) { const o = mkItem(old); const left = G.inv.give(o); if (left) { G.dropItem(o); toast('Sem espaço: ' + ITEMS[old].s + ' ficou no chão'); } } g.att[d.att] = it.k; audio.play('recarregar', 0.6); sel = null; }, !old); } }
       if (d.gun && it.att) for (const slot of ['scope', 'sup', 'light']) if (it.att[slot]) add('Tirar ' + ITEMS[it.att[slot]].s, () => { const a = mkItem(it.att[slot]); const left = G.inv.give(a); if (left) { G.dropItem(a); toast('Sem espaço: ficou no chão'); } it.att[slot] = null; });
       // carregadores: encher, esvaziar, meter numa arma; e tirar o carregador da arma
       if (d.clip) {
@@ -162,6 +168,7 @@ export function initUI(G) {
         const gs = G.inv.belt.filter(g => g && ITEMS[g.k].gun && ITEMS[g.k].gun.clip === it.k);
         for (const g of gs.slice(0, 2)) add('Meter na ' + ITEMS[g.k].s, () => { removeAt(it, loc); if (g.mg) { const old = mkItem(g.mg); old.am = g.ammo; old.ak = g.ak; const left = G.inv.give(old); if (left) { G.dropItem(old); toast('Sem espaço: o outro ficou no chão'); } } g.mg = it.k; g.ammo = it.am || 0; g.ak = it.ak; audio.play('recarregar', 0.6); sel = null; });
       }
+      if (d.gun && !d.gun.clip && (it.ammo | 0) > 0) add('Descarregar', unload);
       if (d.gun && d.gun.clip && it.mg) add('Tirar carregador', () => { const m = mkItem(it.mg); m.am = it.ammo; m.ak = it.ak; it.mg = null; it.ammo = 0; const left = G.inv.give(m); if (left) { G.dropItem(m); toast('Sem espaço: ficou no chão'); } });
       if (d.gun) for (const k of ammoOf(d.gun)) if (k !== (it.pref || it.ak) && ammoOf(d.gun).length > 1) add('Usar ' + ITEMS[k].s, () => { it.pref = k; toast('Na próxima recarga usa ' + ITEMS[k].s); });
       if (it.n > 1) add('Dividir', () => split(it));
@@ -196,8 +203,9 @@ export function initUI(G) {
   const renderCraft = () => {
     const el = $('recipes'); el.innerHTML = ''; const bn = G.base ? G.base.benchNear() : 0;
     const head = t => { const h = document.createElement('div'); h.className = 'rhead'; h.textContent = t; el.appendChild(h); };
-    let last = -1;
-    for (const r of RECIPES) {
+    let last = -1; const can = r => Object.entries(r.need).every(([k, n]) => G.inv.count(k) >= n) ? 1 : 0;
+    // em cada nível, primeiro o que já dá para fazer
+    for (const r of RECIPES.map((r, i) => [r, i]).sort((a, b) => (a[0].b || 0) - (b[0].b || 0) || can(b[0]) - can(a[0]) || a[1] - b[1]).map(a => a[0])) {
       const lv = r.b || 0; if (lv !== last) { last = lv; head(lv ? 'Bancada nível ' + lv + (bn >= lv ? '' : ' · precisas de uma a menos de 4 m') : 'À mão'); }
       const d = ITEMS[r.k], has = Object.entries(r.need).every(([k, n]) => G.inv.count(k) >= n), near = bn >= lv, ok = has && near;
       const row = document.createElement('div'); row.className = 'recipe' + (near ? '' : ' lock');
@@ -498,6 +506,10 @@ export function initUI(G) {
     return null; };
   // conduzir: cada botão conta enquanto o dedo estiver em cima (dá para acelerar e virar ao mesmo tempo, um polegar de cada lado)
   G.dIn = { u: 0, d: 0, l: 0, r: 0 };
+  // pairar (helicóptero no ar): fica parado à mesma altura
+  G.hovSet = on => { const b = $('dHov'); if (b) { b.setAttribute('aria-pressed', on ? 'true' : 'false'); b.querySelector('em').textContent = on ? 'A pairar' : 'Pairar'; } };
+  G.hoverToggle = () => { const c = G.car; if (!c || G.carSeat || !(VT[c.k] || {}).fly || !(c.alt > 1)) return; c.hov = !c.hov; G.hovSet(c.hov); G.ui.toast(c.hov ? 'A pairar: o helicóptero fica parado no ar' : 'Já não está a pairar'); G.buzz && G.buzz(12); };
+  $('dHov').addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); G.hoverToggle(); });
   for (const [id, k] of [['dUp', 'u'], ['dDn', 'd'], ['dL', 'l'], ['dR', 'r']]) { const el = $(id); hold(el, () => { G.dIn[k] = 1; el.classList.add('dn'); G.buzz && G.buzz(8); }, () => { G.dIn[k] = 0; el.classList.remove('dn'); }); }
   hold($('tLower'), () => G.aimEnd());
   addEventListener('keydown', e => { if (e.code === 'Escape' && G.aimS && G.aimS.on) G.aimEnd(); });
@@ -514,6 +526,7 @@ export function initUI(G) {
     body.innerHTML = '';
     const grp = (t, rows, cls = '') => { const g = document.createElement('div'); g.className = 'sgrp ' + cls; g.innerHTML = `<h3>${t}</h3>`; rows.forEach(r => g.appendChild(r)); body.appendChild(g); };
     const doors = row('Portas automáticas', 'Abrem quando vais contra elas e fecham-se atrás de ti. Desligado, abres e fechas com o botão.', tog(() => cfg.autoDoor, v => cfg.autoDoor = v));
+    const iron = row('Primeira pessoa sem mira', 'Nas espingardas sem mira (M4, AK, SMG, caça, metralhadoras), o botão «Mira» põe-te a apontar em primeira pessoa pela mira de ferro. Bom para entrar em prédios.', tog(() => cfg.fpIron !== false, v => cfg.fpIron = v));
     const lean = row('Espreitar nas esquinas', 'Ao apontar encostado a uma parede, esquina ou poste, o boneco inclina-se para o lado livre para conseguires disparar.', tog(() => cfg.autoLean, v => cfg.autoLean = v));
     const quick = row('Disparo rápido', 'O botão de disparar dispara logo (assim que a arma sobe). Desligado, o primeiro toque só levanta a arma.', tog(() => cfg.quick, v => cfg.quick = v));
     const mirror = row('Comandos para canhotos', 'Troca os lados: andas com o polegar direito, apontas e disparas com o esquerdo.', tog(() => cfg.mirror, v => { cfg.mirror = v; applyHud(); }));
@@ -524,15 +537,22 @@ export function initUI(G) {
       b.onclick = () => { audio.play('ui'); try { const r = on() ? (document.exitFullscreen || document.webkitExitFullscreen).call(document) : (D.requestFullscreen ? D.requestFullscreen({ navigationUI: 'hide' }) : D.webkitRequestFullscreen()); if (r && r.catch) r.catch(() => toast('Este browser não deixou pôr em ecrã inteiro')); } catch (e) { toast('Este browser não deixou pôr em ecrã inteiro'); } };
       grp('Ecrã inteiro', [row(on() ? 'Estás em ecrã inteiro' : 'Jogar em ecrã inteiro', can ? 'Esconde as barras do browser. Para sair, toca aqui outra vez ou faz o gesto de voltar.' : 'Este browser não deixa. No iPhone: Partilhar e «Adicionar ao ecrã principal», e abre o jogo a partir daí.', can ? b : document.createElement('span'))]); }
     if (G.TOUCH) {
-      grp('Controlos', [mirror, quick,
+      grp('Controlos', [mirror, quick, iron,
         row('Mira assistida', 'Ao levantar a arma, a mira vai para o zombie mais perto que estiver à vista e com tiro livre, e segue-o. Nunca prende a jogadores. Arrasta para a cabeça ou para as pernas.', tog(() => cfg.assist, v => cfg.assist = v)),
         sens, doors, lean,
         row('Correr ao empurrar o polegar até ao fim', 'O botão «Auto» corre sempre em frente sem tocar no polegar.', tog(() => cfg.sprintPush, v => { cfg.sprintPush = v; if (!v) cfg.hud.sprint.on = 1; })),
         row('Vibração', 'Vibra ao levar dano, disparar e acertar. Não funciona no iPhone (o Safari não deixa).', tog(() => cfg.haptics, v => { cfg.haptics = v; if (v) try { navigator.vibrate && navigator.vibrate(30); } catch (e) { } })),
       ]);
-    } else grp('Controlos', [row('Rato e teclado', 'WASD mover · Shift correr · Espaço saltar e trepar · botão direito levantar a arma · clique disparar · E revistar e portas · Tab inventário · R recarregar · M mapa · F lanterna', document.createElement('span')), quick, sens, doors, lean]);
+    } else grp('Controlos', [row('Rato e teclado', 'WASD mover · Shift correr · Espaço saltar e trepar · botão direito levantar a arma · clique disparar · E revistar e portas · Tab inventário · R recarregar · M mapa · F lanterna', document.createElement('span')), quick, iron, sens, doors, lean]);
     const vis = document.createElement('div'); vis.className = 'vis';
     for (const k in NAMES) { if (!G.TOUCH && ['reload', 'use', 'sprint', 'jump', 'fire', 'light', 'scope', 'lower', 'breath'].includes(k)) continue; const b = document.createElement('button'); b.className = cfg.hud[k].on ? 'on' : ''; b.innerHTML = (cfg.hud[k].on ? EYE : EYEOFF) + NAMES[k]; b.onclick = () => { cfg.hud[k].on = cfg.hud[k].on ? 0 : 1; audio.play('ui'); applyAll(); renderSet(); }; vis.appendChild(b); }
+    // telemóvel: alarme de raid e instalar como app
+    if (G.pwa) { const P = G.pwa, pb = document.createElement('button'); pb.className = 'btn sm' + (P.pushOn() ? '' : ' pri'); pb.textContent = P.pushOn() ? 'Desligar' : 'Ligar';
+      pb.onclick = async () => { audio.play('ui'); if (P.pushOn()) { await P.disablePush(); toast('Alarme de raid desligado'); renderSet(); return; } pb.disabled = true; const r = await P.enablePush().catch(() => 'nao'); pb.disabled = false;
+        toast(r === 'ok' ? 'Alarme ligado: deve chegar já um aviso de teste' : r === 'ios' ? 'No iPhone, primeiro instala o jogo no ecrã principal (Partilhar → Adicionar ao ecrã principal) e abre-o por lá' : r === 'offline' ? 'Liga-te ao servidor primeiro (entra no jogo online)' : r === 'negado' ? 'Os avisos estão bloqueados nas definições do browser' : 'Este browser não deixa avisos'); renderSet(); };
+      const ib = document.createElement(P.canInstall() ? 'button' : 'span'); if (P.canInstall()) { ib.className = 'btn sm pri'; ib.textContent = 'Instalar'; ib.onclick = async () => { audio.play('ui'); await P.install(); renderSet(); }; }
+      grp('Telemóvel', [row('Alarme de raid', 'Aviso no telemóvel quando rebentam a tua base ou a do teu clã, mesmo com o jogo fechado.', pb),
+        row('Instalar como app', P.installed() ? 'Já estás a jogar na app.' : P.canInstall() ? 'Fica com um ícone no ecrã, abre sem a barra do browser e o gesto de voltar atrás não sai do jogo.' : P.ios ? 'No Safari: Partilhar → Adicionar ao ecrã principal.' : 'No menu do browser: Instalar app (ou Adicionar ao ecrã principal).', ib)]); }
     if (G.playing) { const qb = document.createElement('button'); qb.className = 'btn sm'; qb.textContent = 'Sair'; qb.onclick = () => { closeSet(); G.askQuit(); }; grp('Jogo', [row('Sair para o menu', 'Fica tudo guardado onde estás. Em combate tens de ficar 5 s parado: mexer-te ou levar dano cancela.', qb)]); }
     const ed = document.createElement('button'); ed.className = 'btn pri sm'; ed.textContent = 'Editar'; ed.onclick = () => startEdit();
     const rs = document.createElement('button'); rs.className = 'btn sm'; rs.textContent = 'Repor'; rs.onclick = () => { cfg.hud = JSON.parse(JSON.stringify(DEF.hud)); cfg.btn = 1; cfg.op = 1; applyAll(); renderSet(); };
@@ -598,6 +618,22 @@ export function initUI(G) {
   $('admX').onclick = () => { admEl.hidden = true; audio.play('ui'); };
   $('bAdm').onclick = e => { e.stopPropagation(); audio.play('ui'); admOpen(); };
   // ---------- classificações
+  // ---------- comerciantes: comprar e vender por ienes (online, o servidor confirma contra o que tens)
+  const trEl = $('trw'), trB = $('trB'); let trT = null, trTab = 'b';
+  const yen = n => '¥ ' + Math.round(n).toLocaleString('pt-PT');
+  const trRender = () => { if (!trT) return; const T = trT, money = G.inv.count('iene'); $('trT').textContent = T.n + ' · ' + T.where; $('trM').textContent = yen(money);
+    trEl.querySelectorAll('#trTabs button').forEach(b => b.classList.toggle('on', b.dataset.t === trTab));
+    const rows = [];
+    if (trTab === 'b') { for (const k of T.sells) { const d = ITEMS[k], n = d.cat === 'a' ? 20 : 1, cost = G.TR.PRICE[k] * n, can = money >= cost; rows.push(`<div class="trr${can ? '' : ' no'}"><img src="${G.ICONS[k]}" alt=""><div class="n"><b>${d.n}${n > 1 ? ' × ' + n : ''}</b><span>${d.desc.split('.')[0]}</span></div><span class="p">${yen(cost)}</span><button class="btn sm${can ? ' pri' : ''}" data-b="${k}" data-n="${n}" ${can ? '' : 'disabled'}>Comprar</button></div>`); } }
+    else { const seen = new Map(); for (const it of [...G.inv.bag.list.map(e => e.it), ...G.inv.belt.filter(Boolean)]) { const p = G.TR.SELL(it.k); if (!p || it.k === 'iene') continue; seen.set(it.k, (seen.get(it.k) || 0) + Math.max(1, it.n || 1)); }
+      if (!seen.size) rows.push('<p class="empty">Não tens nada que este comerciante compre. O equipamento vestido não aparece aqui: tira-o primeiro para a mochila.</p>');
+      for (const [k, have] of seen) { const d = ITEMS[k], n = Math.min(have, d.cat === 'a' ? 20 : d.cat === 'r' ? Math.min(have, 50) : 1), got = G.TR.SELL(k) * n; rows.push(`<div class="trr"><img src="${G.ICONS[k]}" alt=""><div class="n"><b>${d.n}${n > 1 ? ' × ' + n : ''}</b><span>Tens ${have}</span></div><span class="p">+ ${yen(got)}</span><button class="btn sm" data-s="${k}" data-n="${n}">Vender</button></div>`); } }
+    trB.innerHTML = rows.join('');
+    trB.querySelectorAll('button[data-b]').forEach(b => b.onclick = () => { G.trade(T, b.dataset.b, +b.dataset.n, false); trRender(); });
+    trB.querySelectorAll('button[data-s]').forEach(b => b.onclick = () => { G.trade(T, b.dataset.s, +b.dataset.n, true); trRender(); }); };
+  const trOpen = T => { trT = T; trTab = 'b'; trEl.hidden = false; audio.play('ui'); trRender(); };
+  trEl.querySelectorAll('#trTabs button').forEach(b => b.onclick = () => { trTab = b.dataset.t; audio.play('ui'); trRender(); });
+  $('trX').onclick = () => { trEl.hidden = true; trT = null; audio.play('ui'); };
   const lbEl = $('lbw'), lbB = $('lbB'); let lbTab = 'pvp', lbData = null;
   const lbOpen = () => { if (!G.net || !G.net.on) { toast('As classificações só existem online'); return; } lbEl.hidden = false; lbRender(); G.net.lb(); };
   const lbShow = m => { lbData = m; if (!lbEl.hidden) lbRender(); };
@@ -802,7 +838,7 @@ export function initUI(G) {
     if (g) { const d = L[+g.dataset.i]; if (!d) return; const w = G.base.bedReady(d); if (w) { audio.play('vazio'); toast(d.name + ': pronta daqui a ' + mmss(w)); return; } audio.play('ui'); G.respawn(d); return; }
     if (x) { const d = L[+x.dataset.x]; if (!d) return; audio.play('ui'); if (dSure === d) { G.base.removeBed(d); dSure = null; toast(d.name + ' foi removida'); } else { dSure = d; setTimeout(() => { if (dSure === d) { dSure = null; if (!$('dead').hidden) dRows(); } }, 3000); } dRows(); dMap(); } };
   $('dMap').onclick = e => { const cv = $('dMap'), r = cv.getBoundingClientRect(), x = (e.clientX - r.left) * cv.width / r.width, z = (e.clientY - r.top) * cv.height / r.height; let best = null, bd = 30; for (const d of G.base.beds()) { const q = Math.hypot((d._mx ?? -99) - x, (d._mz ?? -99) - z); if (q < bd) { bd = q; best = d; } } if (!best) return; const w = G.base.bedReady(best); if (w) { audio.play('vazio'); toast(best.name + ': pronta daqui a ' + mmss(w)); return; } audio.play('ui'); G.respawn(best); };
-  const death = o => { const C = { queda: 'Caíste de muito alto.', admin: 'Um administrador tirou-te do jogo.', zombie: 'Os zombies apanharam-te.', sangue: 'Sangraste até ao fim. Uma ligadura tinha chegado.', fome: 'Morreste de fome.', sede: 'Morreste de sede.', afogado: 'Ficaste sem fôlego a nadar e afogaste-te.', explosao: 'Uma explosão apanhou-te.', dormir: 'Mataram-te enquanto dormias e levaram o que tinhas.' }; $('dCause').textContent = o.cause === 'pvp' ? (o.by ? o.by + ' matou-te.' : 'Outro jogador matou-te.') : o.cause === 'carro' ? (o.by ? o.by + ' atropelou-te.' : 'Foste atropelado.') : C[o.cause] || 'Morreste.'; const m = Math.floor(o.time / 60), s = Math.floor(o.time % 60); $('dStat').textContent = `Sobreviveste ${m} min ${s} s · ${o.kills} zombie${o.kills === 1 ? '' : 's'} abatido${o.kills === 1 ? '' : 's'}`;
+  const death = o => { const C = { queda: 'Caíste de muito alto.', admin: 'Um administrador tirou-te do jogo.', zombie: 'Os zombies apanharam-te.', lobo: 'Os lobos apanharam-te.', javali: 'Um javali deu cabo de ti.', sangue: 'Sangraste até ao fim. Uma ligadura tinha chegado.', fome: 'Morreste de fome.', sede: 'Morreste de sede.', afogado: 'Ficaste sem fôlego a nadar e afogaste-te.', explosao: 'Uma explosão apanhou-te.', dormir: 'Mataram-te enquanto dormias e levaram o que tinhas.' }; $('dCause').textContent = o.cause === 'pvp' ? (o.by ? o.by + ' matou-te.' : 'Outro jogador matou-te.') : o.cause === 'carro' ? (o.by ? o.by + ' atropelou-te.' : 'Foste atropelado.') : C[o.cause] || 'Morreste.'; const m = Math.floor(o.time / 60), s = Math.floor(o.time % 60); $('dStat').textContent = `Sobreviveste ${m} min ${s} s · ${o.kills} zombie${o.kills === 1 ? '' : 's'} abatido${o.kills === 1 ? '' : 's'}`;
     $('dNote').textContent = o.cause === 'dormir' ? 'Tens de começar com o que trouxeres.' : 'As tuas coisas ficaram no teu corpo, onde caíste.';
     dSure = null; dKey = ''; dRows(); $('dead').hidden = false; toastEl.hidden = true; requestAnimationFrame(dMap); clearInterval(dTick); dTick = setInterval(() => { if ($('dead').hidden) { clearInterval(dTick); return; } dRows(); dMap(); }, 1000); };
   // cama ou saco-cama: mudar o nome ou apanhar
@@ -889,7 +925,7 @@ export function initUI(G) {
       if (fp) { const e = sm(clamp((fpT - 0.55) / 0.45, 0, 1)); scEl.style.setProperty('--cx', SC.x + 'px'); scEl.style.setProperty('--cy', SC.y + 'px'); scEl.style.setProperty('--hr', (R * e).toFixed(1) + 'px'); scEl.style.setProperty('--ro', e.toFixed(3)); }
       else { const e = sm(clamp(fpT / 0.55, 0, 1)), q = G.proj(A.A), far = Math.hypot(innerWidth, innerHeight); scEl.style.setProperty('--cx', q.x + 'px'); scEl.style.setProperty('--cy', q.y + 'px'); scEl.style.setProperty('--hr', (far * (1 - e) + 2).toFixed(1) + 'px'); scEl.style.setProperty('--ro', '0'); }
       scEl.style.setProperty('--r', R.toFixed(0) + 'px');
-      const sc = it && it.att && it.att.scope ? ITEMS[it.att.scope] : null; const m8 = sc && sc.mag >= 8, rd = !!(sc && sc.rd); scEl.classList.toggle('m8', !!m8); scEl.classList.toggle('rd', rd); scEl.classList.toggle('vm', !!G.vmOn); scEl.classList.toggle('z-head', A.zone === 'head'); setV('scMag', (sc ? sc.mag : 4) + '×'); setV('scDist', A.dist ? Math.round(A.dist) + ' m' : '');
+      const sc = G.scopeItem ? G.scopeItem() : it && it.att && it.att.scope ? ITEMS[it.att.scope] : null; const m8 = sc && sc.mag >= 8, rd = !!(sc && sc.rd); scEl.classList.toggle('m8', !!m8); scEl.classList.toggle('rd', rd); scEl.classList.toggle('ir', !!(sc && sc.iron)); scEl.classList.toggle('vm', !!G.vmOn); scEl.classList.toggle('z-head', A.zone === 'head'); setV('scMag', (sc ? sc.mag : 4) + '×'); setV('scDist', A.dist ? Math.round(A.dist) + ' m' : '');
       // zero e marcas de queda (para a munição carregada): cada marca é onde pôr o alvo a 200, 300, 400 m…
       { const zs = $('szero'); zs.hidden = !(gun && sc && fp && !sc.rd); if (!zs.hidden) zs.style.setProperty('--ro', scEl.style.getPropertyValue('--ro')); if (fp) zPlace(SC, R); }
       if (gun && sc && !sc.rd) { const zero = it.zero || (m8 ? 200 : 100), v0 = ITEMS[it.ak || ammoOf(gun)[0]].bal.v * (gun.vk || 1), key = it.ak + v0 + ':' + zero + ':' + sc.mag; setV('scZero', zero + ' m');
@@ -899,12 +935,12 @@ export function initUI(G) {
     sugT -= dt; if (sugT <= 0) { sugT = 0.5; const s = suggest(); sugIt = s ? s[0] : null; sugEl.hidden = !s; if (s) { const key = s[0].k + s[1] + s[2]; if (vals.sug !== key) { vals.sug = key; sugEl.querySelector('img').src = G.ICONS[s[0].k]; sugEl.querySelector('span').textContent = s[1] + ' · ' + ITEMS[s[0].k].s; sugEl.classList.toggle('urg', !!s[2]); } } }
     // no carro: sem botões de armas, saltar ou correr
     { const inCar = !!G.car; if (vals.car !== inCar) { vals.car = inCar; for (const id of ['tFire', 'tScope', 'tLower', 'tBreath', 'tJump', 'tSprint']) $(id).style.visibility = inCar ? 'hidden' : ''; }
-      const drv = inCar && G.carSeat === 0 && p.alive; if (vals.drv !== drv) { vals.drv = drv; document.body.classList.toggle('driving', drv); if (!drv) for (const k in G.dIn) G.dIn[k] = 0; document.querySelectorAll('.dv.dn').forEach(e => e.classList.remove('dn')); }
+      const drv = inCar && G.carSeat === 0 && p.alive; { const ha = drv && (VT[G.car.k] || {}).fly && (G.car.alt || 0) > 1; if (vals.ha !== ha) { vals.ha = ha; document.body.classList.toggle('heliAir', !!ha); if (!ha) G.hovSet(false); } } if (vals.drv !== drv) { vals.drv = drv; document.body.classList.toggle('driving', drv); if (!drv) for (const k in G.dIn) G.dIn[k] = 0; document.querySelectorAll('.dv.dn').forEach(e => e.classList.remove('dn')); }
       if (drv) { const fl = (VT[G.car.k] || {}).fly, lb = fl ? (G.car.v > 2.5 ? 'Travar' : (G.car.alt || 0) > 0.3 ? 'Descer' : 'Parado') : G.car.v > 0.5 ? 'Travar' : 'Trás', ub = fl ? ((G.car.alt || 0) < 0.3 && (G.car.rot || 0) < 0.92 ? 'Rotor…' : (G.car.alt || 0) < 0.3 ? 'Levantar' : 'Avançar') : 'Acelerar'; if (vals.dlb !== lb) { vals.dlb = lb; $('dDn').querySelector('em').textContent = lb; } if (vals.dub !== ub) { vals.dub = ub; $('dUp').querySelector('em').textContent = ub; } } }
     // botões das armas
     const fb = $('tFire'), armed = !!gun && A.raise >= 1; if (fb.classList.contains('armed') !== armed) fb.classList.toggle('armed', armed); if (fb.classList.contains('melee') !== !gun) fb.classList.toggle('melee', !gun); { const bk = G.buildK === 'planta' || G.buildK === 'martelo', hk2 = (G.inv.belt[G.sel] || {}).k, bm = hk2 === 'granada' || hk2 === 'c4'; if (fb.classList.contains('build') !== bk) fb.classList.toggle('build', bk); if (fb.classList.contains('boom') !== bm) fb.classList.toggle('boom', bm); }
     const hk = (G.inv.belt[G.sel] || {}).k, fl = G.base.placing() ? 'Colocar' : G.buildK === 'planta' ? 'Construir' : G.buildK === 'martelo' ? 'Melhorar' : hk === 'granada' ? 'Lançar' : hk === 'c4' ? 'Colocar' : gun ? (armed || cfg.quick ? 'Disparar' : A.on ? '' : 'Levantar') : 'Bater'; if (vals.fl !== fl) { vals.fl = fl; fb.querySelector('em').textContent = fl; }
-    const hasSc = !!(gun && it.att && it.att.scope); $('tScope').hidden = !hasSc; $('tLower').hidden = !(gun && A.on); $('tScope').classList.toggle('on', !!A.scope); $('tBreath').hidden = !fp || !!(it && it.att && it.att.scope === 'reddot'); $('tBreath').classList.toggle('on', !!A.breathOn);
+    const hasSc = !!(gun && G.scopeItem && G.scopeItem()); $('tScope').hidden = !hasSc; $('tLower').hidden = !(gun && A.on); $('tScope').classList.toggle('on', !!A.scope); $('tBreath').hidden = !fp || !!(it && it.att && it.att.scope === 'reddot') || !!(G.scopeItem && G.scopeItem() && G.scopeItem().iron); $('tBreath').classList.toggle('on', !!A.breathOn);
     $('padR').querySelector('.knob').style.visibility = gun ? 'hidden' : ''; if (fp) { $('gR').style.opacity = 0; $('gL').style.opacity = 0; }
     // avisos
     if (toastT > 0) { toastT -= dt; if (toastT <= 0.3) toastEl.style.opacity = Math.max(0, toastT / 0.3); if (toastT <= 0) toastEl.hidden = true; }
@@ -919,7 +955,7 @@ export function initUI(G) {
 
   return {
     refresh, openInv, closeInv, toast, feed, hit, damage, death, toggleMap, frame, resize, safe, scopeR, scopeC,
-    closeDeath: () => { $('dead').hidden = true; clearInterval(dTick); }, sound, bedMenu, codeAsk, codeErr, codeDone, lockMenu, admRole, admList, admOpen, lbShow, lbOpen,
+    closeDeath: () => { $('dead').hidden = true; clearInterval(dTick); }, sound, bedMenu, codeAsk, codeErr, codeDone, lockMenu, admRole, admList, admOpen, lbShow, lbOpen, trOpen, trRender, trOpenNow: () => !!trT, trWho: () => trT, trClose: () => { trEl.hidden = true; trT = null; },
     showHUD: msg => { $('hud').hidden = false; refresh(); toast(msg); },
     // sair para o menu (com 5 s parado se estiveres em combate)
     toMenu: () => { setTimeout(() => { pfRender(); if (G.ui_count) G.ui_count(); }, 50); if (!pfm.hidden && $('pfT').textContent === 'Clã') pfClose(); $('quit').hidden = true; $('hud').hidden = true; setEl.hidden = true; G.paused = false; closeInv(); $('map').hidden = true; G.hasSave = true; $('sCont').hidden = false; $('sPlay').querySelector('b').textContent = 'Começar de novo'; $('sPlay').querySelector('em').textContent = 'Perdes o que tens e começas do zero'; $('sPlay').classList.remove('pri'); $('start').hidden = false; },

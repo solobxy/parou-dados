@@ -76,6 +76,8 @@ export function makeCars({ scene, G, W, collide, solidAt, tallAt = () => 0, grou
   const fly = (c, T, dt, inp) => {
     let f = 0, s = 0;
     if (inp.kb) { f = inp.t; s = inp.s; }
+    // a pairar: trava sozinho e fica à mesma altura até carregares em avançar ou descer (virar continua a dar)
+    if (c.hov) { if (Math.abs(f) > 0.2 || !(c.alt > 1)) { c.hov = false; if (G.hovSet) G.hovSet(false); } else f = Math.hypot(c.vx || 0, c.vz || 0) > 0.4 ? -0.7 : 0; }
     else if (inp.m > 0.15) { const d = angDiff(inp.yaw, c.yaw); f = inp.m * Math.max(0, Math.cos(d)); s = clamp(d * 1.2, -1, 1); }
     const ok = c.hp > 0 && c.fuel > 0, alt0 = c.alt || 0, to = (a, b, r) => a + clamp(b - a, -r, r);
     c.cf = to(c.cf || 0, f, dt * 2.2); c.cs = to(c.cs || 0, s, dt * 2.6); // cíclico e pedais: chegam devagar, sem saltos
@@ -88,9 +90,9 @@ export function makeCars({ scene, G, W, collide, solidAt, tallAt = () => 0, grou
     // c.uAlt = a altura que o piloto pede (cruzeiro, ou a descer devagar enquanto trava parado); c.tAlt = essa ou mais, se houver prédios
     const below = tallAt(c.x, c.z, 4); let ahead = below; for (let k = 1; k <= 3; k++) ahead = Math.max(ahead, tallAt(c.x + vx * k, c.z + vz * k, 5));
     const floor = canLand ? 0 : wet ? 3 : Math.max(3, below + 2.5);
-    if (c.air) { if (f < -0.2 && sp0 < 2.5) c.uAlt = Math.max(floor, Math.min(c.uAlt ?? alt0, alt0 + 1) - dt * 4.5); else if (f > 0.05) c.uAlt = CRU; else c.uAlt = Math.max(floor, c.uAlt ?? alt0); }
+    if (c.air) { if (f < -0.2 && sp0 < 2.5 && !c.hov) c.uAlt = Math.max(floor, Math.min(c.uAlt ?? alt0, alt0 + 1) - dt * 4.5); else if (f > 0.05) c.uAlt = CRU; else c.uAlt = Math.max(floor, c.uAlt ?? alt0); }
     else c.uAlt = 0;
-    if (c.air && f < -0.2 && sp0 < 2.5 && !canLand && c.uAlt <= floor + 0.01 && !(c.nlT > 0)) { c.nlT = 4; G.ui.toast(wet ? 'Não dá para aterrar na água' : 'Aqui não dá para aterrar: procura um sítio livre'); } c.nlT = (c.nlT || 0) - dt;
+    if (c.air && !c.hov && f < -0.2 && sp0 < 2.5 && !canLand && c.uAlt <= floor + 0.01 && !(c.nlT > 0)) { c.nlT = 4; G.ui.toast(wet ? 'Não dá para aterrar na água' : 'Aqui não dá para aterrar: procura um sítio livre'); } c.nlT = (c.nlT || 0) - dt;
     c.tAlt = !ok ? 0 : c.air && c.uAlt > 0.5 ? Math.max(c.uAlt, ahead + 6) : c.uAlt;
     const blocked = ok && ahead + 2.5 > alt0;
     let vy = c.vy || 0; const want = !ok ? (alt0 > 0.2 ? -5 : 0) : clamp((c.tAlt - alt0) * 0.9, -3.5, blocked ? 7 : 4.2);
@@ -212,7 +214,10 @@ export function makeCars({ scene, G, W, collide, solidAt, tallAt = () => 0, grou
       }
       // faróis a sério: os 2 carros com condutor mais perto de ti acendem um foco à frente (mais forte de noite)
       { const night = 1 - (G.day ?? 1), P = G.p || { x: 0, z: 0 }, on = list.filter(q => q.seats[0] && q.hp > 0 && Math.hypot(q.x - P.x, q.z - P.z) < 90).sort((a, b) => (a === G.car ? -1 : b === G.car ? 1 : Math.hypot(a.x - P.x, a.z - P.z) - Math.hypot(b.x - P.x, b.z - P.z)));
-        HL.forEach((L, i) => { const q = on[i]; if (!q) { L.intensity = 0; return; } const fx = Math.sin(q.yaw), fz = Math.cos(q.yaw); L.position.set(q.x + fx * 2.2, 0.85, q.z + fz * 2.2); L.target.position.set(q.x + fx * 20, 0, q.z + fz * 20); L.intensity = 6 + night * 140; }); }
+        HL.forEach((L, i) => { const q = on[i]; if (!q) { L.intensity = 0; return; } const fx = Math.sin(q.yaw), fz = Math.cos(q.yaw);
+          // helicóptero no ar: holofote por baixo, a apontar ao chão um pouco à frente; um círculo largo que cresce com a altura
+          if (VT[q.k].fly && (q.alt || 0) > 1.5) { const a = q.alt, gy = groundY(q.x, q.z, 0); L.angle = 0.72; L.penumbra = 0.75; L.distance = a + 40; L.position.set(q.x + fx * 1.2, gy + a - 0.2, q.z + fz * 1.2); L.target.position.set(q.x + fx * a * 0.12, gy, q.z + fz * a * 0.12); L.intensity = (5 + night * 100) * Math.pow(Math.max(1, a / 5), 1.15); return; }
+          L.angle = 0.62; L.penumbra = 0.6; L.distance = 42; L.position.set(q.x + fx * 2.2, 0.85, q.z + fz * 2.2); L.target.position.set(q.x + fx * 20, 0, q.z + fz * 20); L.intensity = 6 + night * 140; }); }
       const c = G.car, p = G.p; if (!c || !p) { if (audio.engine) audio.engine(0, 0); return; }
       const T = VT[c.k], [sx0, , sz] = T.seats[G.carSeat] || T.seats[0]; const cs = Math.cos(c.yaw), sn = Math.sin(c.yaw);
       // passageiro a apontar: debruça-se pela janela (fica à mostra, fora da carroçaria); quem conduz não dispara
