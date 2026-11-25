@@ -1,7 +1,7 @@
 {
-  "built_at": "2026-11-25T13:29:37.974693+00:00",
-  "db_bytes": 840511488,
-  "gz_bytes": 221292682,
+  "built_at": "2026-11-25T23:44:24.925956+00:00",
+  "db_bytes": 840544256,
+  "gz_bytes": 221297793,
   "totals": {
     "lines": 2838,
     "stops": 50690,
@@ -660,7 +660,7 @@
     }
   ],
   "desenhos": {
-    "bytes": 11234468,
+    "bytes": 11246708,
     "por_operador": {
       "barraqueiro_oeste": {
         "viagens": 119,
@@ -674,8 +674,8 @@
       },
       "carris": {
         "viagens": 31161,
-        "com_desenho": 30215,
-        "desenhos": 295
+        "com_desenho": 31161,
+        "desenhos": 310
       },
       "cmh": {
         "viagens": 44516,
@@ -1010,10 +1010,10 @@
         "servicos_com_data_hoje": [
           "BU",
           "AU",
-          "EU",
-          "FU",
           "CU",
           "DU",
+          "FU",
+          "EU",
           "BexpU"
         ],
         "viagens_por_servico": [
@@ -1069,5 +1069,5 @@
       }
     }
   },
-  "duration_s": 339
+  "duration_s": 389
 }
