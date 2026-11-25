@@ -243,6 +243,14 @@ jobs:
           SAIDA=../res timeout 300 node estados-erro.mjs 2>&1 | tee ../res/estados-erro.txt | tail -40
           exit ${PIPESTATUS[0]}
 
+      - name: Testar o aviso do Android para ligar a localização (Chrome com a localização do telemóvel desligada)
+        continue-on-error: true
+        working-directory: auditoria
+        run: |
+          mkdir -p ../res
+          SAIDA=../res timeout 300 node aviso-localizacao.mjs 2>&1 | tee ../res/aviso-localizacao.txt | tail -20
+          exit ${PIPESTATUS[0]}
+
       - name: Testar o reforço de segurança (scripts estranhos bloqueados, chave só no cabeçalho, campo isco)
         continue-on-error: true
         working-directory: auditoria
