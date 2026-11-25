@@ -33,6 +33,9 @@ boot().catch(e => { console.error(e.stack || String(e)); window.__failed = Strin
 
 async function boot() {
   const wait = (p, ms) => Promise.race([p, new Promise(r => setTimeout(r, ms))]);
+  // percentagem no ecrã de carregamento: deixa o browser pintar entre as etapas pesadas (senão parece que bloqueou)
+  const LP = (pc, txt) => { (window.__lp = window.__lp || []).push([pc, Math.round(performance.now())]); const L = document.getElementById('load'); if (L) { L.classList.add('pc'); const b = L.querySelector('.bar b'), t = document.getElementById('ldP'); if (b) b.style.width = pc + '%'; if (t) t.textContent = pc + '%' + (txt ? ' · ' + txt : ''); } return new Promise(r => requestAnimationFrame(() => setTimeout(r, 0))); };
+  await LP(3, 'a preparar');
   await wait(Promise.all([document.fonts.load('700 40px "Roboto Condensed"'), document.fonts.load('600 40px "Roboto Condensed"'), document.fonts.load('900 40px "KJP"', '黒鉄'), document.fonts.load('500 16px "Roboto Condensed"')]), 2500);
 
   // ---------- renderer, cena, luz
@@ -151,7 +154,9 @@ async function boot() {
       roughnessFactor = clamp( roughnessFactor + ( texture2D( uDet, ( abs( vDetN.y ) > 0.6 ? vDetP.xz : vDetP.xy + vDetP.zy ) * 0.9 ).g - 0.5 ) * 0.18, 0.04, 1.0 );`); };
     m.customProgramCacheKey = () => 'det-' + key; return m; };
   const wmats = { ...mats, v: detail(S(), 1, 'v'), vf: detail(S({ flatShading: true }), 1, 'vf'), m: detail(S({ roughness: 0.38, metalness: 0.55 }), 0.55, 'm') }; // só o que está construído no mapa (personagens e armas ficam sem isto)
+  await LP(12, 'a construir a cidade');
   const tW0 = performance.now(); const W = buildWorld(scene, wmats, A); W.buildMs = Math.round(performance.now() - tW0);
+  await LP(50, 'a preparar o mapa');
   atlasTex.needsUpdate = true;
   // sombras dos prédios mesmo com o telhado e as paredes de cima escondidos (quando estás lá dentro): o sol e a lanterna nunca atravessam telhados nem paredes,
   // só entram por janelas (o vidro não faz sombra) e portas abertas. Cópias só para sombra, na camada 1, que a câmara não desenha
@@ -276,6 +281,7 @@ async function boot() {
   // mundo de fora (8 km): setores carregados à tua volta
   const bushGeo = geo1(b => { b.ico(0.62, 0, 0.32, 0, 0x3f5a2a, { mat: 'vf' }); b.ico(0.46, 0.42, 0.26, 0.2, 0x4a6632, { mat: 'vf' }); b.ico(0.4, -0.36, 0.22, -0.26, 0x36522a, { mat: 'vf' }); });
   const _gc = new THREE.Color();
+  await LP(62, 'a preparar as zonas');
   const SECTORS = makeSectors({ scene, W, nodes, addCirc, removeCirc, near, CORE, MAP, mats: { tree: tm, grass: grassMat, grassTint: () => _gc.setHSL(0.22 + Math.random() * 0.05, 0.45, 0.24 + Math.random() * 0.12) }, geos: { cedar, broad, rock: rockGeo, bush: bushGeo, grass: grassGeo, seixo: seixoGeo, fibra: fibraGeo },
     iMesh: (geo, mat, list, matOf, shadow, CH) => iMesh(geo, mat, list, matOf, shadow, CH, geo === grassGeo ? () => _gc.setHSL(0.22 + Math.random() * 0.05, 0.45, 0.24 + Math.random() * 0.12) : null) });
   // pedras soltas e plantas de fibra também no centro do mapa (mesma posição em todos os aparelhos)
@@ -412,6 +418,7 @@ async function boot() {
 
   // ---------- jogador
   // aparência do jogador (do perfil): cores e cabelo entram na geometria, por isso muda-se reconstruindo o corpo
+  await LP(78, 'a preparar as personagens');
   const silMat = new THREE.MeshBasicMaterial({ color: 0xf2a33a, depthFunc: THREE.GreaterDepth, depthWrite: false, fog: false });
   const mkBody = L => { const b = new Body(mats, lookCol(L)); b.forceNear = true; b.root.traverse(o => { if (o.isMesh && !o.userData.sil) { o.renderOrder = 2; const s = new THREE.Mesh(o.geometry, o.userData.skinned ? b.skinMat(silMat) : silMat); s.userData.sil = true; s.renderOrder = 1; s.castShadow = false; o.add(s); } }); scene.add(b.root); return b; };
   let body = mkBody((Conta.ativo() || {}).look); let myLook = lookCol((Conta.ativo() || {}).look);
@@ -434,6 +441,7 @@ async function boot() {
       G.inv.take('iene', cost); const left = G.inv.give(it); if (left) { G.dropItem(it); G.ui.toast('Mochila cheia: ficou no chão'); } else G.ui.toast('Compraste ' + (n > 1 ? n + ' × ' : '') + ITEMS[k].s.toLowerCase()); audio.play('apanhar'); }
     refresh(); G.ui.refresh(true); };
   const mkRemote = L => { const b = new Body(mats, lookCol(L && typeof L === 'object' ? L : {})); scene.add(b.root); return b; };
+  await LP(84, 'a preparar os animais');
   const fauna = new Fauna(scene, mats.v, 160); // animais (veados, javalis, lobos, cães, galinhas)
   const _vf = new THREE.Frustum(), _vfM = new THREE.Matrix4();
   // zombies com corpo realista (Blender + MakeHuman): textura de cor e de relevo; enquanto carregam, cor lisa parecida
@@ -894,6 +902,7 @@ async function boot() {
       audio.play('ladrar', 0.8); G.ui.toast('O cão confia em ti: segue-te, ladra quando vem alguém e ataca zombies'); return; } if (pr.drink) { G.p.water = Math.min(100, G.p.water + 20); audio.play('comer'); G.ui.toast('Bebeste água'); G.ui.refresh && G.ui.refresh(true); return; } if (pr.lockPut && G.lockT) { G.ui.lockMenu(G.lockT); return; } if (pr.carExit) { G.cars.exit(); return; } if (pr.car) { if (pr.full) return; if (pr.fuel) { const h = held(); if (h && h.k === 'gasolina' && G.cars.refuel(pr.car, h)) { consume(h); G.ui.refresh(true); } return; } G.cars.enter(pr.car); return; } if (pr.own && pr.bed) { G.base.use(pr); return; } if (pr.own && pr.bench) { G.box = null; G.ui.openInv(null, 'craft'); return; } if (pr.door) { const D = pr.door; if (D.lock && D.lock.hp > 0) { G.ui.toast('Trancada. Só abre com explosivos (' + Math.round(D.lock.hp / D.lock.max * 100) + '%)'); audio.play('vazio'); return; } if (!setDoor(D, D.target ? 0 : 1)) G.ui.toast('Está alguém na porta'); return; } openBox(pr); };
 
   // ---------- zombies
+  await LP(90, 'a espalhar os zombies');
   const zoneAt = (x, z) => { if (inCity(x, z)) return W.zones[0]; let best = null; for (const zn of W.zones) { if (zn.kind === 'city') continue; const d = Math.hypot(x - zn.x, z - zn.z); if (d < zn.r && (!best || zn.r < best.r)) best = zn; } return best; };
   G.zoneAt = zoneAt;
   const zAt = (x, z) => ({ x, z, yaw: Math.random() * 6.28, hp: 80, state: 'wander', tx: x, tz: z, think: Math.random() * 0.3, phase: Math.random() * 6, mv: 0, atkT: 0, atkCd: 0, lost: 0, stuck: 0, det: 0, detDir: 1, deadT: 0, sink: 0, groan: 2 + Math.random() * 5, sc: 0.95 + Math.random() * 0.12, lx: x, lz: z, wT: 0, spd: 0.86 + Math.random() * 0.26, lv: 0, base: 0 });
@@ -1774,9 +1783,12 @@ async function boot() {
     fireFrame(G.t, renderer, cam); renderer.render(scene, cam);
     if (G.vmOn) { renderer.autoClear = false; renderer.clearDepth(); renderer.render(vm.scene, vm.cam); renderer.autoClear = true; }
   };
+  await LP(96, 'quase pronto');
   body.root.visible = false;
   G.p = newPlayer(0, -2); G.p.alive = false;
+  await LP(98, 'a preparar os gráficos'); // compila os shaders antes de mostrar o menu (senão o 1.º desenho prendia o ecrã)
+  try { if (renderer.compileAsync) await wait(renderer.compileAsync(scene, cam), 20000); } catch (e) { }
+  loop(); await new Promise(r => requestAnimationFrame(() => setTimeout(r, 0))); // 1.º desenho ainda atrás do ecrã de carregamento
   G.ui.ready();
   window.__ready = true;
-  loop();
 }
