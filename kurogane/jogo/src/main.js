@@ -242,18 +242,23 @@ async function boot() {
 
   const G0 = {};
   // ---------- vegetação e recursos (instanciados)
-  const iMesh = (geo, mat, list, matOf, shadow = true, CH = 50, tint = null) => { const groups = new Map(); for (const o of list) { const k = Math.floor(o.x / CH) + ',' + Math.floor(o.z / CH); if (!groups.has(k)) groups.set(k, []); groups.get(k).push(o); } const out = []; for (const l of groups.values()) { const m = new THREE.InstancedMesh(geo, mat, l.length); l.forEach((o, i) => { o.m0 = matOf(o); m.setMatrixAt(i, o.m0); o.mesh = m; o.idx = i; if (tint) m.setColorAt(i, tint(o, i)); }); m.castShadow = shadow; m.receiveShadow = true; m.computeBoundingSphere(); if (geo !== cedar && geo !== broad) m.renderOrder = 3; scene.add(m); out.push(m); } return out; };
+  const TLOD = []; // árvores: cada bloco de 50 m tem também uma versão simples (mesmas posições), usada ao longe na 1.ª pessoa
+  const iMesh = (geo, mat, list, matOf, shadow = true, CH = 50, tint = null, low = null) => { const groups = new Map(); for (const o of list) { const k = Math.floor(o.x / CH) + ',' + Math.floor(o.z / CH); if (!groups.has(k)) groups.set(k, []); groups.get(k).push(o); } const out = []; for (const l of groups.values()) { const m = new THREE.InstancedMesh(geo, mat, l.length); l.forEach((o, i) => { o.m0 = matOf(o); m.setMatrixAt(i, o.m0); o.mesh = m; o.idx = i; if (tint) m.setColorAt(i, tint(o, i)); }); m.castShadow = shadow; m.receiveShadow = true; m.computeBoundingSphere(); if (geo !== cedar && geo !== broad) m.renderOrder = 3; scene.add(m); out.push(m);
+    if (low) { const L = new THREE.InstancedMesh(low, mat, l.length); L.instanceMatrix = m.instanceMatrix; if (m.instanceColor) L.instanceColor = m.instanceColor; L.castShadow = shadow; L.receiveShadow = true; L.computeBoundingSphere(); L.visible = false; scene.add(L); let cx = 0, cz = 0; for (const o of l) { cx += o.x; cz += o.z; } TLOD.push({ hi: m, lo: L, x: cx / l.length, z: cz / l.length }); } } return out; };
   const geo1 = fn => { const b = new Builder(0); fn(b); const out = []; for (const k of [...b.buckets.keys()]) out.push(b.merged(k)); return out.length === 1 ? out[0] : mergeAll(out); };
   const mergeAll = gs => mergeGeometries(gs, false);
   const cedar = geo1(b => { b.cyl(0.14, 0.22, 3.2, 9, 0, 1.6, 0, 0x5a4230, { mat: 'vf' }); for (const [r, h, y, c] of [[1.75, 2.6, 3.0, 0x2f4a2a], [1.45, 2.3, 3.8, 0x324e2c], [1.2, 2.2, 4.6, 0x34522e], [0.95, 2.0, 5.5, 0x3a5a32], [0.55, 1.5, 6.6, 0x426436]]) b.add(new THREE.ConeGeometry(r, h, 11), c, 'vf', mat4(0, y, 0, Math.random())); });
   const broad = geo1(b => { b.cyl(0.13, 0.2, 2.6, 7, 0, 1.3, 0, 0x5a4636, { mat: 'vf' }); b.cyl(0.07, 0.09, 1.2, 5, 0.4, 2.6, 0.1, 0x5a4636, { mat: 'vf', rz: -0.6 }); for (const [x, y, z, r, c] of [[0, 3.4, 0, 1.55, 0x4a6a32], [0.9, 3.9, 0.3, 1.15, 0x56763a], [-0.8, 3.8, -0.4, 1.1, 0x44622e], [0.1, 4.5, -0.2, 1.0, 0x5c7c40], [-0.3, 3.2, 0.9, 0.95, 0x50703a], [0.6, 3.1, -0.8, 0.9, 0x486834]]) b.ico(r, x, y, z, c, { mat: 'vf', det: 1 }); });
+  // as mesmas árvores com menos faces (para longe): copas em icosaedros simples e cones de 6 lados
+  const cedarLo = geo1(b => { b.cyl(0.14, 0.22, 3.2, 5, 0, 1.6, 0, 0x5a4230, { mat: 'vf' }); for (const [r, h, y, c] of [[1.75, 2.6, 3.0, 0x2f4a2a], [1.3, 2.4, 4.2, 0x34522e], [0.85, 2.0, 5.6, 0x3a5a32], [0.5, 1.4, 6.6, 0x426436]]) b.add(new THREE.ConeGeometry(r, h, 6), c, 'vf', mat4(0, y, 0, 0.3)); });
+  const broadLo = geo1(b => { b.cyl(0.13, 0.2, 2.6, 5, 0, 1.3, 0, 0x5a4636, { mat: 'vf' }); for (const [x, y, z, r, c] of [[0, 3.4, 0, 1.55, 0x4a6a32], [0.9, 3.9, 0.3, 1.15, 0x56763a], [-0.8, 3.8, -0.4, 1.1, 0x44622e], [0.1, 4.5, -0.2, 1.0, 0x5c7c40], [-0.3, 3.2, 0.9, 0.95, 0x50703a], [0.6, 3.1, -0.8, 0.9, 0x486834]]) b.ico(r, x, y, z, c, { mat: 'vf', det: 0 }); });
   const tm = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.9, flatShading: true });
   const nodes = [];
   const treeList = [[], []];
   for (const t of W.trees) { treeList[t.v].push(t); t.kind = 'tree'; t.r = 0.32 * t.s; t.hp = t.max = Math.round(150 * t.s); t.alive = true; nodes.push(t); t.col = { x: t.x, z: t.z, r: t.r, k: 's', on: true, node: t }; addCirc(t.col); }
-  treeList.forEach((l, v) => iMesh(v ? broad : cedar, tm, l, t => mat4(t.x, 0, t.z, t.ry, 0, 0, t.s)));
+  treeList.forEach((l, v) => iMesh(v ? broad : cedar, tm, l, t => mat4(t.x, 0, t.z, t.ry, 0, 0, t.s), true, 50, null, v ? broadLo : cedarLo));
   // ginkgos da rua (amarelos, de novembro)
-  { const l = W.streetTrees.map(([x, z]) => ({ x, z })); const c = new THREE.Color(); iMesh(broad, tm, l, t => mat4(t.x, 0.14, t.z, Math.random() * 6, 0, 0, 0.72), true, 50, (t, i) => c.setHex(i % 3 ? 0xffd46a : 0xf2c04a)); l.forEach(t => { t.col = { x: t.x, z: t.z, r: 0.22, k: 's', on: true }; addCirc(t.col); }); }
+  { const l = W.streetTrees.map(([x, z]) => ({ x, z })); const c = new THREE.Color(); iMesh(broad, tm, l, t => mat4(t.x, 0.14, t.z, Math.random() * 6, 0, 0, 0.72), true, 50, (t, i) => c.setHex(i % 3 ? 0xffd46a : 0xf2c04a), broadLo); l.forEach(t => { t.col = { x: t.x, z: t.z, r: 0.22, k: 's', on: true }; addCirc(t.col); }); }
   const rockGeo = { stone: geo1(b => { b.ico(0.95, 0, 0.35, 0, 0x8f8d86, { mat: 'vf', det: 1, sy: 0.7 }); b.ico(0.6, 0.7, 0.2, 0.3, 0x85837c, { mat: 'vf', det: 1, sy: 0.7 }); b.ico(0.5, -0.6, 0.15, -0.4, 0x9a988f, { mat: 'vf', det: 0 }); }),
     sulfur: geo1(b => { b.ico(0.9, 0, 0.3, 0, 0x8a8470, { mat: 'vf', det: 1, sy: 0.7 }); for (const [x, y, z, r] of [[0.3, 0.75, 0.2, 0.34], [-0.35, 0.6, 0.35, 0.28], [0.55, 0.4, -0.35, 0.3], [-0.2, 0.7, -0.4, 0.25]]) b.ico(r, x, y, z, 0xe0c43a, { mat: 'vf', det: 0 }); }),
     metal: geo1(b => { b.ico(0.92, 0, 0.32, 0, 0x6e625a, { mat: 'vf', det: 1, sy: 0.72 }); for (const [x, y, z, r] of [[0.35, 0.7, 0.2, 0.3], [-0.4, 0.55, 0.3, 0.26], [0.3, 0.45, -0.45, 0.28]]) b.ico(r, x, y, z, 0x9a5a32, { mat: 'vf', det: 0 }); b.ico(0.22, -0.1, 0.8, -0.2, 0xa8acb0, { mat: 'vf' }); }) };
@@ -682,11 +687,11 @@ async function boot() {
     if (it.ammo <= 0) { audio.play('vazio'); p.cd = 0.3; startReload(true); return false; }
     const B = ITEMS[it.ak].bal, sup = !!(it.att && it.att.sup), v0 = B.v * (g.vk || 1), n = B.pel || 1;
     it.ammo--; p.cd = g.cd; p.recoil = 1; G.combatT = G.t;
-    const AIM = G.aimS, fp = G.fp;
+    const AIM = G.aimS, fp = G.fp, hipF = fp && G.fpv.on && AIM.adsT < 0.5; // 1.ª pessoa sem apontar: tiro à anca (espalha como na vista de cima)
     const lo = (AIM.lean || 0) * LEAN, O = fp ? AIM.eye.clone() : new THREE.Vector3(p.x + Math.sin(p.yaw) * 0.15 + Math.cos(p.yaw) * lo, p.y + 1.35, p.z + Math.cos(p.yaw) * 0.15 - Math.sin(p.yaw) * lo);
     const dir = fp ? AIM.dir.clone() : AIM.Aw.clone().sub(O).normalize();
-    { const scI = scopeItem(), zd = fp ? (scI && scI.rd ? 50 : it.zero || (scI && scI.mag >= 8 ? 200 : 100)) : Math.min(400, AIM.Aw.distanceTo(O)), el = elevFor(it.ak, v0, zd); if (el) { const hz = Math.hypot(dir.x, dir.z) || 1, a = Math.atan2(dir.y, hz) + el; dir.set(dir.x / hz * Math.cos(a), Math.sin(a), dir.z / hz * Math.cos(a)); } }
-    const mv = Math.hypot(p.vx, p.vz) > 0.6 ? 1.5 : 1, spread = (G.dbgSpread ?? 1) * (fp ? (g.acc ?? g.spread * 0.2) * mv * (p.onGround ? 1 : 2) : g.spread * (1 - 0.6 * AIM.steady) * (1 - 0.2 * sk('mira')) * mv * (p.onGround ? 1 : 2)); // na luneta conta a precisão mecânica da arma; o resto é a tua mão (balanço e respiração)
+    { const scI = scopeItem(), zd = fp ? (hipF ? clamp(AIM.dist || 30, 5, 400) : scI && scI.rd ? 50 : it.zero || (scI && scI.mag >= 8 ? 200 : 100)) : Math.min(400, AIM.Aw.distanceTo(O)), el = elevFor(it.ak, v0, zd); if (el) { const hz = Math.hypot(dir.x, dir.z) || 1, a = Math.atan2(dir.y, hz) + el; dir.set(dir.x / hz * Math.cos(a), Math.sin(a), dir.z / hz * Math.cos(a)); } }
+    const mv = Math.hypot(p.vx, p.vz) > 0.6 ? 1.5 : 1, spread = (G.dbgSpread ?? 1) * (fp && !hipF ? (g.acc ?? g.spread * 0.2) * mv * (p.onGround ? 1 : 2) : g.spread * (1 - 0.6 * AIM.steady) * (1 - 0.2 * sk('mira')) * mv * (p.onGround ? 1 : 2)); // na luneta conta a precisão mecânica da arma; o resto é a tua mão (balanço e respiração)
     const D0 = spreadDir(dir, spread), ds = [];
     for (let i = 0; i < n; i++) { const di = n > 1 ? spreadDir(D0, B.pat || 0, true) : D0; ds.push(di); bullets.push({ P: O.clone(), v: di.clone().multiplyScalar(v0), v0, cd: B.cd || 0.001, t: 0, dmg: B.dmg * (g.dk || 1), pen: B.pen, bp: B.bp ?? B.pen, pel: n > 1, fall: B.fall || 99, dist: 0, rng: g.rng, sup }); }
     AIM.steady *= 0.55; AIM.kick += (g.kick ?? (B.dmg > 60 ? 0.05 : 0.018)) * (1 - 0.35 * sk('mira')); AIM.idle = 0; skUp('mira', 0.0012);
@@ -795,7 +800,7 @@ async function boot() {
   G.lazyTick = lazyTick;
   // só para testes: vista de cima (ortográfica) de um quadrado de lado L à volta de (x, z), devolvida como imagem
   G.TR = { PRICE, SELL, TRADERS }; G.trade = tradeFn; npcInit(); G.npcs = npcs; initPWA(G);
-  G.dbgDoors = () => W.doors; G.vm = vm; G.dbgL = { torch, baseL, scene, cam }; G.dbgHurtZ = (z, d) => hurtZombie(z, d, 0, 0, {});
+  G.dbgDoors = () => W.doors; G.dbgDie = c => die(c || 'teste'); G.vm = vm; G.dbgL = { torch, baseL, scene, cam }; G.dbgHurtZ = (z, d) => hurtZombie(z, d, 0, 0, {});
   G.dbgCam = (pos, at, fov = 30, w = 800, h = 600) => { const pc = new THREE.PerspectiveCamera(fov, w / h, 0.05, 300); pc.position.set(...pos); pc.lookAt(...at); const s0 = new THREE.Vector2(); renderer.getSize(s0); const r0 = renderer.getPixelRatio(); renderer.setPixelRatio(1); renderer.setSize(w, h, false); fireFrame(G.t, renderer, pc); renderer.render(scene, pc); const url = renderer.domElement.toDataURL('image/jpeg', 0.88); renderer.setPixelRatio(r0); renderer.setSize(s0.x, s0.y, false); return url; }; // testes: vista de perto
   G.dbgTop = (x, z, L, px = 900) => { for (let i = 0; i < 80 && lazyTick(x, z); i++); const oc = new THREE.OrthographicCamera(-L / 2, L / 2, L / 2, -L / 2, 1, 400); oc.position.set(x, 200, z + 0.01); oc.lookAt(x, 0, z); const s0 = new THREE.Vector2(); renderer.getSize(s0); const r0 = renderer.getPixelRatio(); renderer.setPixelRatio(1); renderer.setSize(px, px, false); const fg = scene.fog; scene.fog = null; renderer.render(scene, oc); scene.fog = fg; const url = renderer.domElement.toDataURL('image/jpeg', 0.85); renderer.setPixelRatio(r0); renderer.setSize(s0.x, s0.y, false); return url; };
   G.weather = (on = true) => { G.rainT = on ? 1 : 0; WX.t = on ? 300 : 900; };
@@ -1228,6 +1233,7 @@ async function boot() {
     else if (e.code === 'Space') { e.preventDefault(); G.jump(); }
     else if (e.code === 'KeyF') G.toggleLight();
     else if (e.code === 'KeyM') G.ui.toggleMap();
+    else if (e.code === 'KeyV' && G.playing) G.viewToggle();
     else if (/^Digit[1-6]$/.test(e.code)) select(+e.code.slice(5) - 1);
   });
   addEventListener('keyup', e => { keys.delete(e.code); if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') G.breath(false); });
@@ -1236,7 +1242,15 @@ async function boot() {
   //  telemóvel: botão de disparo levanta a arma e mostra a mira no alvo mais perto; arrastar ajusta (cabeça, corpo, pernas); o mesmo botão dispara
   //  PC: botão direito levanta (ou o primeiro clique); o rato aponta; clique dispara
   //  miras 4x e 8x: vista na primeira pessoa através da mira
-  const AIM = G.aimS = { on: false, scope: false, raise: 0, idle: 0, lock: null, sx: innerWidth / 2, sy: innerHeight / 2, steady: 0, breath: 0, breathOn: false, breathT: 0, kick: 0, A: new THREE.Vector3(), Aw: new THREE.Vector3(), zone: null, tgt: null, fpT: 0, fy: 0, fpit: 0, eye: new THREE.Vector3(), dir: new THREE.Vector3(0, 0, 1), pend: false, rmb: false };
+  const AIM = G.aimS = { on: false, scope: false, raise: 0, idle: 0, lock: null, sx: innerWidth / 2, sy: innerHeight / 2, steady: 0, breath: 0, breathOn: false, breathT: 0, kick: 0, A: new THREE.Vector3(), Aw: new THREE.Vector3(), zone: null, tgt: null, fpT: 0, fy: 0, fpit: 0, eye: new THREE.Vector3(), dir: new THREE.Vector3(0, 0, 1), pend: false, rmb: false, adsT: 0 };
+  // vista na primeira pessoa (botão do olho / tecla V): a câmara vai para os olhos e fica lá, com ou sem nada na mão.
+  // P, Q e M guardam a câmara de antes da troca, para a passagem de uma vista para a outra ser suave (~0,34 s)
+  const _qF = new THREE.Quaternion();
+  const lockPtr = () => { try { const r = canvas.requestPointerLock && canvas.requestPointerLock(); if (r && r.catch) r.catch(() => { }); } catch (e) { } }; // o browser pode recusar (sem clique): não é erro
+  const FPF = G.fpv = { on: false, t: 1, P: new THREE.Vector3(), Q: new THREE.Quaternion(), M: new THREE.Matrix4() };
+  G.fpFree = false;
+  G.viewToggle = () => { G.fpFree = !G.fpFree; if (G.cfg) G.cfg.fpView = G.fpFree; try { G.ui.saveCfg && G.ui.saveCfg(); } catch (e) { } audio.play('ui'); if (!G.fpFree && AIM.scope) { AIM.scope = false; AIM.reseed = true; } if (G.fpFree && !TOUCH) lockPtr(); else if (!G.fpFree) try { if (document.pointerLockElement) document.exitPointerLock(); } catch (e) { } };
+  const fpBuild = () => G.buildK === 'planta' || G.buildK === 'martelo' || G.base.placing(); // a construir volta à vista de cima (o fantasma da peça põe-se a ver de cima)
   // lanterna: a de mão no inventário, ou a montada na arma que tens na mão
   const gunLight = () => { const it = held(); return !!(it && it.att && it.att.light); };
   const hasLight = () => G.inv.count('lanterna') > 0 || gunLight();
@@ -1288,8 +1302,8 @@ async function boot() {
     const p = G.p, d = heldDef(); if (!G.playing || !d.gun || !p.alive || p.climb || p.use || G.invOpen) return;
     const was = AIM.on; AIM.on = true; AIM.idle = 0; if (!was) AIM.steady = 0;
     AIM.scope = !!(scope && scopeItem());
-    if (TOUCH && !was && !AIM.scope) { AIM.lock = null; AIM.off = null; const z = G.cfg.assist ? bestTarget() : null; if (z) AIM.lock = chestLock(z); else { const s0 = toScreen(_c.set(p.x + Math.sin(p.yaw) * 7, p.y + 1.25, p.z + Math.cos(p.yaw) * 7)); AIM.sx = s0.x; AIM.sy = s0.y; AIM.off = { x: Math.sin(p.yaw) * 7, y: p.y + 1.25, z: Math.cos(p.yaw) * 7 }; } }
-    if (AIM.scope) { // entrar na mira: começa a olhar para onde já estavas a apontar
+    if (TOUCH && !was && !AIM.scope && !FPF.on) { AIM.lock = null; AIM.off = null; const z = G.cfg.assist ? bestTarget() : null; if (z) AIM.lock = chestLock(z); else { const s0 = toScreen(_c.set(p.x + Math.sin(p.yaw) * 7, p.y + 1.25, p.z + Math.cos(p.yaw) * 7)); AIM.sx = s0.x; AIM.sy = s0.y; AIM.off = { x: Math.sin(p.yaw) * 7, y: p.y + 1.25, z: Math.cos(p.yaw) * 7 }; } }
+    if (AIM.scope && !FPF.on) { // entrar na mira: começa a olhar para onde já estavas a apontar (na 1.ª pessoa já estás a olhar)
       // já a apontar: o ponto da retícula; a começar agora: o rato (PC) ou a direção para onde o boneco está virado, à altura dos olhos
       const eye = eyePos(_e); let T;
       if (was && AIM.A.lengthSq()) T = AIM.lock ? lockW(AIM.lock, _c) : _c.copy(AIM.A);
@@ -1298,10 +1312,10 @@ async function boot() {
       if (Math.hypot(T.x - eye.x, T.z - eye.z) < 1.5) T.set(eye.x + Math.sin(p.yaw) * 30, eye.y, eye.z + Math.cos(p.yaw) * 30);
       AIM.lock = null;
       AIM.fy = Math.atan2(T.x - eye.x, T.z - eye.z); AIM.fpit = Math.atan2(T.y - eye.y, Math.hypot(T.x - eye.x, T.z - eye.z));
-      if (!TOUCH) try { canvas.requestPointerLock && canvas.requestPointerLock(); } catch (e) { }
+      if (!TOUCH) lockPtr();
     }
   };
-  const aimEnd = () => { AIM.on = false; AIM.scope = false; AIM.lock = null; AIM.pend = false; AIM.breathOn = false; G.fireHeld = false; try { if (document.pointerLockElement) document.exitPointerLock(); } catch (e) { } };
+  const aimEnd = () => { AIM.on = false; AIM.scope = false; AIM.lock = null; AIM.pend = false; AIM.breathOn = false; G.fireHeld = false; if (!FPF.on) try { if (document.pointerLockElement) document.exitPointerLock(); } catch (e) { } };
   G.aimStart = aimStart; G.aimEnd = aimEnd;
   G.setAuto = on => { const p = G.p; G.autoRun = !!on && !!p && p.alive; if (G.autoRun) G.autoYaw = Math.hypot(p.vx, p.vz) > 0.5 ? Math.atan2(p.vx, p.vz) : p.root; const b = document.getElementById('tSprint'); if (b) b.classList.toggle('on', G.autoRun); };
   G.proj = v => toScreen(v);
@@ -1318,18 +1332,22 @@ async function boot() {
     for (const s of [1, -1]) { _lc.set(p.x + rx * s * LEAN, y, p.z + rz * s * LEAN); if (wallHit(_la, _lc) < 0.999) continue; _ld.set(_lc.x + fx * 6, y, _lc.z + fz * 6); const v = wallHit(_lc, _ld) * 6; if (v > bv) { bv = v; best = s; } }
     return best;
   };
-  const scopeFov = () => { const s = scopeItem(); return 55 / (s ? s.mag : 4); }; // campo de visão real: ~55° da ocular a dividir pela ampliação
+  const scopeFov = () => { const s = scopeItem(); return 55 / (s ? s.mag : 4); };
+  // 1.ª pessoa sem apontar: ~90° na horizontal deitado; ao alto o campo vertical abre até 76° (senão via-se pouco à frente)
+  const fpFov = () => clamp(2 * Math.atan(1 / Math.max(0.3, innerWidth / innerHeight)) * 180 / Math.PI, 52, 76);
+  G.fpFov = fpFov; // campo de visão real: ~55° da ocular a dividir pela ampliação
   // arrastar o dedo: na vista de cima move a mira no ecrã (e prende-se ao zombie por baixo); na mira em primeira pessoa roda a vista
   G.aimDrag = (dx, dy) => {
-    if (!AIM.on) return; AIM.idle = 0; const k = G.cfg.sens || 1;
-    if (G.fp) { const R = G.ui.scopeR(), f = THREE.MathUtils.degToRad(scopeFov()) / (2 * R) * 1.1 * k; AIM.fy -= dx * f; AIM.fpit = clamp(AIM.fpit - dy * f, -1.2, 1.2); return; }
+    if (!AIM.on && !FPF.on) return; AIM.idle = 0; const k = G.cfg.sens || 1;
+    // na 1.ª pessoa: arrastar o ecrã todo de cima a baixo roda a vista o campo de visão; a apontar, mais devagar (pela ampliação)
+    if (G.fp || FPF.on) { const R = G.ui.scopeR(), a = FPF.on ? AIM.adsT * AIM.adsT * (3 - 2 * AIM.adsT) : 1, fs = THREE.MathUtils.degToRad(scopeFov()) / (2 * R) * 1.1, ff = THREE.MathUtils.degToRad(fpFov()) / innerHeight * 1.15, f = (ff + (fs - ff) * a) * k; AIM.fy -= dx * f; AIM.fpit = clamp(AIM.fpit - dy * f, -1.35, 1.35); return; }
     AIM.sx = clamp(AIM.sx + dx * k, 4, innerWidth - 4); AIM.sy = clamp(AIM.sy + dy * k, 4, innerHeight - 4);
     const pk = pick(AIM.sx, AIM.sy, 1.25); if (pk.part && lockable(pk.z)) { AIM.lock = pk.part; AIM.off = null; return; }
     AIM.lock = null; { const p = G.p; AIM.off = { x: pk.point.x - p.x, y: pk.point.y, z: pk.point.z - p.z }; }
     if (pk.pl) return; // em cima de outro jogador: a ajuda não salta para um zombie que esteja ao lado dele
     if (G.cfg.assist) { let bz = null, bd = 24; for (const z of G.zs) { if (!lockable(z)) continue; const q = toScreen(lockW(chestLock(z), _c)); const dd = Math.hypot(q.x - AIM.sx, q.y - AIM.sy); if (q.ok && dd < bd) { bd = dd; bz = z; } } if (bz) AIM.lock = chestLock(bz); }
   };
-  G.relock = () => { if (!AIM.on || G.fp) return; const z = bestTarget(); AIM.lock = z ? chestLock(z) : null; AIM.idle = 0; };
+  G.relock = () => { if (!AIM.on || G.fp || FPF.on) return; const z = bestTarget(); AIM.lock = z ? chestLock(z) : null; AIM.idle = 0; };
   const tryFire = () => { const it = held(), d = heldDef(); if (!d.gun || !G.p.alive || G.invOpen || AIM.raise < 1) return false; return fire(it, d.gun); };
   G.dbgFire = () => { const it = held(), d = heldDef(); G.p.cd = 0; return d.gun ? fire(it, d.gun) : false; }; // testes
   G.fireDown = () => { if (G.car && (!G.carSeat || G.car.hp <= 0)) return; // de passageiro dispara-se da janela; quem conduz não
@@ -1338,17 +1356,18 @@ async function boot() {
     { const it = held(); if (it && it.k === 'planta') { G.base.place(); return; } if (it && it.k === 'martelo') { G.base.upgrade(); return; } if (it && it.k === 'granada') { throwGrenade(it); return; } if (it && it.k === 'c4') { plantC4(it); return; } }
     if (!d.gun) { G.fireHeld = true; G.holdT0 = G.t; G.tapAttack(); return; }
     G.fireHeld = true; AIM.idle = 0;
-    if (!AIM.on) { aimStart(); if (G.cfg.quick) AIM.pend = true; return; }
+    if (!AIM.on) { aimStart(); if (G.cfg.quick || FPF.on) AIM.pend = true; return; }
     if (AIM.raise < 1) { AIM.pend = true; return; }
     tryFire();
   };
   G.fireUp = () => { G.fireHeld = false; }; // um toque enquanto a arma sobe não se perde: dispara quando estiver levantada
   G.breath = on => { AIM.breathOn = !!on && AIM.scope; };
   canvas.addEventListener('wheel', e => { if (G.fp && G.aimS.scope) { e.preventDefault(); G.zeroAdj(e.deltaY < 0 ? 1 : -1); } }, { passive: false });
-  canvas.addEventListener('pointermove', e => { if (e.pointerType !== 'mouse') return; if (G.fp && AIM.on) { G.aimDrag(e.movementX || 0, e.movementY || 0); return; } mouse.x = e.clientX; mouse.y = e.clientY; mouse.has = true; });
+  canvas.addEventListener('pointermove', e => { if (e.pointerType !== 'mouse') return; if ((G.fp && AIM.on) || FPF.on) { if (FPF.on && !document.pointerLockElement && !AIM.on) { mouse.x = e.clientX; mouse.y = e.clientY; mouse.has = true; return; } G.aimDrag(e.movementX || 0, e.movementY || 0); return; } mouse.x = e.clientX; mouse.y = e.clientY; mouse.has = true; });
   canvas.addEventListener('pointerdown', e => {
     if (e.pointerType !== 'mouse') return; mouse.x = e.clientX; mouse.y = e.clientY; mouse.has = true;
-    if (e.button === 2) { AIM.rmb = true; aimStart(true); return; }
+    if (FPF.on && !document.pointerLockElement) lockPtr();
+    if (e.button === 2) { AIM.rmb = true; aimStart(!FPF.on || !!scopeItem()); return; }
     if (e.button !== 0) return; mouse.down = true;
     if (G.base.placing()) { G.base.pin(G.groundAt(e.clientX, e.clientY)); G.base.placeNow(); return; } // no PC: clica onde queres pôr
     if (heldDef().gun) G.fireDown(); else { G.fireHeld = true; G.holdT0 = G.t; attack(); }
@@ -1357,7 +1376,7 @@ async function boot() {
   canvas.addEventListener('contextmenu', e => e.preventDefault());
   // corpo a corpo no telemóvel: toque rápido vira-se para o mais perto e ataca
   const faceTo = yaw => { const p = G.p; p.aim = yaw; p.yaw = yaw; if (Math.abs(angDiff(yaw, p.root)) > 1.2) p.root = yaw - Math.sign(angDiff(yaw, p.root)) * 1.2; G.aimHold = 0.5; };
-  G.tapAttack = () => { const p = G.p; if (!p.alive || p.climb) return; if (G.car && !heldDef().gun) return; if (heldDef().gun) { G.fireDown(); G.fireUp(); return; } const best = bestTarget(); if (best && Math.hypot(best.x - p.x, best.z - p.z) < 3.2) faceTo(Math.atan2(best.x - p.x, best.z - p.z)); else if (!p.lv) { let nb = null, nd = 2.2; for (const n of nodes) { if (!n.alive || Math.abs(n.x - p.x) > 6 || Math.abs(n.z - p.z) > 6) continue; const d = Math.hypot(n.x - p.x, n.z - p.z) - n.r; if (d < nd) { nd = d; nb = n; } } if (nb) faceTo(Math.atan2(nb.x - p.x, nb.z - p.z)); } /* sem zombie perto, vira-se para a árvore ou rocha ao lado */ attack(); };
+  G.tapAttack = () => { const p = G.p; if (!p.alive || p.climb) return; if (G.car && !heldDef().gun) return; if (heldDef().gun) { G.fireDown(); G.fireUp(); return; } if (G.fp) { attack(); return; } /* na 1.ª pessoa bate para onde estás a olhar */ const best = bestTarget(); if (best && Math.hypot(best.x - p.x, best.z - p.z) < 3.2) faceTo(Math.atan2(best.x - p.x, best.z - p.z)); else if (!p.lv) { let nb = null, nd = 2.2; for (const n of nodes) { if (!n.alive || Math.abs(n.x - p.x) > 6 || Math.abs(n.z - p.z) > 6) continue; const d = Math.hypot(n.x - p.x, n.z - p.z) - n.r; if (d < nd) { nd = d; nb = n; } } if (nb) faceTo(Math.atan2(nb.x - p.x, nb.z - p.z)); } /* sem zombie perto, vira-se para a árvore ou rocha ao lado */ attack(); };
   G.toggleLight = () => { if (!G.playing || !G.p.alive) return; if (!G.lightOn && !hasLight()) { G.ui.toast('Precisas de uma lanterna'); return; } G.lightOn = !G.lightOn; audio.play('ui'); G.ui.refresh(true); };
   // saltar; se houver algo trepável à frente, trepa
   G.jump = () => {
@@ -1419,7 +1438,7 @@ async function boot() {
         if (!melee || il > 0.25 || (G.farm && (!G.farm.alive || Math.hypot(G.farm.x - p.x, G.farm.z - p.z) - G.farm.r > 2.2))) { G.farm = null; if (il > 0.25 || !melee) G.autoHit = false; }
         if ((G.farm || G.autoHit) && melee && p.cd <= 0 && !p.use && p.swing < 0) { if (G.farm) { faceTo(Math.atan2(G.farm.x - p.x, G.farm.z - p.z)); attack(); } else G.tapAttack(); } }
       // eixos do movimento: na vista de cima, os do ecrã; na mira (primeira pessoa), para a frente é para onde estás a olhar
-      let Fx = FWD.x, Fz = FWD.y, Rx = RGT.x, Rz = RGT.y; if (G.fp && AIM.fy != null) { Fx = Math.sin(AIM.fy); Fz = Math.cos(AIM.fy); Rx = -Fz; Rz = Fx; }
+      let Fx = FWD.x, Fz = FWD.y, Rx = RGT.x, Rz = RGT.y; if ((G.fp || FPF.on) && AIM.fy != null) { Fx = Math.sin(AIM.fy); Fz = Math.cos(AIM.fy); Rx = -Fz; Rz = Fx; }
       if (G.car) { if (G.carSeat === 0 && p.alive) { const k = c => keys.has(c) ? 1 : 0, D = G.dIn || {}; // teclado (WASD/setas) ou botões do ecrã: à esquerda acelerar/trás, à direita virar
           G.cars.drive(dt, G.dbgDrive ? G.dbgDrive : { kb: true, t: clamp(k('KeyW') + k('ArrowUp') + (D.u ? 1 : 0) - k('KeyS') - k('ArrowDown') - (D.d ? 1 : 0), -1, 1), s: clamp(k('KeyA') + k('ArrowLeft') + (D.l ? 1 : 0) - k('KeyD') - k('ArrowRight') - (D.r ? 1 : 0), -1, 1) }); }
         ix = iy = il = 0; if (G.autoRun) G.setAuto(false); if (AIM.on && !G.carSeat) aimEnd(); } // de passageiro pode apontar (debruça-se)
@@ -1427,7 +1446,7 @@ async function boot() {
       if (G.autoRun) {
         if (!p.alive || G.invOpen || G.mapOpen || AIM.on || p.use) G.setAuto(false);
         else if (il > 0.15) { const yw = Math.atan2(Rx * ix + Fx * iy, Rz * ix + Fz * iy); if (il > 0.5 && Math.abs(angDiff(yw, G.autoYaw)) > 2.5) G.setAuto(false); else G.autoYaw = yw; }
-        else { const dx = Math.sin(G.autoYaw), dz = Math.cos(G.autoYaw); ix = dx * Rx + dz * Rz; iy = dx * Fx + dz * Fz; il = 1; }
+        else { if (FPF.on && AIM.fy != null) G.autoYaw = AIM.fy; /* na 1.ª pessoa corre para onde olhas */ const dx = Math.sin(G.autoYaw), dz = Math.cos(G.autoYaw); ix = dx * Rx + dz * Rz; iy = dx * Fx + dz * Fz; il = 1; }
       }
       const moving = il > 0.15 && p.alive && !p.climb;
       const wx = Rx * ix + Fx * iy, wz = Rz * ix + Fz * iy, moveYaw = moving ? Math.atan2(wx, wz) : null;
@@ -1436,7 +1455,7 @@ async function boot() {
       if (AIM.on && (!gunH || !p.alive || p.climb || p.use || G.invOpen)) aimEnd();
       if (AIM.scope && !scopeItem()) AIM.scope = false;
       AIM.raise = clamp(AIM.raise + (AIM.on ? dt / 0.25 : -dt / 0.2), 0, 1);
-      AIM.idle += dt; if (AIM.on && !AIM.scope && !AIM.rmb && !G.fireHeld && AIM.idle > 6) aimEnd();
+      AIM.idle += dt; if (AIM.on && !AIM.scope && !AIM.rmb && !G.fireHeld && AIM.idle > (FPF.on ? 4 : 6)) aimEnd();
       const still = Math.hypot(p.vx, p.vz) < 0.35;
       AIM.steady = clamp(AIM.steady + (AIM.on && still ? dt * 1.3 : -dt * 2.2), 0, 1);
       // suster a respiração na mira: 4 s quase sem tremer, gasta energia; depois treme mais um bocado
@@ -1444,14 +1463,21 @@ async function boot() {
       else { AIM.breath = Math.max(0, AIM.breath - dt * 4); if (!AIM.breathOn) AIM.breathT = Math.max(0, AIM.breathT - dt * 0.6); }
       AIM.gasp = Math.max(0, (AIM.gasp || 0) - dt); AIM.kick *= Math.exp(-dt * 7);
       // entrar e sair da mira em primeira pessoa (a câmara desce até ao ombro e a mira abre)
-      AIM.fpT = clamp(AIM.fpT + (AIM.scope && AIM.raise > 0.5 ? dt / 0.42 : -dt / 0.3), 0, 1);
-      { const fpNow = AIM.fpT > 0.55 && p.alive; if (fpNow !== !!G.fp) { G.fp = fpNow; PROJ.dirty = true; } }
+      // vista na 1.ª pessoa à vontade: não no carro, nem morto, nem a construir. A troca guarda a câmara de agora para passar suave
+      { const want = !!G.fpFree && p.alive && !G.car && !fpBuild();
+        if (want !== FPF.on) { FPF.on = want; FPF.t = 0; FPF.P.copy(cam.position); FPF.Q.copy(cam.quaternion); FPF.M.copy(cam.projectionMatrix);
+          if (want) { if (!AIM.scope) { AIM.fy = p.aim ?? p.yaw; AIM.fpit = -0.06; } AIM.lock = null; } else { if (AIM.scope) { AIM.scope = false; AIM.reseed = true; } AIM.fpT = 0; AIM.adsT = 0; if (!AIM.rmb) try { if (document.pointerLockElement) document.exitPointerLock(); } catch (e) { } } }
+        FPF.t = Math.min(1, FPF.t + dt / 0.34); }
+      if (FPF.on) AIM.fpT = 1; else AIM.fpT = clamp(AIM.fpT + (AIM.scope && AIM.raise > 0.5 ? dt / 0.42 : -dt / 0.3), 0, 1);
+      // a apontar na 1.ª pessoa (mira de ferro, ponto vermelho ou luneta): 0 à anca, 1 com a mira no olho
+      AIM.adsT = clamp(AIM.adsT + (AIM.scope && AIM.raise > 0.5 && (G.fp || FPF.on) ? dt / 0.22 : -dt / 0.18), 0, 1);
+      { const fpNow = (FPF.on ? FPF.t >= 0.5 : AIM.fpT > 0.55) && p.alive; if (fpNow !== !!G.fp) { G.fp = fpNow; PROJ.dirty = true; } }
       const scI = scopeItem(), swayA = (AIM.scope ? (scI && scI.mag >= 8 ? 0.0062 : scI && scI.rd ? 0.0017 : 0.004) : 0.0012) * (1 - 0.55 * AIM.steady) * (1 - 0.85 * AIM.breath) * (still ? 1 : 2.4) * (1 + (AIM.gasp || 0)) * (1 - 0.3 * sk('mira')) * (G.dbgSway ?? 1);
       const swY = swayA * (Math.sin(G.t * 1.1) + 0.45 * Math.sin(G.t * 2.9 + 1)), swP = swayA * (0.8 * Math.sin(G.t * 0.83 + 2) + 0.35 * Math.sin(G.t * 3.7));
       { let want = 0; if (AIM.on && AIM.raise > 0.3 && cfg.autoLean !== false && p.onGround && !p.sprint && !p.climb) { AIM.leanT = (AIM.leanT || 0) - dt; if (AIM.leanT <= 0) { AIM.leanT = 0.1; AIM.leanW = leanPick(p); } want = AIM.leanW || 0; } else AIM.leanW = 0; AIM.lean = (AIM.lean || 0) + (want - (AIM.lean || 0)) * Math.min(1, dt * 9); if (Math.abs(AIM.lean) < 1e-3) AIM.lean = 0; }
       let aimYaw = null;
       if (p.alive && !p.climb) {
-        if (G.fp) {
+        if (G.fp || FPF.on) {
           eyePos(AIM.eye); const yy = AIM.fy + swY, pp = AIM.fpit + swP + AIM.kick;
           AIM.dir.set(Math.sin(yy) * Math.cos(pp), Math.sin(pp), Math.cos(yy) * Math.cos(pp)); aimYaw = AIM.fy;
           const end = _a.copy(AIM.eye).addScaledVector(AIM.dir, 160); let bz = null; for (const z of G.zs) { if (z.state === 'dead') continue; const r = zoneHit(z, AIM.eye, end); if (r && (!bz || r.s < bz.s)) bz = r; }
@@ -1619,7 +1645,7 @@ async function boot() {
         glow.position.set(p.x, p.y + 1.8, p.z); glow.intensity = G.car ? 0 : nt * 3.5;
         if (G.lightOn && !hasLight()) G.lightOn = false;
         const wl = gunLight(), fy = p.yaw, fw = Math.max(0.04, Math.min(0.7, ray(p.x, p.z, Math.sin(fy), Math.cos(fy), 0.9, null, 's', p.lv) - 0.15)); // a lanterna nunca sai do outro lado de uma parede encostada
-        if (wl) { torch.intensity = G.lightOn ? 95 : 0; torch.angle = 0.34; torch.distance = 36; if (G.fp && AIM.on) { torch.position.copy(AIM.eye).addScaledVector(AIM.dir, Math.min(0.5, fw)); torch.target.position.copy(AIM.eye).addScaledVector(AIM.dir, 20); } else { torch.position.set(p.x + Math.sin(fy) * fw, p.y + 1.32, p.z + Math.cos(fy) * fw); if (AIM.on && AIM.Aw) torch.target.position.copy(AIM.Aw); else torch.target.position.set(p.x + Math.sin(fy) * 12, p.y + 0.3, p.z + Math.cos(fy) * 12); } }
+        if (wl) { torch.intensity = G.lightOn ? 95 : 0; torch.angle = 0.34; torch.distance = 36; if (G.fp) { torch.position.copy(AIM.eye).addScaledVector(AIM.dir, Math.min(0.5, fw)); torch.target.position.copy(AIM.eye).addScaledVector(AIM.dir, 20); } else { torch.position.set(p.x + Math.sin(fy) * fw, p.y + 1.32, p.z + Math.cos(fy) * fw); if (AIM.on && AIM.Aw) torch.target.position.copy(AIM.Aw); else torch.target.position.set(p.x + Math.sin(fy) * 12, p.y + 0.3, p.z + Math.cos(fy) * 12); } }
         else { torch.intensity = G.lightOn ? 70 : 0; torch.angle = 0.5; torch.distance = 28; torch.position.set(p.x + Math.sin(fy) * Math.min(0.3, fw), p.y + 1.45, p.z + Math.cos(fy) * Math.min(0.3, fw)); torch.target.position.set(p.x + Math.sin(fy) * 9, p.y + 0.2, p.z + Math.cos(fy) * 9); }
         if (!renderer.shadowMap.enabled && torch.intensity > 0) { const tp = torch.position, tg = torch.target.position, ddx = tg.x - tp.x, ddz = tg.z - tp.z, dl = Math.hypot(ddx, ddz) || 1; torch.distance = Math.min(torch.distance, ray(tp.x, tp.z, ddx / dl, ddz / dl, torch.distance, null, 's', p.lv, 0.5) + 0.35); } // sem sombras, a luz acaba na primeira parede à frente
         torch.target.updateMatrixWorld();
@@ -1649,15 +1675,23 @@ async function boot() {
     for (const s of smoke) { s.userData.t = (s.userData.t + dt * 0.12) % 1; const t = s.userData.t; s.position.set(W.smoke[0] + t * 5, W.smoke[1] + t * 11, W.smoke[2] - t * 2.5); const sc = 1.4 + t * 5; s.scale.set(sc, sc, 1); s.material.opacity = 0.55 * (1 - t) * Math.min(1, t * 6); }
     { cam.updateMatrixWorld(); _vfM.multiplyMatrices(cam.projectionMatrix, cam.matrixWorldInverse); _vf.setFromProjectionMatrix(_vfM); } // o que a câmara vê: zombies e animais fora disto não se desenham
     horde.update(G.zs, G.fp, _vf); fauna.update(G.zs, camT, _vf);
+    // árvores ao longe (só na 1.ª pessoa, que vê até à neblina): a versão simples a partir de ~65 m
+    G.lodT = (G.lodT || 0) - dt; if (G.lodT <= 0) { G.lodT = 0.25; const c = cam.position, fpL = !!G.fp; for (const T of TLOD) { const far = fpL && Math.hypot(T.x - c.x, T.z - c.z) > 65; if (T.hi.visible === far) { T.hi.visible = !far; T.lo.visible = far; } } }
     // comerciantes: respiram parados e viram-se para quem chega perto
     if (G.p) for (const N of npcs) { const dx = G.p.x - N.T.x, dz = G.p.z - N.T.z, d = Math.hypot(dx, dz); if (d > 90) { N.b.root.visible = false; continue; } N.b.root.visible = true; const want = d < 7 ? Math.atan2(dx, dz) : N.T.yaw; N.yaw += angDiff(want, N.yaw) * Math.min(1, dt * 3); N.b.root.rotation.y = N.yaw; N.b.pose(dt, 0, 0); if (G.ui.trOpenNow() && G.ui.trWho && G.ui.trWho() === N.T && d > TRADE_R + 2) G.ui.trClose(); }
     // câmara e sol
-    if (G.fp && p) {
+    if ((G.fp || FPF.on) && p) {
       cam.position.copy(AIM.eye); cam.lookAt(_c.copy(AIM.eye).add(AIM.dir)); if (AIM.lean) cam.rotateZ(-AIM.lean * 0.12);
-      // a luneta mostra sempre o mesmo ângulo, em qualquer ecrã; o centro fica no meio da zona livre
-      const S = G.ui.scopeR(), SC = G.ui.scopeC(), sf = THREE.MathUtils.degToRad(scopeFov()); cam.near = 0.3; cam.far = 900; cam.aspect = innerWidth / innerHeight; cam.fov = THREE.MathUtils.radToDeg(2 * Math.atan(Math.tan(sf / 2) * innerHeight / (2 * S))); cam.updateProjectionMatrix();
-      { const e = cam.projectionMatrix.elements; e[8] = -(SC.x / innerWidth * 2 - 1); e[9] = -(1 - SC.y / innerHeight * 2); cam.projectionMatrixInverse.copy(cam.projectionMatrix).invert(); } PROJ.mode = 'fp';
-      { const it = held(), at = (it && it.att) || {}; vm.set(it ? it.k : '', !at.scope && ironOk(it) ? { ...at, scope: 'iron' } : at, myLook); vm.update(dt, cam, { day: G.day, nv: G.nv, mv: Math.min(1, Math.hypot(p.vx || 0, p.vz || 0) / 3) }); }
+      // a luneta mostra sempre o mesmo ângulo, em qualquer ecrã; o centro fica no meio da zona livre. Sem apontar (vista livre): campo largo, centro no meio do ecrã
+      const a = FPF.on ? AIM.adsT * AIM.adsT * (3 - 2 * AIM.adsT) : 1, scI = scopeItem(), fa = a * (scI && scI.mag >= 2 ? 1 : 0); FPF.fa = FPF.on ? fa : 1;
+      const S = G.ui.scopeR(), SC = G.ui.scopeC(), sf = THREE.MathUtils.degToRad(scopeFov()), fS = THREE.MathUtils.radToDeg(2 * Math.atan(Math.tan(sf / 2) * innerHeight / (2 * S))), fF = fpFov();
+      cam.near = FPF.on ? 0.05 + 0.25 * a : 0.3; cam.far = FPF.on ? 142 + 758 * fa : 900; cam.aspect = innerWidth / innerHeight; cam.fov = FPF.on ? fF + ((scI && scI.rd ? Math.min(fS, fF / Math.max(1, scI.mag)) : fS) - fF) * a : fS; /* mira de ferro e ponto vermelho na vista livre: apontar nunca abre o campo (ao alto a fórmula da luneta dava mais do que a vista normal) */ cam.updateProjectionMatrix();
+      { const e = cam.projectionMatrix.elements; e[8] = -(SC.x / innerWidth * 2 - 1) * a; e[9] = -(1 - SC.y / innerHeight * 2) * a; cam.projectionMatrixInverse.copy(cam.projectionMatrix).invert(); } PROJ.mode = 'fp';
+      // braços e o que tens na mão: na vista livre sempre (punhos de mãos vazias); a apontar só com mira de ferro ou ponto vermelho (a luneta tapa o ecrã)
+      { const it = held(), at = (it && it.att) || {}, k = it ? it.k : '', att = !at.scope && ironOk(it) ? { ...at, scope: 'iron' } : at, optic = !!(at.scope && at.scope !== 'reddot');
+        const show = FPF.on ? !(optic && AIM.adsT > 0.5) : !!(RDP[k] && (att.scope === 'reddot' || att.scope === 'iron'));
+        const sm = (v, w) => v + (w - v) * Math.min(1, dt * 9); FPF.rel = sm(FPF.rel || 0, p.reload > 0 ? 1 : 0); FPF.spr = sm(FPF.spr || 0, p.sprint && Math.hypot(p.vx, p.vz) > 1 ? 1 : 0);
+        vm.set(show ? (k || 'mao') : '', att, myLook); vm.update(dt, cam, { day: G.day, nv: G.nv, mv: Math.min(1, Math.hypot(p.vx || 0, p.vz || 0) / 3), ads: FPF.on ? a : 1, sw: p.swing, rel: FPF.rel, spr: FPF.spr * (1 - a), up: FPF.on ? FPF.t : 1, raise: heldDef().gun ? AIM.raise : 1 }); }
     } else {
       vm.set('', {}, myLook);
       if (PROJ.dirty || PROJ.mode !== 'top') topProj();
@@ -1665,8 +1699,10 @@ async function boot() {
       v3b.copy(camT); if (e > 0) { v3b.x += (AIM.A.x - camT.x) * 0.45 * e; v3b.z += (AIM.A.z - camT.z) * 0.45 * e; v3b.y = camT.y + 0.4 * e; }
       cam.position.copy(v3b).add(camOff((1 - 0.72 * e) * (G.car ? 1 + 0.35 * Math.min(1, Math.abs(G.car.v) / 17) + (G.car.alt || 0) / 26 : 1))); if (G.shakeT > 0) { G.shakeT -= dt; const a = Math.min(1, G.shakeT) * 0.9; cam.position.x += (Math.random() - 0.5) * a; cam.position.z += (Math.random() - 0.5) * a; cam.position.y += (Math.random() - 0.5) * a * 0.5; } cam.lookAt(v3b.x, v3b.y + 1.0, v3b.z);
     }
+    // troca de vista: da câmara de antes para a de agora, em ~0,34 s (posição, rotação e projeção)
+    if (FPF.t < 1 && p) { const e = FPF.t * FPF.t * (3 - 2 * FPF.t); cam.position.lerpVectors(FPF.P, cam.position, e); _qF.copy(cam.quaternion); cam.quaternion.copy(FPF.Q).slerp(_qF, e); const A0 = FPF.M.elements, B0 = cam.projectionMatrix.elements; for (let i = 0; i < 16; i++) B0[i] = A0[i] + (B0[i] - A0[i]) * e; cam.projectionMatrixInverse.copy(cam.projectionMatrix).invert(); PROJ.dirty = true; }
     cam.updateMatrixWorld();
-    scene.fog.near = G.fp ? 300 : 62; scene.fog.far = G.fp ? 850 : 150;
+    { const fa = G.fp ? FPF.fa ?? 1 : 0; scene.fog.near = G.fp ? 40 + 260 * fa : 62; scene.fog.far = G.fp ? 138 + 712 * fa : 150; } // vista livre: neblina aos ~140 m (poupa o telemóvel: o que está para lá não se desenha)
     { const sc0 = G.fp ? _c.copy(AIM.eye).addScaledVector(AIM.dir, Math.min(AIM.dist || 30, 60)) : camT; const tx = Math.round(sc0.x / 0.5) * 0.5, tz = Math.round(sc0.z / 0.5) * 0.5, ty = G.fp ? 0 : camT.y;
       sun.target.position.set(tx, ty, tz); sun.position.set(tx, ty, tz).addScaledVector(SUNDIR, 70); sun.target.updateMatrixWorld(); }
     // círculo de visão

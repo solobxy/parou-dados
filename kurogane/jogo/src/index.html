@@ -108,6 +108,7 @@ svg{width:18px;height:18px;flex:none}
 #xh i:nth-child(2){left:-1px;top:calc(-1 * var(--r) - 9px);width:2px;height:7px}#xh i:nth-child(3){left:-1px;top:calc(var(--r) + 2px);width:2px;height:7px}#xh i:nth-child(4){top:-1px;left:calc(-1 * var(--r) - 9px);width:7px;height:2px}#xh i:nth-child(5){top:-1px;left:calc(var(--r) + 2px);width:7px;height:2px}
 #xh .dot{position:absolute;left:-1.5px;top:-1.5px;width:3px;height:3px;border-radius:2px;background:var(--c);box-shadow:0 0 0 1px rgba(0,0,0,.7)}
 #xh .zl{position:absolute;left:calc(var(--r) + 12px);top:-8px;font:700 12px/16px "Roboto Condensed",sans-serif;letter-spacing:.08em;text-transform:uppercase;color:var(--c);text-shadow:0 1px 2px #000;white-space:nowrap}
+#xh.fpx{transition:none}#xh.mel .ring,#xh.mel i{display:none}#xh.mel .dot{left:-2px;top:-2px;width:4px;height:4px}
 #xh.z-head{--c:#FF6A55}#xh.z-body{--c:#F2C35A}#xh.z-legs{--c:#BFD8F2}
 #hm{position:absolute;z-index:2;left:0;top:0;width:0;height:0;pointer-events:none}
 #hm i{position:absolute;width:3px;height:11px;margin:-5.5px 0 0 -1.5px;background:#F4EFE6;box-shadow:0 0 2px #000;border-radius:1px}
@@ -162,7 +163,7 @@ body.driving #bottom,body.driving #tLight{display:none}body.driving #ammo{left:5
 #tFire .ic-m,#tFire .ic-b,#tFire .ic-x{display:none}#tFire.boom .ic-g,#tFire.boom .ic-m{display:none}#tFire.boom .ic-x{display:block}#tFire.melee .ic-g{display:none}#tFire.melee .ic-m{display:block}#tFire.build .ic-g,#tFire.build .ic-m{display:none}#tFire.build .ic-b{display:block}
 #tFire em{color:#E8D9C2}
 #tFire.armed{--bd:#FF6A48;--fill:rgba(120,30,18,.94)}#tFire.armed svg{color:#FFF1E8}#tFire.armed em{color:#FFE2D8}
-#tScope.on{--bd:var(--amb);--fill:rgba(230,226,218,.9);color:#1a1208}#tScope.on em{color:#1a1208}
+#tAds.on{--bd:var(--amb);--fill:rgba(230,226,218,.9);color:#1a1208}#tAds.on em{color:#1a1208}
 #tLower{--bd:rgba(255,255,255,.3)}
 #tBreath{--sz:auto;width:auto;height:48px;padding:0 16px;flex-direction:row;gap:8px;clip-path:polygon(0 0,calc(100% - var(--cut)) 0,100% var(--cut),100% 100%,0 100%)}
 #tBreath em{font-size:14px;color:var(--tx)}#tBreath.on{--fill:rgba(169,196,110,.9);color:#10200a}#tBreath.on em{color:#10200a}
@@ -498,7 +499,8 @@ input[type=range]{width:160px;accent-color:#E6E2DA;height:30px}
 #tFire{right:calc(24px + var(--sr));bottom:calc(92px + var(--sb))}
 #tReload{right:calc(110px + var(--sr));bottom:calc(72px + var(--sb))}
 #tJump{right:calc(18px + var(--sr));bottom:calc(14px + var(--sb))}
-#tScope{right:calc(108px + var(--sr));bottom:calc(140px + var(--sb))}
+#tView{right:calc(108px + var(--sr));bottom:calc(140px + var(--sb))}
+#tAds{right:calc(176px + var(--sr));bottom:calc(136px + var(--sb))}
 #tLower{right:calc(34px + var(--sr));bottom:calc(182px + var(--sb))}
 #tBreath{right:calc(176px + var(--sr));bottom:calc(196px + var(--sb))}
 #tUse{right:calc(16px + var(--sr));bottom:calc(254px + var(--sb));max-width:min(260px,calc(50vw - 190px))}#tSug{left:50%;transform:translateX(-50%);bottom:calc(124px + var(--sb))}#tLock{right:calc(16px + var(--sr));bottom:calc(312px + var(--sb))}
@@ -519,7 +521,8 @@ input[type=range]{width:160px;accent-color:#E6E2DA;height:30px}
 #tFire{right:calc(16px + var(--sr));bottom:calc(118px + var(--sb))}
 #tReload{right:calc(104px + var(--sr));bottom:calc(122px + var(--sb))}
 #tJump{right:calc(18px + var(--sr));bottom:calc(206px + var(--sb))}
-#tScope{right:calc(168px + var(--sr));bottom:calc(122px + var(--sb))}
+#tView{right:calc(168px + var(--sr));bottom:calc(122px + var(--sb))}
+#tAds{right:calc(18px + var(--sr));bottom:calc(342px + var(--sb))}
 #tLower{right:calc(18px + var(--sr));bottom:calc(274px + var(--sb))}
 #tBreath{left:calc(16px + var(--sl));bottom:calc(252px + var(--sb))}
 #tUse{left:50%;transform:translateX(-50%);bottom:calc(266px + var(--sb));max-width:calc(100vw - 170px)}#tSug{left:calc(16px + var(--sl));top:calc(12px + var(--st) + var(--mmw) + 12px);bottom:auto}#tLock{left:50%;transform:translateX(-50%);bottom:calc(322px + var(--sb))}
@@ -545,7 +548,7 @@ input[type=range]{width:160px;accent-color:#E6E2DA;height:30px}
 }
 @media (orientation:portrait) and (min-width:600px){#zone{display:block}}
 @media (max-width:420px){.istat{display:none}.ihead .close{margin-left:auto}}
-@media (orientation:portrait) and (max-height:700px){#vit{bottom:calc(62px + var(--sb))}#tFire,#tReload,#tScope,#tLight{bottom:calc(110px + var(--sb))}#tSprint{bottom:calc(174px + var(--sb))}#tJump{bottom:calc(194px + var(--sb))}#ammo{bottom:calc(192px + var(--sb))}#tUse{bottom:calc(252px + var(--sb))}#tBreath{bottom:calc(252px + var(--sb))}#tLower{bottom:calc(258px + var(--sb))}#gL{left:calc(124px + var(--sl));bottom:calc(182px + var(--sb))}}
+@media (orientation:portrait) and (max-height:700px){#vit{bottom:calc(62px + var(--sb))}#tFire,#tReload,#tView,#tLight{bottom:calc(110px + var(--sb))}#tSprint{bottom:calc(174px + var(--sb))}#tJump{bottom:calc(194px + var(--sb))}#ammo{bottom:calc(192px + var(--sb))}#tUse{bottom:calc(252px + var(--sb))}#tBreath{bottom:calc(252px + var(--sb))}#tLower{bottom:calc(258px + var(--sb))}#gL{left:calc(124px + var(--sl));bottom:calc(182px + var(--sb))}}
 
 
 /* ---------- linguagem visual 2 (24/11): painéis lisos e translúcidos como no Rust, botões de toque redondos como no PUBG Mobile,
@@ -602,7 +605,7 @@ button:focus-visible{outline:2px solid #E6E2DA}
 .tb:active{--fill:rgba(255,250,240,.2)}
 #tFire{--bd:rgba(255,250,240,.68);--fill:rgba(10,10,9,.36)}#tFire svg{color:#F4F1EA}#tFire em{color:#F4F1EA}
 #tFire.armed{--bd:#E2735C;--fill:rgba(140,40,25,.55)}
-#tScope.on,#tSprint.on,#tLight.on{--fill:rgba(244,241,234,.9);--bd:#F4F1EA;color:#151413}#tScope.on em,#tSprint.on em,#tLight.on em{color:#151413}
+#tAds.on,#tView.on,#tSprint.on,#tLight.on{--fill:rgba(244,241,234,.9);--bd:#F4F1EA;color:#151413}#tAds.on em,#tView.on em,#tSprint.on em,#tLight.on em{color:#151413}
 #tBreath{border-radius:24px}#tBreath.on{--fill:rgba(169,196,110,.92)}
 #tUse,#tLock{border-radius:2px;--fill:rgba(14,13,12,.8);--bd:rgba(255,250,240,.2)}
 #tUse i,#tLock svg{color:#F4F1EA}
@@ -707,7 +710,8 @@ body.mir #touch .tb>*,body.mir #touch .ghost{transform:scaleX(-1)}
     <button class="tb" id="tSug" hidden><img alt=""><span></span></button>
     <button class="tb" id="tUse" data-h="use" hidden><i><span class="ic-h">{{hand}}</span><span class="ic-d">{{door-open}}</span></i><span></span></button>
     <button class="tb" id="tFire" data-h="fire" aria-label="Disparar ou bater"><span class="ic-g">{{crosshair}}</span><span class="ic-m">{{hand-fist}}</span><span class="ic-b">{{hammer}}</span><span class="ic-x">{{bomb}}</span><em></em></button>
-    <button class="tb" id="tScope" data-h="scope" aria-label="Mira" hidden>{{scan-eye}}<em>Mira</em></button>
+    <button class="tb" id="tView" data-h="scope" aria-label="Passar para a 1.ª pessoa" aria-pressed="false">{{eye}}<em>1.ª pessoa</em></button>
+    <button class="tb" id="tAds" data-h="ads" aria-label="Apontar pela mira" hidden>{{scan-eye}}<em>Mira</em></button>
     <button class="tb" id="tLower" data-h="lower" aria-label="Baixar a arma" hidden>{{arrow-down-to-line}}<em>Baixar</em></button>
     <button class="tb" id="tBreath" data-h="breath" aria-label="Suster a respiração" hidden>{{wind}}<em>Respirar</em></button>
     <button class="tb" id="tJump" data-h="jump" aria-label="Saltar">{{chevrons-up}}<em>Saltar</em></button>
@@ -754,7 +758,7 @@ body.mir #touch .tb>*,body.mir #touch .ghost{transform:scaleX(-1)}
   <nav class="menu"><button class="mi pri" id="sCont" hidden><b>Continuar</b><em>Voltas onde ficaste</em></button><button class="mi pri" id="sPlay"><b>Jogar</b><em>Acordas perto de uma vila ou monumento</em></button><button class="mi" id="sSet"><b>Definições</b><em>Controlos, imagem e som</em></button></nav>
   <div class="onl" id="sOnl" role="status"><i class="dot" aria-hidden="true"></i><span><b>Servidor</b><em id="sOnT">A ver quem está a jogar…</em></span></div>
   <div class="keys" id="sKeys"></div>
-  <div class="foot">Protótipo 0.32 · um servidor para todos · quem sai fica a dormir no mundo</div>
+  <div class="foot">Protótipo 0.33 · um servidor para todos · quem sai fica a dormir no mundo</div>
 </div><button id="sMus" aria-label="Música do menu"><span class="on">{{volume-2}}</span><span class="off">{{volume-x}}</span></button><a class="credit" href="https://dinissousa.pt" target="_blank" rel="noopener">feito por dinissousa.pt</a></div>
 <div id="pfm" class="ov" hidden><div class="pfbox"><div class="pfh"><b id="pfT"></b><button class="close" id="pfX" aria-label="Fechar">{{x}}</button></div><div id="pfB" class="pfb"></div></div></div>
 <div id="adm" class="ov" hidden><div class="sp2"><div class="ihead"><b class="cond adh">Administração</b><span class="admr" id="admR"></span><div class="tabs" id="admTabs"><button data-t="p" class="on">Jogadores</button><button data-t="e">Eu</button><button data-t="b">Banidos</button><button data-t="c">Clãs</button></div><button class="close" id="admX" aria-label="Fechar">{{x}}</button></div><div class="sbody" id="admB"></div></div></div>

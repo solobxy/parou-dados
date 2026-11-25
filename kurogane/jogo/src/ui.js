@@ -24,8 +24,8 @@ export function initUI(G) {
   try { history.pushState({ kg: 1 }, ''); addEventListener('popstate', () => { try { history.pushState({ kg: 1 }, ''); } catch (e) { } if (!G.playing) return; if (G.invOpen) closeInv(); else if (G.mapOpen) toggleMap(false); else if (!$('set').hidden) closeSet(); else openSet(); }); } catch (e) { }
   // ---------- ecrã inicial
   $('sKeys').innerHTML = G.TOUCH
-    ? '<b>Polegar esquerdo</b><span>mover (até ao fim para correr)</span><b>Botão de disparo</b><span>1.º toque levanta a arma e mira no mais perto · arrasta para a cabeça · toca para disparar</span><b>Lado direito</b><span>arrastar ajusta a mira · com arma branca, toque = golpe</span><b>Botões</b><span>revistar e portas, recarregar, mira 4x/8x, inventário e mapa</span>'
-    : '<b>WASD</b><span>mover · Shift correr</span><b>Rato</b><span>botão direito levanta a arma (com mira 4x/8x vês pela mira) · clique dispara</span><b>E</b><span>revistar e portas · Tab inventário · R recarregar</span><b>1–6</b><span>cinto · M mapa · F lanterna · Q correr sempre · Shift na mira suster a respiração</span>';
+    ? '<b>Polegar esquerdo</b><span>mover (até ao fim para correr)</span><b>Botão de disparo</b><span>1.º toque levanta a arma e mira no mais perto · arrasta para a cabeça · toca para disparar</span><b>Lado direito</b><span>arrastar ajusta a mira · com arma branca, toque = golpe</span><b>Botões</b><span>revistar e portas, recarregar, olho (1.ª ou 3.ª pessoa), inventário e mapa</span>'
+    : '<b>WASD</b><span>mover · Shift correr</span><b>Rato</b><span>botão direito levanta a arma (com mira 4x/8x vês pela mira) · clique dispara</span><b>E</b><span>revistar e portas · Tab inventário · R recarregar</span><b>1–6</b><span>cinto · M mapa · F lanterna · Q correr sempre · V 1.ª ou 3.ª pessoa · Shift na mira suster a respiração</span>';
   const go = (cont, kit) => {
     const a = Conta.ativo(); if (!a || !a.nome) { askName(false, () => go(cont, kit)); return; }
     audio.start(); MUS.prime(['fundo', ...PER]); audio.play('ui');
@@ -71,9 +71,9 @@ export function initUI(G) {
   const mx = x => cfg.mirror ? innerWidth - x : x; // com os comandos trocados, o #touch está espelhado: o botão fica onde puseste o dedo
   const pad = (id, key) => {
     const el = $(id), kn = el.querySelector('.knob'), ki = kn.querySelector('i'); let pid = null, ox = 0, oy = 0, lx = 0, ly = 0, t0 = 0, maxM = 0, trk = false, moved = 0; const R = 50;
-    el.addEventListener('pointerdown', e => { if (pid !== null || !G.playing || G.invOpen) return; pid = e.pointerId; el.setPointerCapture(pid); ox = lx = e.clientX; oy = ly = e.clientY; t0 = performance.now(); maxM = 0; moved = 0; trk = key === 'R' && gunHeld(); $(key === 'L' ? 'gL' : 'gR').style.opacity = 0; if (trk) { if (!G.aimS.on) G.aimStart(); return; } kn.style.left = mx(ox) + 'px'; kn.style.top = oy + 'px'; kn.classList.add('on'); ki.style.transform = ''; G.sticks[key] = { x: 0, y: 0, m: 0 }; });
+    el.addEventListener('pointerdown', e => { if (pid !== null || !G.playing || G.invOpen) return; pid = e.pointerId; el.setPointerCapture(pid); ox = lx = e.clientX; oy = ly = e.clientY; t0 = performance.now(); maxM = 0; moved = 0; trk = key === 'R' && (gunHeld() || G.fpv.on); $(key === 'L' ? 'gL' : 'gR').style.opacity = 0; if (trk) { if (!G.aimS.on && !G.fpv.on) G.aimStart(); return; } kn.style.left = mx(ox) + 'px'; kn.style.top = oy + 'px'; kn.classList.add('on'); ki.style.transform = ''; G.sticks[key] = { x: 0, y: 0, m: 0 }; });
     el.addEventListener('pointermove', e => { if (e.pointerId !== pid) return; if (trk) { const dx = e.clientX - lx, dy = e.clientY - ly; lx = e.clientX; ly = e.clientY; moved += Math.abs(dx) + Math.abs(dy); G.aimDrag(dx, dy); return; } let dx = e.clientX - ox, dy = e.clientY - oy; const l = Math.hypot(dx, dy); if (l > R) { dx *= R / l; dy *= R / l; if (key === 'L' && l > R * 1.6) { ox = e.clientX - dx * 1.0; oy = e.clientY - dy * 1.0; kn.style.left = mx(ox) + 'px'; kn.style.top = oy + 'px'; } } const m = Math.min(1, l / R); maxM = Math.max(maxM, m); G.sticks[key] = { x: dx / R, y: dy / R, m }; ki.style.transform = `translate(${cfg.mirror ? -dx : dx}px,${dy}px)`; });
-    const up = e => { if (e.pointerId !== pid) return; pid = null; kn.classList.remove('on'); G.sticks[key] = null; if (key !== 'R') return; const quick = performance.now() - t0 < 260; if (quick && maxM < 0.35 && G.base.placing()) { G.base.pin(G.groundAt(e.clientX, e.clientY)); return; } /* a colocar um objeto: o toque escolhe o sítio */ if (trk) { if (quick && moved < 10) G.relock(); return; } if (quick && maxM < 0.35) G.tapAttack(); };
+    const up = e => { if (e.pointerId !== pid) return; pid = null; kn.classList.remove('on'); G.sticks[key] = null; if (key !== 'R') return; const quick = performance.now() - t0 < 260; if (quick && maxM < 0.35 && G.base.placing()) { G.base.pin(G.groundAt(e.clientX, e.clientY)); return; } /* a colocar um objeto: o toque escolhe o sítio */ if (trk) { if (G.fpv.on) { if (quick && moved < 10 && !gunHeld()) G.tapAttack(); return; } /* na 1.ª pessoa: toque rápido bate (com arma branca ou à mão) */ if (quick && moved < 10) G.relock(); return; } if (quick && maxM < 0.35) G.tapAttack(); };
     el.addEventListener('pointerup', up); el.addEventListener('pointercancel', up);
   };
   pad('padL', 'L'); pad('padR', 'R');
@@ -316,16 +316,16 @@ export function initUI(G) {
   // sensibilidade por defeito mais alta no telemóvel (o polegar anda pouco)
   const SENS0 = matchMedia('(pointer: coarse)').matches ? 1.7 : 1.2;
   const DEF = { v: 2, quick: true, mirror: false, sprintPush: true, assist: true, autoDoor: true, autoLean: true, sens: SENS0, sensV: 2, btn: 1, op: 1, shadows: true, lowres: false, fps: false, vol: 0.7, musMenu: 0.7, musGame: 0.5, soundViz: true, haptics: false,
-    hud: { mm: { on: 1 }, zone: { on: 1 }, tr: { on: 1 }, vit: { on: 1 }, belt: { on: 1 }, ammo: { on: 1 }, feed: { on: 1 }, reload: { on: 1 }, use: { on: 1 }, sprint: { on: 1 }, jump: { on: 1 }, fire: { on: 1 }, light: { on: 1 }, scope: { on: 1 }, lower: { on: 1 }, breath: { on: 1 } } };
-  const NAMES = { mm: 'Minimapa', zone: 'Zona', tr: 'Mapa, inventário e definições', vit: 'Vida, comida e água', belt: 'Cinto', ammo: 'Munições', feed: 'Avisos de recolha', reload: 'Recarregar', use: 'Revistar e portas', sprint: 'Correr sempre (Auto)', jump: 'Saltar', fire: 'Mirar e disparar', light: 'Lanterna', scope: 'Mira 4x/8x', lower: 'Baixar a arma', breath: 'Respirar' };
-  const BTN = ['reload', 'use', 'sprint', 'jump', 'fire', 'tr', 'light', 'scope', 'lower', 'breath'];
+    hud: { mm: { on: 1 }, zone: { on: 1 }, tr: { on: 1 }, vit: { on: 1 }, belt: { on: 1 }, ammo: { on: 1 }, feed: { on: 1 }, reload: { on: 1 }, use: { on: 1 }, sprint: { on: 1 }, jump: { on: 1 }, fire: { on: 1 }, light: { on: 1 }, scope: { on: 1 }, ads: { on: 1 }, lower: { on: 1 }, breath: { on: 1 } } };
+  const NAMES = { mm: 'Minimapa', zone: 'Zona', tr: 'Mapa, inventário e definições', vit: 'Vida, comida e água', belt: 'Cinto', ammo: 'Munições', feed: 'Avisos de recolha', reload: 'Recarregar', use: 'Revistar e portas', sprint: 'Correr sempre (Auto)', jump: 'Saltar', fire: 'Mirar e disparar', light: 'Lanterna', scope: 'Vista (1.ª ou 3.ª pessoa)', ads: 'Mira (na 1.ª pessoa)', lower: 'Baixar a arma', breath: 'Respirar' };
+  const BTN = ['reload', 'use', 'sprint', 'jump', 'fire', 'tr', 'light', 'scope', 'ads', 'lower', 'breath'];
   let cfg; try { cfg = JSON.parse(localStorage.getItem('kurogane-cfg-v1') || 'null'); } catch (e) { cfg = null; }
   if (cfg && cfg.v === 1) { cfg.v = 2; for (const k in cfg.hud) { const h = cfg.hud[k]; if (h.dx || h.dy || h.s) h.L = { dx: h.dx || 0, dy: h.dy || 0, s: h.s || 1 }; delete h.dx; delete h.dy; delete h.s; } if (cfg.hud.fire) cfg.hud.fire.on = 1; delete cfg.fire; }
   if (!cfg || cfg.v !== 2) cfg = JSON.parse(JSON.stringify(DEF)); for (const k in DEF) if (cfg[k] === undefined) cfg[k] = JSON.parse(JSON.stringify(DEF[k])); for (const k in DEF.hud) if (!cfg.hud[k]) cfg.hud[k] = { ...DEF.hud[k] };
   if (cfg.sensV !== 2) { if (cfg.sens === 1) cfg.sens = SENS0; cfg.sensV = 2; }
   if (!cfg.autoV) { cfg.autoV = 1; if (cfg.hud && cfg.hud.sprint) cfg.hud.sprint.on = 1; } // o botão de correr sempre passa a aparecer
   if (!cfg.q2) { cfg.q2 = 1; cfg.quick = true; } // 0.22: o botão grande passa a disparar logo (antes o 1.º toque só levantava a arma)
-  G.cfg = cfg;
+  G.cfg = cfg; G.fpFree = !!cfg.fpView; // a vista escolhida fica guardada
   const saveCfg = () => { try { localStorage.setItem('kurogane-cfg-v1', JSON.stringify(cfg)); } catch (e) { } };
 
   // ---------- música do menu: começa no primeiro toque (os browsers não deixam antes), entra e sai devagar
@@ -489,16 +489,16 @@ export function initUI(G) {
   // botão de disparo: 1.º toque levanta a arma; depois dispara; arrastar a partir dele mexe na mira
   { const el = $('tFire'); let pid = null, lx = 0, ly = 0;
     el.addEventListener('pointerdown', e => { e.stopPropagation(); e.preventDefault(); if (pid !== null) return; pid = e.pointerId; try { el.setPointerCapture(pid); } catch (er) { } lx = e.clientX; ly = e.clientY; G.fireDown(); });
-    el.addEventListener('pointermove', e => { if (e.pointerId !== pid) return; const dx = e.clientX - lx, dy = e.clientY - ly; lx = e.clientX; ly = e.clientY; if (gunHeld()) G.aimDrag(dx, dy); });
+    el.addEventListener('pointermove', e => { if (e.pointerId !== pid) return; const dx = e.clientX - lx, dy = e.clientY - ly; lx = e.clientX; ly = e.clientY; if (gunHeld() || G.fpv.on) G.aimDrag(dx, dy); });
     const end = e => { if (e.pointerId !== pid) return; pid = null; G.fireUp(); }; el.addEventListener('pointerup', end); el.addEventListener('pointercancel', end); }
-  hold($('tScope'), () => G.scopeToggle());
+  hold($('tView'), () => G.viewToggle()); hold($('tAds'), () => G.scopeToggle());
   // versão nova no site: aviso que tapa o jogo e um botão para recarregar (só na página do servidor)
   if (window.KG_ONLINE && window.KG_BUILD) { let shown = false; const chk = () => { if (shown || document.hidden) return; fetch('versao.txt?t=' + Date.now(), { cache: 'no-store' }).then(r => r.ok ? r.text() : null).then(v => { v = v && v.trim(); if (!v || v === window.KG_BUILD || !/^[0-9a-f]{12}$/.test(v)) return; shown = true; $('upd').hidden = false; $('updB').focus(); }).catch(() => {}); };
     $('updB').onclick = () => { G.updating = true; $('updB').textContent = 'A atualizar…'; location.reload(); }; setInterval(chk, 60000); document.addEventListener('visibilitychange', chk); setTimeout(chk, 15000); }
   // sugestão: a sangrar, com pouca vida, fome ou sede, mostra o melhor que tens para isso (um toque usa)
   let sugIt = null, sugT = 0; const sugEl = $('tSug');
   hold(sugEl, () => { if (sugIt) { G.use(sugIt); sugT = 0; } });
-  const suggest = () => { const p = G.p, I = G.inv; if (!p || !p.alive || p.use || G.car || G.fp || !G.playing) return null; const all = [...I.belt.filter(Boolean), ...I.bag.list.map(e => e.it)], U = it => ITEMS[it.k].use || {};
+  const suggest = () => { const p = G.p, I = G.inv; if (!p || !p.alive || p.use || G.car || (G.fp && (!G.fpv.on || G.aimS.scope)) || !G.playing) return null; const all = [...I.belt.filter(Boolean), ...I.bag.list.map(e => e.it)], U = it => ITEMS[it.k].use || {};
     const best = (f, sc) => { let b = null, bs = -1e9; for (const it of all) { const u = U(it); if (!f(u)) continue; const s = sc(u, it); if (s > bs) { bs = s; b = it; } } return b; };
     if (p.bleed) { const it = best(u => u.bleed, u => -(u.hp || 0)); if (it) return [it, 'Parar a hemorragia', 1]; }
     if (p.hp < 45) { const it = best(u => u.hp && !u.food, u => u.hp); if (it) return [it, 'Tratar-te', 1]; }
@@ -527,7 +527,7 @@ export function initUI(G) {
     body.innerHTML = '';
     const grp = (t, rows, cls = '') => { const g = document.createElement('div'); g.className = 'sgrp ' + cls; g.innerHTML = `<h3>${t}</h3>`; rows.forEach(r => g.appendChild(r)); body.appendChild(g); };
     const doors = row('Portas automáticas', 'Abrem quando vais contra elas e fecham-se atrás de ti. Desligado, abres e fechas com o botão.', tog(() => cfg.autoDoor, v => cfg.autoDoor = v));
-    const iron = row('Primeira pessoa sem mira', 'Nas espingardas sem mira (M4, AK, SMG, caça, metralhadoras), o botão «Mira» põe-te a apontar em primeira pessoa pela mira de ferro. Bom para entrar em prédios.', tog(() => cfg.fpIron !== false, v => cfg.fpIron = v));
+    const iron = row('Mira de ferro', 'Na 1.ª pessoa, nas espingardas sem mira (M4, AK, SMG, caça, metralhadoras), o botão «Mira» aponta pela mira de ferro da arma.', tog(() => cfg.fpIron !== false, v => cfg.fpIron = v));
     const lean = row('Espreitar nas esquinas', 'Ao apontar encostado a uma parede, esquina ou poste, o boneco inclina-se para o lado livre para conseguires disparar.', tog(() => cfg.autoLean, v => cfg.autoLean = v));
     const quick = row('Disparo rápido', 'O botão de disparar dispara logo (assim que a arma sobe). Desligado, o primeiro toque só levanta a arma.', tog(() => cfg.quick, v => cfg.quick = v));
     const mirror = row('Comandos para canhotos', 'Troca os lados: andas com o polegar direito, apontas e disparas com o esquerdo.', tog(() => cfg.mirror, v => { cfg.mirror = v; applyHud(); }));
@@ -919,12 +919,18 @@ export function initUI(G) {
       const spr = gun ? gun.spread * (1 - 0.6 * A.steady) * (Math.hypot(p.vx, p.vz) > 0.6 ? 1.7 : 1) : 0.02, dist = Math.hypot(A.A.x - p.x, A.A.z - p.z), r = clamp(spr * dist * (G.pxm || 20), 9, 46);
       xh.hidden = false; xh.style.transform = `translate(${q.x}px,${q.y}px)`; xh.style.setProperty('--r', r.toFixed(1) + 'px'); const zc = gun && A.zone ? 'z-' + A.zone : ''; const cls = (A.raise >= 1 || !gun ? 'up ' : '') + zc; if (xh.className !== cls) xh.className = cls;
       const zl = gun && A.zone ? { head: 'Cabeça', body: 'Corpo', arms: 'Braço', legs: 'Pernas' }[A.zone] : ''; if (vals.zl !== zl) { vals.zl = zl; xh.querySelector('.zl').textContent = zl; } }
+    else if (fp && G.fpv.on && p.alive && !G.invOpen && (A.adsT || 0) < 0.35) { // vista livre: mira no centro (com arma, o anel mostra quanto espalha à anca)
+      const cx = innerWidth / 2, cy = innerHeight / 2, spr = gun ? gun.spread * (1 - 0.6 * A.steady) * (Math.hypot(p.vx, p.vz) > 0.6 ? 1.5 : 1) : 0, fov = G.fpFov ? G.fpFov() : 70, r = gun ? clamp(spr / Math.tan(fov * Math.PI / 360) * innerHeight / 2, 7, 40) : 0;
+      xh.hidden = false; xh.style.transform = `translate(${cx}px,${cy}px)`; xh.style.setProperty('--r', r.toFixed(1) + 'px'); const cls = 'fpx ' + (gun ? (A.raise >= 1 ? 'up ' : '') + (A.zone ? 'z-' + A.zone : '') : 'up mel'); if (xh.className !== cls) xh.className = cls;
+      const zl = gun && A.zone ? { head: 'Cabeça', body: 'Corpo', arms: 'Braço', legs: 'Pernas' }[A.zone] : ''; if (vals.zl !== zl) { vals.zl = zl; xh.querySelector('.zl').textContent = zl; } }
     else xh.hidden = true;
     if (!hm.hidden && hitAt) { const q = G.proj(hitAt); hm.style.transform = `translate(${q.x}px,${q.y}px)`; hm.style.visibility = q.ok ? '' : 'hidden'; }
     if (hitT > 0) { hitT -= dt; if (hitT <= 0) hm.hidden = true; }
     ftT -= dt;
-    if (fpT > 0 && p.alive) { scEl.hidden = false; const R = scopeR(), SC = scopeC(), sm = t => t * t * (3 - 2 * t);
-      if (fp) { const e = sm(clamp((fpT - 0.55) / 0.45, 0, 1)); scEl.style.setProperty('--cx', SC.x + 'px'); scEl.style.setProperty('--cy', SC.y + 'px'); scEl.style.setProperty('--hr', (R * e).toFixed(1) + 'px'); scEl.style.setProperty('--ro', e.toFixed(3)); }
+    const fvo = !!G.fpv.on, adsT = A.adsT || 0;
+    if (fvo ? adsT > 0.001 && fp && p.alive : fpT > 0 && p.alive) { scEl.hidden = false; const R = scopeR(), SC = scopeC(), sm = t => t * t * (3 - 2 * t);
+      if (fvo) { const e = sm(adsT), far = Math.hypot(innerWidth, innerHeight); scEl.style.setProperty('--cx', SC.x + 'px'); scEl.style.setProperty('--cy', SC.y + 'px'); scEl.style.setProperty('--hr', (R + (far - R) * (1 - e)).toFixed(1) + 'px'); scEl.style.setProperty('--ro', e.toFixed(3)); } // na 1.ª pessoa: a luneta fecha à volta do centro
+      else if (fp) { const e = sm(clamp((fpT - 0.55) / 0.45, 0, 1)); scEl.style.setProperty('--cx', SC.x + 'px'); scEl.style.setProperty('--cy', SC.y + 'px'); scEl.style.setProperty('--hr', (R * e).toFixed(1) + 'px'); scEl.style.setProperty('--ro', e.toFixed(3)); }
       else { const e = sm(clamp(fpT / 0.55, 0, 1)), q = G.proj(A.A), far = Math.hypot(innerWidth, innerHeight); scEl.style.setProperty('--cx', q.x + 'px'); scEl.style.setProperty('--cy', q.y + 'px'); scEl.style.setProperty('--hr', (far * (1 - e) + 2).toFixed(1) + 'px'); scEl.style.setProperty('--ro', '0'); }
       scEl.style.setProperty('--r', R.toFixed(0) + 'px');
       const sc = G.scopeItem ? G.scopeItem() : it && it.att && it.att.scope ? ITEMS[it.att.scope] : null; const m8 = sc && sc.mag >= 8, rd = !!(sc && sc.rd); scEl.classList.toggle('m8', !!m8); scEl.classList.toggle('rd', rd); scEl.classList.toggle('ir', !!(sc && sc.iron)); scEl.classList.toggle('vm', !!G.vmOn); scEl.classList.toggle('z-head', A.zone === 'head'); setV('scMag', (sc ? sc.mag : 4) + '×'); setV('scDist', A.dist ? Math.round(A.dist) + ' m' : '');
@@ -936,14 +942,16 @@ export function initUI(G) {
     else { scEl.hidden = true; $('szero').hidden = true; }
     sugT -= dt; if (sugT <= 0) { sugT = 0.5; const s = suggest(); sugIt = s ? s[0] : null; sugEl.hidden = !s; if (s) { const key = s[0].k + s[1] + s[2]; if (vals.sug !== key) { vals.sug = key; sugEl.querySelector('img').src = G.ICONS[s[0].k]; sugEl.querySelector('span').textContent = s[1] + ' · ' + ITEMS[s[0].k].s; sugEl.classList.toggle('urg', !!s[2]); } } }
     // no carro: sem botões de armas, saltar ou correr
-    { const inCar = !!G.car; if (vals.car !== inCar) { vals.car = inCar; for (const id of ['tFire', 'tScope', 'tLower', 'tBreath', 'tJump', 'tSprint']) $(id).style.visibility = inCar ? 'hidden' : ''; }
+    { const inCar = !!G.car; if (vals.car !== inCar) { vals.car = inCar; for (const id of ['tFire', 'tView', 'tAds', 'tLower', 'tBreath', 'tJump', 'tSprint']) $(id).style.visibility = inCar ? 'hidden' : ''; }
       const drv = inCar && G.carSeat === 0 && p.alive; { const ha = drv && (VT[G.car.k] || {}).fly && (G.car.alt || 0) > 1; if (vals.ha !== ha) { vals.ha = ha; document.body.classList.toggle('heliAir', !!ha); if (!ha) G.hovSet(false); } } if (vals.drv !== drv) { vals.drv = drv; document.body.classList.toggle('driving', drv); if (!drv) for (const k in G.dIn) G.dIn[k] = 0; document.querySelectorAll('.dv.dn').forEach(e => e.classList.remove('dn')); }
       if (drv) { const fl = (VT[G.car.k] || {}).fly, lb = fl ? (G.car.v > 2.5 ? 'Travar' : (G.car.alt || 0) > 0.3 ? 'Descer' : 'Parado') : G.car.v > 0.5 ? 'Travar' : 'Trás', ub = fl ? ((G.car.alt || 0) < 0.3 && (G.car.rot || 0) < 0.92 ? 'Rotor…' : (G.car.alt || 0) < 0.3 ? 'Levantar' : 'Avançar') : 'Acelerar'; if (vals.dlb !== lb) { vals.dlb = lb; $('dDn').querySelector('em').textContent = lb; } if (vals.dub !== ub) { vals.dub = ub; $('dUp').querySelector('em').textContent = ub; } } }
     // botões das armas
     const fb = $('tFire'), armed = !!gun && A.raise >= 1; if (fb.classList.contains('armed') !== armed) fb.classList.toggle('armed', armed); if (fb.classList.contains('melee') !== !gun) fb.classList.toggle('melee', !gun); { const bk = G.buildK === 'planta' || G.buildK === 'martelo', hk2 = (G.inv.belt[G.sel] || {}).k, bm = hk2 === 'granada' || hk2 === 'c4'; if (fb.classList.contains('build') !== bk) fb.classList.toggle('build', bk); if (fb.classList.contains('boom') !== bm) fb.classList.toggle('boom', bm); }
     const hk = (G.inv.belt[G.sel] || {}).k, fl = G.base.placing() ? 'Colocar' : G.buildK === 'planta' ? 'Construir' : G.buildK === 'martelo' ? 'Melhorar' : hk === 'granada' ? 'Lançar' : hk === 'c4' ? 'Colocar' : gun ? (armed || cfg.quick ? 'Disparar' : A.on ? '' : 'Levantar') : 'Bater'; if (vals.fl !== fl) { vals.fl = fl; fb.querySelector('em').textContent = fl; }
-    const hasSc = !!(gun && G.scopeItem && G.scopeItem()); $('tScope').hidden = !hasSc; $('tLower').hidden = !(gun && A.on); $('tScope').classList.toggle('on', !!A.scope); $('tBreath').hidden = !fp || !!(it && it.att && it.att.scope === 'reddot') || !!(G.scopeItem && G.scopeItem() && G.scopeItem().iron); $('tBreath').classList.toggle('on', !!A.breathOn);
-    $('padR').querySelector('.knob').style.visibility = gun ? 'hidden' : ''; if (fp) { $('gR').style.opacity = 0; $('gL').style.opacity = 0; }
+    // olho: 1.ª ou 3.ª pessoa (sempre à mão). «Mira»: só na 1.ª pessoa, com uma arma que tenha mira (de ferro, ponto vermelho ou luneta)
+    const fv = !!G.fpv.on, hasSc = !!(gun && G.scopeItem && G.scopeItem()), vb = $('tView'); if (vals.fv !== G.fpFree) { vals.fv = G.fpFree; vb.classList.toggle('on', !!G.fpFree); vb.setAttribute('aria-pressed', G.fpFree ? 'true' : 'false'); vb.querySelector('em').textContent = G.fpFree ? '3.ª pessoa' : '1.ª pessoa'; vb.setAttribute('aria-label', G.fpFree ? 'Passar para a 3.ª pessoa' : 'Passar para a 1.ª pessoa'); }
+    $('tAds').hidden = !(fv && hasSc); $('tLower').hidden = !(gun && A.on); $('tAds').classList.toggle('on', !!A.scope); $('tBreath').hidden = !fp || !A.scope || !!(it && it.att && it.att.scope === 'reddot') || !!(G.scopeItem && G.scopeItem() && G.scopeItem().iron); $('tBreath').classList.toggle('on', !!A.breathOn);
+    $('padR').querySelector('.knob').style.visibility = gun || fv ? 'hidden' : ''; if (fp) { $('gR').style.opacity = 0; $('gL').style.opacity = 0; }
     // avisos
     if (toastT > 0) { toastT -= dt; if (toastT <= 0.3) toastEl.style.opacity = Math.max(0, toastT / 0.3); if (toastT <= 0) toastEl.hidden = true; }
     for (const o of SI) if (o.t > 0) { o.t -= dt; o.el.style.opacity = (Math.min(1, o.t / 0.4) * o.a).toFixed(2); }
@@ -956,7 +964,7 @@ export function initUI(G) {
   const resize = () => { if (OR() !== lastOr) { lastOr = OR(); applyHud(); } if (G.invOpen) { layout(); render(); } };
 
   return {
-    refresh, openInv, closeInv, toast, feed, hit, damage, death, toggleMap, frame, resize, safe, scopeR, scopeC,
+    refresh, openInv, closeInv, toast, saveCfg, feed, hit, damage, death, toggleMap, frame, resize, safe, scopeR, scopeC,
     closeDeath: () => { $('dead').hidden = true; clearInterval(dTick); }, sound, bedMenu, codeAsk, codeErr, codeDone, lockMenu, admRole, admList, admOpen, lbShow, lbOpen, trOpen, trRender, trOpenNow: () => !!trT, trWho: () => trT, trClose: () => { trEl.hidden = true; trT = null; },
     showHUD: msg => { $('hud').hidden = false; refresh(); toast(msg); },
     // sair para o menu (com 5 s parado se estiveres em combate)
