@@ -40,6 +40,7 @@ export const audio = {
     if (!this.on || !ctx || v < 0.02) return; const t = ctx.currentTime;
     switch (name) {
       case 'pistola': this.noise(t, 0.28, 5200, 300, 0.9 * v); this.tone(t, 0.12, 180, 50, 0.6 * v, 'triangle'); break;
+      case 'grosso': this.noise(t, 0.5, 3200, 140, 1.0 * v); this.tone(t, 0.28, 90, 28, 0.9 * v, 'triangle'); this.noise(t + 0.03, 0.9, 900, 60, 0.35 * v); break;
       case 'm4': this.noise(t, 0.2, 6500, 400, 0.75 * v); this.tone(t, 0.09, 140, 45, 0.55 * v, 'triangle'); break;
       case 'vazio': this.tone(t, 0.03, 1800, 1200, 0.25 * v, 'square'); break;
       case 'recarregar': this.tone(t, 0.04, 900, 600, 0.2 * v, 'square'); this.tone(t + 0.5, 0.05, 700, 500, 0.25 * v, 'square'); this.noise(t + 0.9, 0.08, 3000, 1500, 0.3 * v, 'bandpass', 2); break;

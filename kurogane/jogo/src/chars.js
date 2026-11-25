@@ -1,9 +1,10 @@
 // Personagem do jogador (com equipamento visível) e zombies (desenhados todos de uma vez).
 import * as THREE from 'three';
 import { Builder, mat4, shade } from './builder.js';
+import { ITEMS, TINTS } from './items.js';
 
 export const HIP = 0.92, SHY = 1.42, SHX = 0.27;
-export const LONG = ['m4', 'ak', 'smg', 'cacadeira', 'caca'];
+export const LONG = ['m4', 'ak', 'smg', 'cacadeira', 'caca', 'cheytac', 'barrett', 'm249', 'pkm'];
 
 const geoOf = fn => { const b = new Builder(0); fn(b); const out = {}; for (const k of [...b.buckets.keys()]) out[k] = b.merged(k); return out; };
 const meshOf = (geos, mats, shadow = true) => { const g = new THREE.Group(); for (const k in geos) { const m = new THREE.Mesh(geos[k], mats[k] || mats.v); m.castShadow = shadow; m.receiveShadow = true; g.add(m); } return g; };
@@ -58,16 +59,55 @@ export function partGeos(c) {
   return { leg, arm, torso };
 }
 
-export function gearGeos() {
-  const OLV = 0x5f6844, TAN = 0x8a7a55;
-  return {
-    head: geoOf(b => { b.sph(0.185, 0, 0.92, 0.0, OLV, { th: Math.PI * 0.55, ws: 14, hs: 8 }); b.rbox(0.08, 0.06, 0.05, 0.015, 0, 1.04, 0.16, 0x2a2b2c); for (const s of [-1, 1]) b.rbox(0.03, 0.09, 0.12, 0.01, s * 0.175, 0.86, 0.02, shade(OLV, 0.8)); }),
-    vest: geoOf(b => { b.rbox(0.54, 0.44, 0.36, 0.06, 0, 0.44, 0, TAN); for (const x of [-0.15, 0, 0.15]) b.rbox(0.12, 0.15, 0.07, 0.02, x, 0.33, 0.19, shade(TAN, 0.8)); b.rbox(0.07, 0.15, 0.05, 0.015, 0.2, 0.56, 0.19, 0x2a2b2c); }),
-    back: geoOf(b => { b.rbox(0.42, 0.52, 0.26, 0.08, 0, 0.44, -0.27, 0x7a5f3c); b.rbox(0.3, 0.2, 0.09, 0.03, 0, 0.32, -0.43, 0x634c30); b.cyl(0.1, 0.1, 0.5, 10, 0, 0.76, -0.27, 0x8a4b36, { rz: Math.PI / 2 }); for (const s of [-0.13, 0.13]) b.box(0.05, 0.46, 0.02, s, 0.46, 0.15, 0x4e3c24); }),
-  };
+// cores e camuflados do equipamento: repinta só os triângulos da cor base (e tons dela), o resto (fivelas, bolsos escuros) fica
+const CAMO = { camo: [0x4b5a32, 0x6e6b3e, 0x3b3326, 0x25271d], urb: [0x8e9092, 0x5f6265, 0xb7b8b4, 0x3c3e41] };
+const _tb = new THREE.Color(), _tc = new THREE.Color();
+export function retint(geos, base, tint) {
+  _tb.set(base); const pal = CAMO[tint];
+  for (const k in geos) { const g = geos[k], col = g.attributes.color, pos = g.attributes.position;
+    for (let i = 0; i + 2 < col.count; i += 3) {
+      const sr = col.getX(i) / _tb.r, sg = col.getY(i) / _tb.g, sb = col.getZ(i) / _tb.b, s = (sr + sg + sb) / 3;
+      if (!(s > 0.35 && s < 1.4) || Math.max(sr, sg, sb) - Math.min(sr, sg, sb) > 0.15) continue;
+      if (pal) { let x = (pos.getX(i) + pos.getX(i + 1) + pos.getX(i + 2)) / 3, y = (pos.getY(i) + pos.getY(i + 1) + pos.getY(i + 2)) / 3, z = (pos.getZ(i) + pos.getZ(i + 1) + pos.getZ(i + 2)) / 3;
+        if (tint === 'urb') { x = Math.round(x / 0.045) * 0.045; y = Math.round(y / 0.045) * 0.045; z = Math.round(z / 0.045) * 0.045; }
+        const v = Math.sin(x * 21 + Math.sin(z * 17) * 1.8) + Math.sin(y * 19 + z * 13) + Math.sin(x * 11 - y * 23 + 1.3);
+        _tc.setHex(pal[Math.max(0, Math.min(3, Math.floor((v + 2.4) / 4.8 * 4)))]); }
+      else _tc.setHex(tint);
+      for (let j = 0; j < 3; j++) col.setXYZ(i + j, _tc.r * s, _tc.g * s, _tc.b * s);
+    }
+    col.needsUpdate = true; }
+  return geos;
 }
+// fato ghillie: tufos de folhas e fios por cima do corpo, braços e pernas (sementes fixas: igual em todos)
+const GHC = [0x4a5a2c, 0x5f6a34, 0x3c4a26, 0x6b6440, 0x2f3a1f, 0x54502e];
+const ghillie = (fn, seed) => geoOf(b => { let s = seed; const r = () => { s = (s * 16807) % 2147483647; return s / 2147483647; }; fn(b, r, () => GHC[Math.floor(r() * GHC.length)]); });
+export function gearGeos() {
+  const OLV = 0x5f6844, TAN = 0x8a7a55; let gearHead, gearVest;
+  const G = {
+    head: geoOf(gearHead = b => { b.sph(0.185, 0, 0.92, 0.0, OLV, { th: Math.PI * 0.55, ws: 14, hs: 8 }); b.rbox(0.08, 0.06, 0.05, 0.015, 0, 1.04, 0.16, 0x2a2b2c); for (const s of [-1, 1]) b.rbox(0.03, 0.09, 0.12, 0.01, s * 0.175, 0.86, 0.02, shade(OLV, 0.8)); }),
+    vest: geoOf(gearVest = b => { b.rbox(0.54, 0.44, 0.36, 0.06, 0, 0.44, 0, TAN); for (const x of [-0.15, 0, 0.15]) b.rbox(0.12, 0.15, 0.07, 0.02, x, 0.33, 0.19, shade(TAN, 0.8)); b.rbox(0.07, 0.15, 0.05, 0.015, 0.2, 0.56, 0.19, 0x2a2b2c); }),
+    back: geoOf(b => { b.rbox(0.42, 0.52, 0.26, 0.08, 0, 0.44, -0.27, 0x7a5f3c); b.rbox(0.3, 0.2, 0.09, 0.03, 0, 0.32, -0.43, 0x634c30); b.cyl(0.1, 0.1, 0.5, 10, 0, 0.76, -0.27, 0x8a4b36, { rz: Math.PI / 2 }); for (const s of [-0.13, 0.13]) b.box(0.05, 0.46, 0.02, s, 0.46, 0.15, 0x4e3c24); }),
+    // óculos de visão noturna: suporte na testa e dois tubos para a frente
+    eyes: geoOf(b => { b.rbox(0.12, 0.05, 0.05, 0.012, 0, 1.0, 0.17, 0x1e2022); for (const s of [-1, 1]) { b.cyl(0.024, 0.026, 0.08, 10, s * 0.034, 0.97, 0.22, 0x26292c, { rx: Math.PI / 2 }); b.cyl(0.02, 0.02, 0.006, 10, s * 0.034, 0.97, 0.262, 0x3c6a46, { rx: Math.PI / 2 }); } b.box(0.36, 0.025, 0.025, 0, 0.98, 0.0, 0x1a1b1c, { rx: 0 }); }),
+    suit: ghillie((b, r, c) => {
+      for (let i = 0; i < 70; i++) { const a = r() * Math.PI * 2, y = -0.02 + r() * 0.76, rx = 0.25 + 0.04 * Math.sin(y * 5), rz = 0.17; b.ico(0.055 + r() * 0.05, Math.sin(a) * rx, y, Math.cos(a) * rz, c(), { rx: r() * 3, ry: r() * 3 }); }
+      for (let i = 0; i < 26; i++) { const a = r() * Math.PI * 2, t = r() * Math.PI * 0.55; b.ico(0.05 + r() * 0.035, Math.sin(a) * Math.sin(t) * 0.2, 0.93 + Math.cos(t) * 0.18, Math.cos(a) * Math.sin(t) * 0.2 - 0.02, c(), { rx: r() * 3 }); }
+      for (let i = 0; i < 30; i++) { const a = r() * Math.PI * 2, y = -0.02 + r() * 0.9; b.box(0.022, 0.16 + r() * 0.12, 0.012, Math.sin(a) * 0.27, y, Math.cos(a) * 0.19, c(), { ry: a, rx: (r() - 0.5) * 0.6, rz: (r() - 0.5) * 0.6 }); }
+    }, 7),
+    suitArm: ghillie((b, r, c) => { for (let i = 0; i < 14; i++) { const a = r() * Math.PI * 2, y = -r() * 0.5; b.ico(0.045 + r() * 0.03, Math.sin(a) * 0.075, y, Math.cos(a) * 0.075, c(), { rx: r() * 3 }); } }, 11),
+    suitLeg: ghillie((b, r, c) => { for (let i = 0; i < 18; i++) { const a = r() * Math.PI * 2, y = -r() * 0.75; b.ico(0.05 + r() * 0.035, Math.sin(a) * 0.1, y, Math.cos(a) * 0.1, c(), { rx: r() * 3 }); } }, 13),
+  };
+  // capacete e colete de outras cores (as chaves são as dos itens: capacetep, coletec…)
+  for (const t in TINTS) { G['head_' + t] = retint(geoOf(gearHead), OLV, TINTS[t][1]); G['vest_' + t] = retint(geoOf(gearVest), TAN, TINTS[t][1]); }
+  return G;
+}
+// que peças mostrar para o equipamento que tens (aceita só chaves: { head: { k: 'capacetec' } })
+export const gearKeys = eq => { const out = new Set(); for (const s in eq) { const it = eq[s]; if (!it) continue; const d = ITEMS[it.k]; out.add(s + (d && d.tk ? '_' + d.tk : '')); } return out; };
 
 // armas: rifle no espaço do tronco (cano em +z); as outras na mão direita (ao longo de -y do braço)
+// onde fica a mira de ponto vermelho em cada arma (altura e distância no espaço da arma); a vista na 1.ª pessoa usa o mesmo sítio
+export const RDP = { m4: [0.085, 0.12], ak: [0.085, 0.1], smg: [0.07, 0.06], caca: [0.075, 0.12], m249: [0.085, 0.06], pkm: [0.085, 0.06] };
+export const WPUSH = [0.07, SHY - HIP - 0.12, 0.16];
 export function weaponGeos() {
   const BLK = 0x1c1e21, WOOD = 0x7a5232, ST = 0x8f8d86;
   const inHand = fn => geoOf(b => { b.push(0, -0.56, 0, 0, Math.PI / 2, 0); fn(b); b.pop(); });
@@ -87,6 +127,11 @@ export function weaponGeos() {
     ak: geoOf(b => { b.push(0.07, SHY - HIP - 0.12, 0.16); b.rbox(0.065, 0.1, 0.5, 0.015, 0, 0, 0.12, 0x3a3c3e, { mat: 'm' }); b.rbox(0.07, 0.07, 0.24, 0.015, 0, -0.005, 0.46, 0x8a5a32); b.cyl(0.013, 0.013, 0.3, 8, 0, 0.01, 0.74, BLK, { rx: Math.PI / 2, mat: 'm' }); b.rbox(0.045, 0.2, 0.07, 0.015, 0, -0.14, 0.22, 0x3a3c3e, { rx: 0.4 }); b.rbox(0.055, 0.12, 0.3, 0.02, 0, -0.03, -0.25, 0x8a5a32); b.pop(); }),
     cacadeira: geoOf(b => { b.push(0.07, SHY - HIP - 0.12, 0.16); b.cyl(0.024, 0.024, 0.8, 10, 0, 0.03, 0.48, BLK, { rx: Math.PI / 2, mat: 'm' }); b.cyl(0.02, 0.02, 0.62, 10, 0, -0.02, 0.4, 0x2a2c2e, { rx: Math.PI / 2, mat: 'm' }); b.rbox(0.07, 0.07, 0.22, 0.02, 0, -0.02, 0.36, WOOD); b.rbox(0.07, 0.12, 0.26, 0.02, 0, 0.0, 0.02, BLK, { mat: 'm' }); b.rbox(0.06, 0.12, 0.34, 0.03, 0, -0.04, -0.28, WOOD); b.pop(); }),
     caca: geoOf(b => { b.push(0.07, SHY - HIP - 0.12, 0.16); b.cyl(0.016, 0.016, 0.66, 10, 0, 0.03, 0.62, BLK, { rx: Math.PI / 2, mat: 'm' }); b.rbox(0.065, 0.07, 0.62, 0.025, 0, -0.005, 0.22, 0x7a4a2a); b.rbox(0.06, 0.12, 0.32, 0.03, 0, -0.03, -0.24, 0x7a4a2a); b.pop(); }),
+    // armas pesadas: duas de precisão (ferrolho .408 e semiautomática .50) e duas metralhadoras com caixa de fita
+    cheytac: geoOf(b => { b.push(0.07, SHY - HIP - 0.12, 0.16); const C = 0x6b6450; b.rbox(0.065, 0.1, 0.52, 0.015, 0, 0, 0.12, C); b.cyl(0.017, 0.017, 0.72, 8, 0, 0.01, 0.72, BLK, { rx: Math.PI / 2, mat: 'm' }); b.cyl(0.03, 0.03, 0.07, 8, 0, 0.01, 1.1, BLK, { rx: Math.PI / 2, mat: 'm' }); b.rbox(0.06, 0.13, 0.32, 0.02, 0, -0.02, -0.27, C); b.box(0.05, 0.03, 0.14, 0, 0.06, -0.3, C); b.rbox(0.05, 0.1, 0.07, 0.012, 0, -0.1, 0.14, BLK); b.rbox(0.045, 0.12, 0.06, 0.012, 0, -0.1, -0.04, BLK, { rx: -0.3 }); for (const s of [-1, 1]) b.cyl(0.006, 0.006, 0.26, 5, s * 0.012, -0.016, 0.62, BLK, { rx: Math.PI / 2 }); b.pop(); }),
+    barrett: geoOf(b => { b.push(0.07, SHY - HIP - 0.12, 0.16); const C = 0x2b2d30; b.rbox(0.08, 0.13, 0.64, 0.02, 0, 0, 0.12, C, { mat: 'm' }); b.cyl(0.024, 0.024, 0.6, 8, 0, 0.015, 0.74, BLK, { rx: Math.PI / 2, mat: 'm' }); b.rbox(0.1, 0.05, 0.11, 0.01, 0, 0.015, 1.08, BLK, { mat: 'm' }); b.rbox(0.07, 0.14, 0.3, 0.02, 0, -0.02, -0.33, C); b.rbox(0.06, 0.15, 0.11, 0.012, 0, -0.13, 0.2, BLK); b.rbox(0.05, 0.13, 0.06, 0.012, 0, -0.11, -0.06, BLK, { rx: -0.3 }); for (const s of [-1, 1]) b.cyl(0.008, 0.008, 0.28, 5, s * 0.016, -0.02, 0.7, BLK, { rx: Math.PI / 2 }); b.pop(); }),
+    m249: geoOf(b => { b.push(0.07, SHY - HIP - 0.12, 0.16); b.rbox(0.08, 0.11, 0.48, 0.015, 0, 0, 0.1, 0x2b2d30, { mat: 'm' }); b.cyl(0.017, 0.017, 0.46, 8, 0, 0.01, 0.6, BLK, { rx: Math.PI / 2, mat: 'm' }); b.cyl(0.032, 0.032, 0.2, 10, 0, 0.012, 0.46, 0x3a3c3e, { rx: Math.PI / 2 }); b.rbox(0.13, 0.13, 0.1, 0.015, -0.015, -0.13, 0.12, 0x4b5a32); b.rbox(0.06, 0.12, 0.28, 0.02, 0, -0.02, -0.26, 0x2b2d30); b.rbox(0.045, 0.11, 0.06, 0.012, 0, -0.1, -0.04, BLK, { rx: -0.3 }); b.box(0.02, 0.035, 0.025, 0, 0.04, 0.78, BLK); for (const s of [-1, 1]) b.cyl(0.006, 0.006, 0.22, 5, s * 0.012, -0.016, 0.68, BLK, { rx: Math.PI / 2 }); b.pop(); }),
+    pkm: geoOf(b => { b.push(0.07, SHY - HIP - 0.12, 0.16); b.rbox(0.075, 0.11, 0.46, 0.015, 0, 0, 0.1, 0x3a3c3e, { mat: 'm' }); b.cyl(0.018, 0.018, 0.52, 8, 0, 0.01, 0.6, BLK, { rx: Math.PI / 2, mat: 'm' }); b.cyl(0.03, 0.03, 0.06, 8, 0, 0.01, 0.88, BLK, { rx: Math.PI / 2 }); b.rbox(0.12, 0.13, 0.1, 0.015, -0.015, -0.13, 0.1, 0x3a3c3e, { mat: 'm' }); b.rbox(0.05, 0.11, 0.3, 0.02, 0, -0.03, -0.26, 0x8a5a32); b.box(0.03, 0.06, 0.16, 0, 0.01, -0.24, 0x8a5a32); b.rbox(0.045, 0.11, 0.06, 0.012, 0, -0.1, -0.04, 0x8a5a32, { rx: -0.3 }); for (const s of [-1, 1]) b.cyl(0.006, 0.006, 0.22, 5, s * 0.012, -0.016, 0.72, BLK, { rx: Math.PI / 2 }); b.pop(); }),
     // acessórios: silenciador na ponta do cano e mira por cima
     ...(() => { const o = {}; const BY = SHY - HIP - 0.12;
       const sup = (y, z, r, l) => geoOf(b => { b.push(0.07, BY, 0.16); b.cyl(r, r, l, 12, 0, y, z + l / 2, 0x2c2e30, { rx: Math.PI / 2, mat: 'm' }); for (let i = 1; i < 4; i++) b.cyl(r + 0.002, r + 0.002, 0.008, 12, 0, y, z + l * i / 4, 0x17181a, { rx: Math.PI / 2 }); b.pop(); });
@@ -94,11 +139,13 @@ export function weaponGeos() {
       o.sup_m4 = sup(0.005, 0.98, 0.026, 0.24); o.sup_ak = sup(0.01, 0.89, 0.026, 0.24); o.sup_caca = sup(0.03, 0.95, 0.024, 0.26); o.sup_smg = sup(0.01, 0.41, 0.024, 0.2);
       o.sup_pistola = inHand(b => { b.cyl(0.02, 0.02, 0.16, 12, 0, 0.03, 0.245, 0x2c2e30, { rx: Math.PI / 2, mat: 'm' }); });
       o.sc_m4 = sc(0.1, 0.14); o.sc_ak = sc(0.1, 0.12); o.sc_caca = sc(0.1, 0.14); o.sc8_caca = sc(0.11, 0.14, true);
+      o.sup_cheytac = sup(0.01, 1.14, 0.032, 0.26); o.sc_cheytac = sc(0.1, 0.12); o.sc8_cheytac = sc(0.11, 0.12, true); o.sc_barrett = sc(0.12, 0.1); o.sc8_barrett = sc(0.13, 0.1, true);
+      o.sc_m249 = sc(0.1, 0.08); o.sc_pkm = sc(0.1, 0.08);
       // ponto vermelho (caixa baixa com vidro) e lanterna por baixo do cano
       const rd = (y, z) => geoOf(b => { b.push(0.07, BY, 0.16); b.box(0.045, 0.012, 0.07, 0, y - 0.02, z, 0x2a2c2e, { mat: 'm' }); b.box(0.006, 0.05, 0.06, -0.022, y + 0.01, z, BLK, { mat: 'm' }); b.box(0.006, 0.05, 0.06, 0.022, y + 0.01, z, BLK, { mat: 'm' }); b.box(0.05, 0.008, 0.06, 0, y + 0.038, z, BLK, { mat: 'm' }); b.box(0.038, 0.04, 0.004, 0, y + 0.012, z + 0.028, 0x8ab8d8); b.pop(); });
-      o.rd_m4 = rd(0.085, 0.12); o.rd_ak = rd(0.085, 0.1); o.rd_smg = rd(0.07, 0.06); o.rd_caca = rd(0.075, 0.12);
+      for (const k in RDP) o['rd_' + k] = rd(...RDP[k]);
       const lt = (y, z) => geoOf(b => { b.push(0.07, BY, 0.16); b.cyl(0.016, 0.016, 0.09, 10, 0, y, z, BLK, { rx: Math.PI / 2, mat: 'm' }); b.cyl(0.019, 0.016, 0.02, 10, 0, y, z + 0.05, BLK, { rx: Math.PI / 2, mat: 'm' }); b.cyl(0.015, 0.015, 0.003, 10, 0, y, z + 0.062, 0xfff4d8, { rx: Math.PI / 2, mat: 'lit' }); b.box(0.012, 0.02, 0.05, 0, y + 0.02, z, 0x2a2c2e); b.pop(); });
-      o.lt_m4 = lt(-0.055, 0.6); o.lt_ak = lt(-0.05, 0.6); o.lt_smg = lt(-0.055, 0.28); o.lt_caca = lt(-0.035, 0.62); o.lt_cacadeira = lt(-0.05, 0.62);
+      o.lt_m4 = lt(-0.055, 0.6); o.lt_ak = lt(-0.05, 0.6); o.lt_smg = lt(-0.055, 0.28); o.lt_caca = lt(-0.035, 0.62); o.lt_cacadeira = lt(-0.05, 0.62); o.lt_m249 = lt(-0.06, 0.4); o.lt_pkm = lt(-0.06, 0.42);
       o.lt_pistola = inHand(b => { b.cyl(0.014, 0.014, 0.07, 10, 0, -0.035, 0.1, BLK, { rx: Math.PI / 2, mat: 'm' }); b.cyl(0.012, 0.012, 0.003, 10, 0, -0.035, 0.137, 0xfff4d8, { rx: Math.PI / 2, mat: 'lit' }); });
       return o; })(),
     katana: inHand(b => { b.cyl(0.02, 0.022, 0.25, 8, 0, 0, -0.02, 0x2a2230, { rx: Math.PI / 2 }); b.cyl(0.045, 0.045, 0.012, 14, 0, 0, 0.11, 0x3a3328, { rx: Math.PI / 2, mat: 'm' }); b.box(0.01, 0.045, 0.76, 0, 0, 0.5, 0xd6dade, { mat: 'm' }); }),
@@ -114,14 +161,15 @@ export class Body {
     this.torso.add(meshOf(P.torso, mats));
     this.legs = [-1, 1].map(s => { const g = meshOf(P.leg, mats); g.position.set(s * 0.11, HIP, 0); this.root.add(g); return g; });
     this.arms = [-1, 1].map(s => { const g = meshOf(P.arm, mats); g.position.set(s * SHX, SHY - HIP, 0); this.torso.add(g); return g; });
-    this.gear = {}; for (const k in G) { const g = meshOf(G[k], mats); g.visible = false; this.torso.add(g); this.gear[k] = g; }
+    this.gear = {}; for (const k in G) { if (k === 'suitArm' || k === 'suitLeg') continue; const g = meshOf(G[k], mats); g.visible = false; this.torso.add(g); this.gear[k] = g; }
+    this.suitX = [...this.arms.map(a => { const g = meshOf(G.suitArm, mats); a.add(g); return g; }), ...this.legs.map(l => { const g = meshOf(G.suitLeg, mats); l.add(g); return g; })]; for (const g of this.suitX) g.visible = false;
     this.weps = {}; for (const k in Wp) { const g = meshOf(Wp[k], mats); g.visible = false; const base = k.replace(/^(sup|sc8|sc|rd|lt)_/, ''); (LONG.includes(base) ? this.torso : this.arms[1]).add(g); this.weps[k] = g; }
     // o que tens na mão ao usar: comida, bebida ou ligadura
     this.props = { eat: meshOf(geoOf(b => { b.rbox(0.13, 0.17, 0.05, 0.02, 0, 0, 0, 0xd8c8a0); b.box(0.135, 0.05, 0.055, 0, 0.05, 0, 0xc8321e); }), mats), drink: meshOf(geoOf(b => { b.cyl(0.04, 0.04, 0.2, 10, 0, 0, 0, 0x8ab8d8); b.cyl(0.02, 0.025, 0.04, 8, 0, 0.12, 0, 0x2a6aa8); }), mats), heal: meshOf(geoOf(b => { b.cyl(0.05, 0.05, 0.08, 12, 0, 0, 0, 0xf2f0ea, { rz: Math.PI / 2 }); }), mats) };
     for (const k in this.props) { const m = this.props[k]; m.visible = false; m.position.set(0, -0.6, 0.05); this.arms[1].add(m); }
     this.phase = 0;
   }
-  setGear(eq) { for (const k in this.gear) this.gear[k].visible = !!eq[k]; }
+  setGear(eq) { const on = gearKeys(eq); for (const k in this.gear) this.gear[k].visible = on.has(k); for (const g of this.suitX) g.visible = on.has('suit'); }
   setWeapon(k, att = {}) { const sc = att.scope ? (att.scope === 'mira8' ? 'sc8_' : att.scope === 'reddot' ? 'rd_' : 'sc_') + k : null, sp = att.sup ? 'sup_' + k : null, lt = att.light ? 'lt_' + k : null; const vis = [sc, sp, lt].filter(w => w && this.weps[w]); for (const w in this.weps) this.weps[w].visible = w === k || vis.includes(w); this.wk = k; this.wkAtt = vis; }
   // anim: mv (0..1.5), mode ('rifle','pistol','melee','none'), swing (0..1 ou -1), dt
   pose(dt, mv, mode, swing = -1, recoil = 0, twist = 0, climb = -1, step = 0, raise = 1, use = null) {

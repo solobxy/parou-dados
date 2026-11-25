@@ -12,7 +12,9 @@ import { VT, vt } from './jogo/src/vtypes.js';
 const PORT = +process.env.PORT || 3190, DIR = process.env.STATE_DIRECTORY || path.join(process.cwd(), 'dados');
 const FILE = path.join(DIR, 'estado.json'), SLEEP_MS = 72 * 3600e3, BAG_MS = 45 * 60e3, MAXP = 60;
 // munições: velocidade (m/s), dano, perfuração, arrasto, bagos
-const AM = { a9: [360, 30, 1.5, 0.0018], a9s: [300, 27, 1.3, 0.002], a556: [940, 34, 2.8, 0.0012], a762: [715, 40, 2.6, 0.0011], a308: [850, 95, 3.4, 0.0007], a357: [440, 48, 2, 0.0016], c12: [400, 16, 1, 0.004, 8], c12s: [490, 85, 2.2, 0.0022] };
+const AM = { a9: [360, 30, 1.5, 0.0018], a9s: [300, 27, 1.3, 0.002], a556: [940, 34, 2.8, 0.0012], a762: [715, 40, 2.6, 0.0011], a308: [850, 95, 3.4, 0.0007], a357: [440, 48, 2, 0.0016], c12: [400, 16, 1, 0.004, 8], c12s: [490, 85, 2.2, 0.0022], a408: [900, 140, 4, 0.0005], a50: [850, 175, 5, 0.0006], a754: [825, 58, 3.2, 0.0008] };
+const GKS = ['head', 'vest', 'suit', 'eyes', 'back']; // equipamento à vista (ghillie e visão noturna incluídos)
+const HEAVY = new Set(['a408', 'a50']), CARX = { a50: 3, a408: 1.4 }; // calibres grossos: som próprio; a .50 desfaz veículos
 const NAME = /^[A-Za-z0-9_À-ÖØ-öø-ÿ-]{3,16}$/;
 
 // ---------- estado (gravado em disco)
@@ -99,12 +101,13 @@ const diffT = (A, B) => { const out = {}; for (const k of new Set([...Object.key
 const fits = (need, T) => Object.entries(need).every(([k, n]) => (T[k] || 0) >= n);
 const addT = (T, X, s = 1) => { for (const [k, n] of Object.entries(X)) { T[k] = (T[k] || 0) + s * n; if (T[k] <= 0) delete T[k]; } };
 const ledOf = p => { let L = S.led[p.tok]; if (!L) { L = S.led[p.tok] = { T: { ...KIT }, inv: null, g: !!(S.tokens[p.tok] && S.tokens[p.tok].g) }; dirty = true; } return L; };
-const cleanInv = m => ({ bag: cleanIt(m.bag), belt: (Array.isArray(m.belt) ? m.belt.slice(0, 6) : []).map(o => o ? cleanIt([o])[0] || null : null), eq: Object.fromEntries(['head', 'vest', 'back'].map(s => [s, m.eq && m.eq[s] ? cleanIt([m.eq[s]])[0] || null : null])) });
+const cleanInv = m => ({ bag: cleanIt(m.bag), belt: (Array.isArray(m.belt) ? m.belt.slice(0, 6) : []).map(o => o ? cleanIt([o])[0] || null : null), eq: Object.fromEntries(['head', 'eyes', 'suit', 'vest', 'back'].map(s => [s, m.eq && m.eq[s] ? cleanIt([m.eq[s]])[0] || null : null])) });
 const strike = (c, p, what) => { p.strikes = (p.strikes || 0) + 1; if (p.strikes <= 5 || p.strikes % 20 === 0) console.log('batota?', p.name, what, p.strikes); };
 // o inventário do jogo: se tiver coisas que o servidor não viu chegar, manda corrigir
 const invMsg = (c, p, m) => { const L = ledOf(p), inv = cleanInv(m), C = tally(flat(inv));
   if (L.g) { L.T = C; L.inv = inv; L.g = false; if (S.tokens[p.tok]) delete S.tokens[p.tok].g; dirty = true; return; } // personagens de antes das contas: aceita-se o que tinham
   const extra = diffT(C, L.T); if (Object.keys(extra).length) { strike(c, p, 'inv ' + JSON.stringify(extra)); send(c, { t: 'fix', T: L.T }); return; }
+  if (L.pend && Date.now() - L.pend.t < 8000) { for (const k in L.pend.k) if ((C[k] || 0) < (L.T[k] || 0)) C[k] = L.T[k]; } else L.pend = null; // o que a equipa deu há pouco ainda pode não ter chegado ao inventário que o jogo mandou
   L.T = C; L.inv = inv; p.inv = flat(inv).map(({ x, y, ...r }) => r); dirty = true; };
 // juntar recursos (árvores e rochas): no máximo o que dá para apanhar a bater sem parar
 const GATHER = { madeira: 1, pedraR: 1, metal: 1, enxofre: 1 };
@@ -346,7 +349,8 @@ const onMsg = (c, m) => {
     { const H = p.hist || (p.hist = []); H.push([now, p.x, p.y, p.z]); while (H.length > 2 && now - H[0][0] > 500) H.shift(); } // onde esteve nos últimos 0,5 s (para o tiro de quem o via um pouco atrás)
     p.ts = num(m.ts, 0, 1e13, 0); p.yaw = num(m.yaw, -10, 10); p.mv = num(m.mv, 0, 3); p.an = num(m.an, 0, 15) | 0; p.w = typeof m.w === 'string' ? m.w.slice(0, 12) : '';
     const al = !!m.al, hp = num(m.hp, 0, 100, p.hp); if (al && !p.alive) { p.hp = hp; p.hd = p.vd = null; } else p.hp = Math.min(hp, p.hp + 3); p.alive = al; // a vida que o servidor tirou não volta de repente
-    if (Array.isArray(m.ar)) { const a = [num(m.ar[0], 0, 4) | 0, num(m.ar[1], 0, 4) | 0]; if (a[0] !== p.ar[0]) p.hd = null; if (a[1] !== p.ar[1]) p.vd = null; p.ar = a; } return; }
+    if (Array.isArray(m.ar)) { const a = [num(m.ar[0], 0, 4) | 0, num(m.ar[1], 0, 4) | 0]; if (a[0] !== p.ar[0]) p.hd = null; if (a[1] !== p.ar[1]) p.vd = null; p.ar = a; }
+    if (typeof m.gk === 'string' && (m.gk !== p.gkRaw || now - (p.gkT || 0) > 2000)) { p.gkRaw = m.gk.slice(0, 80); p.gkT = now; const T = ledOf(p).T, q = p.gkRaw.split(','); p.gk = GKS.map((s, i) => { const k = q[i] || ''; return ITEMS[k] && ITEMS[k].eq === s && T[k] > 0 ? k : ''; }).join(); p.ghillie = p.gk.includes('ghillie'); } return; }
   if (m.t === 'inv') { if (m.bag || m.belt) invMsg(c, p, m); return; }
   if (m.t === 'gt') { gather(c, p, m); return; }
   if (m.t === 'cr') { craft(c, p, m); return; }
@@ -434,7 +438,7 @@ const shot = (c, m) => {
   const dl = Math.hypot(D[0], D[1], D[2]) || 1; D[0] /= dl; D[1] /= dl; D[2] /= dl;
   const k = String(m.k || ''), n = Math.min(8, num(m.n, 1, 8, 1) | 0), L = num(m.L, 0, 900, 300), sup = !!m.sup;
   // para os outros: o som e o rasto do tiro
-  bcast({ t: 'fx', id: c.id, o: O, d: D, sup }, o => o !== c && Math.hypot(o.p.x - O[0], o.p.z - O[2]) < (sup ? 60 : 400));
+  bcast({ t: 'fx', id: c.id, o: O, d: D, sup, hv: HEAVY.has(k) ? 1 : 0 }, o => o !== c && Math.hypot(o.p.x - O[0], o.p.z - O[2]) < (sup ? 60 : 520));
   const myClan = p.clan; const tgt = [];
   // quem dispara vê os outros cerca de 0,1–0,3 s atrás (o caminho da rede e a suavização): conta onde o alvo está e onde esteve nesse tempo
   for (const o of players.values()) if (o !== c && o.p && o.p.alive && !o.p.invis && (o.p.lv || 0) === (p.lv || 0) && !(myClan && o.p.clan === myClan) && Math.hypot(o.p.x - O[0], o.p.z - O[2]) < L + 3) {
@@ -453,7 +457,7 @@ const shot = (c, m) => {
     else if (n > 1) { const sp = 0.02; d = [D[0] + (Math.random() - 0.5) * sp * 2, D[1] + (Math.random() - 0.5) * sp * 2, D[2] + (Math.random() - 0.5) * sp * 2]; }
     const Li = Ls ? Math.min(L, num(Ls[i], 0, 900, L)) : L;
     const h = hitTest(O, d, k, Li, tgt, cars); if (!h) continue; const T = h.T;
-    if (h.car) carShot(c, h.car, h.dmg * Math.max(0.3, h.v) * 0.55);
+    if (h.car) carShot(c, h.car, h.dmg * Math.max(0.3, h.v) * 0.55 * (CARX[k] || 1));
     if (!T) continue;
     // chumbo perde força com a distância (como no jogo, até 35 m); balas pela velocidade que ainda levam
     let dmg = h.dmg * (n > 1 ? Math.min(1, Math.max(0.25, 1 - h.dist / 35)) : Math.max(0.3, Math.pow(h.v, 1.5))) * (0.9 + Math.random() * 0.2);
@@ -517,7 +521,7 @@ const adm = (c, m) => { const p = c.p, now = Date.now();
   if (a === 'unban') { delete S.bans[uid]; dirty = true; return admList(c); }
   if (a === 'freeze') { if (!o) return send(c, { t: 'admno', e: 'Não está ligado' }); o.p.frozen = m.on ? 1 : 0; send(o, { t: 'frz', on: o.p.frozen }); return admList(c); }
   if (a === 'kill') { if (!o) return send(c, { t: 'admno', e: 'Não está ligado' }); send(o, { t: 'akill' }); return admList(c); }
-  if (a === 'give') { const k = String(m.k || ''), D = ITEMS[k]; if (!D) return; const n = num(m.n, 1, Math.max(1, (D.st || 1) * 10), 1) | 0; addT(ledOf(p).T, { [k]: n }); return send(c, { t: 'adgive', k, n }); }
+  if (a === 'give') { const k = String(m.k || ''), D = ITEMS[k]; if (!D) return; const n = num(m.n, 1, Math.max(1, (D.st || 1) * 10), 1) | 0; const L = ledOf(p); addT(L.T, { [k]: n }); L.pend = { t: Date.now(), k: { ...(L.pend && L.pend.k), [k]: 1 } }; return send(c, { t: 'adgive', k, n }); }
   if (a === 'car') { const id = 'a' + rid(4), yaw = num(p.yaw, -10, 10), x = p.x + Math.sin(yaw) * 4, z = p.z + Math.cos(yaw) * 4; const k = VT[m.k] ? m.k : 'sedan', T = VT[k]; S.w.cars[id] = { k, x, z, yaw, v: 0, fuel: T.tank, hp: T.hp, sx: x, sz: z, syaw: yaw, s: T.seats.map(() => 0), dead: 0, adm: 1 }; dirty = true; return send(c, { t: 'admmsg', e: T.n + ' criado à tua frente' }); }
   if (a === 'drop') { if (S.drop.warn) return send(c, { t: 'admno', e: 'Já vem um avião a caminho' }); const ok = dropWarn(Date.now(), Date.now() + 20e3); return send(c, ok ? { t: 'admmsg', e: 'Avião a caminho: cai daqui a 20 s' } : { t: 'admno', e: 'Não encontrei sítio para o avião' }); }
   if (a === 'delbase') { const n = uid ? wipeBase(uid) : 0; send(c, { t: 'admmsg', e: n ? 'Base apagada (' + n + ' peças)' : 'Não tem base' }); return admList(c); }
@@ -534,7 +538,7 @@ const ZR = 300; // zombies que cada um recebe (metros): até onde a luneta deixa
 setInterval(() => {
   const L = [...players.values()].filter(c => c.p), full = (++tickN & 1) === 0;
   for (const c of L) {
-    const out = [], staff = !!S.roles[c.p.uid]; for (const o of L) { if (o === c || (o.p.invis && !staff)) continue; const d = Math.hypot(o.p.x - c.p.x, o.p.z - c.p.z), mate = c.p.clan && o.p.clan === c.p.clan; if (d > 320 && !mate) continue; out.push([o.id, +o.p.x.toFixed(2), +o.p.z.toFixed(2), +o.p.y.toFixed(2), o.p.lv, +o.p.yaw.toFixed(2), +o.p.mv.toFixed(2), o.p.an, o.p.w, Math.round(o.p.hp), o.p.alive ? 1 : 0, d > 320 ? 1 : 0, o.p.ar, Math.round(o.p.ts || 0)]); }
+    const out = [], staff = !!S.roles[c.p.uid]; for (const o of L) { if (o === c || (o.p.invis && !staff)) continue; const d = Math.hypot(o.p.x - c.p.x, o.p.z - c.p.z), mate = c.p.clan && o.p.clan === c.p.clan; if (d > 320 && !mate) continue; out.push([o.id, +o.p.x.toFixed(2), +o.p.z.toFixed(2), +o.p.y.toFixed(2), o.p.lv, +o.p.yaw.toFixed(2), +o.p.mv.toFixed(2), o.p.an, o.p.w, Math.round(o.p.hp), o.p.alive ? 1 : 0, d > 320 ? 1 : 0, o.p.ar, Math.round(o.p.ts || 0), o.p.gk || '']); }
     const msg = { t: 's', ps: out };
     // zombies: só os que mudaram desde a última vez (e os que saíram de perto)
     if (full && c.zc) { const u = [], seen = new Set(); const zs = S.w.zs;

@@ -114,10 +114,10 @@ export function initUI(G) {
     renderGrid(gBag, I.bag, rows, 'bag');
     $('bagCap').textContent = I.eq.back ? '6 × 6' : '6 × 4 · sem mochila';
     // equipamento e cinto
-    for (const s of ['head', 'vest', 'back']) { const el = inv.querySelector(`[data-eq="${s}"]`), it = I.eq[s]; el.innerHTML = slotHTML(it, { head: 'Cabeça', vest: 'Colete', back: 'Costas' }[s]); el.dataset.src = it ? 'eq:' + s : ''; el.classList.toggle('sel', !!(sel && it && sel.it === it)); el.className = 'slot' + (it ? ' ' + catOf(ITEMS[it.k]) : '') + (sel && it && sel.it === it ? ' sel' : ''); }
+    for (const s of ['head', 'eyes', 'suit', 'vest', 'back']) { const el = inv.querySelector(`[data-eq="${s}"]`), it = I.eq[s]; el.innerHTML = slotHTML(it, { head: 'Cabeça', eyes: 'Olhos', suit: 'Fato', vest: 'Colete', back: 'Costas' }[s]); el.dataset.src = it ? 'eq:' + s : ''; el.classList.toggle('sel', !!(sel && it && sel.it === it)); el.className = 'slot' + (it ? ' ' + catOf(ITEMS[it.k]) : '') + (sel && it && sel.it === it ? ' sel' : ''); }
     const bI = $('beltI'); if (!bI.children.length) for (let i = 0; i < 6; i++) { const d = document.createElement('div'); d.className = 'slot'; d.dataset.belt = i; bI.appendChild(d); }
     [...bI.children].forEach((el, i) => { const it = I.belt[i]; el.innerHTML = slotHTML(it, '', i + 1); el.dataset.src = it ? 'belt:' + i : ''; el.className = 'slot' + (it ? ' ' + catOf(ITEMS[it.k]) : '') + (sel && it && sel.it === it ? ' sel' : ''); });
-    const pk = ['head', 'vest', 'back'].map(s => I.eq[s] ? 1 : 0).join('') + (I.belt.some(b => b && b.k === 'm4') ? 'r' : '') + (G.lookV || 0);
+    const pk = ['head', 'eyes', 'suit', 'vest', 'back'].map(s => I.eq[s] ? I.eq[s].k : '').join() + (I.belt.some(b => b && b.k === 'm4') ? 'r' : '') + (G.lookV || 0);
     if (pk !== lastPortrait) { lastPortrait = pk; $('portrait').src = G.portrait(I.eq); }
     // caixa / chão
     $('boxV').hidden = tab !== 'inv'; $('craftV').hidden = tab !== 'craft'; $('skillV').hidden = tab !== 'skills'; if (tab === 'skills') renderSkills();
@@ -873,7 +873,7 @@ export function initUI(G) {
       if (fp) { const e = sm(clamp((fpT - 0.55) / 0.45, 0, 1)); scEl.style.setProperty('--cx', SC.x + 'px'); scEl.style.setProperty('--cy', SC.y + 'px'); scEl.style.setProperty('--hr', (R * e).toFixed(1) + 'px'); scEl.style.setProperty('--ro', e.toFixed(3)); }
       else { const e = sm(clamp(fpT / 0.55, 0, 1)), q = G.proj(A.A), far = Math.hypot(innerWidth, innerHeight); scEl.style.setProperty('--cx', q.x + 'px'); scEl.style.setProperty('--cy', q.y + 'px'); scEl.style.setProperty('--hr', (far * (1 - e) + 2).toFixed(1) + 'px'); scEl.style.setProperty('--ro', '0'); }
       scEl.style.setProperty('--r', R.toFixed(0) + 'px');
-      const sc = it && it.att && it.att.scope ? ITEMS[it.att.scope] : null; const m8 = sc && sc.mag >= 8, rd = !!(sc && sc.rd); scEl.classList.toggle('m8', !!m8); scEl.classList.toggle('rd', rd); scEl.classList.toggle('z-head', A.zone === 'head'); setV('scMag', (sc ? sc.mag : 4) + '×'); setV('scDist', A.dist ? Math.round(A.dist) + ' m' : '');
+      const sc = it && it.att && it.att.scope ? ITEMS[it.att.scope] : null; const m8 = sc && sc.mag >= 8, rd = !!(sc && sc.rd); scEl.classList.toggle('m8', !!m8); scEl.classList.toggle('rd', rd); scEl.classList.toggle('vm', !!G.vmOn); scEl.classList.toggle('z-head', A.zone === 'head'); setV('scMag', (sc ? sc.mag : 4) + '×'); setV('scDist', A.dist ? Math.round(A.dist) + ' m' : '');
       // zero e marcas de queda (para a munição carregada): cada marca é onde pôr o alvo a 200, 300, 400 m…
       { const zs = $('szero'); zs.hidden = !(gun && sc && fp && !sc.rd); if (!zs.hidden) zs.style.setProperty('--ro', scEl.style.getPropertyValue('--ro')); if (fp) zPlace(SC, R); }
       if (gun && sc && !sc.rd) { const zero = it.zero || (m8 ? 200 : 100), v0 = ITEMS[it.ak || ammoOf(gun)[0]].bal.v * (gun.vk || 1), key = it.ak + v0 + ':' + zero + ':' + sc.mag; setV('scZero', zero + ' m');

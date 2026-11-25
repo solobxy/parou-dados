@@ -17,6 +17,7 @@ export function makeNav(near, MAP) {
       const lim = MAXW * C; if (bx - ax > lim) { const c = (x0 + x1) / 2; ax = c - lim / 2; bx = c + lim / 2; } if (bz - az > lim) { const c = (z0 + z1) / 2; az = c - lim / 2; bz = c + lim / 2; }
       ax = Math.max(ax, -MAP); az = Math.max(az, -MAP); bx = Math.min(bx, MAP); bz = Math.min(bz, MAP);
       const W = Math.min(MAXW, Math.ceil((bx - ax) / C)), H = Math.min(MAXW, Math.ceil((bz - az) / C)), N = W * H;
+      if (W < 2 || H < 2) return { ok: false, pts: [] }; // fora do mapa
       blk.fill(0, 0, N);
       const mark = (rx0, rz0, rx1, rz1) => { const i0 = Math.max(0, Math.ceil((rx0 - R - ax) / C - 0.5)), i1 = Math.min(W - 1, Math.floor((rx1 + R - ax) / C - 0.5)), j0 = Math.max(0, Math.ceil((rz0 - R - az) / C - 0.5)), j1 = Math.min(H - 1, Math.floor((rz1 + R - az) / C - 0.5)); if (i1 < i0 || j1 < j0) return; for (let j = j0; j <= j1; j++) blk.fill(1, j * W + i0, j * W + i1 + 1); };
       near(ax, az, bx, bz, r => { if (blocks(r, lv)) mark(r.x0, r.z0, r.x1, r.z1); }, c => { if ((c.lv || 0) === lv && c.on !== false && c.k === 's') mark(c.x - c.r * 0.8, c.z - c.r * 0.8, c.x + c.r * 0.8, c.z + c.r * 0.8); });

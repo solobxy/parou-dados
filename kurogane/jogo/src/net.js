@@ -2,6 +2,7 @@
 // quem acerta), mostra quem está a dormir e as mochilas de quem morreu, e trata dos clãs.
 import * as THREE from 'three';
 import { track, push, sample } from './interp.js';
+import { ITEMS } from './items.js';
 
 const MODES = ['none', 'pistol', 'rifle', 'melee'];
 
@@ -55,7 +56,7 @@ export function makeNet({ G, scene, mkRemote, audio, Conta, enc, dec, hurt, die,
       case 's': {
         const now = performance.now(), seen = new Set();
         for (const a of m.ps) { const r = R.get(a[0]); if (!r) continue; seen.add(r.id); if (r.s1 && (Math.hypot(a[1] - r.s1[1], a[2] - r.s1[2]) > 25 || a[4] !== r.s1[4])) r.T = track(); r.s1 = a; push(r.T, a[13] || now, now, { x: a[1], z: a[2], y: a[3], yaw: a[5], a });
-          const ar = a[12] || [0, 0], ak = ar.join(); if (ak !== r.ar) { r.ar = ak; r.b.setGear({ head: ar[0] ? { k: 'capacete' } : null, vest: ar[1] ? { k: 'colete' } : null }); }
+          const ar = a[12] || [0, 0], gk = typeof a[14] === 'string' ? a[14] : null, ak = gk ?? ar.join(); if (ak !== r.ar) { r.ar = ak; if (gk != null) { const q = gk.split(','), e = {}; ['head', 'vest', 'suit', 'eyes', 'back'].forEach((s, i) => { if (q[i] && ITEMS[q[i]]) e[s] = { k: q[i] }; }); r.b.setGear(e); r.gh = !!e.suit; } else r.b.setGear({ head: ar[0] ? { k: 'capacete' } : null, vest: ar[1] ? { k: 'colete' } : null }); }
           if (r.w !== a[8]) { r.w = a[8]; r.b.setWeapon(a[8] || null, {}); } }
         for (const r of R.values()) if (!seen.has(r.id)) { r.s1 = null; r.T = track(); r.b.root.visible = false; r.el.style.display = 'none'; }
         if (m.zu) world.z.rows(m.zu); if (m.zg) world.z.gone(m.zg); if (m.cu) G.cars.rows(m.cu); if (m.cg) G.cars.gone(m.cg);
@@ -63,7 +64,7 @@ export function makeNet({ G, scene, mkRemote, audio, Conta, enc, dec, hurt, die,
       }
       case 'fx': {
         const p = G.p, d = p ? Math.hypot(m.o[0] - p.x, m.o[2] - p.z) : 99;
-        audio.play(m.sup ? 'abafado' : 'pistola', Math.max(0.04, 1 - d / (m.sup ? 70 : 320)) * (m.sup ? 0.6 : 1));
+        audio.play(m.sup ? 'abafado' : m.hv ? 'grosso' : 'pistola', Math.max(0.04, 1 - d / (m.sup ? 70 : m.hv ? 480 : 320)) * (m.sup ? 0.6 : 1));
         wallEnd(m.o, m.d); if (G.noise) G.noise(m.o[0], m.o[2], m.sup ? 12 : 34); if (G.heardShot && d < 300) G.heardShot(); if (p && d > 2.5) G.ui.sound(m.o[0], m.o[2], 't', d); return;
       }
       case 'hit': hurt(m.dmg, m.by, m.zone, m.pop, m.car ? 'carro' : null); return;
@@ -156,7 +157,7 @@ export function makeNet({ G, scene, mkRemote, audio, Conta, enc, dec, hurt, die,
       r.b.root.visible = vis; if (!vis) { r.el.style.display = 'none'; continue; }
       r.b.root.position.set(x, y, z); r.b.root.rotation.set(0, S.yaw, 0);
       const an = b[7] | 0; { r.wt = (r.wt || 0) - dt; if (r.wt <= 0 && G.wallAhead) { r.wt = 0.1; r.wk = Math.max(0, Math.min(1, (0.85 - G.wallAhead(x, z, S.yaw, b[4])) / 0.35)); } } r.b.pose(dt, Math.min(b[6], r.spd / 3 + 0.03), MODES[an & 3], -1, 0, 0, -1, r.step, (an & 4 ? 1 : 0.25) * (1 - 0.85 * (r.wk || 0)), null);
-      place(r.el, x, y + 2.05, z);
+      if (r.gh && me && !mate(r.clan) && Math.hypot(x - me.x, z - me.z) > 12) r.el.style.display = 'none'; else place(r.el, x, y + 2.05, z); // de ghillie não se vê o nome ao longe
     }
     for (const s of sleepers.values()) {
       const vis = me && (s.lv || 0) === lv && Math.hypot(s.x - me.x, s.z - me.z) < 45 && see({ x: s.x, z: s.z, lv: s.lv || 0 });

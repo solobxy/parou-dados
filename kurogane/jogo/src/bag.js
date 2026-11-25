@@ -33,7 +33,7 @@ export class Grid {
 }
 
 export class Inv {
-  constructor() { this.bag = new Grid(6, 6); this.belt = Array(6).fill(null); this.eq = { head: null, vest: null, back: null }; }
+  constructor() { this.bag = new Grid(6, 6); this.belt = Array(6).fill(null); this.eq = { head: null, eyes: null, suit: null, vest: null, back: null }; }
   rows() { return 4 + (this.eq.back ? ITEMS[this.eq.back.k].rows : 0); }
   count(k) { let n = this.bag.count(k); for (const b of this.belt) if (b && b.k === k) n += b.n; return n; }
   take(k, n) { let got = this.bag.take(k, n); for (let i = 0; i < 6 && got < n; i++) { const b = this.belt[i]; if (b && b.k === k) { const m = Math.min(b.n, n - got); b.n -= m; got += m; if (!b.n) this.belt[i] = null; } } return got; }

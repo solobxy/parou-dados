@@ -16,6 +16,7 @@ import { makeBase } from './base.js';
 import { makeNav } from './nav.js';
 import { makeNet } from './net.js';
 import { makeCars } from './cars.js';
+import { makeVM } from './vm.js';
 import { track, push, sample } from './interp.js';
 
 const TOUCH = matchMedia('(pointer: coarse)').matches || ('ontouchstart' in window && navigator.maxTouchPoints > 0);
@@ -340,7 +341,8 @@ async function boot() {
   const lookCol = L => { L = L || {}; const hair = L.hair ?? PCOL.hair, bs = L.beardS ?? 1; return { ...PCOL, skin: L.skin ?? PCOL.skin, top: L.top ?? PCOL.top, legs: L.legs ?? PCOL.legs, hair, hairS: L.hairS ?? 0, beardS: bs, beard: bs ? (hair === PCOL.hair ? PCOL.beard : hair) : null }; };
   const silMat = new THREE.MeshBasicMaterial({ color: 0xf2a33a, depthFunc: THREE.GreaterDepth, depthWrite: false, fog: false });
   const mkBody = L => { const b = new Body(mats, lookCol(L)); b.root.traverse(o => { if (o.isMesh && !o.userData.sil) { o.renderOrder = 2; const s = new THREE.Mesh(o.geometry, silMat); s.userData.sil = true; s.renderOrder = 1; s.castShadow = false; o.add(s); } }); scene.add(b.root); return b; };
-  let body = mkBody((Conta.ativo() || {}).look);
+  let body = mkBody((Conta.ativo() || {}).look); let myLook = lookCol((Conta.ativo() || {}).look);
+  const vm = makeVM(); // arma e braços na 1.ª pessoa
   const mkRemote = L => { const b = new Body(mats, lookCol(L && typeof L === 'object' ? L : {})); scene.add(b.root); return b; };
   const horde = new Horde(scene, mats, 900, null); // zombies sem silhueta vermelha: atrás de paredes simplesmente não se veem
   const bagM = bagMesh(mats), bodyBagM = bagMesh(mats, true);
@@ -391,18 +393,19 @@ async function boot() {
 
   // ---------- ícones dos objetos
   const I3 = makeIcons(2); const ICONS = {}, CELLPX = 46;
-  for (const k in ITEMS) { const d = ITEMS[k]; ICONS[k] = I3.iconOf(d.icon, d.w * CELLPX + (d.w - 1) * 2, d.h * CELLPX + (d.h - 1) * 2, d.v || 'side', d.w === 1 && d.h === 1 ? 0.7 : 0.82); }
-  G.ICONS = ICONS; G.portrait = eq => I3.portrait({ head: !!eq.head, vest: !!eq.vest, back: !!eq.back }, 112, 168); I3.setLook((Conta.ativo() || {}).look);
+  for (const k in ITEMS) { const d = ITEMS[k]; ICONS[k] = I3.iconOf(d.icon, d.w * CELLPX + (d.w - 1) * 2, d.h * CELLPX + (d.h - 1) * 2, d.v || 'side', d.w === 1 && d.h === 1 ? 0.7 : 0.82, d.tint); }
+  G.ICONS = ICONS; G.portrait = eq => { const t = s => eq[s] ? ITEMS[eq[s].k].tint ?? true : null; return I3.portrait({ head: t('head'), vest: t('vest'), back: !!eq.back, eyes: !!eq.eyes, suit: !!eq.suit }, 120, 184); }; I3.setLook((Conta.ativo() || {}).look);
   G.portraitLook = L => I3.portrait({}, 168, 252, L); G.LOOK_OPTS = LOOK_OPTS;
-  G.setLook = L => { const o = body, nb = mkBody(L); nb.root.position.copy(o.root.position); nb.root.rotation.copy(o.root.rotation); nb.root.visible = o.root.visible; scene.remove(o.root); body = nb; I3.setLook(L); if (G.p && G.inv) refresh(); G.lookV = (G.lookV || 0) + 1; };
+  G.setLook = L => { myLook = lookCol(L); const o = body, nb = mkBody(L); nb.root.position.copy(o.root.position); nb.root.rotation.copy(o.root.rotation); nb.root.visible = o.root.visible; scene.remove(o.root); body = nb; I3.setLook(L); if (G.p && G.inv) refresh(); G.lookV = (G.lookV || 0) + 1; };
 
   // ---------- ações
   const held = () => G.inv.belt[G.sel];
   const heldDef = () => { const it = held(); return it ? ITEMS[it.k] : FISTS; };
   const noise = (x, z, r) => { r *= 1 - 0.35 * (G.rain || 0); for (const zb of G.zs) if (zb.state !== 'dead' && zb.state !== 'chase' && Math.hypot(zb.x - x, zb.z - z) < r) { zb.state = 'alert'; zb.tx = x + (Math.random() - 0.5) * 4; zb.tz = z + (Math.random() - 0.5) * 4; } };
   const vol = (x, z) => clamp(1 - Math.hypot(x - G.p.x, z - G.p.z) / 34, 0, 1);
+  const GK = ['head', 'vest', 'suit', 'eyes', 'back']; // equipamento que os outros veem (chaves dos itens, pela mesma ordem do servidor)
   const refresh = () => { body.setGear(G.inv.eq); const d = heldDef(); body.setWeapon(held() ? (d.gun || d.melee ? held().k : null) : null, held() && held().att || {}); G.ui.refresh(); };
-  G.refresh = refresh;
+  G.refresh = refresh; G.mkItem = mkItem; G.dbgBody = () => body; /* testes */
   const select = i => { if (G.sel === i) return; G.sel = i; if (G.aimEnd) G.aimEnd(); AIM.raise = 0; G.p.reload = 0; G.p.use = null; G.p.swing = -1; audio.play('ui'); refresh(); };
   G.select = select;
   // ---------- treino: o corpo habitua-se ao que fazes. Cada ganho é proporcional ao que falta (sobe depressa no início, devagar perto do máximo); perde-se tudo ao morrer
@@ -584,8 +587,8 @@ async function boot() {
     // som: o silenciador abafa o disparo; com bala subsónica quase não se ouve; supersónica ainda estala
     const ss = v0 > 343, nr = sup ? g.noise * (ss ? 0.5 : 0.2) : g.noise;
     const mx = p.x + Math.sin(p.yaw) * 0.85, my = p.y + 1.3, mz = p.z + Math.cos(p.yaw) * 0.85;
-    flash.position.set(mx, my, mz); flash.intensity = sup ? 0 : 6 + 14 * (1 - (G.day ?? 1)); G.flashT = 0.06; G.buzz(n > 1 ? 30 : 10);
-    if (sup) audio.play('abafado', ss ? 0.85 : 0.5); else audio.play(g.auto ? 'm4' : 'pistola', it.k === 'cacadeira' || it.k === 'caca' ? 1.3 : 1);
+    vm.fire(); flash.position.set(mx, my, mz); flash.intensity = sup ? 0 : 6 + 14 * (1 - (G.day ?? 1)); G.flashT = 0.06; G.buzz(n > 1 ? 30 : 10);
+    if (sup) audio.play('abafado', ss ? 0.85 : 0.5); else audio.play(ITEMS[it.k].heavy ? 'grosso' : g.auto ? 'm4' : 'pistola', it.k === 'cacadeira' || it.k === 'caca' ? 1.3 : 1);
     noise(p.x, p.z, nr);
     if (G.net && G.net.on) { const far = G.net.near(O.x, O.z, 420), Ls = ds.map(di => far ? stopAt(O, di, B.bp ?? B.pen) : 420); G.net.shot(O, dir, it.ak, n, Math.max(...Ls), sup, ds, Ls); }
     G.ui.refresh(true); return true;
@@ -682,6 +685,7 @@ async function boot() {
   const lazyTick = (px, pz) => { let best = null, bd = 1e9; for (const L of W.lazy) { const d = Math.max(L.x0 - px, px - L.x1, L.z0 - pz, pz - L.z1, 0); if (L.meshes) { if (d > 430) W.lazyDrop(L); } else if (d < 250 && d < bd) { bd = d; best = L; } } if (best) { W.lazyBuild(best); return true; } return false; };
   G.lazyTick = lazyTick;
   // só para testes: vista de cima (ortográfica) de um quadrado de lado L à volta de (x, z), devolvida como imagem
+  G.dbgCam = (pos, at, fov = 30, w = 800, h = 600) => { const pc = new THREE.PerspectiveCamera(fov, w / h, 0.05, 300); pc.position.set(...pos); pc.lookAt(...at); const s0 = new THREE.Vector2(); renderer.getSize(s0); const r0 = renderer.getPixelRatio(); renderer.setPixelRatio(1); renderer.setSize(w, h, false); renderer.render(scene, pc); const url = renderer.domElement.toDataURL('image/jpeg', 0.88); renderer.setPixelRatio(r0); renderer.setSize(s0.x, s0.y, false); return url; }; // testes: vista de perto
   G.dbgTop = (x, z, L, px = 900) => { for (let i = 0; i < 80 && lazyTick(x, z); i++); const oc = new THREE.OrthographicCamera(-L / 2, L / 2, L / 2, -L / 2, 1, 400); oc.position.set(x, 200, z + 0.01); oc.lookAt(x, 0, z); const s0 = new THREE.Vector2(); renderer.getSize(s0); const r0 = renderer.getPixelRatio(); renderer.setPixelRatio(1); renderer.setSize(px, px, false); const fg = scene.fog; scene.fog = null; renderer.render(scene, oc); scene.fog = fg; const url = renderer.domElement.toDataURL('image/jpeg', 0.85); renderer.setPixelRatio(r0); renderer.setSize(s0.x, s0.y, false); return url; };
   G.weather = (on = true) => { G.rainT = on ? 1 : 0; WX.t = on ? 300 : 900; };
   G.explodeAt = (k, x, z) => explode({ k, P: new THREE.Vector3(x, 0.5, z), lv: 0 });
@@ -801,7 +805,7 @@ async function boot() {
     const me = G.p, onl = G.net.world, now = performance.now();
     // quem os zombies podem perseguir: tu e, online, os outros jogadores vivos por perto
     const tgts = me && G.playing ? [me] : [];
-    if (onl) for (const r of G.net.R.values()) { const b = r.s1; if (!b || !b[10] || b[11]) continue; const t = r.tg || (r.tg = { remote: true, rid: r.id, alive: true, h: 0 }); t.x = r.x; t.z = r.z; t.lv = b[4] || 0; t.base = Math.max(0, (r.y || 0) - groundY(r.x, r.z, t.lv)); t.sprint = b[6] > 1.3; tgts.push(t); }
+    if (onl) for (const r of G.net.R.values()) { const b = r.s1; if (!b || !b[10] || b[11]) continue; const t = r.tg || (r.tg = { remote: true, rid: r.id, alive: true, h: 0 }); t.x = r.x; t.z = r.z; t.gh = !!r.gh; t.lv = b[4] || 0; t.base = Math.max(0, (r.y || 0) - groundY(r.x, r.z, t.lv)); t.sprint = b[6] > 1.3; tgts.push(t); }
     for (let i = G.zs.length - 1; i >= 0; i--) {
       const z = G.zs[i];
       if (z.remote) { remoteZ(z, dt0, now); continue; }
@@ -818,7 +822,7 @@ async function boot() {
       if (z.think <= 0) {
         z.think = 0.22 + Math.random() * 0.12;
         const face = Math.abs(angDiff(Math.atan2(dx, dz), z.yaw)) < 1.05;
-        const sr = 6 + 4 * (G.day ?? 1) + (p === me && G.lightOn ? 8 : 0); const sees = p.alive && G.playing && !(p === me && G.admF && G.admF.spec) && d < sr && (d < 3.5 || face) && canSee(z, p); z.sees = sees;
+        const sr = (6 + 4 * (G.day ?? 1) + (p === me && G.lightOn ? 8 : 0)) * ((p === me ? G.inv.eq.suit : p.gh) ? 0.6 : 1); /* ghillie: só te veem mais perto */ const sees = p.alive && G.playing && !(p === me && G.admF && G.admF.spec) && d < sr && (d < 3.5 || face) && canSee(z, p); z.sees = sees;
         if (sees) { if (z.state !== 'chase') { audio.play('grunhido', 0.8 * vol(z.x, z.z)); G.ui.sound(z.x, z.z, 'z', dMe); } z.state = 'chase'; z.tx = p.x; z.tz = p.z; z.lost = 0; z.mem = 6; }
         else if (z.state === 'chase') { z.lost += 0.28; if (z.lost > 3.2 || !p.alive) { z.state = 'alert'; } }
         if (p.alive && p.sprint && d < 7 && same && z.state === 'wander') { z.state = 'alert'; z.tx = p.x; z.tz = p.z; }
@@ -1169,6 +1173,7 @@ async function boot() {
   };
   G.relock = () => { if (!AIM.on || G.fp) return; const z = bestTarget(); AIM.lock = z ? chestLock(z) : null; AIM.idle = 0; };
   const tryFire = () => { const it = held(), d = heldDef(); if (!d.gun || !G.p.alive || G.invOpen || AIM.raise < 1) return false; return fire(it, d.gun); };
+  G.dbgFire = () => { const it = held(), d = heldDef(); G.p.cd = 0; return d.gun ? fire(it, d.gun) : false; }; // testes
   G.fireDown = () => { if (G.car && (!G.carSeat || G.car.hp <= 0)) return; // de passageiro dispara-se da janela; quem conduz não
     const p = G.p; if (!G.playing || !p.alive || G.invOpen) return; const d = heldDef();
     { const it = held(); if (it && it.k === 'planta') { G.base.place(); return; } if (it && it.k === 'martelo') { G.base.upgrade(); return; } if (it && it.k === 'granada') { throwGrenade(it); return; } if (it && it.k === 'c4') { plantC4(it); return; } }
@@ -1321,6 +1326,7 @@ async function boot() {
       if (AIM.on && !p.sprint) spd = AIM.scope ? 1.1 : 2.4; if (back) spd *= 0.62;
       if (moving) spd *= 0.5 + 0.5 * Math.max(0, Math.cos(Math.min(Math.PI / 2, Math.abs(angDiff(moveYaw, p.root)) * (aimingNow ? 0.6 : 1))));
       if (over > 0) spd *= Math.max(0.62, 1 - over / 45);
+      if (heldDef().heavy) spd *= 0.88; // CheyTac e Barrett pesam
       if (p.use) spd = 1.5; if (p.swim) spd = Math.min(spd, p.stam > 0 ? 1.8 : 1.0); if (!p.alive || p.climb) spd = 0; if (!p.onGround) spd *= 0.9;
       let tvx = moving ? wx / Math.max(il, 1e-6) * Math.min(il, 1) * spd : 0, tvz = moving ? wz / Math.max(il, 1e-6) * Math.min(il, 1) * spd : 0;
       // a passar numa porta aberta: puxa-te devagar para o meio do vão, para não ficares preso no aro (no telemóvel o polegar raramente vai certinho)
@@ -1392,7 +1398,7 @@ async function boot() {
       if (!best && p.alive && !G.car && !p.lv && p.water < 97 && (p.swim || W.wet(p.x, p.z, 1.4))) best = { label: 'Beber água', drink: true, x: p.x, z: p.z };
       G.prompt = best;
       if (G.net.on) { const d = heldDef(), it = held(), mode = d.gun ? (d.long ? 2 : 1) : d.melee && it ? 3 : 0, eq = G.inv.eq, lvl = s => eq[s] ? ITEMS[eq[s].k].lvl || 0 : 0;
-        G.net.frame(dt, { x: +p.x.toFixed(2), z: +p.z.toFixed(2), y: +(p.y - (p.swimY || 0)).toFixed(2), lv: p.lv || 0, yaw: +Math.atan2(Math.sin(p.root), Math.cos(p.root)).toFixed(2), mv: +Math.min(3, p.mv || 0).toFixed(2), an: (G.car && !G.leanOut ? 8 : mode + (AIM.on ? 4 : 0)), w: mode ? it.k : '', hp: Math.round(Math.max(0, p.hp)), al: p.alive ? 1 : 0, ar: [lvl('head'), lvl('vest')] }, o => canSee(p, o)); }
+        G.net.frame(dt, { x: +p.x.toFixed(2), z: +p.z.toFixed(2), y: +(p.y - (p.swimY || 0)).toFixed(2), lv: p.lv || 0, yaw: +Math.atan2(Math.sin(p.root), Math.cos(p.root)).toFixed(2), mv: +Math.min(3, p.mv || 0).toFixed(2), an: (G.car && !G.leanOut ? 8 : mode + (AIM.on ? 4 : 0)), w: mode ? it.k : '', hp: Math.round(Math.max(0, p.hp)), al: p.alive ? 1 : 0, ar: [lvl('head'), lvl('vest')], gk: GK.map(s => eq[s] ? eq[s].k : '').join() }, o => canSee(p, o)); }
       if (G.box && (Math.hypot(G.box.x - p.x, G.box.z - p.z) > 2.6)) { G.box = null; if (G.invOpen) G.ui.openInv(null); }
       updZombies(dt); G.cars.update(dt);
       // sacos: os vazios desaparecem, os velhos também
@@ -1423,6 +1429,10 @@ async function boot() {
       _fc.copy(FOGN).lerp(FOGD, D).lerp(FOGS, dusk); if (rn > 0) _fc.lerp(_rc.copy(RAINFOG).multiplyScalar(0.35 + 0.65 * D), 0.55 * rn); if (G.boltT > 0) _fc.lerp(_rc.setRGB(0.85, 0.88, 0.95), Math.min(1, G.boltT * 6) * 0.5); scene.fog.color.copy(_fc); scene.background.copy(_fc); if (G.boltT > 0) hemi.intensity += G.boltT * 6;
       mats.sign.emissiveIntensity = 1.05 + 1.0 * (1 - D); mats.nwin.emissiveIntensity = 1.5 * (1 - D); mats.nwin2.emissiveIntensity = 1.1 * (1 - D); renderer.toneMappingExposure = 1.02 + 0.2 * (1 - D);
       const nt = 1 - D;
+      // óculos de visão noturna: ligam sozinhos ao escurecer (mais luz e tudo em verde)
+      { const nv = p && p.alive && G.inv && G.inv.eq.eyes ? Math.max(0, Math.min(1, (nt - 0.3) / 0.35)) : 0; G.nv = nv;
+        if (nv > 0) { hemi.intensity += 1.3 * nv; scene.environmentIntensity += 0.35 * nv; renderer.toneMappingExposure += 0.75 * nv; _fc.lerp(_rc.setRGB(0.15, 0.19, 0.16), 0.6 * nv); scene.fog.color.copy(_fc); scene.background.copy(_fc); }
+        const on = nv > 0.5; if (on !== !!G.nvOn) { G.nvOn = on; renderer.domElement.classList.toggle('nvg', on); if (on && G.playing) G.ui.toast('Visão noturna ligada'); } }
       if (p && G.playing && p.alive) {
         glow.position.set(p.x, p.y + 1.8, p.z); glow.intensity = G.car ? 0 : nt * 3.5;
         if (G.lightOn && !hasLight()) G.lightOn = false;
@@ -1456,7 +1466,9 @@ async function boot() {
       // a luneta mostra sempre o mesmo ângulo, em qualquer ecrã; o centro fica no meio da zona livre
       const S = G.ui.scopeR(), SC = G.ui.scopeC(), sf = THREE.MathUtils.degToRad(scopeFov()); cam.near = 0.3; cam.far = 900; cam.aspect = innerWidth / innerHeight; cam.fov = THREE.MathUtils.radToDeg(2 * Math.atan(Math.tan(sf / 2) * innerHeight / (2 * S))); cam.updateProjectionMatrix();
       { const e = cam.projectionMatrix.elements; e[8] = -(SC.x / innerWidth * 2 - 1); e[9] = -(1 - SC.y / innerHeight * 2); cam.projectionMatrixInverse.copy(cam.projectionMatrix).invert(); } PROJ.mode = 'fp';
+      { const it = held(); vm.set(it ? it.k : '', (it && it.att) || {}, myLook); vm.update(dt, cam, { day: G.day, nv: G.nv, mv: Math.min(1, Math.hypot(p.vx || 0, p.vz || 0) / 3) }); }
     } else {
+      vm.set('', {}, myLook);
       if (PROJ.dirty || PROJ.mode !== 'top') topProj();
       const e = AIM.fpT > 0 && p ? easeD(Math.min(1, AIM.fpT / 0.55)) : 0;
       v3b.copy(camT); if (e > 0) { v3b.x += (AIM.A.x - camT.x) * 0.45 * e; v3b.z += (AIM.A.z - camT.z) * 0.45 * e; v3b.y = camT.y + 0.4 * e; }
@@ -1505,8 +1517,10 @@ async function boot() {
       }
     }
     doorMats();
+    G.vmOn = G.fp && vm.on;
     G.ui.frame(dt);
     renderer.render(scene, cam);
+    if (G.vmOn) { renderer.autoClear = false; renderer.clearDepth(); renderer.render(vm.scene, vm.cam); renderer.autoClear = true; }
   };
   body.root.visible = false;
   G.p = newPlayer(0, -2); G.p.alive = false;
