@@ -170,14 +170,25 @@ if (temRotaDesenhos) {
     ...(corpo.unir || []), ...(corpo.hibridas || []).map((h) => h.candidato), ...(corpo.pontes || []).map((p) => p.candidato),
     ...(corpo.duplas || []).flatMap((d) => [d.a, d.b]), ...(corpo.cadeias || []).flatMap((c) => c.pernas), ...(corpo.ligacoes || []).map((l) => l.candidato),
   ].filter(Boolean);
+  // Com os horários da UNIR na base (GTFS da TMP), a UNIR vem nas opções normais (troços com operatorName "UNIR") e as listas
+  // à parte (unir, hibridas…) ficam vazias. Conta-se das duas maneiras. Data: o próximo dia útil (os horários só cobrem as próximas semanas).
+  const doCorpo = (corpo) => [
+    ...candidatos(corpo),
+    ...(corpo.routes || []).flatMap((r) => r.legs || []).filter((l) => l.mode === 'TRANSIT' && /^UNIR/i.test(String(l.operatorName || '')))
+      .map((l) => ({ linha: l.lineCode, pontos: l.pontos, caminho: l.caminho })),
+  ];
+  const diaUtil = new Date(Date.now() + 86400000);
+  while ([0, 6].includes(diaUtil.getUTCDay())) diaUtil.setUTCDate(diaUtil.getUTCDate() + 1);
+  const quandoUnir = `${diaUtil.toISOString().slice(0, 10)}T10:30`;
   let testados = 0; const semCaminho = [], maus = [];
-  for (const { r, d } of amostra.slice(0, 3)) {
+  for (const { r, d } of amostra) {
+    if (testados >= 6) break;
     const seq = db.prepare('SELECT s.stop_lat AS lat, s.stop_lon AS lon FROM stop_routes sr JOIN stops s ON s.stop_id = sr.stop_id WHERE sr.route_id = ? AND sr.direction_id = ? ORDER BY sr.stop_sequence').all(r, d);
     if (seq.length < 8) continue;
     const o = seq[1], dest = seq[Math.min(seq.length - 2, 9)];
-    const { status, corpo } = await get(`/api/transit/plan-route?originLat=${o.lat}&originLon=${o.lon}&destLat=${dest.lat}&destLon=${dest.lon}&destName=Destino&quando=${encodeURIComponent('2026-10-20T10:30')}`);
+    const { status, corpo } = await get(`/api/transit/plan-route?originLat=${o.lat}&originLon=${o.lon}&destLat=${dest.lat}&destLon=${dest.lon}&destName=Destino&quando=${encodeURIComponent(quandoUnir)}`);
     if (status !== 200 || !corpo) { maus.push(`${r}/${d}: plan-route HTTP ${status}`); continue; }
-    for (const c of candidatos(corpo)) {
+    for (const c of doCorpo(corpo)) {
       if (!c?.pontos || c.pontos.length < 2) continue;
       testados++;
       if (!c.caminho) { semCaminho.push(`${c.linha}`); continue; }
@@ -186,7 +197,7 @@ if (temRotaDesenhos) {
       else if (c.pontos.filter((q) => aLinha(q, linha) <= 120).length / c.pontos.length < 0.8) maus.push(`${c.linha}: paragens longe do caminho`);
     }
   }
-  nota(`opções com a UNIR testadas: ${testados}; sem caminho: ${semCaminho.length}`);
+  nota(`troços da UNIR testados (${quandoUnir}): ${testados}; sem caminho: ${semCaminho.length}`);
   ok('[UNIR] planeador: há opções com a UNIR e todas trazem o caminho pela estrada', testados >= 2 && semCaminho.length === 0 && maus.length === 0, [...semCaminho.slice(0, 2).map((l) => `${l}: sem caminho`), ...maus.slice(0, 2)].join(' | '));
 } else {
   ok('[UNIR] a base tem os desenhos das linhas da UNIR (tabela route_shapes)', false, 'tabela route_shapes inexistente');
