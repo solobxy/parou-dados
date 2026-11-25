@@ -119,6 +119,8 @@ jobs:
           # tempo real no cálculo: viagens suprimidas, atrasos, transbordos que já não dão, autocarros que já passaram
           APP=$PWD node --import tsx ../auditoria/planeador-tempo-real.mjs 2>&1 | grep -v "Experimental\|trace-warnings" | tee ../res/planeador-tempo-real.txt | tail -40
           d=${PIPESTATUS[0]}
+          # greves oficiais nos trajetos (regra e, com greve da CP a decorrer, o aviso no troço do comboio)
+          (APP=$PWD BASE=http://127.0.0.1:3000 node --import tsx ../auditoria/greve-trajeto.mjs 2>&1 | grep -v "Experimental\|trace-warnings") | tee ../res/greve-trajeto.txt | tail -30
           # a UNIR com horários (GTFS da TMP) entra nos percursos normais, com tempo real
           APP=$PWD node --import tsx ../auditoria/planeador-unir.mjs 2>&1 | grep -v "Experimental\|trace-warnings" | tee ../res/planeador-unir.txt | tail -40
           e=${PIPESTATUS[0]}
@@ -245,6 +247,14 @@ jobs:
         run: |
           mkdir -p ../res
           SAIDA=../res timeout 300 node localizacao-automatica.mjs 2>&1 | tee ../res/localizacao-automatica.txt | tail -20
+          exit ${PIPESTATUS[0]}
+
+      - name: Testar o aviso de greve nos trajetos (320, 390 e 1280 px; temas)
+        continue-on-error: true
+        working-directory: auditoria
+        run: |
+          mkdir -p ../res
+          SAIDA=../res timeout 400 node greve-ui.mjs 2>&1 | tee ../res/greve-ui.txt | tail -60
           exit ${PIPESTATUS[0]}
 
       - name: Testar o bilhete Andante nas opções de viagem (320, 390 e 1280 px; temas Claro, Escuro e Âmbar)
