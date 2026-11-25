@@ -116,6 +116,10 @@ jobs:
         working-directory: app
         run: APP=$PWD node --import tsx ../auditoria/atrasos-medidos.mjs 2>&1 | grep -v "Experimental\|trace-warnings" | tail -20; exit ${PIPESTATUS[0]}
 
+      - name: Relatórios e horários de cada dia
+        working-directory: app
+        run: APP=$PWD node --import tsx ../auditoria/relatorios.mjs 2>&1 | grep -v "Experimental\|trace-warnings" | tail -30; exit ${PIPESTATUS[0]}
+
       - name: Pontualidade (a UNIR também fica gravada em bruto)
         run: python3 auditoria/test_pontualidade_unir.py
 
