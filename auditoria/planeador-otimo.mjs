@@ -74,7 +74,8 @@ for (const r of db.prepare('SELECT stop_id, stop_name, stop_lat, stop_lon FROM s
   idx.set(r.stop_id, sId.length); sId.push(r.stop_id); sLat.push(r.stop_lat); sLon.push(r.stop_lon); sNome.push(r.stop_name);
 }
 const nS = sId.length;
-const paraApp = (id) => (id.startsWith('cmh:') ? `cm:${id.slice(4)}` : id);
+// horários só do planeador: Carris Metropolitana ("cmh:" -> "cm:") e UNIR ("unirh:" -> "unir:")
+const paraApp = (id) => (id.startsWith('cmh:') ? `cm:${id.slice(4)}` : id.startsWith('unirh:') ? `unir:${id.slice(6)}` : id);
 
 // ---------------------------------------------------------------- viagens do dia e ligações (paragem a paragem)
 const rotas = new Map(db.prepare('SELECT route_id, route_type, route_short_name FROM routes').all().map((r) => [r.route_id, r]));

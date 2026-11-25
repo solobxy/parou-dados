@@ -119,7 +119,10 @@ jobs:
           # tempo real no cálculo: viagens suprimidas, atrasos, transbordos que já não dão, autocarros que já passaram
           APP=$PWD node --import tsx ../auditoria/planeador-tempo-real.mjs 2>&1 | grep -v "Experimental\|trace-warnings" | tee ../res/planeador-tempo-real.txt | tail -40
           d=${PIPESTATUS[0]}
-          exit $(( a || b || c || d ))
+          # a UNIR com horários (GTFS da TMP) entra nos percursos normais, com tempo real
+          APP=$PWD node --import tsx ../auditoria/planeador-unir.mjs 2>&1 | grep -v "Experimental\|trace-warnings" | tee ../res/planeador-unir.txt | tail -40
+          e=${PIPESTATUS[0]}
+          exit $(( a || b || c || d || e ))
 
       - name: Testes da pesquisa de destinos, da cache com limite e do idioma do aparelho
         continue-on-error: true

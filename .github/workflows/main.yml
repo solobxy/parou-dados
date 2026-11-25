@@ -70,6 +70,7 @@ jobs:
           python auditoria/test_barraqueiro_oeste.py
           python auditoria/test_inventario.py
           python auditoria/test_desenhos_autocarros.py
+          python auditoria/test_unir_horarios.py
 
       # Cópia do último ficheiro oficial da STCP (cache privada do Actions; não é publicada). Usada quando a API
       # responde 429 (quota diária gasta pelo tempo real do servidor), em vez do ficheiro antigo do portal aberto.
@@ -79,6 +80,14 @@ jobs:
           path: fontes/stcp-oficial.zip
           key: stcp-oficial-${{ github.run_id }}
           restore-keys: stcp-oficial-
+
+      # Cópia do último GTFS da UNIR (TMP) que veio bem: usada se a plataforma da TML falhar num dia
+      - name: Cópia do GTFS da UNIR
+        uses: actions/cache/restore@v4
+        with:
+          path: fontes/unir-horarios.zip
+          key: unir-horarios-${{ github.run_id }}
+          restore-keys: unir-horarios-
 
       # Barraqueiro Oeste: os horários só existem em PDF; o construtor tira-lhes o texto com o pdftotext
       - name: Ferramenta para ler PDFs
@@ -94,6 +103,13 @@ jobs:
         with:
           path: fontes/stcp-oficial.zip
           key: stcp-oficial-${{ github.run_id }}
+
+      - name: Guardar a cópia nova do GTFS da UNIR
+        if: ${{ hashFiles('fontes/.unir-atualizada') != '' }}
+        uses: actions/cache/save@v4
+        with:
+          path: fontes/unir-horarios.zip
+          key: unir-horarios-${{ github.run_id }}
 
       - name: Publicar na release "dados"
         env:

@@ -1533,6 +1533,136 @@ def process_horarios_cm(conn, today_dt):
         log(f"  AVISO {fid}: sem horários da Carris Metropolitana para o planeador ({str(err)[:200]})")
 
 
+UNIR_GTFS = "https://go.tmlmobilidade.pt/hub/api/v1/53JAZ/plans/gtfs"
+# Cópia do último GTFS da UNIR que veio bem (cache privada do GitHub Actions, como a da STCP): se a plataforma da TML falhar
+# num dia, o planeador continua com os horários da UNIR em vez de os perder.
+UNIR_COPIA = os.path.join("fontes", "unir-horarios.zip")
+UNIR_COPIA_MAX_DIAS = 21
+
+
+def _copia_unir(body=None):
+    """Guarda (com body) ou lê a cópia do GTFS da UNIR. Lida: bytes, ou None se não houver ou tiver mais de 21 dias."""
+    try:
+        if body is not None:
+            os.makedirs(os.path.dirname(UNIR_COPIA), exist_ok=True)
+            with open(UNIR_COPIA + ".novo", "wb") as f:
+                f.write(body)
+            os.replace(UNIR_COPIA + ".novo", UNIR_COPIA)
+            with open(os.path.join(os.path.dirname(UNIR_COPIA), ".unir-atualizada"), "w") as f:
+                f.write(now_iso())
+            return body
+        if not os.path.exists(UNIR_COPIA):
+            return None
+        dia = datetime.datetime.fromtimestamp(os.path.getmtime(UNIR_COPIA), datetime.timezone.utc).date()
+        if (datetime.datetime.now(datetime.timezone.utc).date() - dia).days > UNIR_COPIA_MAX_DIAS:
+            log(f"  unirh: cópia de {dia} é antiga demais; não se usa")
+            return None
+        with open(UNIR_COPIA, "rb") as f:
+            dados = f.read()
+        return dados if dados[:2] == b"PK" else None
+    except OSError as err:
+        log(f"  unirh: cópia ({err})")
+        return None
+
+
+def process_horarios_unir(conn, today_dt):
+    """Horários da UNIR só para o planeador de viagens (feed "unirh"), do GTFS que a TMP publica na plataforma GO da TML.
+
+    Como o "cmh" da Carris Metropolitana: as paragens e as linhas continuam a ser as da AMP (feed "unir", "unir:<código>"),
+    e as partidas que a app mostra também. Aqui juntam-se só as viagens, com as linhas "unirh:<número>" e as paragens
+    escritas "unirh:<código da UNIR>" (o planeador lê "unir:<código>"). A ligação às paragens da UNIR faz-se pelo código
+    antigo da AMP (legacy_ids, "KJTOU-prg:aro:446" -> "aro:446") ou, sem ele, pela paragem da UNIR mais perto (até 30 m).
+    Os códigos das viagens ficam os da TMP: são os que o tempo real da TMP usa.
+    """
+    global WINDOW_DAYS
+    fid = "unirh"
+    t0 = time.time()
+    body = None
+    try:
+        _, body = http_get(UNIR_GTFS, timeout=300)
+        body = unwrap_zip(body)
+        with zipfile.ZipFile(io.BytesIO(body)) as zf:
+            if "stop_times.txt" not in {os.path.basename(n).lower() for n in zf.namelist()}:
+                raise ValueError("o ficheiro não tem stop_times.txt")
+        log_fetch(conn, fid, UNIR_GTFS, 200, len(body), int((time.time() - t0) * 1000), "GTFS da UNIR (planeador)")
+        _copia_unir(body)
+    except Exception as err:  # noqa: BLE001
+        body = _copia_unir()
+        log_fetch(conn, fid, UNIR_GTFS, 0, 0, int((time.time() - t0) * 1000), "Falha" + (" (a usar a cópia)" if body else ""), str(err))
+        log(f"  AVISO {fid}: GTFS da UNIR falhou ({str(err)[:160]})" + ("; a usar a cópia" if body else "; sem horários da UNIR no planeador"))
+        if not body:
+            conn.commit()
+            return
+    try:
+        delete_feed(conn, fid)
+        stats = ingest_gtfs(conn, fid, body, today_dt)
+        conn.execute("""UPDATE trips SET route_id = 'unirh:' || COALESCE(
+                          (SELECT r.route_short_name FROM routes r WHERE r.route_id = trips.route_id), substr(trips.route_id, 7))
+                        WHERE feed_id = ?""", (fid,))
+        # Paragens da UNIR (as da AMP) por código e por proximidade
+        unir = conn.execute("SELECT stop_id, stop_lat, stop_lon FROM stops WHERE feed_id = 'unir'").fetchall()
+        codigos = {sid[5:] for sid, _, _ in unir}
+        grelha = {}
+        for sid, la, lo in unir:
+            if la is not None and lo is not None:
+                grelha.setdefault((int(la * 500), int(lo * 400)), []).append((sid, la, lo))
+        with zipfile.ZipFile(io.BytesIO(body)) as zf:
+            originais = list(gtfs_rows(zf, "stops.txt"))
+        mapa = []
+        for r in originais:
+            sid = r.get("stop_id")
+            if not sid:
+                continue
+            alvo = None
+            for x in (r.get("legacy_ids") or "").split("|"):
+                cod = x.split("-", 1)[1] if "-" in x else x
+                cod = cod[4:] if cod.startswith("prg:") else cod
+                if cod in codigos:
+                    alvo = cod
+                    break
+            if not alvo:
+                try:
+                    la, lo = float(r.get("stop_lat")), float(r.get("stop_lon"))
+                except (TypeError, ValueError):
+                    la = lo = None
+                if la is not None:
+                    melhor, dmin = None, 30.0
+                    ci, cj = int(la * 500), int(lo * 400)
+                    for di in (-1, 0, 1):
+                        for dj in (-1, 0, 1):
+                            for usid, ula, ulo in grelha.get((ci + di, cj + dj), []):
+                                d = math.hypot((ula - la) * 111320, (ulo - lo) * 111320 * math.cos(math.radians(la)))
+                                if d < dmin:
+                                    melhor, dmin = usid, d
+                    alvo = melhor[5:] if melhor else None
+            if alvo:
+                mapa.append((f"{fid}:{sid}", f"{fid}:{alvo}"))
+        total = len(originais)
+        conn.execute("CREATE TEMP TABLE IF NOT EXISTS mapa_unirh (de TEXT PRIMARY KEY, para TEXT)")
+        conn.execute("DELETE FROM mapa_unirh")
+        conn.executemany("INSERT OR REPLACE INTO mapa_unirh VALUES (?, ?)", mapa)
+        conn.execute("""UPDATE stop_times SET stop_id = (SELECT para FROM mapa_unirh WHERE de = stop_times.stop_id)
+                        WHERE feed_id = ? AND stop_id IN (SELECT de FROM mapa_unirh)""", (fid,))
+        conn.execute("DROP TABLE mapa_unirh")
+        conn.execute("DELETE FROM stops WHERE feed_id = ?", (fid,))
+        conn.execute("DELETE FROM routes WHERE feed_id = ?", (fid,))
+        taxa = len(mapa) / total if total else 0
+        if taxa < 0.9 or not stats.get("stop_times"):
+            delete_feed(conn, fid)
+            conn.commit()
+            log(f"  AVISO {fid}: paragens do GTFS não batem com as da UNIR ({len(mapa)}/{total}); horários da UNIR ignorados")
+            return
+        conn.commit()
+        log(f"  OK  {fid}: {stats.get('trips')} viagens, {stats.get('stop_times')} horários (paragens iguais às da UNIR: {taxa:.0%})")
+    except Exception as err:  # noqa: BLE001
+        try:
+            delete_feed(conn, fid)
+            conn.commit()
+        except Exception:  # noqa: BLE001
+            pass
+        log(f"  AVISO {fid}: sem horários da UNIR para o planeador ({str(err)[:200]})")
+
+
 UNIR_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "unir")
 UNIR_COR = "#CE9926"  # amarelo-torrado dos autocarros UNIR
 
@@ -1963,6 +2093,7 @@ def main():
     results.append(process_carris_metropolitana(conn, have_prev))
     process_horarios_cm(conn, today_dt)
     results.append(process_unir(conn))
+    process_horarios_unir(conn, today_dt)  # depois das paragens da UNIR: liga-se a elas
 
     try:
         conn.execute("DETACH DATABASE prev")
