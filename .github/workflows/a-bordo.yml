@@ -162,8 +162,8 @@ jobs:
           (APP=$PWD BASE=http://127.0.0.1:3000 node --import tsx ../auditoria/ttsl-fonte.mjs 2>&1 | grep -v "Experimental\|trace-warnings") | tee ../res/ttsl-fonte-servidor.txt | tail -30
           a=${PIPESTATUS[0]}
           (APP=$PWD BASE=http://127.0.0.1:3000 node --import tsx ../auditoria/cidades-margens.mjs 2>&1 | grep -v "Experimental\|trace-warnings") | tee ../res/cidades-margens-servidor.txt | tail -30
-          (APP=$PWD BASE=http://127.0.0.1:3000 node --import tsx ../auditoria/metro-mesma-hora.mjs 2>&1 | grep -v "Experimental\|trace-warnings") | tee ../res/metro-mesma-hora.txt | tail -30
           b=${PIPESTATUS[0]}
+          (APP=$PWD BASE=http://127.0.0.1:3000 node --import tsx ../auditoria/metro-mesma-hora.mjs 2>&1 | grep -v "Experimental\|trace-warnings") | tee ../res/metro-mesma-hora.txt | tail -30
           BASE=http://127.0.0.1:3000 node ../auditoria/meta-descricoes.mjs 2>&1 | tee ../res/meta-descricoes.txt | tail -40
           c=${PIPESTATUS[0]}
           exit $(( a || b || c ))
