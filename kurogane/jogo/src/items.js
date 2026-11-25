@@ -72,7 +72,7 @@ export const ITEMS = {
   tecido: { n: 'Tecido', s: 'Tecido', w: 1, h: 1, cat: 'r', icon: 'tecido', st: 30, desc: 'Fibra de algodão bravo, colhida nas plantas de tufos brancos. Faz ligaduras.' },
   couro: { n: 'Couro', s: 'Couro', w: 1, h: 1, cat: 'r', icon: 'couro', st: 20, desc: 'Pele de animal. Serve para fazer a mochila de couro e vende-se bem.' },
   fogueira: { n: 'Fogueira', s: 'Fogueira', w: 1, h: 1, cat: 'g', icon: 'fogueira', deploy: 'fogueira', desc: 'Põe madeira e carne crua: coze a carne. Em qualquer sítio, também fora da base.' },
-  mochilaC: { n: 'Mochila de couro', s: 'Mochila couro', w: 2, h: 2, cat: 'g', icon: 'pack', v: 'iso', eq: 'back', rows: 3, desc: 'Mais 3 filas no inventário.' },
+  mochilaC: { n: 'Mochila de couro', s: 'Mochila couro', w: 2, h: 2, cat: 'g', icon: 'pack', v: 'iso', eq: 'back', tk: 'C', rows: 3, desc: 'Mais 3 filas no inventário.' },
   madeira: { n: 'Madeira', s: 'Madeira', w: 1, h: 1, cat: 'r', icon: 'wood', v: 'iso', st: 1000, desc: 'Para fabricar ferramentas e armas.' },
   pedraR: { n: 'Pedras', s: 'Pedras', w: 1, h: 1, cat: 'r', icon: 'stone', v: 'iso', st: 1000, desc: 'Para fabricar ferramentas.' },
   enxofre: { n: 'Enxofre', s: 'Enxofre', w: 1, h: 1, cat: 'r', icon: 'sulfur', v: 'iso', st: 1000, desc: 'Pólvora para balas. Mais tarde, explosivos.' },

@@ -7,9 +7,10 @@ import { GUNSDATA } from './gunsdata.js';
 // armas novas (Blender, tamanho real): descodificadas uma vez e juntadas ao Builder por cor e material
 const _gd = {};
 const gb64 = (s, T) => { const b = atob(s), u = new Uint8Array(b.length); for (let i = 0; i < b.length; i++) u[i] = b.charCodeAt(i); return new T(u.buffer); };
-const gunTpl = k => _gd[k] || (_gd[k] = GUNSDATA[k].g.map(G => { const S = GUNSDATA[k].s, P = gb64(G.p, Int16Array), N = gb64(G.n, Int8Array), I = gb64(G.i, G.w === 4 ? Uint32Array : Uint16Array), n = I.length;
+export const dataTpl = (D, k, C = {}) => C[k] || (C[k] = D[k].g.map(G => { const S = D[k].s, P = gb64(G.p, Int16Array), N = gb64(G.n, Int8Array), I = gb64(G.i, G.w === 4 ? Uint32Array : Uint16Array), n = I.length;
   const p = new Float32Array(n * 3), nn = new Float32Array(n * 3); for (let t = 0; t < n; t++) { const v = I[t]; for (let c = 0; c < 3; c++) { p[t * 3 + c] = P[v * 3 + c] / 32767 * S; nn[t * 3 + c] = N[v * 3 + c] / 127; } }
   return { c: G.c, m: G.m, g: { tpl: true, p, n: nn, uv: new Float32Array(n * 2) } }; }));
+const gunTpl = k => dataTpl(GUNSDATA, k, _gd);
 const blendGun = k => b => { for (const T of gunTpl(k)) b.add(T.g, T.c, T.m); };
 // pontos de encaixe das armas novas (boca do cano, calha, mira de ferro, lanterna, punho, guarda-mão)
 export const GUNA = k => GUNSDATA[k] ? GUNSDATA[k].a : null;

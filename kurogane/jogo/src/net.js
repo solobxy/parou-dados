@@ -13,7 +13,7 @@ export function makeNet({ G, scene, mkRemote, audio, Conta, enc, dec, hurt, die,
   const R = new Map(), sleepers = new Map();
   const tags = document.createElement('div'); tags.id = 'tags'; { const h = document.getElementById('hud'); if (h && h.parentNode) h.parentNode.insertBefore(tags, h); else document.body.appendChild(tags); } // por baixo do HUD e dos ecrãs por cima
   const N = { on: false, world: false, id: null, clan: null, clanInfo: null, R };
-  const url = () => { try { const o = localStorage.getItem('kg.srv'); if (o) return o; } catch (e) { } return (location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + '/srv/ws'; };
+  const url = () => { try { const o = localStorage.getItem('kg.srv'); if (o) return o; } catch (e) { } return window.KG_ONLINE ? (location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + '/srv/ws' : 'wss://kurogane.2-31-13-85.sslip.io/srv/ws'; };
   const tokKey = () => 'kg.tok.' + ((Conta.ativo() || {}).id || 'x');
   const send = o => { if (ws && ws.readyState === 1) ws.send(JSON.stringify(o)); };
   const tag = (name, cls) => { const e = document.createElement('div'); e.className = 'ntag' + (cls ? ' ' + cls : ''); e.textContent = name; e.style.display = 'none'; tags.appendChild(e); return e; };
@@ -34,7 +34,7 @@ export function makeNet({ G, scene, mkRemote, audio, Conta, enc, dec, hurt, die,
   const onMsg = m => {
     switch (m.t) {
       case 'ok': {
-        N.id = m.id; tok = m.tok; try { localStorage.setItem(tokKey(), tok); } catch (e) { } N.on = true; retry = 0;
+        N.id = m.id; tok = m.tok; try { localStorage.setItem(tokKey(), tok); } catch (e) { } N.on = true; retry = 0; found();
         clearAll(); for (const [id, name, look, clan] of m.players) addRemote(id, name, look, clan); setSleepers(m.sleep); N.clan = m.clan ? m.clan.id : null; N.clanInfo = m.clan;
         if (G.airdrop) G.airdrop({ ph: 9, ...(m.drop || {}) });
         N.role = m.role || null; G.admF = { r: N.role, inv: 0, god: 0, spec: 0 }; G.frozen = false; G.ui.admRole && G.ui.admRole(N.role);
@@ -100,17 +100,21 @@ export function makeNet({ G, scene, mkRemote, audio, Conta, enc, dec, hurt, die,
       case 'pclan': { const r = R.get(m.id); if (r) { r.clan = m.clan; r.el.classList.toggle('mate', mate(m.clan)); } return; }
     }
   };
+  // sem modo offline: se a ligação cair, o jogo para e tenta voltar; se não voltar, regressa ao menu
+  const lost = final => { const el = document.getElementById('netLost'); if (final) { want = false; if (el) el.hidden = true; G.paused = false; if (G.playing) G.toMenu(); G.ui.toast('Sem ligação ao servidor. O Kurogane só se joga online.'); return; }
+    if (!G.playing) return; G.paused = true; if (el) { el.hidden = false; const t = document.getElementById('netLostT'); if (t) t.textContent = 'A tentar outra vez… (' + retry + ' de 6)'; } };
+  const found = () => { const el = document.getElementById('netLost'); if (el && !el.hidden) { el.hidden = true; G.paused = false; } };
   const connect = () => {
     if (ws || !want) return; const a = Conta.ativo(); if (!a || !a.nome) return;
     try { tok = localStorage.getItem(tokKey()); } catch (e) { }
-    let opened = false; try { ws = new WebSocket(url()); } catch (e) { ws = null; G.ui.toast('Sem ligação ao servidor. Continuas sozinho.'); return; }
+    let opened = false; try { ws = new WebSocket(url()); } catch (e) { ws = null; lost(true); return; }
     ws.onopen = () => { opened = true; send({ t: 'hi', pv: 4, name: a.nome, look: a.look || {}, tok, wv: WV, x: G.p ? G.p.x : 0, z: G.p ? G.p.z : 0, cars: G.cars.spawnPoints(), ctab: G.W.containers.filter(c => c.wid != null).sort((a, b) => a.wid - b.wid).map(c => [c.table, c.slots[0], c.slots[1]]), fresh: !!G.freshStart, test: (() => { try { return localStorage.getItem('kg.test') === '1'; } catch (e) { return false; } })() }); G.freshStart = false; };
     ws.onmessage = e => { try { onMsg(JSON.parse(e.data)); } catch (er) { console.error(er); } };
     ws.onclose = () => {
       const was = N.on; ws = null; N.on = false; clearAll(); offline();
       if (!want) return;
-      if (retry < 6) { retry++; if (was) G.ui.toast('Perdeste a ligação ao servidor. A tentar outra vez…'); else if (!opened && retry === 1) G.ui.toast('O servidor não responde. Continuas sozinho e o jogo tenta outra vez.'); setTimeout(connect, 1500 * retry); }
-      else G.ui.toast('Sem servidor. Continuas sozinho.');
+      if (retry < 6) { retry++; lost(false); setTimeout(connect, 1500 * retry); }
+      else lost(true);
     };
   };
   N.start = () => { want = true; retry = 0; connect(); };

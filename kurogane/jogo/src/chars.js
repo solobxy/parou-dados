@@ -2,7 +2,8 @@
 import * as THREE from 'three';
 import { Builder, mat4, shade } from './builder.js';
 import { ITEMS, TINTS } from './items.js';
-import { GUNS, GUNA } from './guns.js';
+import { GUNS, GUNA, dataTpl } from './guns.js';
+import { GEARDATA } from './geardata.js';
 import { ZBODY } from './zbody.js';
 import { PBODY } from './pbody.js';
 
@@ -136,6 +137,13 @@ export function gearGeos() {
   };
   // capacete e colete de outras cores (as chaves são as dos itens: capacetep, coletec…)
   for (const t in TINTS) { G['head_' + t] = retint(geoOf(gearHead), OLV, TINTS[t][1]); G['vest_' + t] = retint(geoOf(gearVest), TAN, TINTS[t][1]); }
+  // equipamento novo (Blender, já nas coordenadas da cabeça ou do tronco do corpo novo)
+  const _gc = {}, real = k => geoOf(b => { for (const T of dataTpl(GEARDATA, k, _gc)) b.add(T.g, T.c, T.m); });
+  if (GEARDATA.capacete) { G.head = real('capacete'); for (const t in TINTS) G['head_' + t] = retint(real('capacete'), OLV, TINTS[t][1]); }
+  if (GEARDATA.colete) { G.vest = real('colete'); for (const t in TINTS) G['vest_' + t] = retint(real('colete'), TAN, TINTS[t][1]); }
+  if (GEARDATA.mochila) G.back = real('mochila'); if (GEARDATA.mochilaC) G.back_C = real('mochilaC'); if (GEARDATA.nvg) G.eyes = real('nvg');
+  if (GEARDATA.ghillie_torso) { G.suit = real('ghillie_torso'); for (const s of ['head', 'armL', 'armR', 'foreL', 'foreR', 'legL', 'legR', 'shinL', 'shinR']) G['gh_' + s] = real('ghillie_' + s); }
+  G.real = !!GEARDATA.capacete;
   return G;
 }
 // que peças mostrar para o equipamento que tens (aceita só chaves: { head: { k: 'capacetec' } })
@@ -273,9 +281,10 @@ export class Body {
     this.arms = [-1, 1].map(s => { const g = new THREE.Group(); g.position.set(s * SHX, SHY - HIP, 0); this.torso.add(g); const f = new THREE.Group(); f.position.y = -UPPER; g.add(f); const h = new THREE.Group(); h.position.y = -0.33; f.add(h); g.userData.fore = f; g.userData.hand = h; return g; });
     this.mkSkin(c);
     // equipamento (provisório até ao equipamento novo): encolhido e mudado para a cabeça e o tronco do corpo novo
-    this.gear = {}; for (const k in G) { if (/^suit[A-Z]/.test(k)) continue; const g = meshOf(G[k], mats); g.visible = false; if (k === 'eyes' || k.startsWith('head')) { const hs = 0.68; g.scale.setScalar(hs); g.position.set(0, PBODY.headC[1] - hs * (NECK + 0.145) + 0.006, PBODY.headC[2] + 0.02 - hs * 0.01); this.head.add(g); } else { const T = k.startsWith('vest') ? [0.74, 0.8, 0.75, -0.022, 0.01] : k === 'back' ? [0.85, 0.85, 0.85, 0, 0.012] : [0.8, 0.85, 0.8, 0, 0.01]; g.scale.set(T[0], T[1], T[2]); g.position.set(0, T[3], T[4]); this.torso.add(g); } this.gear[k] = g; }
+    this.gear = {}; for (const k in G) { if (/^suit[A-Z]/.test(k) || k.startsWith('gh_') || k === 'real') continue; const g = meshOf(G[k], mats); g.visible = false; if (G.real) { if (k === 'eyes' || k.startsWith('head')) this.head.add(g); else this.torso.add(g); this.gear[k] = g; continue; } if (k === 'eyes' || k.startsWith('head')) { const hs = 0.68; g.scale.setScalar(hs); g.position.set(0, PBODY.headC[1] - hs * (NECK + 0.145) + 0.006, PBODY.headC[2] + 0.02 - hs * 0.01); this.head.add(g); } else { const T = k.startsWith('vest') ? [0.74, 0.8, 0.75, -0.022, 0.01] : k === 'back' ? [0.85, 0.85, 0.85, 0, 0.012] : [0.8, 0.85, 0.8, 0, 0.01]; g.scale.set(T[0], T[1], T[2]); g.position.set(0, T[3], T[4]); this.torso.add(g); } this.gear[k] = g; }
     const sx = (geo, par) => { const g = meshOf(geo, mats); g.visible = false; par.add(g); return g; };
-    this.suitX = [...this.arms.flatMap(a => [sx(G.suitU, a), sx(G.suitF, a.userData.fore)]), ...this.legs.flatMap(l => [sx(G.suitT, l), sx(G.suitS, l.userData.knee)])];
+    this.suitX = G.gh_head ? [sx(G.gh_head, this.head), sx(G.gh_armL, this.arms[0]), sx(G.gh_armR, this.arms[1]), sx(G.gh_foreL, this.arms[0].userData.fore), sx(G.gh_foreR, this.arms[1].userData.fore), sx(G.gh_legL, this.legs[0]), sx(G.gh_legR, this.legs[1]), sx(G.gh_shinL, this.legs[0].userData.knee), sx(G.gh_shinR, this.legs[1].userData.knee)]
+      : [...this.arms.flatMap(a => [sx(G.suitU, a), sx(G.suitF, a.userData.fore)]), ...this.legs.flatMap(l => [sx(G.suitT, l), sx(G.suitS, l.userData.knee)])];
     this.weps = {}; for (const k in Wp) { const g = meshOf(Wp[k], mats); g.visible = false; const base = k.replace(/^(sup|sc8|sc|rd|lt)_/, ''); if (LONG.includes(base)) this.torso.add(g); else { g.position.y = 0.53; this.arms[1].userData.hand.add(g); } this.weps[k] = g; }
     // o que tens na mão ao usar: comida, bebida ou ligadura
     this.props = { eat: meshOf(geoOf(b => { b.rbox(0.13, 0.17, 0.05, 0.02, 0, 0, 0, 0xd8c8a0); b.box(0.135, 0.05, 0.055, 0, 0.05, 0, 0xc8321e); }), mats), drink: meshOf(geoOf(b => { b.cyl(0.04, 0.04, 0.2, 10, 0, 0, 0, 0x8ab8d8); b.cyl(0.02, 0.025, 0.04, 8, 0, 0.12, 0, 0x2a6aa8); }), mats), heal: meshOf(geoOf(b => { b.cyl(0.05, 0.05, 0.08, 12, 0, 0, 0, 0xf2f0ea, { rz: Math.PI / 2 }); }), mats) };
@@ -480,7 +489,9 @@ export class ZHorde {
     const arm = geoOf(b => { b.sph(hr + 0.024, hc[0], hc[1] + 0.02, hc[2] - 0.005, 0xffffff, { th: Math.PI * 0.52, ws: 18, hs: 9, sy: 1.05 }); b.box(0.2, 0.024, 0.03, 0, hc[1] + 0.035, hc[2] + hr + 0.012, 0xd8d8d8); });
     const vst = geoOf(b => { b.rbox(0.4, 0.4, 0.28, 0.06, 0, 0.36, 0.01, 0xffffff); for (const x of [-0.1, 0, 0.1]) b.rbox(0.085, 0.11, 0.05, 0.018, x, 0.27, 0.15, 0xd0d0d0); });
     const mk = g => { const m = new THREE.InstancedMesh(g.v, vmat, 400); m.castShadow = true; m.receiveShadow = true; m.frustumCulled = false; m.count = 0; m.renderOrder = 3; scene.add(m); return m; };
-    this.helm = mk(arm); this.vest = mk(vst); this._c = new THREE.Color();
+    const one = k => { const g = geoOf(b => { for (const T of dataTpl(GEARDATA, k)) b.add(T.g, T.c, 'v'); }); return g; };
+    if (GEARDATA.capacete) { const h = one('capacete'); h.v.translate(0, 0, -0.02); this.helm = mk(h); this.vest = mk(one('colete')); this.realGear = true; } // equipamento novo (a cabeça dos zombies tem o ponto de rotação 2 cm mais à frente)
+    else { this.helm = mk(arm); this.vest = mk(vst); } this._c = new THREE.Color();
   }
   // a textura chegou depois de criar os materiais: passa-a às cópias
   setMaps(map, nmap) { for (const L of this.lods) { L.m.map = map; L.m.normalMap = nmap; L.m.color.set(0xffffff); L.m.needsUpdate = true; } }
@@ -498,7 +509,7 @@ export class ZHorde {
         d[o] = e[0]; d[o + 1] = e[4]; d[o + 2] = e[8]; d[o + 3] = e[12]; d[o + 4] = e[1]; d[o + 5] = e[5]; d[o + 6] = e[9]; d[o + 7] = e[13]; d[o + 8] = e[2]; d[o + 9] = e[6]; d[o + 10] = e[10]; d[o + 11] = e[14];
       }
       z.inst = r;
-      if (z.state !== 'dead') { if (z.helm && nh < 400) { this.helm.setMatrixAt(nh, M.head); this.helm.setColorAt(nh++, this._c.set(z.kind === 'pol' ? 0x2a3442 : 0x55603e)); } if (z.vest && nv < 400) { this.vest.setMatrixAt(nv, M.torso); this.vest.setColorAt(nv++, this._c.set(z.kind === 'pol' ? 0x2c3a52 : 0x6a6448)); } }
+      if (z.state !== 'dead') { if (z.helm && nh < 400) { this.helm.setMatrixAt(nh, M.head); this.helm.setColorAt(nh++, this._c.set(this.realGear ? (z.kind === 'pol' ? 0x6a7c9a : 0xffffff) : (z.kind === 'pol' ? 0x2a3442 : 0x55603e))); } if (z.vest && nv < 400) { this.vest.setMatrixAt(nv, M.torso); this.vest.setColorAt(nv++, this._c.set(this.realGear ? (z.kind === 'pol' ? 0x5a6a8a : 0xffffff) : (z.kind === 'pol' ? 0x2c3a52 : 0x6a6448))); } }
     }
     for (let li = 0; li < 2; li++) { const L = this.lods[li]; L.mesh.count = n[li]; L.mesh.visible = n[li] > 0; if (n[li]) { L.mesh.instanceMatrix.needsUpdate = true; L.tex.needsUpdate = true; } }
     for (const [m, k] of [[this.helm, nh], [this.vest, nv]]) { m.count = k; m.visible = k > 0; m.instanceMatrix.needsUpdate = true; if (m.instanceColor) m.instanceColor.needsUpdate = true; }

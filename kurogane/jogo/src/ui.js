@@ -32,15 +32,24 @@ export function initUI(G) {
     if (G.TOUCH) { try { const r = document.documentElement.requestFullscreen && document.documentElement.requestFullscreen({ navigationUI: 'hide' }); if (r && r.catch) r.catch(() => { }); } catch (e) { } }
     $('start').hidden = true; G.start(cont, kit);
   };
-  $('sPlay').onclick = () => go(false); $('sArena').onclick = () => { audio.play('ui'); mnote('A Arena PvP em Tóquio está a ser construída. Chega numa das próximas versões.'); }; $('sCont').onclick = () => go(true);
+  // o Kurogane só se joga online: antes de entrar confirma que o servidor responde; sem servidor não se joga
+  const SITE = 'https://kurogane.2-31-13-85.sslip.io';
+  const health = () => { let u = window.KG_ONLINE ? '/srv/saude' : SITE + '/srv/saude'; try { const o = localStorage.getItem('kg.srv'); if (o) u = o.replace(/^ws/, 'http').replace(/\/ws$/, '/saude'); } catch (e) { } return u; };
+  let joining = false;
+  const playOnline = () => { if (joining) return; const b = $('sPlay'), em = b.querySelector('em'), old = em.textContent; joining = true; b.classList.add('busy'); em.textContent = 'A ligar ao servidor…'; audio.play('ui');
+    const ctl = new AbortController(), tm = setTimeout(() => ctl.abort(), 8000);
+    fetch(health(), { cache: 'no-store', signal: ctl.signal }).then(r => r.ok ? r.json() : null).catch(() => null).then(j => { clearTimeout(tm); joining = false; b.classList.remove('busy'); em.textContent = old;
+      if (j && j.ok) { go(false); return; }
+      mnote(window.KG_ONLINE ? 'O servidor não está a responder. O Kurogane só se joga online: tenta outra vez daqui a pouco.' : 'Daqui não dá para ligar ao servidor. O Kurogane só se joga online, no site: ' + SITE.replace('https://', '')); }); };
+  $('sPlay').onclick = playOnline; $('sArena').onclick = () => { audio.play('ui'); mnote('A Arena PvP em Tóquio está a ser construída. Chega numa das próximas versões.'); }; $('sCont').onclick = () => go(true);
   G.dbgKit = () => go(false, true); // só para os testes automáticos (joga sempre sem servidor)
   // um só servidor para todos: no site joga-se sempre online (se o servidor não responder, joga-se sozinho até voltar)
-  let canOnline = !!window.KG_ONLINE; try { if (localStorage.getItem('kg.srv')) canOnline = true; } catch (e) { }
+  let canOnline = true; // sem modo offline: no site e fora dele tenta sempre o servidor
   G.online = canOnline;
   if (!canOnline) { $('sOnl').hidden = true; const f = document.querySelector('#start .foot'); if (f) f.textContent = ((f.textContent.match(/Protótipo [\d.]+/) || ['Protótipo'])[0]) + ' · aqui jogas sozinho · o jogo online está no site do Kurogane'; }
   else { const b = $('sOnl'), t = $('sOnT');
-    const count = () => { let u = '/srv/saude'; try { const o = localStorage.getItem('kg.srv'); if (o) u = o.replace(/^ws/, 'http').replace(/\/ws$/, '/saude'); } catch (e) { }
-      fetch(u, { cache: 'no-store' }).then(r => r.ok ? r.json() : null).then(j => { const up = !!(j && j.ok); b.classList.toggle('up', up); b.classList.toggle('down', !up); t.textContent = up ? (j.jogadores ? `${j.jogadores} a jogar agora · PvP e clãs` : 'Ninguém a jogar agora · PvP e clãs') : 'Servidor em baixo: jogas sozinho até voltar'; }).catch(() => { b.classList.add('down'); t.textContent = 'Servidor em baixo: jogas sozinho até voltar'; }); };
+    const count = () => { let u = window.KG_ONLINE ? '/srv/saude' : 'https://kurogane.2-31-13-85.sslip.io/srv/saude'; try { const o = localStorage.getItem('kg.srv'); if (o) u = o.replace(/^ws/, 'http').replace(/\/ws$/, '/saude'); } catch (e) { }
+      fetch(u, { cache: 'no-store' }).then(r => r.ok ? r.json() : null).then(j => { const up = !!(j && j.ok); b.classList.toggle('up', up); b.classList.toggle('down', !up); t.textContent = up ? (j.jogadores ? `${j.jogadores} a jogar agora · PvP e clãs` : 'Ninguém a jogar agora · PvP e clãs') : 'Servidor em baixo: volta a tentar daqui a pouco'; }).catch(() => { b.classList.add('down'); t.textContent = 'Servidor em baixo: volta a tentar daqui a pouco'; }); };
     count(); G.ui_count = count; }
   // os toques no jogo não contam como cliques nas estatísticas (só os botões dos menus)
   for (const id of ['touch', 'c']) $(id).addEventListener('click', e => e.stopPropagation());
@@ -406,7 +415,7 @@ export function initUI(G) {
     pfm.hidden = false;
   };
   $('tLock').addEventListener('pointerdown', e => { e.stopPropagation(); if (G.lockT) { audio.play('ui'); lockMenu(G.lockT); } });
-  const startLabels = () => { G.hasSave = !!Conta.lerPersonagem(); $('sCont').hidden = !G.hasSave; const b = $('sPlay'); b.hidden = G.hasSave; b.classList.add('pri'); };
+  const startLabels = () => { $('sCont').hidden = true; const b = $('sPlay'); b.hidden = false; b.classList.add('pri'); }; // só online: a personagem fica no servidor
   const pfRender = () => {
     const a = Conta.ativo(), c = Conta.conta(), P = Conta.perfis();
     $('prof').innerHTML = (a && a.nome ? `<span class="pn">${c ? '{{cloud-check}}' : '{{user-round}}'}${esc(a.nome)}</span><span>${c ? 'na nuvem e neste aparelho' : 'guardado neste aparelho'}</span>` : `<span>Ainda sem perfil</span>`) + (a && a.nome ? `<button class="lnk" id="pfA">Aparência</button>` : '') + (P.lista.length > 1 || (a && a.nome) ? `<button class="lnk" id="pfL">Perfis</button>` : '') + `<button class="lnk" id="pfC">${c ? 'Conta' : 'Criar conta ou entrar'}</button>`;
@@ -592,11 +601,11 @@ export function initUI(G) {
       admB.innerHTML = t('Ver sem ser visto', 'Ninguém te vê nem te acerta e os zombies ignoram-te.', 'spec', 'spec') + t('Invisível', 'Os outros jogadores deixam de te ver no mapa e no jogo.', 'inv', 'inv') + (isA ? t('Invencível', 'Não perdes vida com tiros, zombies, quedas nem fome.', 'god', 'god') : '')
         + `<div class="srow"><div class="lab"><b>Ir a um ponto do mapa</b><span>Liga e toca no mapa grande onde queres ir.</span></div><button class="tog${G.admTp ? ' on' : ''}" id="admTp" role="switch"></button></div>`
         + (isA ? `<div class="srow ae"><div class="lab"><b>Criar objeto</b><span>Vai para o teu inventário.</span></div><div class="aq" style="margin:0"><select id="admK">${Object.keys(ITEMS).sort((a, b) => ITEMS[a].n.localeCompare(ITEMS[b].n, 'pt')).map(k => `<option value="${k}">${esc(ITEMS[k].n)}</option>`).join('')}</select><input id="admN" type="number" min="1" max="999" value="1" style="width:80px"><button class="btn sm pri" id="admGive">Dar</button></div></div>
-        <div class="srow"><div class="lab"><b>Criar carro</b><span>Aparece à tua frente.</span></div><button class="btn sm" id="admCar">Criar</button></div>
+        <div class="srow ae"><div class="lab"><b>Criar veículo</b><span>Aparece à tua frente (o helicóptero precisa de espaço).</span></div><div class="aq" style="margin:0"><select id="admV">${Object.keys(VT).map(k => `<option value="${k}"${k === (G.admV || 'sedan') ? ' selected' : ''}>${esc(VT[k].n)}</option>`).join('')}</select><button class="btn sm pri" id="admCar">Criar</button></div></div>
         <div class="srow"><div class="lab"><b>Lançamento aéreo</b><span>Um avião cai daqui a 20 s, num sítio ao calhas.</span></div><button class="btn sm" id="admDrop">Lançar</button></div>` : '');
       admB.querySelectorAll('.tog[data-a]').forEach(b => b.onclick = () => A(b.dataset.a, { on: +b.dataset.on }));
       $('admTp').onclick = () => { G.admTp = !G.admTp; audio.play('ui'); admRender(); if (G.admTp) toast('Abre o mapa e toca onde queres ir'); };
-      if (isA) { $('admGive').onclick = () => A('give', { k: $('admK').value, n: +$('admN').value || 1 }); $('admCar').onclick = () => A('car'); $('admDrop').onclick = () => A('drop'); }
+      if (isA) { $('admGive').onclick = () => A('give', { k: $('admK').value, n: +$('admN').value || 1 }); $('admV').onchange = e => { G.admV = e.target.value; }; $('admCar').onclick = () => A('car', { k: $('admV').value }); $('admDrop').onclick = () => A('drop'); }
       return; }
     if (!admData) { admB.innerHTML = '<p class="empty">A carregar…</p>'; return; }
     if (admTab === 'b') { admB.innerHTML = admData.bans.length ? admData.bans.map(b => `<div class="ap"><button><span class="nm"><b>${esc(b.n || '?')}</b><span>${b.until ? 'até ' + new Date(b.until).toLocaleString('pt-PT', { day: 'numeric', month: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'para sempre'} · por ${esc(b.by)}${b.why ? ' · ' + esc(b.why) : ''}</span></span></button><div class="aa"><button class="btn sm" data-ub="${b.uid}">Tirar ban</button></div></div>`).join('') : '<p class="empty">Ninguém está banido.</p>';
@@ -976,9 +985,9 @@ export function initUI(G) {
     closeDeath: () => { $('dead').hidden = true; clearInterval(dTick); }, sound, bedMenu, codeAsk, codeErr, codeDone, lockMenu, admRole, admList, admOpen, lbShow, lbOpen, trOpen, trRender, trOpenNow: () => !!trT, trWho: () => trT, trClose: () => { trEl.hidden = true; trT = null; },
     showHUD: msg => { $('hud').hidden = false; refresh(); toast(msg); },
     // sair para o menu (com 5 s parado se estiveres em combate)
-    toMenu: () => { setTimeout(() => { pfRender(); if (G.ui_count) G.ui_count(); }, 50); if (!pfm.hidden && $('pfT').textContent === 'Clã') pfClose(); $('quit').hidden = true; $('hud').hidden = true; setEl.hidden = true; G.paused = false; closeInv(); $('map').hidden = true; G.hasSave = true; $('sCont').hidden = false; $('sPlay').hidden = true;   $('start').hidden = false; },
+    toMenu: () => { setTimeout(() => { pfRender(); if (G.ui_count) G.ui_count(); }, 50); if (!pfm.hidden && $('pfT').textContent === 'Clã') pfClose(); $('quit').hidden = true; $('hud').hidden = true; setEl.hidden = true; G.paused = false; closeInv(); $('map').hidden = true; $('start').hidden = false; },
     quitTick: t => { const q = $('quit'); if (t < 0) { q.hidden = true; return; } q.hidden = false; $('qN').textContent = Math.max(1, Math.ceil(t)); q.style.setProperty('--qp', (1 - t / 5).toFixed(3)); },
-    ready: () => { drawOff(); { const t = $('ldP'), b = document.querySelector('#load .bar b'); if (t) t.textContent = '100%'; if (b) b.style.width = '100%'; } $('load').hidden = true; $('start').hidden = false; pfRender(); Conta.conta() && Conta.sincronizar().then(r => { if (r === 'nuvem') { pfRender(); mnote('Trouxemos o teu jogo mais recente da nuvem.'); } }).catch(() => { }); if (G.hasSave) { $('sCont').hidden = false; $('sPlay').hidden = true;   }
+    ready: () => { drawOff(); { const t = $('ldP'), b = document.querySelector('#load .bar b'); if (t) t.textContent = '100%'; if (b) b.style.width = '100%'; } $('load').hidden = true; $('start').hidden = false; pfRender(); Conta.conta() && Conta.sincronizar().then(r => { if (r === 'nuvem') { pfRender(); mnote('Trouxemos o teu jogo mais recente da nuvem.'); } }).catch(() => { }); 
       // intro curta (uma vez por sessão; toca para saltar; sem animação se o sistema pedir menos movimento)
       let seen = false; try { seen = sessionStorage.getItem('kgIntro') === '1'; sessionStorage.setItem('kgIntro', '1'); } catch (e) { } if (!seen && !matchMedia('(prefers-reduced-motion: reduce)').matches) { const it = $('intro'); it.hidden = false; const end = () => { it.hidden = true; }; it.onclick = end; setTimeout(end, 2700); } },
   };
