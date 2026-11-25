@@ -100,6 +100,10 @@ jobs:
         working-directory: app
         run: APP=$PWD node --import tsx ../auditoria/planeador-unir.mjs 2>&1 | grep -v "Experimental\|trace-warnings" | tail -40; exit ${PIPESTATUS[0]}
 
+      - name: Avisos da TML (plataforma GO, endereços com a organização)
+        working-directory: app
+        run: APP=$PWD node --import tsx ../auditoria/tml-alertas.mjs 2>&1 | grep -v "Experimental\|trace-warnings" | tail -30; exit ${PIPESTATUS[0]}
+
       - name: Planeador (metro, comboio e barco nas opções de viagem)
         working-directory: app
         run: APP=$PWD node --import tsx ../auditoria/planeador-modos.mjs 2>&1 | grep -v "Experimental\|trace-warnings" | tail -50; exit ${PIPESTATUS[0]}
