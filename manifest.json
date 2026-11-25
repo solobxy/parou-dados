@@ -1,7 +1,7 @@
 {
-  "built_at": "2026-11-25T01:27:47.310254+00:00",
-  "db_bytes": 840486912,
-  "gz_bytes": 221289088,
+  "built_at": "2026-11-25T13:29:37.974693+00:00",
+  "db_bytes": 840511488,
+  "gz_bytes": 221292682,
   "totals": {
     "lines": 2838,
     "stops": 50690,
@@ -342,9 +342,9 @@
       "lines": 11,
       "stops": 230,
       "trips": 541,
-      "valid_until": "2026-12-31",
+      "valid_until": "2027-12-31",
       "validade": "ok",
-      "dias_validade": 36,
+      "dias_validade": 401,
       "horario_prolongado": false,
       "url": "https://drive.google.com/uc?export=download&id=1tkKV40lQlFcLiJhq8SwZQdxNVjFclRCA",
       "last_error": null,
@@ -1008,13 +1008,13 @@
           "total": 385
         },
         "servicos_com_data_hoje": [
-          "BexpU",
-          "FU",
-          "CU",
+          "BU",
           "AU",
           "EU",
-          "BU",
-          "DU"
+          "FU",
+          "CU",
+          "DU",
+          "BexpU"
         ],
         "viagens_por_servico": [
           {
@@ -1069,5 +1069,5 @@
       }
     }
   },
-  "duration_s": 355
+  "duration_s": 339
 }
