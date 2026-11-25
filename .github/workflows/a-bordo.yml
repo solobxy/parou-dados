@@ -150,7 +150,7 @@ jobs:
         run: |
           mkdir -p dados
           if [ -n "$DADOS_PEDIDOS" ]; then export PAROU_DADOS_URL="$DADOS_PEDIDOS"; fi
-          NODE_ENV=production PORT=3000 PAROU_DATA_DIR=$PWD/dados TZ=Europe/Lisbon FOGOS_TESTE=1 nohup node --import tsx server.ts > app.log 2>&1 &
+          PAROU_ADMIN_TOKEN=ensaio-chave-admin-1234567890 NODE_ENV=production PORT=3000 PAROU_DATA_DIR=$PWD/dados TZ=Europe/Lisbon FOGOS_TESTE=1 nohup node --import tsx server.ts > app.log 2>&1 &
           for i in $(seq 1 60); do curl -s -m 5 http://127.0.0.1:3000/api/transit/loading-status | grep -q '"isLoading":false' && break; sleep 5; done
           sleep 5
 
@@ -241,6 +241,14 @@ jobs:
         run: |
           mkdir -p ../res
           SAIDA=../res timeout 300 node estados-erro.mjs 2>&1 | tee ../res/estados-erro.txt | tail -40
+          exit ${PIPESTATUS[0]}
+
+      - name: Testar o reforço de segurança (scripts estranhos bloqueados, chave só no cabeçalho, campo isco)
+        continue-on-error: true
+        working-directory: auditoria
+        run: |
+          mkdir -p ../res
+          APP=$PWD/../app SAIDA=../res timeout 300 node seguranca-reforco.mjs 2>&1 | tee ../res/seguranca-reforco.txt | tail -30
           exit ${PIPESTATUS[0]}
 
       - name: Testar o arranque rápido (esqueleto sem esperar pelo CSS nem por scripts, browser)
