@@ -4,6 +4,7 @@ import { Builder, mat4, shade } from './builder.js';
 import { ITEMS, TINTS } from './items.js';
 import { GUNS } from './guns.js';
 import { ZBODY } from './zbody.js';
+import { PBODY } from './pbody.js';
 
 export const HIP = 0.92, SHY = 1.42, SHX = 0.27;
 export const LONG = ['m4', 'ak', 'smg', 'cacadeira', 'caca', 'cheytac', 'barrett', 'm249', 'pkm'];
@@ -204,18 +205,56 @@ const _t = new THREE.Vector3(), _sh = new THREE.Vector3(), _pl = new THREE.Vecto
 const GRIP = { m4: [[0, -0.1, -0.02], [0, -0.04, 0.36]], ak: [[0, -0.09, -0.06], [0, -0.035, 0.34]], smg: [[0, -0.07, 0.04], [0, -0.03, 0.26]], cacadeira: [[0, -0.06, 0.0], [0, -0.04, 0.36]], caca: [[0, -0.06, -0.12], [0, -0.03, 0.3]],
   cheytac: [[0, -0.1, -0.04], [0, -0.04, 0.38]], barrett: [[0, -0.11, -0.06], [0, -0.05, 0.36]], m249: [[0, -0.1, -0.04], [0, -0.06, 0.34]], pkm: [[0, -0.1, -0.04], [0, -0.06, 0.34]] };
 
+
+// ---------- corpo do jogador e dos comerciantes (Blender + MakeHuman): uma malha com pele por partes, presa aos mesmos
+// pontos de rotação de sempre (anca, joelhos, ombros, cotovelos, pescoço). As cores escolhidas pintam-se no shader com
+// uma máscara (camisa, calças, pele, cabelo); cabelo e barba são malhas presas à cabeça.
+let PG = null;
+function hairGeo(D) {
+  const g = new THREE.BufferGeometry(), P = new Int16Array(zbuf(D.p)), pos = new Float32Array(P.length), C = new Uint8Array(zbuf(D.c)), col = new Float32Array(C.length * 3);
+  for (let i = 0; i < P.length; i++) pos[i] = P[i] / 32767 * 0.5;
+  for (let i = 0; i < C.length; i++) col[i * 3] = col[i * 3 + 1] = col[i * 3 + 2] = C[i] / 255 * 1.2;
+  g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); g.setAttribute('normal', new THREE.BufferAttribute(new Int8Array(zbuf(D.nm)), 3, true)); g.setAttribute('color', new THREE.BufferAttribute(col, 3));
+  g.setIndex(new THREE.BufferAttribute(new Uint16Array(zbuf(D.i)), 1)); g.computeBoundingSphere(); return g;
+}
+const pgeo = () => PG || (PG = { l0: bodyGeo(PBODY.lod0), l1: bodyGeo(PBODY.lod1), hair: Object.fromEntries(Object.entries(PBODY.hair).map(([k, D]) => [k, hairGeo(D)])) });
+const PREF = { top: 0x9a9a96, legs: 0x8e8e8a, skin: 0xd9a882, hair: 0x6a5a4c }; // tons em que a textura foi pintada
+export const PTEX = { map: null, nmap: null, mask: null, mats: new Set(), started: false, base: 'tex/',
+  load() { if (this.started) return; this.started = true; const TL = new THREE.TextureLoader(), done = () => { if (this.map && this.nmap && this.mask) for (const m of this.mats) PTEX.apply(m); };
+    TL.load(this.base + 'player.jpg', t => { t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; this.map = t; done(); }, undefined, () => { });
+    TL.load(this.base + 'player_n.jpg', t => { t.anisotropy = 4; this.nmap = t; done(); }, undefined, () => { });
+    TL.load(this.base + 'player_m.png', t => { t.colorSpace = THREE.NoColorSpace; this.mask = t; done(); }, undefined, () => { }); },
+  apply(m) { if (!this.map || !this.nmap || !this.mask) return; m.map = this.map; m.normalMap = this.nmap; m.userData.uni.maskMap.value = this.mask; m.userData.uni.uHasMask.value = 1; m.color.set(0xffffff); m.needsUpdate = true; } };
+const _cr = new THREE.Color(), _cc = new THREE.Color();
+const ratio = (hex, ref, out) => { _cc.setHex(hex); _cr.setHex(ref); return out.set(_cc.r / Math.max(_cr.r, 1e-4), _cc.g / Math.max(_cr.g, 1e-4), _cc.b / Math.max(_cr.b, 1e-4)); };
+const maskFrag = sh => {
+  for (const k of ['maskMap', 'uTop', 'uLegs', 'uSkin', 'uHair', 'uHasMask']) sh.uniforms[k] = sh.__uni[k];
+  sh.fragmentShader = 'uniform sampler2D maskMap;\nuniform vec3 uTop, uLegs, uSkin, uHair;\nuniform float uHasMask;\n' + sh.fragmentShader.replace('#include <map_fragment>', `#include <map_fragment>
+#ifdef USE_MAP
+  { vec4 mk = texture2D(maskMap, vMapUv); float hr = clamp(mk.a * 2.0 - 1.0, 0.0, 1.0);
+    vec3 f = vec3(1.0) + mk.r * (uTop - 1.0) + mk.g * (uLegs - 1.0) + mk.b * (uSkin - 1.0) + hr * (uHair - 1.0);
+    diffuseColor.rgb *= mix(vec3(1.0), f, uHasMask); }
+#endif`);
+};
+const SEGN = ['torso', 'head', 'armL', 'armR', 'foreL', 'foreR', 'legL', 'legR', 'shinL', 'shinR'];
+const _rm = new THREE.Matrix4(), _rk = new THREE.Matrix4();
+const relTo = (root, o, out) => { out.copy(o.matrix); for (let p = o.parent; p && p !== root; p = p.parent) out.premultiply(p.matrix); return out; };
+export const PCOL = { skin: 0xd9a882, top: 0x5c6846, legs: 0x3a3f33, shoes: 0x23211f, hair: 0x2a211b, beard: 0x6a4a32 };
+export const lookCol = L => { L = L || {}; const hair = L.hair ?? PCOL.hair, bs = L.beardS ?? 1; return { ...PCOL, skin: L.skin ?? PCOL.skin, top: L.top ?? PCOL.top, legs: L.legs ?? PCOL.legs, hair, hairS: L.hairS ?? 0, beardS: bs, beard: bs ? (hair === PCOL.hair ? PCOL.beard : hair) : null }; };
 export class Body {
   // personagem articulada: anca, coxa→joelho→canela, ombro→cotovelo→mão, pescoço→cabeça. Andar com dobra dos joelhos e
   // balanço dos braços, respiração parada, as duas mãos na arma por IK, pistola a duas mãos, golpe com o corpo todo
   constructor(mats, c, opts = {}) {
-    const P = partGeos(c), G = gearGeos(), Wp = weaponGeos();
+    const G = gearGeos(), Wp = weaponGeos();
     this.root = new THREE.Group();
     this.hips = new THREE.Group(); this.hips.position.y = HIP; this.root.add(this.hips);
-    this.torso = new THREE.Group(); this.hips.add(this.torso); this.torso.add(meshOf(P.torso, mats));
-    this.head = new THREE.Group(); this.head.position.y = NECK; this.torso.add(this.head); this.head.add(meshOf(P.head, mats));
-    this.legs = [-1, 1].map(s => { const g = new THREE.Group(); g.position.set(s * 0.11, 0, 0); g.add(meshOf(s < 0 ? P.thighL : P.thighR, mats)); this.hips.add(g); const k = new THREE.Group(); k.position.y = -THIGH; k.add(meshOf(P.shin, mats)); g.add(k); g.userData.knee = k; return g; });
-    this.arms = [-1, 1].map(s => { const g = new THREE.Group(); g.position.set(s * SHX, SHY - HIP, 0); g.add(meshOf(P.upper, mats)); this.torso.add(g); const f = new THREE.Group(); f.position.y = -UPPER; f.add(meshOf(P.fore, mats)); g.add(f); const h = new THREE.Group(); h.position.y = -0.33; f.add(h); g.userData.fore = f; g.userData.hand = h; return g; });
-    this.gear = {}; for (const k in G) { if (/^suit[A-Z]/.test(k)) continue; const g = meshOf(G[k], mats); g.visible = false; if (k === 'eyes' || k.startsWith('head')) { g.position.y = -NECK; this.head.add(g); } else this.torso.add(g); this.gear[k] = g; }
+    this.torso = new THREE.Group(); this.hips.add(this.torso);
+    this.head = new THREE.Group(); this.head.position.y = NECK; this.torso.add(this.head);
+    this.legs = [-1, 1].map(s => { const g = new THREE.Group(); g.position.set(s * 0.11, 0, 0); this.hips.add(g); const k = new THREE.Group(); k.position.y = -THIGH; g.add(k); g.userData.knee = k; return g; });
+    this.arms = [-1, 1].map(s => { const g = new THREE.Group(); g.position.set(s * SHX, SHY - HIP, 0); this.torso.add(g); const f = new THREE.Group(); f.position.y = -UPPER; g.add(f); const h = new THREE.Group(); h.position.y = -0.33; f.add(h); g.userData.fore = f; g.userData.hand = h; return g; });
+    this.mkSkin(c);
+    // equipamento (provisório até ao equipamento novo): encolhido e mudado para a cabeça e o tronco do corpo novo
+    this.gear = {}; for (const k in G) { if (/^suit[A-Z]/.test(k)) continue; const g = meshOf(G[k], mats); g.visible = false; if (k === 'eyes' || k.startsWith('head')) { const hs = 0.68; g.scale.setScalar(hs); g.position.set(0, PBODY.headC[1] - hs * (NECK + 0.145) + 0.006, PBODY.headC[2] + 0.02 - hs * 0.01); this.head.add(g); } else { const T = k.startsWith('vest') ? [0.74, 0.8, 0.75, -0.022, 0.01] : k === 'back' ? [0.85, 0.85, 0.85, 0, 0.012] : [0.8, 0.85, 0.8, 0, 0.01]; g.scale.set(T[0], T[1], T[2]); g.position.set(0, T[3], T[4]); this.torso.add(g); } this.gear[k] = g; }
     const sx = (geo, par) => { const g = meshOf(geo, mats); g.visible = false; par.add(g); return g; };
     this.suitX = [...this.arms.flatMap(a => [sx(G.suitU, a), sx(G.suitF, a.userData.fore)]), ...this.legs.flatMap(l => [sx(G.suitT, l), sx(G.suitS, l.userData.knee)])];
     this.weps = {}; for (const k in Wp) { const g = meshOf(Wp[k], mats); g.visible = false; const base = k.replace(/^(sup|sc8|sc|rd|lt)_/, ''); if (LONG.includes(base)) this.torso.add(g); else { g.position.y = 0.53; this.arms[1].userData.hand.add(g); } this.weps[k] = g; }
@@ -224,12 +263,49 @@ export class Body {
     for (const k in this.props) { const m = this.props[k]; m.visible = false; m.position.set(0, -0.04, 0.05); this.arms[1].userData.hand.add(m); }
     this.phase = 0; this.t = Math.random() * 10; this.amp = 0; this.run = 0;
   }
+  mkSkin(c) {
+    const PGe = pgeo(); PTEX.load();
+    const data = new Float32Array(30 * 4), tex = new THREE.DataTexture(data, 30, 1, THREE.RGBAFormat, THREE.FloatType); tex.needsUpdate = true;
+    const uni = this.uni = { boneTex: { value: tex }, maskMap: { value: null }, uTop: { value: new THREE.Vector3(1, 1, 1) }, uLegs: { value: new THREE.Vector3(1, 1, 1) }, uSkin: { value: new THREE.Vector3(1, 1, 1) }, uHair: { value: new THREE.Vector3(1, 1, 1) }, uHasMask: { value: 0 } };
+    this.bdata = data; this.btex = tex;
+    const m = new THREE.MeshStandardMaterial({ color: c.top ?? 0x8a8a80, roughness: 0.82 }); m.userData.uni = uni;
+    skinPatch(m, uni, 'pm', sh => { sh.__uni = uni; maskFrag(sh); }); PTEX.mats.add(m); PTEX.apply(m); this.pmat = m;
+    this.setColors(c);
+    this.skin = [PGe.l0, PGe.l1].map((g, i) => { const me = new THREE.Mesh(g, m); me.castShadow = true; me.receiveShadow = true; me.frustumCulled = false; me.visible = i === 0; me.userData.skinned = true; me.position.y = 0.014;
+      me.customDepthMaterial = skinPatch(new THREE.MeshDepthMaterial({ depthPacking: THREE.RGBADepthPacking }), uni, 'pd'); me.customDistanceMaterial = skinPatch(new THREE.MeshDistanceMaterial(), uni, 'pp'); this.root.add(me); return me; });
+    // cabelo e barba: presos à cabeça (a malha foi feita com a cabeça 2 cm mais à frente do ponto de rotação)
+    const HS = [null, null, 'comprido', 'rabo', 'moicano']; HS[0] = 'curto';
+    this.hairM = new THREE.MeshStandardMaterial({ color: c.hair ?? 0x2a211b, vertexColors: true, roughness: 0.72, side: THREE.DoubleSide });
+    this.beardM = new THREE.MeshStandardMaterial({ color: c.beard ?? c.hair ?? 0x2a211b, vertexColors: true, roughness: 0.8, side: THREE.DoubleSide });
+    const add = (k, mat) => { if (!k || !PGe.hair[k]) return null; const h = new THREE.Mesh(PGe.hair[k], mat); h.position.z = 0.02; h.castShadow = true; h.receiveShadow = true; this.head.add(h); return h; };
+    this.hairMesh = add(HS[c.hairS ?? 0], this.hairM);
+    this.beardMesh = c.beard ? add(['', 'barba', 'bigode'][c.beardS ?? 1], this.beardM) : null;
+    this.segs = [this.torso, this.head, this.arms[0], this.arms[1], this.arms[0].userData.fore, this.arms[1].userData.fore, this.legs[0], this.legs[1], this.legs[0].userData.knee, this.legs[1].userData.knee];
+    this.root.updateMatrixWorld(true); this.Ginv = this.segs.map(o => relTo(this.root, o, new THREE.Matrix4()).invert());
+    this.lodNear = true; this.skinUpd();
+  }
+  // liberta o que é só deste corpo (retratos do inventário e do editor de aparência fazem um corpo novo de cada vez)
+  dispose() { PTEX.mats.delete(this.pmat); this.pmat.dispose(); this.hairM.dispose(); this.beardM.dispose(); this.btex.dispose(); for (const m of this.skin) { m.customDepthMaterial.dispose(); m.customDistanceMaterial.dispose(); } }
+  setColors(c) { const u = this.uni; ratio(c.top ?? PREF.top, PREF.top, u.uTop.value); ratio(c.legs ?? PREF.legs, PREF.legs, u.uLegs.value); ratio(c.skin ?? PREF.skin, PREF.skin, u.uSkin.value); ratio(c.hair ?? PREF.hair, PREF.hair, u.uHair.value); }
+  // material com a mesma pele (para o contorno visto através das paredes)
+  skinMat(base) { return skinPatch(base.clone(), this.uni, 'ps' + base.id); }
+  skinUpd() {
+    const d = this.bdata, S = this.segs; for (const o of S) o.updateMatrix(); this.hips.updateMatrix();
+    for (let k = 0; k < S.length; k++) {
+      relTo(this.root, S[k], _rm); _rk.multiplyMatrices(_rm, this.Ginv[k]); const e = _rk.elements, o = k * 12;
+      d[o] = e[0]; d[o + 1] = e[4]; d[o + 2] = e[8]; d[o + 3] = e[12]; d[o + 4] = e[1]; d[o + 5] = e[5]; d[o + 6] = e[9]; d[o + 7] = e[13]; d[o + 8] = e[2]; d[o + 9] = e[6]; d[o + 10] = e[10]; d[o + 11] = e[14];
+    }
+    this.btex.needsUpdate = true;
+    let near = this.lodNear; if (Body.cam && !this.forceNear) { const p = this.root.position, q = Body.cam; near = (p.x - q.x) ** 2 + (p.y - q.y) ** 2 + (p.z - q.z) ** 2 < (Body.nearD || 16) ** 2; }
+    this.skin[0].visible = near; this.skin[1].visible = !near;
+  }
   setGear(eq) { const on = gearKeys(eq); for (const k in this.gear) this.gear[k].visible = on.has(k); for (const g of this.suitX) g.visible = on.has('suit'); }
   setWeapon(k, att = {}) { const sc = att.scope ? (att.scope === 'mira8' ? 'sc8_' : att.scope === 'reddot' ? 'rd_' : 'sc_') + k : null, sp = att.sup ? 'sup_' + k : null, lt = att.light ? 'lt_' + k : null; const vis = [sc, sp, lt].filter(w => w && this.weps[w]); for (const w in this.weps) this.weps[w].visible = w === k || vis.includes(w); this.wk = k; this.wkAtt = vis; }
   // um membro: coxa/braço (rotação x = para a frente/trás, z = abrir) e a dobra do joelho/cotovelo
   limb(g, rx, rz, bend, ry = 0) { g.quaternion.setFromEuler(_pe.set(rx, ry, rz, 'XYZ')); const k = g.userData.knee || g.userData.fore; k.rotation.set(bend, 0, 0); if (g.userData.hand) g.userData.hand.rotation.set(0, 0, 0); }
   // anim: mv (0..1.5), mode ('rifle','pistol','melee','none'), swing (0..1 ou -1), dt
-  pose(dt, mv, mode, swing = -1, recoil = 0, twist = 0, climb = -1, step = 0, raise = 1, use = null) {
+  pose(...a) { this._pose(...a); this.skinUpd(); }
+  _pose(dt, mv, mode, swing = -1, recoil = 0, twist = 0, climb = -1, step = 0, raise = 1, use = null) {
     this.phase += step * 2.7; this.t += dt;
     const k8 = Math.min(1, dt * 8); this.amp += (Math.min(1, mv) - this.amp) * k8; this.run += ((mv > 1.15 ? 1 : 0) - this.run) * Math.min(1, dt * 5);
     const A = this.amp, Rn = this.run, ph = this.phase, s = Math.sin(ph), cph = Math.cos(ph), idle = 1 - Math.min(1, A * 3), t = this.t;
@@ -347,7 +423,7 @@ export function bodyGeo(D) {
   g.boundingSphere = new THREE.Sphere(new THREE.Vector3(0, 0.9, 0), 1.2); return g;
 }
 // injeta a pele no shader (material normal, sombra do sol e sombra das luzes de ponto)
-export function skinPatch(m, uni, key) {
+export function skinPatch(m, uni, key, extra) {
   m.onBeforeCompile = sh => {
     sh.uniforms.boneTex = uni.boneTex;
     sh.vertexShader = `uniform highp sampler2D boneTex;\nattribute vec4 segI;\nattribute vec4 segW;
@@ -359,6 +435,7 @@ mat4 zskin() { return zbm(segI.x) * segW.x + zbm(segI.y) * segW.y + zbm(segI.z) 
 #ifdef USE_TANGENT
   objectTangent = normalize(zN * objectTangent);
 #endif`).replace('#include <begin_vertex>', '#include <begin_vertex>\n  transformed = (zskin() * vec4(transformed, 1.0)).xyz;');
+    if (extra) extra(sh);
   };
   m.customProgramCacheKey = () => 'zskin-' + key;
   return m;

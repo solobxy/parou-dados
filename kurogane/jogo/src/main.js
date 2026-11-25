@@ -4,7 +4,7 @@ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { Builder, Atlas, ctex, mat4, FONT_JP } from './builder.js';
 import { buildWorld, MAP, CORE, CITY, inCity } from './world.js';
 import { makeSectors } from './sectors.js';
-import { Body, ZHorde, ZHEAD, bagMesh, HIP, zombiePose, newPose, LOOK_OPTS, RDP } from './chars.js';
+import { Body, ZHorde, ZHEAD, bagMesh, HIP, zombiePose, newPose, LOOK_OPTS, RDP, PCOL, lookCol } from './chars.js';
 import * as Conta from './conta.js';
 import { makeFire, fireFrame } from './fire.js';
 import { ITEMS, RECIPES, ammoOf } from './items.js';
@@ -411,11 +411,9 @@ async function boot() {
   const visifyScene = () => scene.traverse(o => { if (!o.isMesh || o.userData.sil || o === aimLine) return; (Array.isArray(o.material) ? o.material : [o.material]).forEach(visify); });
 
   // ---------- jogador
-  const PCOL = { skin: 0xd9a882, top: 0x5c6846, legs: 0x3a3f33, shoes: 0x23211f, hair: 0x2a211b, beard: 0x6a4a32 };
   // aparência do jogador (do perfil): cores e cabelo entram na geometria, por isso muda-se reconstruindo o corpo
-  const lookCol = L => { L = L || {}; const hair = L.hair ?? PCOL.hair, bs = L.beardS ?? 1; return { ...PCOL, skin: L.skin ?? PCOL.skin, top: L.top ?? PCOL.top, legs: L.legs ?? PCOL.legs, hair, hairS: L.hairS ?? 0, beardS: bs, beard: bs ? (hair === PCOL.hair ? PCOL.beard : hair) : null }; };
   const silMat = new THREE.MeshBasicMaterial({ color: 0xf2a33a, depthFunc: THREE.GreaterDepth, depthWrite: false, fog: false });
-  const mkBody = L => { const b = new Body(mats, lookCol(L)); b.root.traverse(o => { if (o.isMesh && !o.userData.sil) { o.renderOrder = 2; const s = new THREE.Mesh(o.geometry, silMat); s.userData.sil = true; s.renderOrder = 1; s.castShadow = false; o.add(s); } }); scene.add(b.root); return b; };
+  const mkBody = L => { const b = new Body(mats, lookCol(L)); b.forceNear = true; b.root.traverse(o => { if (o.isMesh && !o.userData.sil) { o.renderOrder = 2; const s = new THREE.Mesh(o.geometry, o.userData.skinned ? b.skinMat(silMat) : silMat); s.userData.sil = true; s.renderOrder = 1; s.castShadow = false; o.add(s); } }); scene.add(b.root); return b; };
   let body = mkBody((Conta.ativo() || {}).look); let myLook = lookCol((Conta.ativo() || {}).look);
   const vm = makeVM(); // arma e braços na 1.ª pessoa
   // ---------- comerciantes: 4 pessoas paradas nas zonas de PvP (ver traders.js)
@@ -499,9 +497,10 @@ async function boot() {
   const I3 = makeIcons(2); const ICONS = {}, CELLPX = 46;
   for (const k in ITEMS) { const d = ITEMS[k]; ICONS[k] = I3.iconOf(d.icon, d.w * CELLPX + (d.w - 1) * 2, d.h * CELLPX + (d.h - 1) * 2, d.v || 'side', d.w === 1 && d.h === 1 ? 0.7 : 0.82, d.tint); }
   const ICONS_SQ = {}; for (const k in ITEMS) { const d = ITEMS[k]; if (d.w >= d.h * 2 && d.w >= 3) ICONS_SQ[k] = I3.iconOf(d.icon, 96, 96, 'side', 0.94, d.tint, -0.62); } G.ICONS_SQ = ICONS_SQ;
-  G.ICONS = ICONS; G.portrait = eq => { const t = s => eq[s] ? ITEMS[eq[s].k].tint ?? true : null; return I3.portrait({ head: t('head'), vest: t('vest'), back: !!eq.back, eyes: !!eq.eyes, suit: !!eq.suit }, 160, 300); }; I3.setLook((Conta.ativo() || {}).look);
+  G.ICONS = ICONS; G.portrait = eq => I3.portrait({ eq }, 160, 300); I3.setLook((Conta.ativo() || {}).look);
   G.portraitLook = L => I3.portrait({}, 168, 252, L); G.LOOK_OPTS = LOOK_OPTS;
-  G.setLook = L => { myLook = lookCol(L); const o = body, nb = mkBody(L); nb.root.position.copy(o.root.position); nb.root.rotation.copy(o.root.rotation); nb.root.visible = o.root.visible; scene.remove(o.root); body = nb; I3.setLook(L); if (G.p && G.inv) refresh(); G.lookV = (G.lookV || 0) + 1; };
+  Object.defineProperty(G, 'body', { get: () => body, configurable: true });
+  G.setLook = L => { myLook = lookCol(L); const o = body, nb = mkBody(L); nb.root.position.copy(o.root.position); nb.root.rotation.copy(o.root.rotation); nb.root.visible = o.root.visible; scene.remove(o.root); o.dispose(); body = nb; I3.setLook(L); if (G.p && G.inv) refresh(); G.lookV = (G.lookV || 0) + 1; };
 
   // ---------- ações
   const held = () => G.inv.belt[G.sel];
@@ -1251,7 +1250,7 @@ async function boot() {
   // vista na primeira pessoa (botão do olho / tecla V): a câmara vai para os olhos e fica lá, com ou sem nada na mão.
   // P, Q e M guardam a câmara de antes da troca, para a passagem de uma vista para a outra ser suave (~0,34 s)
   const _qF = new THREE.Quaternion();
-  const lockPtr = () => { try { const r = canvas.requestPointerLock && canvas.requestPointerLock(); if (r && r.catch) r.catch(() => { }); } catch (e) { } }; // o browser pode recusar (sem clique): não é erro
+  const lockPtr = () => { try { const r = canvas.requestPointerLock && canvas.requestPointerLock({ unadjustedMovement: true }); /* sem a aceleração do rato do sistema */ if (r && r.catch) r.catch(() => { try { const r2 = canvas.requestPointerLock(); if (r2 && r2.catch) r2.catch(() => { }); } catch (e) { } }); } catch (e) { } }; // o browser pode recusar (sem clique): não é erro
   const FPF = G.fpv = { on: false, t: 1, P: new THREE.Vector3(), Q: new THREE.Quaternion(), M: new THREE.Matrix4() };
   G.fpFree = false;
   G.viewToggle = () => { G.fpFree = !G.fpFree; if (G.cfg) G.cfg.fpView = G.fpFree; try { G.ui.saveCfg && G.ui.saveCfg(); } catch (e) { } audio.play('ui'); if (!G.fpFree && AIM.scope) { AIM.scope = false; AIM.reseed = true; } if (G.fpFree && !TOUCH) lockPtr(); else if (!G.fpFree) try { if (document.pointerLockElement) document.exitPointerLock(); } catch (e) { } };
@@ -1342,15 +1341,34 @@ async function boot() {
   const fpFov = () => clamp(2 * Math.atan(1 / Math.max(0.3, innerWidth / innerHeight)) * 180 / Math.PI, 52, 76);
   G.fpFov = fpFov; // campo de visão real: ~55° da ocular a dividir pela ampliação
   // arrastar o dedo: na vista de cima move a mira no ecrã (e prende-se ao zombie por baixo); na mira em primeira pessoa roda a vista
+  // ajuda à mira ligeira (como nos jogos de toque e comando): perto de um zombie ou jogador à vista a mira abranda um pouco
+  // e, só enquanto arrastas, puxa uma fração do movimento para o alvo. Nunca mexe na mira sozinha e nunca atravessa paredes
+  const _as = new THREE.Vector3(), _ae = new THREE.Vector3(), AST = [];
+  const assistPts = () => { AST.length = 0; const p = G.p; if (!p || !G.cfg.assist) return AST; const d = heldDef(), rng = d.gun ? Math.min(d.gun.rng, 60) : 0; if (!rng) return AST;
+    for (const z of G.zs) { if (!inView(z) || Math.abs(z.x - p.x) > rng || Math.abs(z.z - p.z) > rng || !lockable(z)) continue; AST.push(lockW(chestLock(z), new THREE.Vector3())); }
+    const T = G.net && G.net.on && G.net.targets ? G.net.targets() : null;
+    if (T) { _ae.set(p.x, p.y + 1.5, p.z); for (const t of T) { if (t.lying || Math.abs(t.x - p.x) > rng || Math.abs(t.z - p.z) > rng) continue; _as.set(t.x, t.y + 1.2, t.z); if (wallHit(_ae, _as) > 0.995) AST.push(_as.clone()); } }
+    return AST; };
+  const ASSIST = { slow: 0.3, pull: 0.3 };
+  G.dbgAssist = () => { const z = window.__Z; return { n: assistPts().length, inView: z && inView(z), lk: z && lockable(z), held: heldDef().gun ? heldDef().gun.rng : null, assist: G.cfg.assist }; };
   G.aimDrag = (dx, dy) => {
     if (!AIM.on && !FPF.on) return; AIM.idle = 0; const k = G.cfg.sens || 1;
     // na 1.ª pessoa: arrastar o ecrã todo de cima a baixo roda a vista o campo de visão; a apontar, mais devagar (pela ampliação)
-    if (G.fp || FPF.on) { const R = G.ui.scopeR(), a = FPF.on ? AIM.adsT * AIM.adsT * (3 - 2 * AIM.adsT) : 1, fs = THREE.MathUtils.degToRad(scopeFov()) / (2 * R) * 1.1, ff = THREE.MathUtils.degToRad(fpFov()) / innerHeight * 1.15, f = (ff + (fs - ff) * a) * k; AIM.fy -= dx * f; AIM.fpit = clamp(AIM.fpit - dy * f, -1.35, 1.35); return; }
-    AIM.sx = clamp(AIM.sx + dx * k, 4, innerWidth - 4); AIM.sy = clamp(AIM.sy + dy * k, 4, innerHeight - 4);
+    if (G.fp || FPF.on) { // sensibilidade fixa: cada píxel roda sempre o mesmo ângulo (a do estado para onde vais, nada de rampas durante a transição)
+      const R = G.ui.scopeR(), a = FPF.on ? (AIM.scope && AIM.raise > 0.5 ? 1 : 0) : 1, fs = THREE.MathUtils.degToRad(scopeFov()) / (2 * R) * 1.1, ff = THREE.MathUtils.degToRad(fpFov()) / innerHeight * 1.15; let f = (ff + (fs - ff) * a) * k;
+      let bw = 0, by = 0, bp = 0, ba = 0, bs = 0; const P = assistPts(); // bw: puxar (cone largo); bs: abrandar (só com a mira em cima do alvo)
+      if (P.length) { const E = AIM.eye, cone0 = THREE.MathUtils.degToRad(cam.fov) * 0.1, cp = Math.cos(AIM.fpit);
+        for (const q of P) { const hx = q.x - E.x, hz = q.z - E.z, hd = Math.hypot(hx, hz); if (hd < 0.5) continue; const dyw = angDiff(Math.atan2(hx, hz), AIM.fy), dpt = Math.atan2(q.y - E.y, hd) - AIM.fpit, an = Math.hypot(dyw * cp, dpt), cone = Math.max(cone0, Math.atan(0.7 / hd)), w = 1 - an / cone; if (w > bw) { bw = w; by = dyw; bp = dpt; ba = an; } bs = Math.max(bs, 1 - an / Math.atan(0.32 / hd)); } }
+      f *= 1 - ASSIST.slow * Math.max(0, bs); AIM.fy -= dx * f; AIM.fpit = clamp(AIM.fpit - dy * f, -1.35, 1.35);
+      if (bw > 0 && ba > 1e-4) { const pull = Math.min(ba, ASSIST.pull * Math.hypot(dx, dy) * f * bw); AIM.fy += by / ba * pull; AIM.fpit = clamp(AIM.fpit + bp / ba * pull, -1.35, 1.35); }
+      return; }
+    { let bw = 0, bs = 0, tx = 0, ty = 0; const P = assistPts(); for (const q of P) { const o = toScreen(q); if (!o.ok) continue; const dd = Math.hypot(o.x - AIM.sx, o.y - AIM.sy), w = 1 - dd / 46; if (w > bw) { bw = w; tx = o.x; ty = o.y; } bs = Math.max(bs, 1 - dd / 16); }
+      const kk = k * (1 - ASSIST.slow * bs); AIM.sx += dx * kk; AIM.sy += dy * kk;
+      if (bw > 0) { const ex = tx - AIM.sx, ey = ty - AIM.sy, el = Math.hypot(ex, ey); if (el > 0.5) { const pull = Math.min(el, ASSIST.pull * Math.hypot(dx, dy) * kk * bw); AIM.sx += ex / el * pull; AIM.sy += ey / el * pull; } }
+      AIM.sx = clamp(AIM.sx, 4, innerWidth - 4); AIM.sy = clamp(AIM.sy, 4, innerHeight - 4); }
     const pk = pick(AIM.sx, AIM.sy, 1.25); if (pk.part && lockable(pk.z)) { AIM.lock = pk.part; AIM.off = null; return; }
     AIM.lock = null; { const p = G.p; AIM.off = { x: pk.point.x - p.x, y: pk.point.y, z: pk.point.z - p.z }; }
     if (pk.pl) return; // em cima de outro jogador: a ajuda não salta para um zombie que esteja ao lado dele
-    if (G.cfg.assist) { let bz = null, bd = 24; for (const z of G.zs) { if (!lockable(z)) continue; const q = toScreen(lockW(chestLock(z), _c)); const dd = Math.hypot(q.x - AIM.sx, q.y - AIM.sy); if (q.ok && dd < bd) { bd = dd; bz = z; } } if (bz) AIM.lock = chestLock(bz); }
   };
   G.relock = () => { if (!AIM.on || G.fp || FPF.on) return; const z = bestTarget(); AIM.lock = z ? chestLock(z) : null; AIM.idle = 0; };
   const tryFire = () => { const it = held(), d = heldDef(); if (!d.gun || !G.p.alive || G.invOpen || AIM.raise < 1) return false; return fire(it, d.gun); };
@@ -1683,6 +1701,7 @@ async function boot() {
     // árvores ao longe (só na 1.ª pessoa, que vê até à neblina): a versão simples a partir de ~65 m
     G.lodT = (G.lodT || 0) - dt; if (G.lodT <= 0) { G.lodT = 0.25; const c = cam.position, fpL = !!G.fp; for (const T of TLOD) { const far = fpL && Math.hypot(T.x - c.x, T.z - c.z) > 65; if (T.hi.visible === far) { T.hi.visible = !far; T.lo.visible = far; } } }
     // comerciantes: respiram parados e viram-se para quem chega perto
+    Body.cam = cam.position; Body.nearD = (G.fp || FPF.on) ? 22 : 45; // corpos longe: versão leve
     if (G.p) for (const N of npcs) { const dx = G.p.x - N.T.x, dz = G.p.z - N.T.z, d = Math.hypot(dx, dz); if (d > 90) { N.b.root.visible = false; continue; } N.b.root.visible = true; const want = d < 7 ? Math.atan2(dx, dz) : N.T.yaw; N.yaw += angDiff(want, N.yaw) * Math.min(1, dt * 3); N.b.root.rotation.y = N.yaw; N.b.pose(dt, 0, 0); if (G.ui.trOpenNow() && G.ui.trWho && G.ui.trWho() === N.T && d > TRADE_R + 2) G.ui.trClose(); }
     // câmara e sol
     if ((G.fp || FPF.on) && p) {
@@ -1714,7 +1733,7 @@ async function boot() {
     // máscara da linha de vista (refeita quando te mexes ou uma porta muda)
     if (p && G.playing && p.alive && !G.fp) { VU.uVisK.value = 0.06 + 0.03 * (G.day ?? 1); VIS.t -= dt; const dk = W.doors.reduce((a, D) => a + (D.rc.off ? 1 : 0), 0) + ':' + p.lv + ':' + Math.round((AIM.lean || 0) * 4); VIS.cd = (VIS.cd || 0) - dt; const lo = (AIM.lean || 0) * LEAN, vcx = p.x + Math.cos(p.yaw) * lo, vcz = p.z - Math.sin(p.yaw) * lo; if (Math.hypot(vcx - VIS.x, vcz - VIS.z) > 0.002 || dk !== VIS.key || VIS.t <= 0) { VIS.x = vcx; VIS.z = vcz; VIS.key = dk; VIS.t = 0.5; drawVis(vcx, vcz, p.lv, p.bld && p.lv > 0 ? p.bld : null); } }
     else VU.uVisK.value = 1;
-    if (G0.xray) G0.xray.visible = !G.fp && !onRoof(G.p); // em cima de um telhado, os contornos das portas lá de baixo atravessavam-no
+    if (G0.xray) G0.xray.visible = !G.fp && !FPF.on && !onRoof(G.p); // em 1.ª pessoa não há contornos; em cima de um telhado, os contornos das portas lá de baixo atravessavam-no
     body.root.visible = !!(p && G.playing && p.alive && !G.fp && (!G.car || G.leanOut));
     // onde fica o círculo no ecrã (para os sons à volta e a mira)
     if (p && G.playing && !G.fp) { const c0 = toScreen(_c.set(vc.x, p.y + 0.9, vc.z)), S = G.ui.safe(); G.view = { cx: c0.x, cy: c0.y, rx: Math.max(60, Math.min(c0.x - S.x0, S.x1 - c0.x) - 34), ry: Math.max(60, Math.min(c0.y - S.y0, S.y1 - c0.y) - 34), fp: false }; }

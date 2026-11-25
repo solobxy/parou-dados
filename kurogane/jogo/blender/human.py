@@ -71,6 +71,33 @@ for i in np.where(TAG > 0)[0]: W[i] = 0; W[i, 1] = 1  # olhos e dentes só com a
 W[W.sum(1) == 0, 0] = 1
 W /= W.sum(1)[:, None]
 
+# ---------- 2b. (jogador) dedos meio fechados, como numa mão relaxada (a malha base tem a mão aberta e esticada) ----------
+def rotm(ax, ang):
+    a = ax / np.linalg.norm(ax); K = np.array([[0, -a[2], a[1]], [a[2], 0, -a[0]], [-a[1], a[0], 0]]); return np.eye(3) + math.sin(ang) * K + (1 - math.cos(ang)) * K @ K
+if KIND != 'zombie':
+    BW = {}
+    for b_, lst in Wb.items():
+        if b_.startswith('finger'):
+            arr = np.zeros(len(used))
+            for vi, w in lst:
+                if vi in remap: arr[remap[vi]] += w
+            BW[b_] = arr
+    CURL = float(os.environ.get('CURL', '1'))
+    for sd, sfx in (('l', '.L'), ('r', '.R')):
+        lat = J[f'joint-{sd}-finger-2-1'] - J[f'joint-{sd}-finger-5-1']
+        for f, angs in ((2, (0.45, 0.7, 0.4)), (3, (0.5, 0.75, 0.45)), (4, (0.55, 0.8, 0.45)), (5, (0.65, 0.85, 0.5)), (1, (0.12, 0.2, 0.25))):
+            js = [J[f'joint-{sd}-finger-{f}-{k}'].copy() for k in (1, 2, 3, 4)]
+            d = js[1] - js[0]; ax = np.cross(lat, d) if f != 1 else lat.copy()
+            if f != 1:  # sentido: a ponta do dedo vai para o lado da palma (na malha base a palma está virada para baixo)
+                tip = rotm(ax, 0.5) @ (js[3] - js[0]) + js[0]
+                if tip[1] > js[3][1]: ax = -ax
+            for j in range(3):
+                w = sum(BW.get(f'finger{f}-{k}{sfx}', 0) for k in range(j + 1, 4))
+                if not np.any(w): continue
+                R = rotm(ax, angs[j] * CURL); c = js[j]
+                P0 += w[:, None] * (((P0 - c) @ R.T + c) - P0)
+                for k in range(j + 1, 4): js[k] = R @ (js[k] - c) + c
+
 # ---------- 3. pose e medidas do jogo ----------
 HIP, SHY, SHX, THIGH, UPPER, NECK = 0.92, 1.42, 0.27, 0.44, 0.30, 0.74
 def frame(o, child, fwd=np.array([0, 0, 1.0])):
@@ -98,6 +125,17 @@ print('ombro real', J['joint-l-shoulder'].round(3), 'pescoço', round(dneck, 3))
 P = np.zeros_like(P0)
 for k, s in enumerate(SEG):
     R, o = B[s]; P += W[:, k:k + 1] * (GM[s] + (P0 - o) @ R)  # (P0 − o) @ R = Rᵀ(P0 − o): coordenadas locais da parte
+if KIND != 'zombie':  # ombro: ao baixar os braços da pose em A fica uma aresta; alisa-se só a zona de transição tronco/braço
+    nbr = [set() for _ in range(len(P))]
+    for f in [[remap[v] for v in F[i]] for i in faces]:
+        for a_ in f:
+            nbr[a_].update(f)
+    nbr = [np.array(sorted(n_ - {i})) for i, n_ in enumerate(nbr)]
+    wa = W[:, SEG.index('armL')] + W[:, SEG.index('armR')]
+    msk = np.clip(4 * wa * (1 - wa), 0, 1) * (lambda t: t * t * (3 - 2 * t))(np.clip((P[:, 1] - 1.25) / 0.11, 0, 1)) * (TAG == 0)
+    for _ in range(12):
+        mean = np.array([P[n_].mean(0) if len(n_) else P[i] for i, n_ in enumerate(nbr)])
+        P += 0.5 * msk[:, None] * (mean - P)
 print('pose do jogo: altura', P[:, 1].max().round(3), 'pés', P[:, 1].min().round(3))
 hv = P[(W[:, 1] > 0.95) & (TAG == 0)]; hc = (hv.min(0) + hv.max(0)) / 2 - G['head']; hr = float(((hv.max(0) - hv.min(0)) / 2)[[0, 2]].mean())
 print('cabeça: centro', hc.round(3), 'raio', round(hr, 3))  # cabeça desenhada (para a mira e o capacete)
@@ -154,14 +192,17 @@ def region_of_faces(bm):
         if t: continue
         sg = np.bincount(seg[vs], minlength=10).argmax(); name = SEG[sg]; x, y, z = c
         r = None
-        if name.startswith('shin') and y < 0.125 + 0.01 * math.sin(x * 40): r = 'shoe'
-        elif name.startswith(('leg', 'shin')) or (name == 'torso' and y < 0.996): r = 'pants' if y > 0.11 + 0.025 * noise(np.array([[x * 30, z * 30, 1]]))[0] else None
+        Z_ = KIND == 'zombie'; shoeTop = 0.125 if Z_ else 0.165  # o jogador usa botas (canos até acima do tornozelo)
+        if name.startswith('shin') and y < shoeTop + (0.01 * math.sin(x * 40) if Z_ else 0): r = 'shoe'
+        elif name.startswith(('leg', 'shin')) or (name == 'torso' and y < 0.996): r = 'pants' if (y > 0.11 + 0.025 * noise(np.array([[x * 30, z * 30, 1]]))[0] if Z_ else y > shoeTop - 0.02) else None
         elif name == 'torso':
             neck = math.hypot(x, (z - 0.0) * 1.3) < 0.082 and y > NECK_Y - 0.075
             r = None if (neck or y > NECK_Y - 0.01) else 'shirt' if y > 0.988 else None
         elif name.startswith('arm'):
-            top = GM[name][1]; L = (0.19 if KIND == 'zombie' else 0.27) + 0.05 * noise(np.array([[x * 25, y * 3, z * 25]]))[0]
-            r = 'shirt' if y > top - L else None
+            if KIND == 'zombie': top = GM[name][1]; L = 0.19 + 0.05 * noise(np.array([[x * 25, y * 3, z * 25]]))[0]; r = 'shirt' if y > top - L else None
+            else: r = 'shirt'
+        elif name.startswith('fore') and KIND != 'zombie':  # jogador: manga comprida até ao pulso
+            r = 'shirt' if y > GM[name][1] - 0.215 else None
         if r: out[f.index] = r
     return out
 
@@ -192,7 +233,7 @@ cov = {i for i in reg if i not in holes}
 # só sai o corpo bem por baixo da roupa: a fila de faces junto a cada borda fica (a borda da casca foi alisada e não pode abrir uma fresta)
 edge_v = {v.index for i in cov for v in OF[i].verts if any(lf.index not in cov for lf in v.link_faces)}
 covered = [OF[i] for i in cov if not any(v.index in edge_v for v in OF[i].verts)]
-TH = {'shirt': 0.0105, 'pants': 0.008, 'shoe': 0.012}
+TH = {'shirt': 0.0105, 'pants': 0.008, 'shoe': 0.012} if KIND == 'zombie' else {'shirt': 0.0095, 'pants': 0.0095, 'shoe': 0.013}
 shell = {}
 for r in ('shirt', 'pants', 'shoe'):
     fs = [OF[i] for i, rr in reg.items() if rr == r and i not in holes]
@@ -201,17 +242,25 @@ for r in ('shirt', 'pants', 'shoe'):
     for v in nv:  # folga: a camisa solta em baixo, as calças largas nas canelas (corte direito)
         y = v.co.y; t = TH[r]
         if r == 'shirt': t += 0.012 * float(ss(1.36, 1.05, y))
-        if r == 'pants': t += 0.013 * float(ss(0.6, 0.15, y)) + 0.004 * float(ss(0.85, 1.0, y))
+        if r == 'pants': t += (0.013 * float(ss(0.6, 0.15, y)) if KIND == 'zombie' else 0.006 * float(ss(0.35, 0.75, y)) * float(ss(0.95, 0.8, y)) + 0.004 * float(ss(0.3, 0.18, y))) + 0.004 * float(ss(0.85, 1.0, y))
         v.co = v.co + v.normal * t
     for f in nf: f[FL] = REG[r]
     bnd = {v for f in nf for e in f.edges if len(e.link_faces) == 1 for v in e.verts}
     if r == 'shoe':  # sapato: sem dedos, biqueira arredondada e sola plana
         inner = [v for v in nv if v not in bnd]
-        for _ in range(30): bmesh.ops.smooth_vert(bm, verts=inner, factor=0.7, use_axis_x=True, use_axis_y=True, use_axis_z=True)
+        for _ in range(30 if KIND == 'zombie' else 70): bmesh.ops.smooth_vert(bm, verts=inner, factor=0.7, use_axis_x=True, use_axis_y=True, use_axis_z=True)
         bm.normal_update()
         for v in inner: v.co = v.co + v.normal * 0.006
         for v in nv:
             if v.co.y < 0.0: v.co.y = -0.014
+    if KIND != 'zombie':  # jogador: bainhas, punhos e canos das botas direitos (a seleção por faces deixa-os em serra)
+        cuff = GM['foreR'][1] - 0.215
+        for v in bnd:
+            x, y = abs(v.co.x), v.co.y
+            if r == 'shirt' and 0.93 < y < 1.1 and x < 0.21: v.co.y = 0.978
+            elif r == 'shirt' and y < 0.97 and x > 0.12: v.co.y = cuff
+            elif r == 'pants' and y < 0.4: v.co.y = 0.146
+            elif r == 'shoe' and y > 0.1: v.co.y = 0.166
     # bordas: rasgões e bainhas sem degraus (alisadas ao longo da própria borda)
     for _ in range(3):
         nb = {}
@@ -241,7 +290,7 @@ for f in bm.faces:
 bm.to_mesh(me); bm.free(); me.update()
 print('com roupa', len(me.vertices), 'vértices', len(me.polygons), 'faces')
 
-def preview(obj, tag, mat=None, cams=('frente', 'lado', 'costas', 'cara')):
+def preview(obj, tag, mat=None, cams=('frente', 'lado', 'costas', 'cara'), extra=()):
     if mat is None:  # cores lisas por região (controlo da forma)
         mat = bpy.data.materials.new('reg'); mat.use_nodes = True; nt = mat.node_tree; bs = nt.nodes['Principled BSDF']
         a = nt.nodes.new('ShaderNodeAttribute'); a.attribute_name = 'reg'; a.attribute_type = 'GEOMETRY'
@@ -252,20 +301,136 @@ def preview(obj, tag, mat=None, cams=('frente', 'lado', 'costas', 'cara')):
         for k in range(2, 7): e = E.new((2 * k - 1) / 12); e.color = (*cols[k], 1)
         nt.links.new(a.outputs['Fac'], mth.inputs[0]); nt.links.new(mth.outputs[0], cr.inputs[0]); nt.links.new(cr.outputs['Color'], bs.inputs['Base Color']); bs.inputs['Roughness'].default_value = 0.8
     c = obj.copy(); c.data = obj.data.copy(); sc.collection.objects.link(c); c.data.materials.clear(); c.data.materials.append(mat); c.rotation_euler = (math.pi / 2, 0, 0); c.hide_render = False
+    ex = []
+    for e, em_, loc in extra:
+        ce = e.copy(); ce.data = e.data.copy(); sc.collection.objects.link(ce); ce.data.materials.clear(); ce.data.materials.append(em_); g = loc; ce.location = (g[0], -g[2], g[1]); ce.rotation_euler = (math.pi / 2, 0, 0); ce.hide_render = False; ex.append(ce)
     for o in sc.objects:
-        if o is not c and o.type == 'MESH': o.hide_render = True
+        if o is not c and o not in ex and o.type == 'MESH': o.hide_render = True
     if not sc.world.use_nodes:
         sc.world.use_nodes = True; sc.world.node_tree.nodes['Background'].inputs[0].default_value = (0.55, 0.58, 0.62, 1)
         L = bpy.data.lights.new('s', 'SUN'); L.energy = 3; lo_ = bpy.data.objects.new('s', L); sc.collection.objects.link(lo_); lo_.rotation_euler = (0.75, 0.25, 0.5)
     cam = bpy.data.cameras.new('c'); co = bpy.data.objects.new('c', cam); sc.collection.objects.link(co); sc.camera = co
     sc.render.resolution_x, sc.render.resolution_y = 520, 720; sc.cycles.samples = 32; out = []
-    V = {'frente': ((0, -4.0, 0.95), (math.pi / 2, 0, 0), 55), 'lado': ((3.3, -1.6, 1.05), (math.pi / 2 - 0.04, 0, math.radians(63)), 55), 'costas': ((0, 4.0, 0.95), (math.pi / 2, 0, math.pi), 55), 'cara': ((0.0, -0.75, 1.62), (math.pi / 2, 0, 0), 60)}
+    V = {'frente': ((0, -4.0, 0.95), (math.pi / 2, 0, 0), 55), 'lado': ((3.3, -1.6, 1.05), (math.pi / 2 - 0.04, 0, math.radians(63)), 55), 'costas': ((0, 4.0, 0.95), (math.pi / 2, 0, math.pi), 55), 'cara': ((0.0, -0.75, 1.62), (math.pi / 2, 0, 0), 60), 'nuca': ((0.56, 0.54, 1.66), (math.pi / 2 - 0.05, 0, math.radians(136)), 60), 'mao': ((0.5, -0.62, 0.8), (math.pi / 2 - 0.05, 0, math.radians(27)), 40)}
     for nm in cams:
         co.location, co.rotation_euler, cam.lens = V[nm]; sc.render.filepath = f'/tmp/{tag}-{nm}.png'; bpy.ops.render.render(write_still=True); out.append(sc.render.filepath)
     bpy.data.objects.remove(c); bpy.data.objects.remove(co)
+    for ce in ex: bpy.data.objects.remove(ce)
     return out
 
 if PREV and 'roupa' in sys.argv: preview(ob, 'roupa', cams=('frente', 'lado', 'costas')); sys.exit(0)
+
+# ---------- 4b. (jogador) cabelo e barba: cascas por cima do couro cabeludo e da cara, presas à cabeça ----------
+HAIR = {}
+if KIND != 'zombie':
+    HC = G['head'] + hc  # centro da cabeça desenhada
+    Wh = np.zeros(len(me.vertices))  # peso da cabeça de cada vértice (a malha mudou ao fazer a roupa: lê-se dos grupos)
+    gh = ob.vertex_groups['head'].index
+    for v in me.vertices:
+        for gg in v.groups:
+            if gg.group == gh: Wh[v.index] = gg.weight
+    def shell_from(sel, t_fun, name, extra=None, tris=1400, taper=0.012, smooth=5):
+        import heapq
+        bmh = bmesh.new(); bmh.from_mesh(me); bmh.verts.ensure_lookup_table(); bmh.faces.ensure_lookup_table(); bmh.normal_update()
+        keep = set(sel(bmh)); bmesh.ops.delete(bmh, geom=[f for f in bmh.faces if f.index not in keep], context='FACES')
+        bmesh.ops.delete(bmh, geom=[v for v in bmh.verts if not v.link_faces], context='VERTS')
+        bv = [v for v in bmh.verts if v.is_boundary]
+        for _ in range(smooth):  # a orla em serra (faces inteiras) passa a curva suave
+            nw = {}
+            for v in bv:
+                nb = [e.other_vert(v) for e in v.link_edges if e.is_boundary]
+                if len(nb) == 2: nw[v] = v.co * 0.5 + (nb[0].co + nb[1].co) * 0.25
+            for v, c in nw.items(): v.co = c
+        bmh.normal_update()
+        dist = {v: 1e9 for v in bmh.verts}; hq = []
+        for v in bv: dist[v] = 0.0; heapq.heappush(hq, (0.0, v.index, v))
+        while hq:  # distância à orla, ao longo da superfície
+            d, _, v = heapq.heappop(hq)
+            if d > dist[v]: continue
+            for e in v.link_edges:
+                o2 = e.other_vert(v); nd = d + e.calc_length()
+                if nd < dist[o2]: dist[o2] = nd; heapq.heappush(hq, (nd, o2.index, o2))
+        for v in bmh.verts:  # mais fino na orla: o cabelo assenta na pele em vez de acabar num degrau
+            t = t_fun(v.co); k = float(ss(0.0, taper, dist[v])); v.co = v.co + v.normal * (0.0012 + (t - 0.0012) * k)
+        if extra: extra(bmh)
+        for v in bmh.verts: v.co = v.co - mathutils.Vector(tuple(G['head']))  # coordenadas da cabeça (ponto de rotação)
+        mh = bpy.data.meshes.new(name); bmh.to_mesh(mh); bmh.free(); o = bpy.data.objects.new(name, mh); sc.collection.objects.link(o); o.hide_render = True
+        nt = sum(len(p.vertices) - 2 for p in mh.polygons)
+        if nt > tris:
+            dm = o.modifiers.new('d', 'DECIMATE'); dm.ratio = tris / nt; bpy.ops.object.select_all(action='DESELECT'); o.select_set(True); bpy.context.view_layer.objects.active = o; bpy.ops.object.modifier_apply(modifier='d')
+        for p in mh.polygons: p.use_smooth = True
+        return o
+    import mathutils
+    def rel(c): return np.array([c.x, c.y, c.z]) - HC
+    HL_A = [0.0, 0.35, 0.7, 1.05, 1.3, 1.42, 1.5, 1.85, 2.05, 2.5, math.pi]  # linha do cabelo: altura (relativa ao centro da cabeça) por ângulo à volta
+    HL_Y = [0.064, 0.07, 0.05, 0.03, -0.02, -0.02, 0.028, 0.028, -0.02, -0.065, -0.08]
+    def scalp(bmh, strip=None, lift=0.0):
+        out = []
+        for f in bmh.faces:
+            if f[bmh.faces.layers.int.get('reg')] != 0: continue
+            vs = [v.index for v in f.verts]
+            if Wh[vs].mean() < 0.9: continue
+            r = rel(f.calc_center_median()); x, y, z = r
+            if abs(x) > 0.075 and y < 0.03 and -0.05 < z < 0.03: continue  # orelha
+            if strip is not None and abs(x) > strip: continue
+            if y > float(np.interp(abs(math.atan2(x, z)), HL_A, HL_Y)) + lift: out.append(f.index)
+        return out
+    def strands(o, k=1.0):  # cor por vértice: madeixas (riscas ao longo do cabelo) e raiz mais escura
+        m = o.data; Pm = np.zeros(len(m.vertices) * 3); m.vertices.foreach_get('co', Pm); Pm = Pm.reshape(-1, 3)
+        s_ = 0.78 + 0.22 * np.sin(np.arctan2(Pm[:, 0], Pm[:, 2]) * 60 * k + 6 * fbm(Pm, 30, 2, 41)) * 0.5 + 0.12 * fbm(Pm, 60, 2, 42)
+        ca = m.color_attributes.new('Col', 'FLOAT_COLOR', 'POINT'); ca.data.foreach_set('color', np.concatenate([np.repeat(np.clip(s_, 0.3, 1.1)[:, None], 3, 1), np.ones((len(Pm), 1))], 1).ravel())
+        return o
+    vol = lambda c: 0.007 + 0.006 * float(ss(0.0, 0.1, c.y - HC[1])) + 0.0015 * float(noise(np.array([[c.x * 60, c.y * 60, c.z * 60]]))[0])
+    HAIR['curto'] = strands(shell_from(lambda b: scalp(b), vol, 'curto'))
+    from mathutils.bvhtree import BVHTree
+    bmb = bmesh.new(); bmb.from_mesh(me); BVH = BVHTree.FromBMesh(bmb); bmb.free()
+    def body_r(y, dr):  # distância do eixo da cabeça à pele, a uma altura e numa direção
+        o0 = mathutils.Vector((HC[0], y, HC[2] - 0.015)); h = BVH.ray_cast(o0, dr, 0.2)[0]  # de dentro para fora: apanha a nuca/pescoço, não o ombro
+        return (h - o0).length if h else 0.06
+    def curtain(bmh):  # comprido: nasce à volta da cabeça (por cima das orelhas), assenta na nuca e cai até aos ombros
+        cols, rows = 29, 11; grid = []
+        for i in range(cols):
+            ph = 1.22 + (2 * math.pi - 2.44) * i / (cols - 1); side = abs(math.cos(ph))
+            dr = mathutils.Vector((math.sin(ph), 0, math.cos(ph))); y0 = HC[1] + 0.045; o_ = mathutils.Vector((HC[0], 0, HC[2] - 0.015))
+            r0 = body_r(y0, dr) + 0.011; ln = (0.21 - 0.16 * side) * (1 + 0.12 * float(noise(np.array([[ph * 3, 0, 0]]))[0]))
+            col = []
+            for j in range(rows):
+                t = j / (rows - 1); y = y0 - ln * t
+                r = min(max(body_r(y, dr) + 0.012, r0 - 0.3 * (y0 - y)), r0 + 0.02) + 0.025 * side * t * t
+                col.append(bmh.verts.new(mathutils.Vector((o_.x, y, o_.z)) + dr * r))
+            grid.append(col)
+        fs = []
+        for i in range(cols - 1):
+            for j in range(rows - 1): fs.append(bmh.faces.new((grid[i][j], grid[i][j + 1], grid[i + 1][j + 1], grid[i + 1][j])))
+        bmh.normal_update(); bmesh.ops.solidify(bmh, geom=fs, thickness=0.01); bmh.normal_update()
+    HAIR['comprido'] = strands(shell_from(lambda b: scalp(b), lambda c: vol(c) + 0.003, 'comprido', curtain, 2400), 0.6)
+    def tail(bmh):  # rabo-de-cavalo: preso atrás da cabeça (com elástico), cai pelas costas e afina na ponta
+        ring = 10; prev = None; base = HC + np.array([0, 0.012, -0.095]); N = 12
+        for i in range(N):
+            t = i / (N - 1); c = base + np.array([0, -0.2 * t ** 1.25, -0.03 - 0.03 * math.sin(min(t, 0.6) / 0.6 * 1.5) + 0.012 * t])
+            r = 0.016 + 0.008 * math.sin(min(1, t / 0.25) * math.pi * 0.5) * (1 - t) ** 0.6 + 0.003 * (1 - t) - (0.004 if 0.06 < t < 0.12 else 0)
+            r = max(r * (1 - 0.85 * ss(0.6, 1.0, t)), 0.002)
+            cur = [bmh.verts.new((c[0] + r * math.cos(2 * math.pi * k / ring), c[1], c[2] + r * 0.8 * math.sin(2 * math.pi * k / ring))) for k in range(ring)]
+            if prev:
+                for k in range(ring): bmh.faces.new((prev[k], prev[(k + 1) % ring], cur[(k + 1) % ring], cur[k]))
+            else: bmh.faces.new(cur)
+            prev = cur
+        bmh.faces.new(prev[::-1]); bmh.normal_update()
+    HAIR['rabo'] = strands(shell_from(lambda b: scalp(b), lambda c: 0.005 + 0.002 * float(ss(0.0, 0.1, c.y - HC[1])), 'rabo', tail))
+    HAIR['moicano'] = strands(shell_from(lambda b: scalp(b, strip=0.026, lift=0.01), lambda c: 0.008 + 0.022 * float(ss(-0.02, 0.09, c.y - HC[1])) * (0.7 + 0.5 * float(noise(np.array([[0, c.y * 90, c.z * 90]]))[0])), 'moicano', None, 1400, 0.026, 3), 2.0)
+    def beard_sel(bmh, kind):
+        out = []; MYr = MOUTH - HC
+        for f in bmh.faces:
+            if f[bmh.faces.layers.int.get('reg')] != 0: continue
+            vs = [v.index for v in f.verts]
+            if Wh[vs].mean() < 0.6: continue
+            x, y, z = rel(f.calc_center_median()); my = MYr[1] - 0.04
+            if kind == 'barba' and (y < my + 0.012) and (y > -0.115) and (z > -0.035) and not (abs(x) < 0.022 and abs(y - my) < 0.01 and z > 0.07): out.append(f.index)
+            if kind == 'bigode' and abs(y - (my + 0.017 - 6 * x * x)) < 0.0075 and abs(x) < 0.034 and z > 0.06: out.append(f.index)
+        return out
+    HAIR['barba'] = strands(shell_from(lambda b: beard_sel(b, 'barba'), lambda c: 0.0045, 'barba', None, 900, 0.01), 2.5)
+    HAIR['bigode'] = strands(shell_from(lambda b: beard_sel(b, 'bigode'), lambda c: 0.004, 'bigode', None, 240, 0.006, 3), 3)
+    print('cabelos', {k: len(o.data.polygons) for k, o in HAIR.items()})
 
 # ---------- 5. cópia densa com relevo (pregas, costuras, costelas, rugas) ----------
 def vreg(m):  # região de cada vértice (a da primeira face onde está)
@@ -363,8 +528,15 @@ def export(o):
             'tg': b(np.clip(np.round(np.array(Tv) * 127), -127, 127).astype(np.int8)), 'uv': b(np.clip(np.round(np.array(Uv) * 65535), 0, 65535).astype(np.uint16)),
             'si': b(np.array(Si, np.uint8)), 'sw': b(np.array(Sw, np.uint8)), 'i': b(np.array(I, np.uint16 if len(Pv) < 65536 else np.uint32))}
 OUTD = {'seg': SEG, 'bind': BIND, 'headC': hc.round(4).tolist(), 'headR': round(hr, 4), 'lod0': export(lo), 'lod1': export(lo1)}
+def export_rigid(o):  # cabelo: preso só à cabeça (coordenadas em relação ao ponto de rotação da cabeça)
+    m = o.data; m.calc_loop_triangles(); ca = m.color_attributes.get('Col')
+    Pv = np.zeros(len(m.vertices) * 3); m.vertices.foreach_get('co', Pv); Pv = Pv.reshape(-1, 3); Nv = np.zeros(len(m.vertices) * 3); m.vertices.foreach_get('normal', Nv); Nv = Nv.reshape(-1, 3)
+    Cv = np.array([ca.data[i].color[0] for i in range(len(m.vertices))]) if ca else np.ones(len(Pv))
+    I = np.array([t.vertices[:] for t in m.loop_triangles], np.uint16).ravel(); b = lambda a: base64.b64encode(np.ascontiguousarray(a).tobytes()).decode()
+    return {'n': len(Pv), 'p': b(np.clip(np.round(Pv / 0.5 * 32767), -32767, 32767).astype(np.int16)), 'nm': b(np.clip(np.round(Nv * 127), -127, 127).astype(np.int8)), 'c': b(np.clip(np.round(Cv / 1.2 * 255), 0, 255).astype(np.uint8)), 'i': b(I)}
+if HAIR: OUTD['hair'] = {k: export_rigid(o) for k, o in HAIR.items()}
 open(os.path.join(ROOT, 'src', NAME + '.js'), 'w').write('// gerado por blender/human.py a partir da malha base do MakeHuman (CC0): corpo com pele por partes (pesos), UV e tangentes. Não editar à mão.\nexport const ' + NAME.upper() + ' = ' + json.dumps(OUTD) + ';\n')
-np.savez('/tmp/mh/ref_' + KIND + '.npz', EYE_R=EYE_R, EYE_L=EYE_L, MOUTH=MOUTH, NECK_Y=NECK_Y)
+np.savez('/tmp/mh/ref_' + KIND + '.npz', EYE_R=EYE_R, EYE_L=EYE_L, MOUTH=MOUTH, NECK_Y=NECK_Y, HC=np.array(G['head']) + hc, HL_A=np.array(HL_A if KIND != 'zombie' else [0.0]), HL_Y=np.array(HL_Y if KIND != 'zombie' else [0.0]))
 print('escrito', NAME + '.js', os.path.getsize(os.path.join(ROOT, 'src', NAME + '.js')) // 1024, 'KB')
 
 # ---------- 9. cor e relevo fino (zcolor.py) e imagem de controlo ----------
@@ -377,5 +549,18 @@ if PREV:
     tnm = pn.nodes.new('ShaderNodeTexImage'); tnm.image = bpy.data.images.load(os.path.join(ROOT, 'assets', 'tex', TN + '_n.jpg')); tnm.image.colorspace_settings.name = 'Non-Color'
     nmap = pn.nodes.new('ShaderNodeNormalMap'); pn.links.new(ti.outputs['Color'], bs.inputs['Base Color']); pn.links.new(tnm.outputs['Color'], nmap.inputs['Color']); pn.links.new(nmap.outputs['Normal'], bs.inputs['Normal'])
     bs.inputs['Roughness'].default_value = 0.85
-    preview(lo, 'final', mat=pm)
+    if KIND != 'zombie':  # jogador: pinta a textura com cores de exemplo (como o jogo faz) e mostra os penteados
+        mk = pn.nodes.new('ShaderNodeTexImage'); mk.image = bpy.data.images.load(os.path.join(ROOT, 'assets', 'tex', 'player_m.png')); mk.image.colorspace_settings.name = 'Non-Color'
+        sep = pn.nodes.new('ShaderNodeSeparateColor'); pn.links.new(mk.outputs['Color'], sep.inputs['Color'])
+        def ratio(c, ref): return tuple(((c >> s_ & 255) / 255) ** 2.2 / max(1e-3, ((ref >> s_ & 255) / 255) ** 2.2) for s_ in (16, 8, 0))
+        cur = ti.outputs['Color']
+        for ch, col, ref in (('Red', 0x3a4a5e, 0x9a9a96), ('Green', 0x3a3f33, 0x8e8e8a), ('Blue', 0xb9805a, 0xd9a882)):
+            mu = pn.nodes.new('ShaderNodeMix'); mu.data_type = 'RGBA'; mu.blend_type = 'MULTIPLY'; pn.links.new(sep.outputs[ch], mu.inputs['Factor']); pn.links.new(cur, mu.inputs[6]); mu.inputs[7].default_value = (*ratio(col, ref), 1); cur = mu.outputs[2]
+        a_ = pn.nodes.new('ShaderNodeMix'); a_.data_type = 'RGBA'; a_.blend_type = 'MULTIPLY'; pn.links.new(mk.outputs['Alpha'], a_.inputs['Factor']); pn.links.new(cur, a_.inputs[6]); a_.inputs[7].default_value = (*ratio(0x2a211b, 0x6a5a4c), 1); cur = a_.outputs[2]
+        pn.links.new(cur, bs.inputs['Base Color'])
+        hm_ = bpy.data.materials.new('hair'); hm_.use_nodes = True; hn = hm_.node_tree; vc = hn.nodes.new('ShaderNodeVertexColor'); vc.layer_name = 'Col'; mm = hn.nodes.new('ShaderNodeMix'); mm.data_type = 'RGBA'; mm.blend_type = 'MULTIPLY'; mm.inputs['Factor'].default_value = 1; pn2 = hn.nodes['Principled BSDF']
+        hn.links.new(vc.outputs['Color'], mm.inputs[6]); mm.inputs[7].default_value = (0.03, 0.02, 0.015, 1); hn.links.new(mm.outputs[2], pn2.inputs['Base Color']); pn2.inputs['Roughness'].default_value = 0.55
+        preview(lo, 'final', mat=pm, cams=('frente', 'lado', 'mao'), extra=[(HAIR['curto'], hm_, G['head'])])
+        for st in ('comprido', 'rabo', 'moicano'): preview(lo, 'h-' + st, mat=pm, cams=('cara', 'nuca'), extra=[(HAIR[st], hm_, G['head']), (HAIR['barba' if st == 'rabo' else 'bigode'], hm_, G['head'])])
+    else: preview(lo, 'final', mat=pm)
     if 'longe' in sys.argv: preview(lo1, 'longe', mat=pm, cams=('frente',))

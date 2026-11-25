@@ -76,6 +76,58 @@ if KIND == 'zombie':
     lace = (z > 0.06) & (y > 0.045) & (y < 0.1) & (np.abs(x) > 0.05) & (np.sin(z * 260) > 0.6); shoe[lace] = hexc(0x8a7f6a)
     C[so] = shoe[so]; H[so] = 0.0003 * fine[so] + 0.0006 * lace[so]
     C[rim] = (C[rim] if rim.any() else 0) * 0 + hexc(0x2a2622)
+else:
+    # jogador: a cor da roupa, da pele e do cabelo escolhe-se no jogo. Aqui fica o detalhe em tons de referência
+    # e uma máscara (R camisa, G calças, B pele, A cabelo) que diz ao jogo o que pintar com cada cor escolhida
+    MASK = np.zeros((n, 4))
+    REF = {'top': hexc(0x9a9a96), 'legs': hexc(0x8e8e8a), 'skin': hexc(0xd9a882), 'hair': hexc(0x6a5a4c)}
+    head = y > NECK_Y + 0.02
+    skc = REF['skin'][None, :] * (1 + 0.05 * mid + 0.03 * fine)[:, None]
+    skc = mix(skc, skc * np.array([1.0, 0.86, 0.84]), 0.25 * ss(-0.1, 0.3, fbm(Pc, 4, 2, 5)))  # rosado nas maçãs e nariz
+    MY = MOUTH[1] - 0.04
+    lip = ss(0.019, 0.01, np.hypot((x - MOUTH[0]) * 0.8, (y - MY) * 2.4)) * (z > MOUTH[2] - 0.01) * head
+    skc = mix(skc, skc * np.array([0.78, 0.55, 0.52]), 0.7 * lip)
+    for E in (EYE_R, EYE_L):  # olheiras suaves e sobrancelhas (pintadas na máscara do cabelo)
+        dd = np.hypot(x - E[0], (y - E[1]) * 1.15); skc = mix(skc, skc * 0.82, 0.5 * ss(0.03, 0.015, dd) * (z > E[2] - 0.03) * head)
+        u = (x - E[0]) * np.sign(E[0] + 1e-9); arc = E[1] + 0.024 - 18 * (u - 0.002) ** 2  # sobrancelha arqueada, mais grossa por dentro
+        bw = 0.0032 + 0.0018 * ss(0.02, -0.01, u); bm_ = ss(bw + 0.0009, bw * 0.55, np.abs(y - arc)) * ss(0.026, 0.016, np.abs(u)) * head * (z > E[2] - 0.02)
+        MASK[:, 3] = np.maximum(MASK[:, 3], bm_ * np.clip(0.82 + 0.35 * fine, 0.55, 1.0))
+    HC = RF['HC']; hr_ = np.interp(np.abs(np.arctan2(x - HC[0], z - HC[2])), RF['HL_A'], RF['HL_Y'])  # mesma linha do cabelo das cascas
+    shav = ss(-0.002, 0.008, y - HC[1] - hr_) * head * (np.hypot(x - HC[0], z - HC[2]) > 0.02)
+    MASK[:, 3] = np.maximum(MASK[:, 3], shav * np.clip(0.5 + 0.25 * fine, 0.3, 0.7))  # cabelo rapado: aparece à volta do moicano
+    C[sk] = skc[sk]; MASK[sk, 2] = 1 - MASK[sk, 3]; H[sk] = 0.0002 * grain[sk] + 0.0003 * fine[sk]
+    hairc = REF['hair'][None, :] * (0.8 + 0.3 * (np.sin(y * 4000 + 40 * fine) > 0))[:, None]; hm = MASK[:, 3][:, None]; C[sk] = (skc * (1 - hm) + hairc * hm)[sk]
+    C[ey] = np.where((np.hypot(x - np.where(x > 0, EYE_R[0], EYE_L[0]), y - EYE_R[1]) < 0.0065)[:, None], hexc(0x3a2a1c), hexc(0xece8e0)[None, :])[ey]
+    C[te] = hexc(0xe0dccb)
+    # camisa de campanha: trama, costuras, bolsos no peito com aba, botões, gola; desgaste nos cotovelos
+    tw = np.sin(x * 2200) * np.sin(y * 2200)
+    shirt = REF['top'][None, :] * (1 + 0.05 * tw + 0.05 * fine + 0.06 * mid)[:, None]
+    for sx in (-1, 1):
+        pk = (np.abs(x - sx * 0.085) < 0.045) & (y > 1.24) & (y < 1.33) & (z > 0.06)
+        edge = pk & ((np.abs(np.abs(x - sx * 0.085) - 0.045) < 0.003) | (np.abs(y - 1.24) < 0.003) | (np.abs(y - 1.31) < 0.0035))
+        shirt[edge] *= 0.7; H[sh & pk] += 0.0008
+        btn = (np.hypot(x - sx * 0.085, y - 1.3) < 0.005) & (z > 0.06); shirt[btn] = hexc(0x2a2622)
+    placket = (np.abs(x) < 0.012) & (z > 0.05) & (y > 1.0); shirt[placket] *= 0.86
+    btns = (np.abs(x - 0.006) < 0.005) & (z > 0.05) & (np.abs(((y - 1.02) % 0.075) - 0.0375) < 0.005) & (y > 1.0) & (y < 1.42); shirt[btns] = hexc(0x2a2622)
+    seam = ss(0.004, 0.0, np.abs(np.abs(x) - 0.19)) * (y < 1.36) * (y > 1.0); shirt *= (1 - 0.22 * seam)[:, None]
+    shirt = mix(shirt, shirt * 0.8, 0.4 * ss(0.0, 0.35, big))
+    C[sh] = shirt[sh]; MASK[sh, 0] = 1; H[sh] += 0.00015 * tw[sh] + 0.0005 * seam[sh] + 0.0006 * placket[sh]
+    # calças de trabalho: sarja, bolsos de lado nas coxas, costuras, joelhos gastos
+    tw2 = np.sin((x + y) * 1700 + z * 500); pants = REF['legs'][None, :] * (1 + 0.07 * tw2 + 0.05 * fine)[:, None]
+    for sx in (-1, 1):
+        cp = (np.abs(x - sx * 0.185) < 0.04) & (y > 0.6) & (y < 0.75) & (np.abs(z) < 0.07)
+        ed = cp & ((np.abs(np.abs(x - sx * 0.185) - 0.04) < 0.003) | (np.abs(y - 0.6) < 0.003) | (np.abs(y - 0.725) < 0.004)); pants[ed] *= 0.7; H[pa & cp] += 0.001
+    knee = (np.abs(y - 0.5) < 0.06) & (z > 0.03); pants[knee] *= 1.08
+    pants = mix(pants, pants * 0.78, 0.35 * ss(0.0, 0.35, big))
+    belt = (y > 0.955) & (y < 0.995); pants[belt] = hexc(0x2a2420) * (1 + 0.1 * fine[belt])[:, None]; MASKb = belt
+    C[pa] = pants[pa]; MASK[pa, 1] = 1; MASK[pa & MASKb, 1] = 0; H[pa] += 0.00018 * tw2[pa]
+    # botas de couro: biqueira, sola grossa, atacadores
+    boot = hexc(0x3a3028)[None, :] * (1 + 0.1 * fine + 0.08 * mid)[:, None]; boot = mix(boot, hexc(0x5a4a3a)[None, :], 0.25 * ss(0.1, 0.4, big))
+    sole = y < 0.012; boot[sole] = hexc(0x1c1b1a) * (1 + 0.08 * grain[sole])[:, None]
+    lace = (z > 0.045) & (y > 0.05) & (y < 0.15) & (np.abs(x) > 0.05) & (np.sin(y * 300) > 0.5) & (np.abs(np.abs(x) - 0.105) < 0.02); boot[lace] = hexc(0x4a4036)
+    C[so] = boot[so]; H[so] = 0.00035 * fine[so] + 0.0006 * lace[so]
+    C[rim] = hexc(0x3a3632); MASK[rim, 0] = 0
+    mimg = np.zeros((S, S, 4)); mimg[idx] = MASK
 C = np.clip(C, 0, 1)
 
 # sombra de canto suave (nunca chega a preto) e a cor final
@@ -105,4 +157,8 @@ N = Nm * 2 - 1; N[..., 0] -= np.clip(gu, -1.5, 1.5); N[..., 1] -= np.clip(gv, -1
 N[~cov] = (0, 0, 1)
 Nimg = dilate(N * 0.5 + 0.5, cov, 12); Nimg[S - 10:, S - 10:] = (0.5, 0.5, 1.0)
 Image.fromarray((np.clip(Nimg[::-1], 0, 1) * 255).astype(np.uint8)).save(os.path.join(OUT, NAME + '_n.jpg'), quality=90, optimize=True)
+if KIND != 'zombie':  # máscara de cores (PNG, sem perdas: as bordas das regiões têm de ficar limpas)
+    mimg = dilate(mimg, cov, 12); mimg[..., 3] = 0.5 + 0.5 * np.clip(mimg[..., 3], 0, 1);
+    # alfa nunca baixo: assim o browser não estraga o RGB ao pré-multiplicar
+    Image.fromarray((np.clip(mimg[::-1], 0, 1) * 255).astype(np.uint8), 'RGBA').resize((512, 512), Image.BILINEAR).save(os.path.join(OUT, NAME + '_m.png'), optimize=True)
 print('texturas', NAME, os.path.getsize(os.path.join(OUT, NAME + '.jpg')) // 1024, 'KB', os.path.getsize(os.path.join(OUT, NAME + '_n.jpg')) // 1024, 'KB')

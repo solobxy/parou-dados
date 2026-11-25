@@ -32,7 +32,7 @@ export function initUI(G) {
     if (G.TOUCH) { try { const r = document.documentElement.requestFullscreen && document.documentElement.requestFullscreen({ navigationUI: 'hide' }); if (r && r.catch) r.catch(() => { }); } catch (e) { } }
     $('start').hidden = true; G.start(cont, kit);
   };
-  $('sPlay').onclick = () => go(false); $('sCont').onclick = () => go(true);
+  $('sPlay').onclick = () => go(false); $('sArena').onclick = () => { audio.play('ui'); mnote('A Arena PvP em Tóquio está a ser construída. Chega numa das próximas versões.'); }; $('sCont').onclick = () => go(true);
   G.dbgKit = () => go(false, true); // só para os testes automáticos (joga sempre sem servidor)
   // um só servidor para todos: no site joga-se sempre online (se o servidor não responder, joga-se sozinho até voltar)
   let canOnline = !!window.KG_ONLINE; try { if (localStorage.getItem('kg.srv')) canOnline = true; } catch (e) { }
@@ -406,7 +406,7 @@ export function initUI(G) {
     pfm.hidden = false;
   };
   $('tLock').addEventListener('pointerdown', e => { e.stopPropagation(); if (G.lockT) { audio.play('ui'); lockMenu(G.lockT); } });
-  const startLabels = () => { G.hasSave = !!Conta.lerPersonagem(); $('sCont').hidden = !G.hasSave; const b = $('sPlay'); b.querySelector('b').textContent = G.hasSave ? 'Começar de novo' : 'Jogar'; b.querySelector('em').textContent = G.hasSave ? 'Perdes o que tens e começas do zero' : 'Acordas perto de uma vila ou monumento'; b.classList.toggle('pri', !G.hasSave); };
+  const startLabels = () => { G.hasSave = !!Conta.lerPersonagem(); $('sCont').hidden = !G.hasSave; const b = $('sPlay'); b.hidden = G.hasSave; b.classList.add('pri'); };
   const pfRender = () => {
     const a = Conta.ativo(), c = Conta.conta(), P = Conta.perfis();
     $('prof').innerHTML = (a && a.nome ? `<span class="pn">${c ? '{{cloud-check}}' : '{{user-round}}'}${esc(a.nome)}</span><span>${c ? 'na nuvem e neste aparelho' : 'guardado neste aparelho'}</span>` : `<span>Ainda sem perfil</span>`) + (a && a.nome ? `<button class="lnk" id="pfA">Aparência</button>` : '') + (P.lista.length > 1 || (a && a.nome) ? `<button class="lnk" id="pfL">Perfis</button>` : '') + `<button class="lnk" id="pfC">${c ? 'Conta' : 'Criar conta ou entrar'}</button>`;
@@ -547,7 +547,7 @@ export function initUI(G) {
       grp('Ecrã inteiro', [row(on() ? 'Estás em ecrã inteiro' : 'Jogar em ecrã inteiro', can ? 'Esconde as barras do browser. Para sair, toca aqui outra vez ou faz o gesto de voltar.' : 'Este browser não deixa. No iPhone: Partilhar e «Adicionar ao ecrã principal», e abre o jogo a partir daí.', can ? b : document.createElement('span'))]); }
     if (G.TOUCH) {
       grp('Controlos', [mirror, quick, iron,
-        row('Mira assistida', 'Ao levantar a arma, a mira vai para o zombie mais perto que estiver à vista e com tiro livre, e segue-o. Nunca prende a jogadores. Arrasta para a cabeça ou para as pernas.', tog(() => cfg.assist, v => cfg.assist = v)),
+        row('Mira assistida', 'Perto de um zombie ou jogador à vista, a mira abranda um pouco e puxa ligeiramente para ele enquanto arrastas (nunca através de paredes). Na vista de cima, ao levantar a arma vai para o zombie mais perto.', tog(() => cfg.assist, v => cfg.assist = v)),
         sens, doors, lean,
         row('Correr ao empurrar o polegar até ao fim', 'O botão «Auto» corre sempre em frente sem tocar no polegar.', tog(() => cfg.sprintPush, v => { cfg.sprintPush = v; if (!v) cfg.hud.sprint.on = 1; })),
         row('Vibração', 'Vibra ao levar dano, disparar e acertar. Não funciona no iPhone (o Safari não deixa).', tog(() => cfg.haptics, v => { cfg.haptics = v; if (v) try { navigator.vibrate && navigator.vibrate(30); } catch (e) { } })),
@@ -976,9 +976,9 @@ export function initUI(G) {
     closeDeath: () => { $('dead').hidden = true; clearInterval(dTick); }, sound, bedMenu, codeAsk, codeErr, codeDone, lockMenu, admRole, admList, admOpen, lbShow, lbOpen, trOpen, trRender, trOpenNow: () => !!trT, trWho: () => trT, trClose: () => { trEl.hidden = true; trT = null; },
     showHUD: msg => { $('hud').hidden = false; refresh(); toast(msg); },
     // sair para o menu (com 5 s parado se estiveres em combate)
-    toMenu: () => { setTimeout(() => { pfRender(); if (G.ui_count) G.ui_count(); }, 50); if (!pfm.hidden && $('pfT').textContent === 'Clã') pfClose(); $('quit').hidden = true; $('hud').hidden = true; setEl.hidden = true; G.paused = false; closeInv(); $('map').hidden = true; G.hasSave = true; $('sCont').hidden = false; $('sPlay').querySelector('b').textContent = 'Começar de novo'; $('sPlay').querySelector('em').textContent = 'Perdes o que tens e começas do zero'; $('sPlay').classList.remove('pri'); $('start').hidden = false; },
+    toMenu: () => { setTimeout(() => { pfRender(); if (G.ui_count) G.ui_count(); }, 50); if (!pfm.hidden && $('pfT').textContent === 'Clã') pfClose(); $('quit').hidden = true; $('hud').hidden = true; setEl.hidden = true; G.paused = false; closeInv(); $('map').hidden = true; G.hasSave = true; $('sCont').hidden = false; $('sPlay').hidden = true;   $('start').hidden = false; },
     quitTick: t => { const q = $('quit'); if (t < 0) { q.hidden = true; return; } q.hidden = false; $('qN').textContent = Math.max(1, Math.ceil(t)); q.style.setProperty('--qp', (1 - t / 5).toFixed(3)); },
-    ready: () => { drawOff(); $('load').hidden = true; $('start').hidden = false; pfRender(); Conta.conta() && Conta.sincronizar().then(r => { if (r === 'nuvem') { pfRender(); mnote('Trouxemos o teu jogo mais recente da nuvem.'); } }).catch(() => { }); if (G.hasSave) { $('sCont').hidden = false; $('sPlay').querySelector('b').textContent = 'Começar de novo'; $('sPlay').querySelector('em').textContent = 'Perdes o que tens e começas do zero'; $('sPlay').classList.remove('pri'); }
+    ready: () => { drawOff(); $('load').hidden = true; $('start').hidden = false; pfRender(); Conta.conta() && Conta.sincronizar().then(r => { if (r === 'nuvem') { pfRender(); mnote('Trouxemos o teu jogo mais recente da nuvem.'); } }).catch(() => { }); if (G.hasSave) { $('sCont').hidden = false; $('sPlay').hidden = true;   }
       // intro curta (uma vez por sessão; toca para saltar; sem animação se o sistema pedir menos movimento)
       let seen = false; try { seen = sessionStorage.getItem('kgIntro') === '1'; sessionStorage.setItem('kgIntro', '1'); } catch (e) { } if (!seen && !matchMedia('(prefers-reduced-motion: reduce)').matches) { const it = $('intro'); it.hidden = false; const end = () => { it.hidden = true; }; it.onclick = end; setTimeout(end, 2700); } },
   };

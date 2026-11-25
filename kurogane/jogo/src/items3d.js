@@ -4,6 +4,7 @@ import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.j
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { Builder } from './builder.js';
 import { GUNS } from './guns.js';
+import { Body, lookCol } from './chars.js';
 
 export function makeIcons(DPR = 2) {
   // ---------- materiais e peças (as mesmas da cidade)
@@ -40,49 +41,6 @@ export function makeIcons(DPR = 2) {
     if (o.laser) put(RB(0.045, 0.045, 0.1, 0.012, 0x2c2f33), 0.055, -0.01, 0.6, g);
     return g;
   };
-  const person = (o = {}) => {
-    const root = new THREE.Group(), body = new THREE.Group(); root.add(body);
-    const skin = o.skin ?? 0xd9a882, top = o.top ?? 0x5c6846, legs = o.legs ?? 0x3a3f33, shoes = o.shoes ?? 0x23211f, stride = o.stride ?? 0.08;
-    for (const sx of [-1, 1]) {
-      const leg = G(sx * 0.12, 0.92, 0, body); leg.rotation.x = sx * stride; leg.rotation.z = sx * 0.04;
-      put(mesh(new THREE.CapsuleGeometry(0.1, 0.34, 6, 14), legs), 0, -0.23, 0, leg);
-      put(B(0.2, 0.05, 0.12, shade(legs, 0.8)), sx * 0.02, -0.2, 0.06, leg); // bolso de perna
-      const kn = G(0, -0.46, 0, leg);
-      put(mesh(new THREE.CapsuleGeometry(0.088, 0.3, 6, 14), legs), 0, -0.2, 0, kn);
-      put(mesh(new RoundedBoxGeometry(0.2, 0.14, 0.33, 3, 0.05), shoes), 0, -0.42, 0.05, kn);
-    }
-    const up = G(0, 0.92, 0, body); up.rotation.x = 0.03;
-    put(RB(0.44, 0.2, 0.26, 0.07, legs), 0, 0.04, 0, up);
-    put(RB(0.5, 0.56, 0.28, 0.1, top), 0, 0.38, 0, up);
-    put(B(0.47, 0.06, 0.29, 0x2a2623), 0, 0.12, 0, up);
-    put(Cy(0.07, 0.08, 0.1, 12, skin), 0, 0.7, 0, up);
-    const head = G(0, 0.86, 0.01, up);
-    const hd = Sp(0.15, skin); hd.scale.set(1, 1.12, 1.02); head.add(hd);
-    for (const sx of [-1, 1]) put(B(0.035, 0.024, 0.012, 0x1a1a1a), sx * 0.055, 0.02, 0.152, head);
-    if (o.hair != null && !o.helmet) { const hs = o.hairS ?? 0, hc = o.hair, stub = new THREE.Color(hc).lerp(new THREE.Color(skin), 0.55).getHex();
-      const cap = mesh(new THREE.SphereGeometry(hs === 1 || hs === 4 ? 0.153 : 0.158, 22, 12, 0, Math.PI * 2, 0, Math.PI * (hs === 1 || hs === 4 ? 0.5 : 0.53)), hs === 1 || hs === 4 ? stub : hc, { r: 0.9 }); cap.position.set(0, 0.02, -0.012); head.add(cap);
-      if (hs === 2) { put(RB(0.3, 0.28, 0.09, 0.04, hc, { r: 0.9 }), 0, -0.07, -0.12, head); for (const sx of [-1, 1]) put(RB(0.05, 0.22, 0.17, 0.02, hc, { r: 0.9 }), sx * 0.145, -0.03, -0.03, head); }
-      if (hs === 3) { put(Sp(0.05, hc, { r: 0.9 }), 0, 0.02, -0.17, head); put(mesh(new THREE.CapsuleGeometry(0.035, 0.14, 6, 10), hc, { r: 0.9 }), 0, -0.09, -0.19, head); }
-      if (hs === 4) put(RB(0.055, 0.075, 0.28, 0.025, hc, { r: 0.9 }), 0, 0.165, -0.015, head); }
-    if (o.beard && o.beardS === 2) put(B(0.1, 0.022, 0.02, o.beard), 0, -0.035, 0.15, head);
-    if (o.beard && (o.beardS ?? 1) === 1) { const bd = mesh(new THREE.SphereGeometry(0.152, 18, 10, -Math.PI * 0.42, Math.PI * 0.84, Math.PI * 0.62, Math.PI * 0.38), o.beard); bd.scale.set(1.02, 1.08, 1.06); head.add(bd); }
-    if (o.helmet) { const hm = mesh(new THREE.SphereGeometry(0.19, 22, 14, 0, Math.PI * 2, 0, Math.PI * 0.55), o.helmet, { r: 0.6 }); hm.position.y = 0.02; head.add(hm); put(RB(0.09, 0.07, 0.05, 0.015, 0x2a2b2c), 0, 0.14, 0.17, head); for (const sx of [-1, 1]) put(RB(0.03, 0.09, 0.12, 0.01, shade(o.helmet, 0.8)), sx * 0.18, 0.05, 0.02, head); }
-    if (o.mask) put(RB(0.25, 0.13, 0.1, 0.04, o.mask), 0, -0.06, 0.12, head);
-    if (o.nvg) { put(RB(0.12, 0.05, 0.05, 0.012, 0x1e2022), 0, o.helmet ? 0.12 : 0.1, 0.17, head); for (const sx of [-1, 1]) put(mesh(new THREE.CylinderGeometry(0.024, 0.026, 0.08, 14), 0x26292c), sx * 0.034, o.helmet ? 0.09 : 0.07, 0.22, head).rotation.x = Math.PI / 2; }
-    const arm = (sx, ax, az, el) => { const sh = G(sx * 0.3, 0.6, 0, up); sh.rotation.set(ax, 0, az); put(Sp(0.095, o.sleeve ?? top), 0, 0, 0, sh); put(mesh(new THREE.CapsuleGeometry(0.075, 0.2, 6, 14), o.sleeve ?? top), 0, -0.15, 0, sh); const e = G(0, -0.3, 0, sh); e.rotation.x = el; put(mesh(new THREE.CapsuleGeometry(0.068, 0.2, 6, 14), o.sleeve ?? top), 0, -0.14, 0, e); put(Sp(0.07, o.glove ?? skin), 0, -0.3, 0, e); };
-    const A = o.arms ?? [[0.05, 0.16, -0.12], [0.05, -0.16, -0.12]];
-    arm(-1, ...A[0]); arm(1, ...A[1]);
-    if (o.vest) { put(RB(0.55, 0.44, 0.37, 0.06, o.vest), 0, 0.4, 0, up); for (const sx of [-0.15, 0, 0.15]) put(RB(0.12, 0.16, 0.07, 0.02, shade(o.vest, 0.8)), sx, 0.3, 0.2, up); put(RB(0.07, 0.15, 0.05, 0.015, 0x2a2b2c), 0.2, 0.55, 0.19, up); put(B(0.2, 0.05, 0.02, 0x3a6a3a), -0.14, 0.56, 0.19, up); }
-    if (o.pack) { put(RB(0.42, 0.52, 0.27, 0.08, o.pack), 0, 0.42, -0.28, up); put(RB(0.3, 0.2, 0.09, 0.03, shade(o.pack, 0.8)), 0, 0.3, -0.44, up); const roll = Cy(0.1, 0.1, 0.5, 14, o.roll ?? 0x6b7d5a); roll.rotation.z = Math.PI / 2; put(roll, 0, 0.74, -0.28, up); for (const sx of [-0.13, 0.13]) put(B(0.05, 0.46, 0.02, shade(o.pack, 0.7)), sx, 0.45, 0.16, up); }
-    if (o.ghillie) { const GH = [0x4a5a2c, 0x5f6a34, 0x3c4a26, 0x6b6440, 0x2f3a1f]; let q = 9; const r = () => { q = (q * 16807) % 2147483647; return q / 2147483647; };
-      for (let i = 0; i < 110; i++) { const a = r() * Math.PI * 2, y = r() * 0.78, m = Ico(0.05 + r() * 0.045, GH[i % 5], { r: 1 }); m.rotation.set(r() * 3, r() * 3, 0); put(m, Math.sin(a) * 0.27, y, Math.cos(a) * 0.18, up); }
-      for (let i = 0; i < 34; i++) { const a = r() * Math.PI * 2, t = r() * 1.5, m = Ico(0.05 + r() * 0.03, GH[i % 5], { r: 1 }); put(m, Math.sin(a) * Math.sin(t) * 0.2, 0.88 + Math.cos(t) * 0.18, Math.cos(a) * Math.sin(t) * 0.2 - 0.02, up); }
-      for (let i = 0; i < 50; i++) { const a = r() * Math.PI * 2, m = Ico(0.05 + r() * 0.04, GH[i % 5], { r: 1 }); put(m, Math.sin(a) * 0.2 + (i % 2 ? 0.12 : -0.12), 0.85 - r() * 0.85, Math.cos(a) * 0.11, body); } }
-    if (o.slung) { const gm = rifle(o.slung); gm.rotation.set(0.2, 0, 2.35); gm.position.set(0.06, 0.42, -0.46); up.add(gm); }
-    if (o.holster) { put(RB(0.08, 0.2, 0.06, 0.02, 0x2a2b2c), 0.27, -0.02, 0.04, up); }
-    return root;
-  };
-
   // ---------- objetos do inventário, desenhados em 3D
   const IT = {
     shotgun: () => { const g = new THREE.Group(); put(X(Cy(0.028, 0.028, 1.0, 14, BLK, { m: 0.5, r: 0.4 })), 0.15, 0.04, 0, g); put(X(Cy(0.024, 0.024, 0.85, 14, 0x2a2c2e, { m: 0.4 })), 0.08, -0.02, 0, g); put(RB(0.26, 0.08, 0.08, 0.025, WOOD), 0.2, -0.02, 0, g); put(RB(0.32, 0.13, 0.07, 0.02, BLK, { m: 0.35 }), -0.5, 0.01, 0, g); const st = RB(0.44, 0.12, 0.06, 0.03, WOOD); st.rotation.z = 0.1; put(st, -0.86, -0.03, 0, g); const gp = RB(0.06, 0.15, 0.06, 0.02, WOOD); gp.rotation.z = -0.45; put(gp, -0.66, -0.11, 0, g); put(B(0.08, 0.02, 0.02, BLK), -0.5, -0.09, 0, g); return g; },
@@ -231,13 +189,14 @@ export function makeIcons(DPR = 2) {
   IT.saco = () => { const g = new THREE.Group(); const s = Sp(0.12, 0x5a4a32, { r: 0.95 }); s.scale.set(1.1, 0.8, 0.9); g.add(s); put(Cy(0.03, 0.05, 0.06, 10, 0x4a3a28), 0, 0.1, 0, g); return g; };
   const PCOL = { skin: 0xd9a882, top: 0x5c6846, legs: 0x3a3f33 };
   let LOOK = {}; const setLook = l => { LOOK = l || {}; };
-  const portrait = (eq, W, H, look) => { const L = look || LOOK;
+  // retrato: o mesmo corpo do jogo (aparência e equipamento), de corpo inteiro
+  const pmats = { v: new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.75 }) };
+  const portrait = (o, W, H, look) => { const L = look || LOOK;
     ir.setSize(W, H, false);
-    const sc = new THREE.Scene(); sc.environment = env; sc.environmentIntensity = 0.55; lights().forEach(l => sc.add(l));
-    const p = person({ beard: 0x6a4a32, helmet: eq.head ? (eq.head === true ? 0x5f6844 : eq.head) : null, vest: eq.vest ? (eq.vest === true ? TAN : eq.vest) : null, nvg: !!eq.eyes, ghillie: !!eq.suit, pack: eq.back ? 0x7a5f3c : null, slung: eq.rifle ? {} : null, ...PCOL, hair: 0x2a211b, ...L, beard: L.beardS === 0 ? null : (L.hair ?? 0x2a211b) === 0x2a211b ? 0x6a4a32 : L.hair, arms: [[0.05, 0.12, -0.1], [0.05, -0.12, -0.1]] });
-    p.rotation.y = -0.45; sc.add(p);
+    const sc = new THREE.Scene(); sc.environment = env; sc.environmentIntensity = 0.4; lights().forEach(l => { l.intensity *= 0.6; sc.add(l); }); // luz mais suave que nos ícones: as cores ficam como no jogo
+    const b = new Body(pmats, lookCol(L)); b.forceNear = true; b.setGear(o.eq || {}); b.pose(0.016, 0, 'none'); b.root.rotation.y = -0.45; b.root.updateMatrixWorld(true); sc.add(b.root);
     const cam = new THREE.PerspectiveCamera(22, W / H, 0.1, 20); cam.position.set(0, 1.25, 5.4); cam.lookAt(0, 0.99, 0); // corpo inteiro, dos pés à cabeça
-    ir.render(sc, cam); return ir.domElement.toDataURL('image/png');
+    ir.render(sc, cam); const url = ir.domElement.toDataURL('image/png'); b.dispose(); return url;
   };
   return { IT, iconOf, portrait, setLook, dispose: () => { ir.dispose(); } };
 }
