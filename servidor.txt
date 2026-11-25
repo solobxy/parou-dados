@@ -1,0 +1,60 @@
+[Planeador] 3 percursos + 0 UNIR + 0/0 híbridas + - gerais em 95 ms
+[Planeador] 3 percursos + 0 UNIR + 0/0 híbridas + - gerais em 48 ms
+[Planeador] 3 percursos + 0 UNIR + 0/0 híbridas + - gerais em 35 ms
+[Planeador] 1 percursos + 0 UNIR + 0/0 híbridas + - gerais em 119 ms
+[Planeador] 3 percursos + 0 UNIR + 0/0 híbridas + - gerais em 85 ms
+[Planeador] 3 percursos + 0 UNIR + 0/0 híbridas + - gerais em 48 ms
+[Planeador] 2 percursos + 0 UNIR + 0/0 híbridas + - gerais em 38 ms
+[Planeador] 3 percursos + 0 UNIR + 0/0 híbridas + - gerais em 50 ms
+[Planeador] 1 percursos + 0 UNIR + 0/0 híbridas + - gerais em 57 ms
+[Planeador] 1 percursos + 0 UNIR + 0/0 híbridas + - gerais em 89 ms
+[Planeador] 3 percursos + 0 UNIR + 0/0 híbridas + - gerais em 55 ms
+[Planeador] 3 percursos + 0 UNIR + 0/0 híbridas + - gerais em 123 ms
+[Planeador] 2 percursos + 0 UNIR + 0/0 híbridas + - gerais em 45 ms
+[Planeador] 1 percursos + 0 UNIR + 0/0 híbridas + - gerais em 66 ms
+[Planeador] 1 percursos + 0 UNIR + 0/0 híbridas + - gerais em 35 ms
+[GTFS Engine] A sincronizar Carris Metropolitana através de API v2 oficial...
+[GTFS Engine] Carris Metropolitana sincronizada em 416ms: 717 linhas, 12752 paragens, 1017 veículos em tempo real.
+[Central Alerts Engine] A sincronizar alertas oficiais de todas as fontes reais...
+[Central Alerts Engine] Sincronização concluída. Total: 81 alertas auditados.
+[Planeador] 4 percursos + 0 UNIR + 0/0 híbridas + - gerais em 46 ms
+[Planeador] 1 percursos + 0 UNIR + 0/0 híbridas + - gerais em 28 ms
+[Planeador] 3 percursos + 0 UNIR + 0/0 híbridas + - gerais em 97 ms
+[Planeador] 3 percursos + 0 UNIR + 0/0 híbridas + - gerais em 33 ms
+[Planeador] 4 percursos + 0 UNIR + 0/0 híbridas + - gerais em 74 ms
+[Planeador] 2 percursos + 0 UNIR + 0/0 híbridas + - gerais em 24 ms
+[Planeador] 3 percursos + 0 UNIR + 0/0 híbridas + - gerais em 34 ms
+[Planeador] 2 percursos + 0 UNIR + 0/0 híbridas + - gerais em 38 ms
+[Planeador] 2 percursos + 0 UNIR + 0/0 híbridas + - gerais em 41 ms
+[Planeador] 3 percursos + 0 UNIR + 0/0 híbridas + - gerais em 63 ms
+[Planeador] 3 percursos + 0 UNIR + 0/0 híbridas + - gerais em 51 ms
+[Planeador] 3 percursos + 0 UNIR + 0/0 híbridas + - gerais em 44 ms
+[Planeador] 3 percursos + 0 UNIR + 0/0 híbridas + - gerais em 90 ms
+[Planeador] 3 percursos + 0 UNIR + 0/0 híbridas + - gerais em 39 ms
+[Planeador] 3 percursos + 0 UNIR + 0/0 híbridas + - gerais em 47 ms
+[Planeador] 3 percursos + 0 UNIR + 0/0 híbridas + - gerais em 34 ms
+[Planeador] 3 percursos + 0 UNIR + 0/0 híbridas + - gerais em 38 ms
+[Planeador] 2 percursos + 0 UNIR + 0/0 híbridas + - gerais em 72 ms
+[Planeador] 1 percursos + 0 UNIR + 0/0 híbridas + - gerais em 36 ms
+[Planeador] 2 percursos + 0 UNIR + 0/0 híbridas + - gerais em 32 ms
+[GTFS Engine] A sincronizar Carris Metropolitana através de API v2 oficial...
+[GTFS Engine] Carris Metropolitana sincronizada em 422ms: 717 linhas, 12752 paragens, 1025 veículos em tempo real.
+[Central Alerts Engine] A sincronizar alertas oficiais de todas as fontes reais...
+[Central Alerts Engine] Sincronização concluída. Total: 81 alertas auditados.
+[Planeador] 3 percursos + 0 UNIR + 0/0 híbridas + - gerais em 42 ms
+[Planeador] 3 percursos + 0 UNIR + 0/0 híbridas + - gerais em 39 ms
+[Planeador] 1 percursos + 0 UNIR + 0/0 híbridas + - gerais em 43 ms
+[Planeador] 2 percursos + 0 UNIR + 0/0 híbridas + - gerais em 55 ms
+[Planeador] 2 percursos + 0 UNIR + 0/0 híbridas + - gerais em 36 ms
+[Planeador] 2 percursos + 0 UNIR + 0/0 híbridas + - gerais em 79 ms
+[Planeador] 1 percursos + 0 UNIR + 0/0 híbridas + - gerais em 31 ms
+[Planeador] 3 percursos + 0 UNIR + 0/0 híbridas + - gerais em 80 ms
+[Planeador] 3 percursos + 0 UNIR + 0/0 híbridas + - gerais em 31 ms
+[Planeador] 2 percursos + 0 UNIR + 0/0 híbridas + - gerais em 56 ms
+[Planeador] 1 percursos + 0 UNIR + 0/0 híbridas + - gerais em 38 ms
+[Planeador] 2 percursos + 0 UNIR + 0/0 híbridas + - gerais em 91 ms
+[Planeador] 1 percursos + 0 UNIR + 0/0 híbridas + - gerais em 27 ms
+[Planeador] 3 percursos + 0 UNIR + 0/0 híbridas + - gerais em 74 ms
+[Planeador] 2 percursos + 0 UNIR + 0/0 híbridas + - gerais em 47 ms
+[Planeador] 2 percursos + 0 UNIR + 0/0 híbridas + - gerais em 37 ms
+[Planeador] 2 percursos + 0 UNIR + 0/0 híbridas + - gerais em 82 ms

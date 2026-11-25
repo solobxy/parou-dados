@@ -1,0 +1,14 @@
+Comparação PAROU × Transitous (MOTIS) — 2026-11-26 (quinta-feira), 08:00 e 17:30, 360 viagens (360 com percurso em pelo menos um)
+Chega 3+ min antes: PAROU 57 (15.8%) · empate 153 (42.5%) · Transitous 50 (13.9%; 8 delas a andar 10+ min a mais ou com mais transbordos)
+Só a PAROU tem percurso: 100 · só o Transitous: 0 · nenhum: 0 · erros: 0
+Mediana (viagens com os dois): diferença de chegada -1 min (negativo = PAROU antes) · a pé PAROU 10 min vs 14 · transbordos 1 vs 1
+Causa provável onde a PAROU perde: transbordo mais apertado 31 · dados ou pesquisa 15 · mais de 3 transbordos 2 · anda muito mais a pé 2
+
+Por região:
+  Lisboa   60 viagens: empate 32 · PAROU pior 25 · PAROU melhor 3
+  Porto    60 viagens: só a PAROU 56 · PAROU melhor 2 · PAROU pior 1 · empate 1
+  Coimbra  60 viagens: PAROU melhor 12 · só a PAROU 43 · empate 3 · PAROU pior 2
+  Braga    60 viagens: PAROU melhor 20 · empate 37 · PAROU pior 3
+  Funchal  60 viagens: empate 37 · PAROU pior 14 · PAROU melhor 9
+  Faro     60 viagens: empate 43 · PAROU melhor 11 · só a PAROU 1 · PAROU pior 5
+

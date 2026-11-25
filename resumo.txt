@@ -1,0 +1,182 @@
+Comparação PAROU × Transitous (MOTIS) — 2026-11-26 (quinta-feira), 08:00 e 17:30, 360 viagens (360 com percurso em pelo menos um)
+Chega 3+ min antes: PAROU 57 (15.8%) · empate 153 (42.5%) · Transitous 50 (13.9%; 8 delas a andar 10+ min a mais ou com mais transbordos)
+Só a PAROU tem percurso: 100 · só o Transitous: 0 · nenhum: 0 · erros: 0
+Mediana (viagens com os dois): diferença de chegada -1 min (negativo = PAROU antes) · a pé PAROU 10 min vs 14 · transbordos 1 vs 1
+Causa provável onde a PAROU perde: transbordo mais apertado 31 · dados ou pesquisa 15 · mais de 3 transbordos 2 · anda muito mais a pé 2
+
+Por região:
+  Lisboa   60 viagens: empate 32 · PAROU pior 25 · PAROU melhor 3
+  Porto    60 viagens: só a PAROU 56 · PAROU melhor 2 · PAROU pior 1 · empate 1
+  Coimbra  60 viagens: PAROU melhor 12 · só a PAROU 43 · empate 3 · PAROU pior 2
+  Braga    60 viagens: PAROU melhor 20 · empate 37 · PAROU pior 3
+  Funchal  60 viagens: empate 37 · PAROU pior 14 · PAROU melhor 9
+  Faro     60 viagens: empate 43 · PAROU melhor 11 · só a PAROU 1 · PAROU pior 5
+
+Onde a PAROU perde (50), da maior diferença para a menor:
+- [Lisboa 08:00] 38.76452,-9.23605 → 38.77034,-9.1219 (9.9 km): +24 min — transbordo mais apertado (2 min; a PAROU pede 4)
+    PAROU      08:20→09:03 a pé 19 min, 1 transb.: CP@08:29 Amadora > 722@08:54 Av. João XXI / Pç. Londres
+    Transitous 08:01→08:39 a pé 11 min, 2 transb.: 1003@08:04 R Dr Azevedo Neves 96 [Carris Metropolitana] > Linha de Sintra@08:09 Amadora [CP - Comboios de Portugal] > 722@08:31 Areeiro [Carris]
+- [Funchal 08:00] 32.64245,-16.94915 → 32.66059,-16.94251 (2.1 km): +24 min — dados ou pesquisa
+    PAROU      08:06→08:49 a pé 12 min, 1 transb.: 001@08:09 Ilma  D (852) > 181@08:30 Hotel Casino Park  S (35)
+    Transitous 08:01→08:25 a pé 12 min, 1 transb.: 004@08:09 CAM Amparo LEV Piornais (00063) [HF] > 048@08:18 São Martinho (00095) [HF]
+- [Funchal 17:30] 32.6491,-16.95813 → 32.63906,-16.92637 (3.2 km): +24 min — dados ou pesquisa
+    PAROU      17:33→18:20 a pé 5 min, 1 transb.: 003@17:35 Antes Igreja STA Rita (887) > 001@18:00 Ponta da Laranjeira  D (836)
+    Transitous 17:31→17:56 a pé 13 min, 0 transb.: 237@17:43 Hotel Orca Praia (00844) [SIGA RODOESTE]
+- [Funchal 08:00] 32.66374,-16.93385 → 32.64898,-16.95889 (2.9 km): +18 min (o outro anda mais ou troca mais) — transbordo mais apertado (2 min; a PAROU pede 3)
+    PAROU      08:23→08:53 a pé 7 min, 1 transb.: 048@08:26 CAM Álamos  Beco Álamos (710) > 003@08:41 Tourigalo  S Martinho  S (91)
+    Transitous 08:02→08:35 a pé 19 min, 1 transb.: 108@08:07 Ponte Ribeira Grande (01001) [HF] > 050@08:17 Estevão Neves (01038) [HF]
+- [Lisboa 08:00] 38.73804,-9.21623 → 38.68319,-9.15287 (8.2 km): +16 min — transbordo mais apertado (2 min; a PAROU pede 3)
+    PAROU      08:02→09:13 a pé 12 min, 3 transb.: 1713@08:05 Estr Alfragide (Leya) > CP@08:38 Alges > CA@08:55 Cais do Sodré > 3@09:08 Cacilhas
+    Transitous 08:09→08:57 a pé 12 min, 3 transb.: 799@08:12 Av. Almeida Garrett [Carris] > Linha de Sintra@08:25 Benfica [CP - Comboios de Portugal] > Fertagus@08:32 Campolide [Fertagus] > 3@08:44 Pragal [Metro Transportes do Sul]
+- [Faro 08:00] 37.01332,-7.91919 → 37.03313,-7.94943 (3.5 km): +16 min — dados ou pesquisa
+    PAROU      08:04→08:38 a pé 9 min, 1 transb.: 2@08:12 Atalaia > 16@08:30 Terminal Rodoviário
+    Transitous 08:01→08:22 a pé 14 min, 0 transb.: 59@08:13 Faro (Instituto da Juventude) [Vamus Algarve]
+- [Braga 08:00] 41.52036,-8.45046 → 41.53451,-8.418 (3.1 km): +15 min — dados ou pesquisa
+    PAROU      08:03→08:51 a pé 20 min, 1 transb.: 14@08:06 Ponte das Traves I > 19@08:29 Carmo (Mercado)
+    Transitous 08:01→08:36 a pé 12 min, 1 transb.: 7@08:06 Ponte das Traves II [Transportes Urbanos de Braga] > 97@08:12 Senhor Paciência I [Transportes Urbanos de Braga]
+- [Lisboa 17:30] 38.73041,-9.1481 → 38.70053,-9.29309 (13 km): +14 min (o outro anda mais ou troca mais) — dados ou pesquisa
+    PAROU      17:33→18:31 a pé 11 min, 1 transb.: 727@17:36 Picoas > CP@18:07 Santos
+    Transitous 17:34→18:17 a pé 17 min, 3 transb.: Am@17:37 Picoas [Metropolitano de Lisboa, E.P.E.] > Az@17:40 Marquês de Pombal [Metropolitano de Lisboa, E.P.E.] > Vd@17:45 Baixa / Chiado [Metropolitano de Lisboa, E.P.E.] > Linha de Cascais@17:50 Cais do Sodre [CP - Comboios de Portugal]
+- [Funchal 08:00] 32.66198,-16.87052 → 32.64793,-16.91162 (4.2 km): +14 min — transbordo mais apertado (2 min; a PAROU pede 4)
+    PAROU      08:11→08:56 a pé 21 min, 1 transb.: 047@08:14 Entrada QTA Palheiro  D (376) > 034@08:35 Praça Autonomia  D (156A)
+    Transitous 08:10→08:42 a pé 10 min, 1 transb.: 047@08:14 ENT QTA Palheiro (00376) [HF] > 125@08:35 AV Mar EEM (00224) [HF]
+- [Funchal 17:30] 32.65755,-16.90775 → 32.64964,-16.96521 (5.5 km): +14 min — dados ou pesquisa
+    PAROU      17:42→18:41 a pé 13 min, 1 transb.: 019@17:48 Colégio STA Teresinha  D (404) > 254@18:05 Auto Silo Campo da Barca (01705)
+    Transitous 17:33→18:27 a pé 15 min, 1 transb.: 199@17:45 Tribunal (00306) [HF] > 003@18:01 AV Luís Camões (00073) [HF]
+- [Lisboa 08:00] 38.76509,-9.27964 → 38.72547,-9.24149 (5.5 km): +13 min — transbordo mais apertado (2 min; a PAROU pede 3)
+    PAROU      08:09→09:05 a pé 3 min, 1 transb.: 1715@08:10 Massamá (Urb Norte) > 1502@08:48 EN 117 (Supermercado)
+    Transitous 08:07→08:52 a pé 10 min, 1 transb.: 1715@08:10 Massamá (Urb Norte) [Carris Metropolitana] > 1522@08:20 Monte Abraão (Estação) P10 [Carris Metropolitana]
+- [Faro 17:30] 37.03184,-7.96018 → 37.03208,-7.9064 (4.8 km): +12 min — dados ou pesquisa
+    PAROU      17:32→18:34 a pé 17 min, 1 transb.: 15@17:35 Largo do Povo > 63@18:10 Faro (Terminal Rodoviário)
+    Transitous 17:31→18:22 a pé 21 min, 2 transb.: 15@17:35 Largo do Povo [Próximo - Transportes Urbanos de Faro] > 69@17:49 Faro (Hospital) [Vamus Algarve] > 67@18:08 Virgílios (Rotunda) [Vamus Algarve]
+- [Lisboa 08:00] 38.81342,-9.16337 → 38.77741,-9.26707 (9.8 km): +11 min — transbordo mais apertado (3 min; a PAROU pede 6)
+    PAROU      08:01→09:21 a pé 13 min, 3 transb.: 2769@08:02 Av D Sebastião (x) R Lourenço Almada > Am@08:24 Senhor Roubado > CP@08:47 Entrecampos > 1212@09:10 Queluz - Belas (Estação)
+    Transitous 08:00→09:10 a pé 16 min, 3 transb.: 2769@08:02 Av D Sebastião (x) R Lourenço Almada [Carris Metropolitana] > Am@08:20 Senhor Roubado [Metropolitano de Lisboa, E.P.E.] > Linha da Azambuja@08:37 Entrecampos [CP - Comboios de Portugal] > 1716@08:58 Queluz - Belas (Estação) [Carris Metropolitana]
+- [Faro 08:00] 37.01692,-7.91773 → 37.02488,-7.96367 (4.2 km): +11 min — dados ou pesquisa
+    PAROU      08:05→08:56 a pé 16 min, 1 transb.: 14@08:08 Atalaia > 16@08:30 Terminal Rodoviário
+    Transitous 08:04→08:45 a pé 21 min, 1 transb.: 14@08:08 Atalaia [Próximo - Transportes Urbanos de Faro] > FlixBus 1043@08:20 Faro (Alfândega) [FlixBus-eu]
+- [Lisboa 08:00] 38.70008,-9.19303 → 38.79088,-9.16638 (10.4 km): +10 min — transbordo mais apertado (2 min; a PAROU pede 3)
+    PAROU      08:00→09:03 a pé 8 min, 2 transb.: 732@08:01 Tv. Artur Lamas > Vd@08:25 Cais do Sodré > 2755@08:50 Campo Grande (Metro) P15
+    Transitous 08:00→08:53 a pé 10 min, 3 transb.: 732@08:01 Tv. Artur Lamas [Carris] > 728@08:13 Av. Infante Santo [Carris] > Vd@08:20 Cais do Sodré [Metropolitano de Lisboa, E.P.E.] > 2774@08:40 Campo Grande (Metro) P9 [Carris Metropolitana]
+- [Lisboa 17:30] 38.79785,-9.19231 → 38.69967,-9.22365 (11.3 km): +10 min — mais de 3 transbordos
+    PAROU      17:35→18:57 a pé 20 min, 3 transb.: 2522@17:45 R Torcato Jorge 12 > Am@17:57 Senhor Roubado > 748@18:20 Mq. Pombal - R. Joaquim A. Aguiar > 1522@18:46 Av Gen Norton Matos - Clínica
+    Transitous 17:41→18:47 a pé 13 min, 4 transb.: 2217@17:43 R M Guilh Ascenso (C Comercial) [Carris Metropolitana] > Am@17:59 Odivelas [Metropolitano de Lisboa, E.P.E.] > Vd@18:10 Campo Grande [Metropolitano de Lisboa, E.P.E.] > Linha de Cascais@18:30 Cais do Sodre [CP - Comboios de Portugal] > 751@18:43 Algés [Carris]
+- [Lisboa 08:00] 38.76041,-9.11203 → 38.72863,-9.23765 (11.5 km): +9 min — transbordo mais apertado (3 min; a PAROU pede 6)
+    PAROU      08:01→08:56 a pé 10 min, 2 transb.: Vm@08:03 Olivais > Am@08:16 Saldanha > 1723@08:36 R Joaquim António Aguiar
+    Transitous 08:00→08:47 a pé 9 min, 2 transb.: Vm@08:03 Olivais [Metropolitano de Lisboa, E.P.E.] > 713@08:18 B. Azul [Carris] > 1723@08:27 Amoreiras [Carris Metropolitana]
+- [Lisboa 17:30] 38.72978,-9.16977 → 38.81538,-9.15918 (9.6 km): +9 min — transbordo mais apertado (4 min; a PAROU pede 9)
+    PAROU      17:35→18:29 a pé 12 min, 2 transb.: 756@17:41 Estação Campolide > Am@17:56 Campo Pequeno > 2821@18:15 Odivelas (Metro) P9
+    Transitous 17:33→18:20 a pé 16 min, 2 transb.: Fertagus@17:38 Campolide [Fertagus] > Am@17:48 Campo Pequeno [Metropolitano de Lisboa, E.P.E.] > 2716@17:55 Campo Grande (Metro) P2 [Carris Metropolitana]
+- [Funchal 08:00] 32.66678,-16.93253 → 32.65844,-16.89892 (3.3 km): +9 min — dados ou pesquisa
+    PAROU      08:03→08:47 a pé 20 min, 1 transb.: 014@08:10 Ponte Ribeira Grande  D (1000) > 237@08:25 Bairro Hospital (00280)
+    Transitous 08:00→08:38 a pé 17 min, 2 transb.: 014@08:10 Ponte Ribeira Grande (01000) [HF] > 209@08:23 Bairro Hospital (00280) [SIGA RODOESTE] > 601@08:32 Campo Barca (00371) [Companhia de Autocarros da Madeira (CAM), S.A.]
+- [Lisboa 08:00] 38.73696,-9.14233 → 38.72252,-9.30937 (14.6 km): +8 min — transbordo mais apertado (4 min; a PAROU pede 5)
+    PAROU      08:01→09:18 a pé 14 min, 2 transb.: 742@08:03 Arco Cego - Av. Miguel Bombarda > CP@08:40 Alcantara -  Mar > 1616@09:05 Paço De Arcos (Estação Norte)
+    Transitous 08:07→09:10 a pé 12 min, 3 transb.: 713@08:11 Arco Cego [Carris] > Vd@08:18 Alameda [Metropolitano de Lisboa, E.P.E.] > Linha de Cascais@08:30 Cais do Sodre [CP - Comboios de Portugal] > 1529@08:50 Oeiras (Estação) P5 Entrada Norte [Carris Metropolitana]
+- [Lisboa 08:00] 38.70553,-9.17885 → 38.8122,-9.11858 (13 km): +8 min — transbordo mais apertado (2 min; a PAROU pede 5)
+    PAROU      08:06→09:11 a pé 9 min, 2 transb.: 756@08:10 Calvário > Am@08:33 Campo Pequeno > 2710@08:46 Lumiar
+    Transitous 08:01→09:03 a pé 11 min, 2 transb.: 742@08:06 Calvário [Carris] > Vm@08:28 São Sebastião [Metropolitano de Lisboa, E.P.E.] > 2708@08:46 Avenida de Moscavide 30 [Carris Metropolitana]
+- [Lisboa 17:30] 38.76155,-9.25118 → 38.76073,-9.18112 (6.1 km): +7 min — transbordo mais apertado (5 min; a PAROU pede 6)
+    PAROU      17:30→18:18 a pé 10 min, 2 transb.: 1720@17:34 Carenque (X) Bica Costa > CP@17:46 Queluz - Belas > 764@18:02 Estação Benfica
+    Transitous 17:37→18:11 a pé 12 min, 3 transb.: 1512@17:38 Estr Carenque (X) Bº Alto Moínhos [Carris Metropolitana] > Linha de Sintra@17:46 Queluz - Belas [CP - Comboios de Portugal] > Az@17:52 Reboleira [Metropolitano de Lisboa, E.P.E.] > 768@17:59 Pontinha (Metro) [Carris]
+- [Porto 08:00] 41.10955,-8.60327 → 41.16864,-8.54184 (8.3 km): +7 min — transbordo mais apertado (0 min; a PAROU pede 2)
+    PAROU      08:01→09:03 a pé 9 min, 1 transb.: D@08:07 Manuel Leão > 806@08:33 MARQUÊS
+    Transitous 08:00→08:56 a pé 14 min, 1 transb.: D@08:07 Manuel Leão [Metro do Porto] > F@08:23 Trindade [Metro do Porto]
+- [Braga 17:30] 41.53576,-8.43028 → 41.55767,-8.39665 (3.7 km): +7 min — transbordo mais apertado (2 min; a PAROU pede 3)
+    PAROU      17:36→18:05 a pé 9 min, 1 transb.: 18@17:37 Mouta I > 31@17:55 25 de Abril (D Maria II - Ii)
+    Transitous 17:34→17:58 a pé 8 min, 1 transb.: 18@17:37 Mouta I [Transportes Urbanos de Braga] > 43@17:48 João XXI (31 de Janeiro I) [Transportes Urbanos de Braga]
+- [Faro 17:30] 37.01516,-7.92772 → 37.03811,-7.92454 (2.6 km): +7 min — transbordo mais apertado (4 min; a PAROU pede 5)
+    PAROU      17:38→18:07 a pé 22 min, 0 transb.: 1@17:47 Largo da Palmeira
+    Transitous 17:31→18:00 a pé 19 min, 1 transb.: 66@17:33 Faro (Instituto da Juventude) [Vamus Algarve] > 3@17:40 Pavilhão Gimnodesportivo [Próximo - Transportes Urbanos de Faro]
+- [Lisboa 08:00] 38.74236,-9.10127 → 38.69676,-9.20608 (10.4 km): +6 min (o outro anda mais ou troca mais) — transbordo mais apertado (3 min; a PAROU pede 6)
+    PAROU      08:07→08:57 a pé 5 min, 0 transb.: 728@08:09 Poço Bispo
+    Transitous 08:06→08:51 a pé 10 min, 2 transb.: 782@08:08 Poço Bispo [Carris] > Linha de Cascais@08:35 Cais do Sodre [CP - Comboios de Portugal] > 1715@08:45 Belém (Estação) [Carris Metropolitana]
+- [Lisboa 17:30] 38.81979,-9.09546 → 38.70735,-9.15202 (13.4 km): +6 min — transbordo mais apertado (3 min; a PAROU pede 4)
+    PAROU      17:30→18:37 a pé 17 min, 2 transb.: 2730@17:35 R D Afonso Henriques 78 > Vm@18:00 Moscavide > Vd@18:18 Alameda
+    Transitous 17:32→18:31 a pé 25 min, 3 transb.: 2790@17:45 En 10 (ETAR) [Carris Metropolitana] > Linha da Azambuja@17:50 Bobadela [CP - Comboios de Portugal] > Am@18:11 Campo Pequeno [Metropolitano de Lisboa, E.P.E.] > 727@18:18 Rato [Carris]
+- [Coimbra 17:30] 40.19946,-8.41159 → 40.21394,-8.43798 (2.8 km): +6 min — dados ou pesquisa
+    PAROU      17:38→17:54 a pé 8 min, 0 transb.: S1@17:43 Norton de Matos
+    Transitous 17:30→17:48 a pé 10 min, 0 transb.: U1@17:36 Norton de Matos [Metro Mondego]
+- [Lisboa 08:00] 38.7683,-9.10181 → 38.71649,-9.29501 (17.7 km): +5 min — transbordo mais apertado (2 min; a PAROU pede 3)
+    PAROU      08:03→09:14 a pé 9 min, 3 transb.: Vm@08:06 Oriente > Vd@08:18 Alameda > CP@08:35 Cais do Sodre > 1617@09:05 Paço De Arcos (Estação Norte)
+    Transitous 08:00→09:09 a pé 17 min, 3 transb.: Linha de Sintra@08:08 Lisboa Oriente [CP - Comboios de Portugal] > 1717@08:40 Massamá - Barcarena (Estação Sul) [Carris Metropolitana] > 1528@08:49 Av Santo António 61A [Carris Metropolitana] > 1731@08:58 Barcarena (Ponte) [Carris Metropolitana]
+- [Lisboa 17:30] 38.7958,-9.173 → 38.77093,-9.18567 (3 km): +5 min — transbordo mais apertado (2 min; a PAROU pede 5)
+    PAROU      17:39→18:16 a pé 30 min, 0 transb.: 2824@17:54 Av D Dinis 10
+    Transitous 17:33→18:11 a pé 20 min, 1 transb.: Am@17:39 Odivelas [Metropolitano de Lisboa, E.P.E.] > 703@17:46 Lumiar (Estr. Torre) [Carris]
+- [Coimbra 17:30] 40.19697,-8.40267 → 40.21355,-8.43001 (3 km): +5 min — dados ou pesquisa
+    PAROU      17:30→18:00 a pé 12 min, 1 transb.: S1@17:38 Casa Branca > U3@17:53 Arnado
+    Transitous 17:30→17:55 a pé 16 min, 0 transb.: U2@17:41 São José [Metro Mondego]
+- [Braga 17:30] 41.52355,-8.45767 → 41.55364,-8.44484 (3.5 km): +5 min — transbordo mais apertado (2 min; a PAROU pede 3)
+    PAROU      17:34→18:22 a pé 17 min, 1 transb.: 14@17:42 Nova Celeirós I (C Futebol) > 95@18:04 Cons Torres Almeida (Pópulo)
+    Transitous 17:35→18:17 a pé 24 min, 1 transb.: 21@17:46 8 de Setembro [Transportes Urbanos de Braga] > 98@18:00 Cons Torres Almeida (Pópulo) [Transportes Urbanos de Braga]
+- [Funchal 08:00] 32.6523,-16.86246 → 32.66262,-16.92175 (5.7 km): +5 min (o outro anda mais ou troca mais) — anda muito mais a pé
+    PAROU      08:10→08:55 a pé 8 min, 1 transb.: 552@08:12 CAM ZN Industrial (67801) > 042@08:32 Rua dos Profetas  EEM (183)
+    Transitous 08:04→08:50 a pé 21 min, 1 transb.: 701@08:15 Maxmat Cancela (01706) [Companhia de Autocarros da Madeira (CAM), S.A.] > 199@08:33 Palácio São Lourenço (00006) [HF]
+- [Funchal 08:00] 32.66204,-16.95314 → 32.65573,-16.89859 (5.2 km): +5 min (o outro anda mais ou troca mais) — transbordo mais apertado (2 min; a PAROU pede 3)
+    PAROU      08:16→08:51 a pé 5 min, 0 transb.: 050@08:17 Caminho STA Quitéria  D (1036)
+    Transitous 08:01→08:46 a pé 26 min, 1 transb.: 110@08:13 CZ Courelas (00666) [HF] > 255@08:28 Bairro Hospital (00280) [SIGA RODOESTE]
+- [Lisboa 08:00] 38.71696,-9.1682 → 38.71447,-9.31139 (12.4 km): +4 min — transbordo mais apertado (3 min; a PAROU pede 5)
+    PAROU      08:00→09:09 a pé 10 min, 1 transb.: 712@08:07 Meia Laranja > 1733@08:26 R Joaquim António Aguiar
+    Transitous 08:07→09:05 a pé 15 min, 2 transb.: 712@08:15 Meia Laranja [Carris] > Linha de Cascais@08:34 Alcantara -  Mar [CP - Comboios de Portugal] > 1529@08:50 Oeiras (Estação) P5 Entrada Norte [Carris Metropolitana]
+- [Lisboa 08:00] 38.69815,-9.20376 → 38.81085,-9.23686 (12.9 km): +4 min — transbordo mais apertado (3 min; a PAROU pede 6)
+    PAROU      08:15→09:23 a pé 5 min, 2 transb.: 1718@08:17 Mosteiro Jerónimos > 1512@08:56 Estr Carenque (X) Estr Militar > 2605@09:04 EN 250 2 (Largo)
+    Transitous 08:02→09:19 a pé 12 min, 3 transb.: 728@08:05 Mosteiro Jerónimos [Carris] > Az@08:29 Terreiro do Paço [Metropolitano de Lisboa, E.P.E.] > 1709@08:49 Estrada da Correia (Centro de Saúde) [Carris Metropolitana] > 1711@09:08 Av Lisboa (X) R D João I [Carris Metropolitana]
+- [Lisboa 08:00] 38.73983,-9.18481 → 38.78631,-9.22537 (6.3 km): +4 min — transbordo mais apertado (4 min; a PAROU pede 5)
+    PAROU      08:04→09:01 a pé 14 min, 2 transb.: 60B@08:07 Espaço Monsanto > Az@08:27 Jardim Zoológico > 2831@08:40 Pontinha (Metro) P6
+    Transitous 08:04→08:57 a pé 12 min, 2 transb.: 60B@08:07 Espaço Monsanto [Carris] > Az@08:23 Jardim Zoológico [Metropolitano de Lisboa, E.P.E.] > 1709@08:39 Estrada da Correia (Centro de Saúde) [Carris Metropolitana]
+- [Lisboa 17:30] 38.79654,-9.16215 → 38.71933,-9.14057 (8.8 km): +4 min — transbordo mais apertado (2 min; a PAROU pede 6)
+    PAROU      17:32→18:17 a pé 16 min, 1 transb.: 2785@17:35 R Alm G Coutinho 16 (Parque) > Vd@17:55 Campo Grande
+    Transitous 17:30→18:13 a pé 20 min, 2 transb.: 2785@17:35 R Alm G Coutinho 16 (Parque) [Carris Metropolitana] > Am@17:41 Senhor Roubado [Metropolitano de Lisboa, E.P.E.] > Vd@17:50 Campo Grande [Metropolitano de Lisboa, E.P.E.]
+- [Funchal 08:00] 32.66146,-16.92579 → 32.66014,-16.90069 (2.4 km): +4 min — transbordo mais apertado (4 min; a PAROU pede 5)
+    PAROU      08:02→08:33 a pé 8 min, 1 transb.: 042@08:05 Tecnopolo  D (630) > 036@08:25 Pinga (19)
+    Transitous 08:01→08:29 a pé 11 min, 1 transb.: 042@08:05 Tecnopolo (00630) [HF] > 029@08:20 Rua Artur Sousa Pinga (01619) [HF]
+- [Funchal 17:30] 32.6555,-16.92092 → 32.65299,-16.88927 (3 km): +4 min — dados ou pesquisa
+    PAROU      17:37→18:13 a pé 12 min, 1 transb.: 049@17:38 Renault (650C) > 827@17:55 Edifício 2000 (00652)
+    Transitous 17:36→18:09 a pé 12 min, 0 transb.: 199@17:39 Renault (01430) [HF]
+- [Funchal 17:30] 32.66309,-16.91527 → 32.65271,-16.88409 (3.1 km): +4 min — transbordo mais apertado (3 min; a PAROU pede 4)
+    PAROU      17:34→18:16 a pé 15 min, 1 transb.: 028@17:45 D João (482) > 038@18:05 Pinga (19)
+    Transitous 17:35→18:12 a pé 14 min, 2 transb.: 028@17:43 CAM D João (00478) [HF] > 032@17:58 Rua Profetas EEM (00183) [HF] > 555@18:01 Rua Infância (00435) [Companhia de Autocarros da Madeira (CAM), S.A.]
+- [Lisboa 08:00] 38.74309,-9.1112 → 38.70032,-9.1826 (7.8 km): +3 min (o outro anda mais ou troca mais) — mais de 3 transbordos
+    PAROU      08:00→08:47 a pé 9 min, 2 transb.: 755@08:01 Av. Paulo VI (Igreja) > CP@08:15 Braco de Prata > 751@08:40 Alcântara - Av. Ceuta
+    Transitous 08:00→08:44 a pé 18 min, 4 transb.: 755@08:02 Av. Paulo VI (Igreja) [Carris] > Vm@08:10 Chelas [Metropolitano de Lisboa, E.P.E.] > Vd@08:18 Alameda [Metropolitano de Lisboa, E.P.E.] > Linha de Cascais@08:30 Cais do Sodre [CP - Comboios de Portugal] > 727@08:39 Calvário [Carris]
+- [Lisboa 08:00] 38.70546,-9.1836 → 38.76932,-9.12283 (8.8 km): +3 min (o outro anda mais ou troca mais) — transbordo mais apertado (6 min; a PAROU pede 9)
+    PAROU      08:00→08:56 a pé 6 min, 2 transb.: 742@08:02 Jardim Alto Sto. Amaro > 756@08:08 Estação Sto. Amaro > 744@08:36 Campo Pequeno - Av. República
+    Transitous 08:00→08:53 a pé 18 min, 3 transb.: 742@08:03 R. Luis Camões [Carris] > 728@08:12 Alcântara Mar [Carris] > Vd@08:20 Cais do Sodré [Metropolitano de Lisboa, E.P.E.] > 705@08:34 Areeiro - Av. Alm. Gago Coutinho [Carris]
+- [Lisboa 17:30] 38.75686,-9.13985 → 38.74325,-9.24072 (8.9 km): +3 min — transbordo mais apertado (4 min; a PAROU pede 7)
+    PAROU      17:31→18:38 a pé 25 min, 2 transb.: 717@17:32 Bombeiros Alvalade > CP@17:55 Roma - Areeiro > 1715@18:19 Av Elias Garcia 219
+    Transitous 17:30→18:35 a pé 20 min, 2 transb.: 717@17:32 Bombeiros Alvalade [Carris] > Linha de Sintra@17:45 Roma - Areeiro [CP - Comboios de Portugal] > 1513@18:07 Queluz - Belas (Estação) [Carris Metropolitana]
+- [Lisboa 17:30] 38.7022,-9.19124 → 38.76535,-9.15558 (7.7 km): +3 min — transbordo mais apertado (2 min; a PAROU pede 5)
+    PAROU      17:33→18:27 a pé 18 min, 2 transb.: 760@17:35 Rio Seco > CP@17:50 Alcantara -  Mar > Vd@18:00 Cais do Sodré
+    Transitous 17:33→18:24 a pé 13 min, 3 transb.: 732@17:37 R. Qta. Almargem [Carris] > Linha de Cascais@17:50 Alcantara -  Mar [CP - Comboios de Portugal] > Vd@18:00 Cais do Sodré [Metropolitano de Lisboa, E.P.E.] > 736@18:18 Campo Grande (Metro) [Carris]
+- [Lisboa 17:30] 38.80344,-9.16006 → 38.70378,-9.18024 (11.2 km): +3 min — transbordo mais apertado (2 min; a PAROU pede 5)
+    PAROU      17:39→18:42 a pé 12 min, 2 transb.: 2525@17:43 R Alm G Coutinho (X) Qta S José > Am@17:55 Odivelas > 756@18:17 Campo Pequeno - Av. Berna
+    Transitous 17:41→18:39 a pé 15 min, 2 transb.: 2754@17:46 R Alm Gago Coutinho 99 [Carris Metropolitana] > Am@17:53 Senhor Roubado [Metropolitano de Lisboa, E.P.E.] > 720@18:14 Rato [Carris]
+- [Funchal 08:00] 32.64901,-16.89635 → 32.64618,-16.96192 (6.1 km): +3 min — dados ou pesquisa
+    PAROU      08:01→08:36 a pé 11 min, 1 transb.: 503@08:02 AV Santiago Menor (01242) > 024@08:10 AV Mar  E E M (11)
+    Transitous 08:00→08:33 a pé 10 min, 1 transb.: 503@08:02 AV Santiago Menor (01242) [Companhia de Autocarros da Madeira (CAM), S.A.] > 398@08:06 Antes C C Anadia (00156) [SIGA RODOESTE]
+- [Funchal 08:00] 32.65857,-16.95853 → 32.65561,-16.91994 (3.6 km): +3 min — dados ou pesquisa
+    PAROU      08:09→08:56 a pé 19 min, 1 transb.: 003@08:20 ER 229  Oficina (998) > 108@08:48 Rua Brito Câmara  La Vie (893)
+    Transitous 08:03→08:53 a pé 22 min, 2 transb.: 050@08:17 STA Quitéria Frutas (01077) [HF] > 290@08:41 Bairro Hospital (00280) [SIGA RODOESTE] > 049@08:47 Viaduto São João (00673) [HF]
+- [Funchal 08:00] 32.66468,-16.8647 → 32.65369,-16.9417 (7.3 km): +3 min (o outro anda mais ou troca mais) — anda muito mais a pé
+    PAROU      08:18→09:07 a pé 6 min, 1 transb.: 602@08:22 Antes LEV Tornos (67803) > 012@08:50 Alfândega (154)
+    Transitous 08:01→09:04 a pé 18 min, 1 transb.: 047@08:13 Saída CAM Pretos (00380) [HF] > 008@08:45 AV Mar Alfândega (00021) [HF]
+- [Faro 17:30] 37.03243,-7.96199 → 37.02035,-7.93286 (2.9 km): +3 min — dados ou pesquisa
+    PAROU      17:32→18:00 a pé 11 min, 0 transb.: 15@17:35 Largo do Povo
+    Transitous 17:32→17:57 a pé 15 min, 0 transb.: 15@17:36 Junta de Freguesia [Próximo - Transportes Urbanos de Faro]
+
+Onde a PAROU ganha (15 maiores):
+- [Porto 08:00] 13.3 km: Transitous sem percurso | PAROU 09:24 5002@08:16 Regedoura > C@08:24 Cândido dos Reis > 8017@09:00 Campanhã Estação > 8030@09:16 Modelo S. Cosme
+- [Porto 08:00] 4.3 km: Transitous sem percurso | PAROU 09:08 C@08:22 Cândido dos Reis > 6012@08:36 Maia (Fórum)
+- [Porto 08:00] 6.9 km: Transitous sem percurso | PAROU 09:00 801@08:04 S.TA EULÁLIA > 304@08:47 AV.ALIADOS
+- [Porto 08:00] 11.1 km: Transitous sem percurso | PAROU 09:27 707@08:20 ARROTEIA > CP@08:42 Ermesinde > D@09:06 São Bento > 9039@09:20 Pádua Correia
+- [Porto 08:00] 10.8 km: Transitous sem percurso | PAROU 08:51 6013@08:04 Hipermercado > C@08:13 Fórum Maia
+- [Porto 08:00] 11.6 km: Transitous sem percurso | PAROU 08:54 CP@08:12 Ermesinde > 901@08:34 SÃO BENTO
+- [Porto 08:00] 11.9 km: Transitous sem percurso | PAROU 09:34 6014@08:08 Vermoim > C@08:25 Fórum Maia > 9004@09:10 Casa da Música (Metro)
+- [Porto 08:00] 12.6 km: Transitous sem percurso | PAROU 08:56 CP@08:11 Madalena > CP@08:25 Porto Campanha > 5011@08:48 Palmilheira
+- [Porto 08:00] 7.9 km: Transitous sem percurso | PAROU 08:57 600@08:02 CONSTITUIÇÃO > 6007@08:45 Maia (Fórum)
+- [Porto 08:00] 16.8 km: Transitous sem percurso | PAROU 09:14 9005@08:07 Marinha > D@08:32 João de Deus > CP@08:50 Porto Sao Bento
+- [Porto 08:00] 5 km: Transitous sem percurso | PAROU 08:34 206@08:07 VALE FORMOSO > D@08:20 Marquês
+- [Porto 08:00] 5.8 km: Transitous sem percurso | PAROU 08:48 CP@08:07 Rio Tinto > CP@08:17 Porto Campanha > 5024@08:46 Via Norte (Arroteia)
+- [Porto 08:00] 8.9 km: Transitous sem percurso | PAROU 09:27 902@08:12 JORGE DIAS > 9004@08:37 Quinta do Fojo > E@08:55 Casa da Música > 503@09:19 SALGADO ZENHA
+- [Porto 08:00] 9.5 km: Transitous sem percurso | PAROU 09:07 5010@08:12 Lota > 706@09:00 PARADA
+- [Porto 08:00] 10.9 km: Transitous sem percurso | PAROU 08:58 C@08:12 Cândido dos Reis > D@08:32 Trindade > 9039@08:50 Pádua Correia
