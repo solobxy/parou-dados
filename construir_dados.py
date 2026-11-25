@@ -38,6 +38,7 @@ from zoneinfo import ZoneInfo
 
 from netex_gtfs import netex_para_gtfs
 import barraqueiro_oeste
+import andante
 
 OUT_DB = "gtfs.db"
 OUT_GZ = "gtfs.db.gz"
@@ -2095,6 +2096,19 @@ def main():
     results.append(process_unir(conn))
     process_horarios_unir(conn, today_dt)  # depois das paragens da UNIR: liga-se a elas
 
+    # Andante: zonas, anéis e preços oficiais (andante.pt), para a app dizer que título comprar em cada trajeto no Porto.
+    # Se o site falhar, ficam os de ontem (com a data em que foram obtidos).
+    estado_andante = None
+    try:
+        if have_prev:
+            try:
+                conn.execute("ATTACH DATABASE ? AS prev", (PREV_DB,))
+            except sqlite3.OperationalError:
+                pass
+        estado_andante = andante.gravar(conn, log=log)
+    except Exception as e:  # noqa: BLE001
+        log(f"AVISO: Andante ficou de fora ({str(e)[:120]}); a app não mostra títulos nem preços")
+
     try:
         conn.execute("DETACH DATABASE prev")
     except sqlite3.Error:
@@ -2183,6 +2197,11 @@ def main():
         "verificacao": {"data_hoje": saude["data_hoje"], "data_amanha": saude["data_amanha"],
                         "dias_uteis_verificados": saude["dias_uteis_verificados"],
                         "porto": saude["porto"]},
+        "andante": {k: v for k, v in (estado_andante or {}).items() if k != "precos"} | (
+            {"precos_em_vigor_desde": estado_andante["precos"].get("em_vigor_desde"),
+             "precos_obtidos": estado_andante["precos"].get("obtidos"),
+             "z2": estado_andante["precos"]["simples"].get(2) or estado_andante["precos"]["simples"].get("2")}
+            if estado_andante and estado_andante.get("precos") else {}),
         "duration_s": int(time.time() - started),
     }
     with open(OUT_MANIFEST, "w", encoding="utf-8") as fh:

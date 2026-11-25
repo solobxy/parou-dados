@@ -164,9 +164,12 @@ jobs:
           (APP=$PWD BASE=http://127.0.0.1:3000 node --import tsx ../auditoria/cidades-margens.mjs 2>&1 | grep -v "Experimental\|trace-warnings") | tee ../res/cidades-margens-servidor.txt | tail -30
           b=${PIPESTATUS[0]}
           (APP=$PWD BASE=http://127.0.0.1:3000 node --import tsx ../auditoria/metro-mesma-hora.mjs 2>&1 | grep -v "Experimental\|trace-warnings") | tee ../res/metro-mesma-hora.txt | tail -30
+          # bilhete Andante em cada trajeto do Porto (regra oficial, planeador a sério e Campanhã → Trindade com dados reais)
+          (APP=$PWD BASE=http://127.0.0.1:3000 node --import tsx ../auditoria/tarifa-andante.mjs 2>&1 | grep -v "Experimental\|trace-warnings") | tee ../res/tarifa-andante.txt | tail -40
+          d=${PIPESTATUS[0]}
           BASE=http://127.0.0.1:3000 node ../auditoria/meta-descricoes.mjs 2>&1 | tee ../res/meta-descricoes.txt | tail -40
           c=${PIPESTATUS[0]}
-          exit $(( a || b || c ))
+          exit $(( a || b || c || d ))
 
       - name: "Teste da Madeira (SIGA Rodoeste e CAM: páginas, linhas juntas, nomes)"
         continue-on-error: true
@@ -235,6 +238,14 @@ jobs:
         run: |
           mkdir -p ../res
           SAIDA=../res RAPIDO=${{ inputs.rapido }} timeout 1800 node a-bordo.mjs 2>&1 | tee ../res/consola.txt | tail -250
+
+      - name: Testar o bilhete Andante nas opções de viagem (320, 390 e 1280 px; temas Claro, Escuro e Âmbar)
+        continue-on-error: true
+        working-directory: auditoria
+        run: |
+          mkdir -p ../res
+          SAIDA=../res timeout 400 node bilhete-ui.mjs 2>&1 | tee ../res/bilhete-ui.txt | tail -70
+          exit ${PIPESTATUS[0]}
 
       - name: Testar que um erro não aparece como «sem resultados» (planeador e horários, browser)
         continue-on-error: true
