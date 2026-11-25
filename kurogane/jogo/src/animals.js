@@ -140,9 +140,9 @@ export class Fauna {
     this._e.set(0, z.yaw || 0, 0, 'YXZ'); this._q.setFromEuler(this._e); out.compose(this._v.set(z.x, y, z.z), this._q, this._s.set(1, 1, 1));
     if (dead) { const w = S.body[3] * 0.5; this._t.makeTranslation(0, w, 0).multiply(this._l.makeRotationZ(Math.PI / 2 * 0.97)).multiply(this._r.makeTranslation(0, -S.hipF[1] * 0.05, 0)); out.multiply(this._t); }
     return out; }
-  update(list, cam) {
-    const n = {}; for (const k of this.K) n[k] = 0; const R = new THREE.Matrix4(), L = this._l, T = this._t;
-    for (const z of list) { if (!z.an || z.hide) continue; const k = z.an, S = ANK[k], M = this.m[k]; if (!M || n[k] >= this.max) continue; if (cam && Math.hypot(z.x - cam.x, z.z - cam.z) > 140) continue;
+  update(list, cam, fr = null) {
+    const sp = this._sp || (this._sp = new THREE.Sphere(new THREE.Vector3(), 3.5)); const n = {}; for (const k of this.K) n[k] = 0; const R = new THREE.Matrix4(), L = this._l, T = this._t;
+    for (const z of list) { if (!z.an || z.hide) continue; const k = z.an, S = ANK[k], M = this.m[k]; if (!M || n[k] >= this.max) continue; if (cam && Math.hypot(z.x - cam.x, z.z - cam.z) > 140) continue; if (fr) { sp.center.set(z.x, 0.8, z.z); if (!fr.intersectsSphere(sp)) continue; }
       const i = n[k]++; this.root(z, R); const dead = z.state === 'dead';
       { const cols = S.cols, ci = z.cid ?? (z.cid = (z.nid ?? Math.floor(Math.random() * 997)) * 7 + 3), c = this._c || (this._c = new THREE.Color()); c.set(cols[ci % cols.length]); for (const m of [M.body, ...M.legs, M.tail]) if (m) m.setColorAt(i, c); }
       const bob = dead ? 0 : Math.abs(Math.sin(z.phase || 0)) * 0.03 * Math.min(1, z.mv || 0) + (z.atkT > 0 ? Math.sin(z.atkT * 18) * 0.04 : 0);
@@ -153,6 +153,6 @@ export class Fauna {
         T.makeTranslation(side * H[0], H[1], H[2]).multiply(L.makeRotationX(a)); M.legs[j].setMatrixAt(i, this._r.copy(R).multiply(T)); }
       if (M.tail) { const H = S.hipB; T.makeTranslation(0, H[1] + 0.1, H[2] - 0.12).multiply(L.makeRotationX(z.an === 'cao' && !dead ? Math.sin((z.tw = (z.tw || 0) + 0.3)) * 0.2 - 0.3 : 0)).multiply(this._l.makeRotationY(z.an === 'cao' && z.pet && !dead ? Math.sin(z.tw * 2) * 0.5 : 0)); M.tail.setMatrixAt(i, this._r.copy(R).multiply(T)); }
     }
-    for (const k of this.K) { const M = this.m[k], c = n[k]; for (const m of [M.body, ...M.legs, M.tail, M.ant]) if (m) { m.count = c; m.instanceMatrix.needsUpdate = true; if (m.instanceColor) m.instanceColor.needsUpdate = true; } }
+    for (const k of this.K) { const M = this.m[k], c = n[k]; for (const m of [M.body, ...M.legs, M.tail, M.ant]) if (m) { m.count = c; m.visible = c > 0; m.instanceMatrix.needsUpdate = true; if (m.instanceColor) m.instanceColor.needsUpdate = true; } }
   }
 }

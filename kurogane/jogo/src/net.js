@@ -147,7 +147,7 @@ export function makeNet({ G, scene, mkRemote, audio, Conta, enc, dec, hurt, die,
   N.frame = (dt, me, see) => {
     if (!N.on) return; const now = performance.now();
     { const hide = G.mapOpen || G.invOpen || G.paused || !G.playing; if (tags.hidden !== hide) tags.hidden = hide; }
-    if (me && now - sendT >= 48) { sendT = now; send({ t: 'st', ...me, ts: Math.round(now) }); if (N.world) { const ca = G.cars.up(); if (ca) send({ t: 'cu', L: [ca] }); } }
+    if (me && now - sendT >= 32) { sendT = now; /* 30 vezes por segundo: os outros veem-te com menos atraso */ send({ t: 'st', ...me, ts: Math.round(now) }); if (N.world) { const ca = G.cars.up(); if (ca) send({ t: 'cu', L: [ca] }); } }
     if (zdQ.length) { send({ t: 'zd', L: zdQ.splice(0, 40) }); }
     zT -= dt; if (zT <= 0 && N.world) { zT = 0.1; const L = world.z.up(); if (L.length) send({ t: 'zu', L, ts: Math.round(now) }); }
     if (cur) { if (cur.open && G.box !== cur.c) closeBox(); else if (cur.open) { psT -= dt; if (psT <= 0) { psT = 0.4; const sg = sigOf(cur.c); if (sg !== cur.sig) { cur.sig = sg; send({ t: 'ps', c: cur.key, it: world.encG(cur.c.grid) }); } } } else if (performance.now() - cur.t > 4000) cur = null; }

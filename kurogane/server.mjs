@@ -59,7 +59,7 @@ const frame = c => {
   if (len > 65536 || !masked) return false; if (b.length < o + 4 + len) return null;
   const mk = b.subarray(o, o + 4), data = Buffer.from(b.subarray(o + 4, o + 4 + len)); for (let i = 0; i < len; i++) data[i] ^= mk[i & 3]; c.buf = b.subarray(o + 4 + len);
   if (op === 8) return false; if (op === 9) { try { c.sock.write(Buffer.concat([Buffer.from([0x8a, data.length]), data])); } catch (e) { } return true; } if (op !== 1) return true;
-  const now = Date.now(); if (now - c.rt > 1000) { c.rt = now; c.rate = 0; } if (++c.rate > 120) return true; // demasiadas mensagens: ignora
+  const now = Date.now(); if (now - c.rt > 1000) { c.rt = now; c.rate = 0; } if (++c.rate > 200) return true; // demasiadas mensagens: ignora (30 posições + 30 do carro + tiros + zombies por segundo cabem à vontade)
   let m; try { m = JSON.parse(data.toString('utf8')); } catch (e) { return true; } try { onMsg(c, m); } catch (e) { console.error('msg', e.message); } return true;
 };
 const drop = c => {
@@ -388,7 +388,7 @@ const onMsg = (c, m) => {
       if (d > (inCar ? vt(inCar.k).vmax * 1.3 + 4 : 8) * dt + 4) { strike(c, p, 'salto ' + d.toFixed(1) + ' m em ' + dt.toFixed(2) + ' s'); send(c, { t: 'pos', x: p.x, z: p.z, lv: p.lv }); p.lastSt = now; return; } }
     if (p.alive && al0 && (p.lv | 0) === 0 && p.y < 3 && Math.hypot(nx - p.x, nz - p.z) < 8 && wallCross(p.x, p.z, nx, nz)) { p.wallN = (p.wallN || 0) + 1; if (p.wallN % 20 === 1) console.log('parede', p.name, p.wallN); send(c, { t: 'pos', x: p.x, z: p.z, lv: p.lv }); p.lastSt = now; return; } // atravessar paredes da base
     p.lastSt = now; p.x = nx; p.z = nz; p.y = num(m.y, -5, 40); p.lv = num(m.lv, 0, 6) | 0;
-    { const H = p.hist || (p.hist = []); H.push([now, p.x, p.y, p.z]); while (H.length > 2 && now - H[0][0] > 500) H.shift(); } // onde esteve nos últimos 0,5 s (para o tiro de quem o via um pouco atrás)
+    { const H = p.hist || (p.hist = []); H.push([now, p.x, p.y, p.z]); while (H.length > 2 && now - H[0][0] > 650) H.shift(); } // onde esteve nos últimos 0,65 s (para o tiro de quem o via um pouco atrás)
     p.ts = num(m.ts, 0, 1e13, 0); p.yaw = num(m.yaw, -10, 10); p.mv = num(m.mv, 0, 3); p.an = num(m.an, 0, 15) | 0; p.w = typeof m.w === 'string' ? m.w.slice(0, 12) : '';
     const al = !!m.al, hp = num(m.hp, 0, 100, p.hp); if (al && !p.alive) { p.hp = hp; p.hd = p.vd = null; } else p.hp = Math.min(hp, p.hp + 3); p.alive = al; // a vida que o servidor tirou não volta de repente
     if (Array.isArray(m.ar)) { const a = [num(m.ar[0], 0, 4) | 0, num(m.ar[1], 0, 4) | 0]; if (a[0] !== p.ar[0]) p.hd = null; if (a[1] !== p.ar[1]) p.vd = null; p.ar = a; }
@@ -492,7 +492,7 @@ const carShot = (c, car, dmg) => { if (car.hp <= 0) return; car.hp = Math.max(0,
   for (const id of car.s) { const o = id && players.get(id); if (!o || !o.p || !o.p.alive) continue; const v = o.p, d = vt(car.k).armor ? 0 : 45; if (v.god || !d) continue; v.hp = Math.max(0, v.hp - d); const kill = v.hp <= 0; if (kill) { v.alive = false; stat(c.p, 'k'); stat(v, 'd'); } send(o, { t: 'hit', by: c.p.name, dmg: d, zone: 'body', hp: v.hp }); if (kill) send(c, { t: 'hitc', on: o.id, zone: 'body', kill, name: v.name }); }
   car.s = car.s.map(() => 0); };
 const shot = (c, m) => {
-  const p = c.p, now = Date.now(); if (!p.alive || now - p.lastShot < 60) return; p.lastShot = now; if (!canShoot(p, String(m.k || ''))) { strike(c, p, 'tiro sem arma ' + m.k); return; }
+  const p = c.p, now = Date.now(); if (!p.alive) return; { p.shB = Math.min(3, (p.shB ?? 3) + (now - (p.lastShot || 0)) / 60); p.lastShot = now; if (p.shB < 1) return; p.shB -= 1; } // até 3 tiros seguidos podem chegar juntos (a rede junta pacotes); em média não mais de 1 a cada 60 ms if (!canShoot(p, String(m.k || ''))) { strike(c, p, 'tiro sem arma ' + m.k); return; }
   const O = Array.isArray(m.o) ? m.o.map(v => num(v, -4100, 4100)) : null, D = Array.isArray(m.d) ? m.d.map(v => num(v, -1, 1)) : null; if (!O || !D || O.length !== 3 || D.length !== 3) return;
   if (Math.hypot(O[0] - p.x, O[2] - p.z) > 3) return; // a bala tem de sair de perto de ti
   const dl = Math.hypot(D[0], D[1], D[2]) || 1; D[0] /= dl; D[1] /= dl; D[2] /= dl;
@@ -503,7 +503,7 @@ const shot = (c, m) => {
   // quem dispara vê os outros cerca de 0,1–0,3 s atrás (o caminho da rede e a suavização): conta onde o alvo está e onde esteve nesse tempo
   for (const o of players.values()) if (o !== c && o.p && o.p.alive && !o.p.invis && (o.p.lv || 0) === (p.lv || 0) && !(myClan && o.p.clan === myClan) && Math.hypot(o.p.x - O[0], o.p.z - O[2]) < L + 3) {
     // o caminho que fez nos últimos 0,45 s, com pontos a cada ~0,25 m (quem dispara vê-o algures nesse caminho)
-    const P = (o.p.hist || []).filter(h => now - h[0] <= 450).map(h => [h[1], h[2], h[3]]); P.push([o.p.x, o.p.y, o.p.z]); tgt.push({ x: o.p.x, y: o.p.y, z: o.p.z, c: o });
+    const P = (o.p.hist || []).filter(h => now - h[0] <= 600).map(h => [h[1], h[2], h[3]]); P.push([o.p.x, o.p.y, o.p.z]); tgt.push({ x: o.p.x, y: o.p.y, z: o.p.z, c: o });
     for (let i = P.length - 1; i > 0; i--) { const a = P[i], b = P[i - 1], dd = Math.hypot(b[0] - a[0], b[2] - a[2]); if (dd < 0.15 || dd > 6) continue; const n = Math.min(8, Math.ceil(dd / 0.25)); for (let k = 1; k <= n; k++) { const f = k / n; tgt.push({ x: a[0] + (b[0] - a[0]) * f, y: a[1] + (b[1] - a[1]) * f, z: a[2] + (b[2] - a[2]) * f, c: o }); } } }
   for (const [tok, s] of Object.entries(S.sleepers)) if (!s.hid && (s.lv || 0) === (p.lv || 0) && !(myClan && s.clan === myClan) && Math.hypot(s.x - O[0], s.z - O[2]) < L + 3) tgt.push({ x: s.x, y: s.y || 0, z: s.z, sl: tok, lying: true });
   // quem vai dentro de um blindado (sem se debruçar) não leva tiros; os veículos perto entram no teste
@@ -596,7 +596,7 @@ const leave = p => { if (!p.clan) return; const C = S.clans[p.clan]; if (C) { C.
 let tickN = 0;
 const ZR = 300; // zombies que cada um recebe (metros): até onde a luneta deixa ver bem
 setInterval(() => {
-  const L = [...players.values()].filter(c => c.p), full = (++tickN & 1) === 0;
+  const L = [...players.values()].filter(c => c.p), full = (++tickN % 3) === 0; // jogadores 30 vezes por segundo; zombies e carros 10
   for (const c of L) {
     const out = [], staff = !!S.roles[c.p.uid]; for (const o of L) { if (o === c || (o.p.invis && !staff)) continue; const d = Math.hypot(o.p.x - c.p.x, o.p.z - c.p.z), mate = c.p.clan && o.p.clan === c.p.clan; if (d > 320 && !mate) continue; out.push([o.id, +o.p.x.toFixed(2), +o.p.z.toFixed(2), +o.p.y.toFixed(2), o.p.lv, +o.p.yaw.toFixed(2), +o.p.mv.toFixed(2), o.p.an, o.p.w, Math.round(o.p.hp), o.p.alive ? 1 : 0, d > 320 ? 1 : 0, o.p.ar, Math.round(o.p.ts || 0), o.p.gk || '']); }
     const msg = { t: 's', ps: out };
@@ -610,7 +610,7 @@ setInterval(() => {
       const g = []; for (const id of c.cc.keys()) if (!seen.has(id)) { c.cc.delete(id); g.push(id); } if (u.length) msg.cu = u; if (g.length) msg.cg = g; }
     send(c, msg);
   }
-}, 50);
+}, 33);
 // quem simula cada zombie: o jogador mais perto (até 100 m), e só muda quando outro fica bem mais perto
 setInterval(() => {
   const L = [...players.values()].filter(c => c.p); const now = Date.now();

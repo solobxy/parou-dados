@@ -307,8 +307,20 @@ export function buildWorld(scene, mats, A) {
   // mobília e contentores
   const shelf = guard((x, z, len, ry = 0, label = 'Revistar prateleira', table = 'konbini') => {
     b.push(x, 0, z, ry);
-    b.box(len, 1.5, 0.7, 0, 0.75, 0, 0xe3e5e2); b.box(len + 0.04, 0.06, 0.74, 0, 1.52, 0, 0xcfd2cf);
-    for (let s = 0; s < 3; s++) for (let i = 0; i < len / 0.22 - 1; i++) for (const sd of [-1, 1]) b.box(0.16, rr(0.18, 0.3), 0.14, -len / 2 + 0.2 + i * 0.22, 0.32 + s * 0.45, sd * 0.3, pick([0xd64a3a, 0x3a78c4, 0xf2c84a, 0x4aa86a, 0xffffff, 0xf28a3a, 0x8a4ab0]));
+    // gôndola de loja: rodapé escuro, painel do meio, prateleiras finas com etiqueta de preço e produtos de vários feitios (caixas, garrafas, copos de ramen)
+    // (os pormenores usam um sorteio próprio, pela posição: não mexem no resto do mapa)
+    for (let s = 0; s < 3; s++) for (let i = 0; i < len / 0.22 - 1; i++) for (let k = 0; k < 2; k++) { rr(0, 1); pick([0]); } // gasta os mesmos sorteios que a versão antiga (o resto do mapa fica igual)
+    let hs = Math.abs(Math.sin(x * 12.9898 + z * 78.233) * 43758.5453) % 1; const hr = () => (hs = (hs * 9301 + 0.49297) % 1, hs);
+    b.box(len, 0.12, 0.72, 0, 0.06, 0, 0x3a3d40); b.box(len, 1.5, 0.08, 0, 0.75, 0, 0xd9dcd8); for (const sx of [-1, 1]) b.box(0.05, 1.56, 0.72, sx * (len / 2 - 0.025), 0.78, 0, 0xc8cbc7, { mat: 'm' });
+    b.box(len + 0.04, 0.05, 0.74, 0, 1.55, 0, 0xcfd2cf);
+    const COL = [0xd64a3a, 0x3a78c4, 0xf2c84a, 0x4aa86a, 0xf4f1ea, 0xf28a3a, 0x8a4ab0, 0x2a2b2e, 0xe86a8a, 0x5ac8c8];
+    for (let s = 0; s < 3; s++) { const y0 = 0.14 + s * 0.46;
+      for (const sd of [-1, 1]) { b.box(len - 0.1, 0.025, 0.3, 0, y0, sd * 0.2, 0xe8eae6, { mat: 'm' }); b.box(len - 0.1, 0.045, 0.012, 0, y0 + 0.005, sd * 0.352, 0xf6f3e8); // prateleira e régua de preços
+        let px = -len / 2 + 0.12; while (px < len / 2 - 0.14) { const kind = hr(), c = COL[Math.floor(hr() * COL.length)], depth = 0.22;
+          if (kind < 0.5) { const w = 0.09 + hr() * 0.1, h = 0.12 + hr() * 0.2; for (let r = 0; r < 2; r++) b.box(w - 0.01, h, depth / 2 - 0.01, px + w / 2, y0 + 0.013 + h / 2, sd * (0.12 + r * 0.11), c); b.box(w - 0.012, h * 0.35, 0.004, px + w / 2, y0 + h * 0.55, sd * 0.33, shade(c, 1.35)); px += w + 0.012; }
+          else if (kind < 0.8) { const r0 = 0.032 + hr() * 0.012, h = 0.2 + hr() * 0.1; for (let r = 0; r < 2; r++) { b.cyl(r0, r0, h, 8, px + r0, y0 + 0.013 + h / 2, sd * (0.15 + r * 0.1), c); b.cyl(r0 * 0.45, r0 * 0.6, 0.05, 6, px + r0, y0 + 0.013 + h + 0.025, sd * (0.15 + r * 0.1), shade(c, 0.6)); } b.cyl(r0 + 0.002, r0 + 0.002, h * 0.35, 8, px + r0, y0 + h * 0.45, sd * 0.25, 0xf4f1ea); px += r0 * 2 + 0.014; }
+          else { const r0 = 0.055; for (let r = 0; r < 2; r++) { b.cyl(r0, r0 * 0.8, 0.11, 10, px + r0, y0 + 0.068, sd * (0.15 + r * 0.11), 0xf4f1ea); b.cyl(r0 + 0.003, r0 + 0.003, 0.01, 10, px + r0, y0 + 0.126, sd * (0.15 + r * 0.11), c); } px += r0 * 2 + 0.012; } } } }
+    b.box(len - 0.3, 0.16, 0.012, 0, 1.68, 0.05, 0xf6f3e8); b.box(len - 0.3, 0.16, 0.012, 0, 1.68, -0.05, 0xf6f3e8); b.box(len - 0.3, 0.04, 0.09, 0, 1.6, 0, 0x9a9ea2, { mat: 'm' }); // letreiro em cima
     b.pop();
     const cs = Math.abs(Math.sin(ry)) > 0.5; rect(x - (cs ? 0.35 : len / 2), z - (cs ? len / 2 : 0.35), x + (cs ? 0.35 : len / 2), z + (cs ? len / 2 : 0.35), 's', 1.5);
     return container(x, z, label, table);
@@ -516,7 +528,7 @@ export function buildWorld(scene, mats, A) {
   const linkCut = (c, built) => {
     if (!c.shell) { c.group = built.cuts.get(c.id) || new THREE.Group(); return; }
     c.gt = []; c.g = []; c.mats = [];
-    for (let L = 0; L < c.n; L++) { c.gt[L] = built.cuts.get(c.id + ':' + L + 't') || new THREE.Group(); if (L) { c.g[L] = built.cuts.get(c.id + ':' + L) || new THREE.Group(); c.mats[L] = []; c.g[L].traverse(m => { if (m.isMesh) { m.material = m.material.clone(); m.material.userData.o0 = m.material.opacity; m.material.userData.t0 = m.material.transparent; c.mats[L].push(m.material); } }); } } c.fv = [];
+    for (let L = 0; L < c.n; L++) { c.gt[L] = built.cuts.get(c.id + ':' + L + 't') || new THREE.Group(); if (L) { c.g[L] = built.cuts.get(c.id + ':' + L) || new THREE.Group(); c.mats[L] = []; c.g[L].traverse(m => { if (m.isMesh) { const m0 = m.material; m.material = m0.clone(); m.material.onBeforeCompile = m0.onBeforeCompile; m.material.customProgramCacheKey = m0.customProgramCacheKey; /* o clone perde o detalhe do shader */ m.material.userData.o0 = m.material.opacity; m.material.userData.t0 = m.material.transparent; c.mats[L].push(m.material); } }); } } c.fv = [];
     c.gR = built.cuts.get(c.id + ':R') || new THREE.Group(); };
   W.lazyBuild = L => { if (L.meshes) return; const s = getSeed(), C = [cid, tid, eid], lens = {}; for (const k in W) if (Array.isArray(W[k])) lens[k] = W[k].length;
     const bk = b.buckets, lg = b.log, cur = CUR; b.buckets = new Map(); b.log = []; setSeed(L.s0); [cid, tid, eid] = L.c0; let built; b.wet = true;

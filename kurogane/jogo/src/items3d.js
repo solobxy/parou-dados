@@ -2,6 +2,8 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { Builder } from './builder.js';
+import { GUNS } from './guns.js';
 
 export function makeIcons(DPR = 2) {
   // ---------- materiais e peças (as mesmas da cidade)
@@ -106,8 +108,13 @@ export function makeIcons(DPR = 2) {
     reddot: () => { const g = new THREE.Group(); put(RB(0.16, 0.025, 0.06, 0.008, 0x2a2c2e, { m: 0.4 }), 0, 0, 0, g); put(RB(0.12, 0.08, 0.012, 0.01, BLK, { m: 0.4 }), 0.0, 0.05, 0.03, g); put(RB(0.12, 0.08, 0.012, 0.01, BLK, { m: 0.4 }), 0.0, 0.05, -0.03, g); put(RB(0.12, 0.014, 0.07, 0.006, BLK, { m: 0.4 }), 0, 0.09, 0, g); put(B(0.004, 0.06, 0.05, 0x8ab8d8, { m: 0.2, r: 0.05, e: 0x305a7a, ei: 0.5 }), 0.055, 0.05, 0, g); put(Cy(0.006, 0.006, 0.004, 10, 0xff3a2a, { e: 0xff2a1a, ei: 2 }), 0.058, 0.05, 0, g); put(B(0.03, 0.03, 0.03, 0x2a2c2e), -0.04, 0.04, 0.045, g); return g; },
     wlight: () => { const g = new THREE.Group(); put(X(Cy(0.024, 0.024, 0.14, 16, BLK, { m: 0.45, r: 0.35 })), 0, 0, 0, g); put(X(Cy(0.032, 0.026, 0.04, 16, BLK, { m: 0.45 })), 0.085, 0, 0, g); put(X(Cy(0.027, 0.027, 0.004, 16, 0xfff4d8, { e: 0xfff0c0, ei: 1.2 })), 0.106, 0, 0, g); put(B(0.08, 0.02, 0.03, 0x2a2c2e, { m: 0.4 }), 0, 0.03, 0, g); put(B(0.02, 0.012, 0.012, 0x8a8c8e), -0.04, -0.028, 0, g); return g; },
     sup: () => { const g = new THREE.Group(); put(X(Cy(0.032, 0.032, 0.22, 18, 0x2a2c2e, { m: 0.5, r: 0.4 })), 0, 0, 0, g); for (const x of [-0.08, -0.03, 0.02, 0.07]) put(X(Cy(0.0335, 0.0335, 0.008, 18, 0x17181a)), x, 0, 0, g); put(X(Cy(0.02, 0.026, 0.03, 18, BLK)), -0.125, 0, 0, g); return g; },
-    mag: () => { const g = new THREE.Group(); put(RB(0.06, 0.11, 0.025, 0.008, BLK, { m: 0.3 }), 0, 0.05, 0, g); const b = RB(0.06, 0.1, 0.025, 0.008, BLK, { m: 0.3 }); b.rotation.z = 0.22; put(b, 0.012, -0.05, 0, g); put(X(Cy(0.008, 0.008, 0.03, 8, 0xc9a14a, { m: 0.8, r: 0.3 })), -0.01, 0.112, 0, g); return g; },
-    pmag: () => { const g = new THREE.Group(); put(RB(0.035, 0.13, 0.02, 0.006, BLK, { m: 0.3 }), 0, 0, 0, g); put(RB(0.045, 0.015, 0.026, 0.004, 0x2a2c2e), 0, -0.07, 0, g); put(X(Cy(0.006, 0.006, 0.02, 8, 0xc9a14a, { m: 0.8, r: 0.3 })), 0, 0.068, 0, g); return g; },
+    mag: (tint) => { const g = new THREE.Group(), C = tint ?? 0x2a2c2e, ak = tint != null; let y = 0.1, x = 0, a = 0.02; // carregador curvo: corpo em segmentos com nervuras, base e as balas à vista em cima
+      for (let i = 0; i < 4; i++) { const seg = RB(0.062, 0.058, 0.026, 0.006, C, { m: ak ? 0.1 : 0.45, r: ak ? 0.6 : 0.4 }); seg.rotation.z = a; put(seg, x, y, 0, g); for (const zz of [-1, 1]) { const rib = B(0.05, 0.006, 0.003, shade(C, 0.7)); rib.rotation.z = a; put(rib, x, y, zz * 0.014, g); } y -= Math.cos(a) * 0.055; x += Math.sin(a) * 0.055; a += ak ? 0.13 : 0.06; }
+      const bp = RB(0.07, 0.014, 0.032, 0.004, BLK, { m: 0.4 }); bp.rotation.z = a - 0.06; put(bp, x, y + 0.02, 0, g);
+      put(B(0.05, 0.008, 0.02, 0x3a3c3e, { m: 0.5 }), -0.003, 0.131, 0, g); for (const s2 of [-1, 1]) { put(X(Cy(0.0072, 0.0072, 0.034, 10, 0xc9a14a, { m: 0.85, r: 0.28 })), -0.004 + s2 * 0.006, 0.142, s2 * 0.004, g); const tip = mesh(new THREE.ConeGeometry(0.0072, 0.014, 10), 0xb87333, { m: 0.8, r: 0.3 }); tip.rotation.z = -Math.PI / 2; put(tip, 0.02 + s2 * 0.006, 0.142, s2 * 0.004, g); }
+      g.rotation.z = -0.05; return g; },
+    pmag: () => { const g = new THREE.Group(); put(RB(0.034, 0.13, 0.024, 0.006, 0x26282b, { m: 0.5, r: 0.35 }), 0, 0, 0, g); for (let i = 0; i < 4; i++) put(Cy(0.0035, 0.0035, 0.0025, 8, 0x0e0f10), 0.005, 0.04 - i * 0.022, 0.0122, g).rotation.x = Math.PI / 2; // corpo com janelas de contagem
+      put(RB(0.042, 0.016, 0.03, 0.005, BLK, { r: 0.6 }), 0.003, -0.07, 0, g); put(X(Cy(0.0062, 0.0062, 0.022, 10, 0xc9a14a, { m: 0.85, r: 0.28 })), 0.0, 0.069, 0, g); const tip = mesh(new THREE.SphereGeometry(0.0062, 10, 8), 0xb87333, { m: 0.8, r: 0.3 }); put(tip, 0.012, 0.069, 0, g); g.rotation.z = -0.08; return g; },
     ammo: () => { const g = new THREE.Group(); put(RB(0.16, 0.08, 0.1, 0.012, OLV), 0, 0, 0, g); put(B(0.1, 0.03, 0.002, 0xd9cfae), 0, 0.005, 0.051, g); for (let i = 0; i < 5; i++) { put(Cy(0.007, 0.007, 0.05, 8, 0xc9a14a, { m: 0.85, r: 0.3 }), -0.05 + i * 0.025, 0.065, 0, g); put(mesh(new THREE.ConeGeometry(0.007, 0.018, 8), 0xb87333, { m: 0.85, r: 0.3 }), -0.05 + i * 0.025, 0.099, 0, g); } return g; },
     shells: () => { const g = new THREE.Group(); put(RB(0.15, 0.07, 0.1, 0.012, 0x8a2a22), 0, 0, 0, g); for (let i = 0; i < 4; i++) { put(Cy(0.012, 0.012, 0.05, 12, 0xc23a2e, { r: 0.5 }), -0.045 + i * 0.03, 0.06, 0, g); put(Cy(0.0125, 0.0125, 0.012, 12, 0xc9a14a, { m: 0.85 }), -0.045 + i * 0.03, 0.035, 0, g); } return g; },
     grenade: () => { const g = new THREE.Group(); const b = Sp(0.035, OLV, { r: 0.6 }); b.scale.set(1, 1.25, 1); g.add(b); put(Cy(0.014, 0.014, 0.02, 12, 0x6a6d70, { m: 0.6 }), 0, 0.05, 0, g); const l = RB(0.012, 0.06, 0.01, 0.004, 0x6a6d70, { m: 0.6 }); l.rotation.z = -0.15; put(l, 0.02, 0.03, 0, g); const ring = mesh(new THREE.TorusGeometry(0.013, 0.0025, 6, 16), 0xb9bcbe, { m: 0.8 }); put(ring, -0.02, 0.07, 0, g); return g; },
@@ -138,11 +145,11 @@ export function makeIcons(DPR = 2) {
   ir.setPixelRatio(DPR); ir.toneMapping = THREE.ACESFilmicToneMapping; ir.outputColorSpace = THREE.SRGBColorSpace;
   const env = new THREE.PMREMGenerator(ir).fromScene(new RoomEnvironment(), 0.04).texture;
   const lights = () => { const k = new THREE.DirectionalLight(0xfff0dc, 2.6); k.position.set(-1.5, 2.5, 2.2); const r = new THREE.DirectionalLight(0xbcd4ff, 1.6); r.position.set(2, 1, -2); return [k, r, new THREE.HemisphereLight(0xdfe6ff, 0x3a332c, 0.7)]; };
-  const iconOf = (key, w, h, view = 'side', pad = 0.84, tint) => {
+  const iconOf = (key, w, h, view = 'side', pad = 0.84, tint, rz = 0) => {
     const W = w, H = h;
     ir.setSize(W, H, false);
     const sc = new THREE.Scene(); sc.environment = env; sc.environmentIntensity = 0.55; lights().forEach(l => sc.add(l));
-    const obj = IT[key](tint); const wrap = new THREE.Group(); wrap.add(obj); sc.add(wrap);
+    const obj = IT[key](tint); const wrap = new THREE.Group(); wrap.add(obj); sc.add(wrap); if (rz) wrap.rotation.z = rz;
     const cam = new THREE.OrthographicCamera(-1, 1, 1, -1, -10, 10);
     const el = view === 'iso' ? 0.55 : view === 'top' ? 1.1 : 0.22, az = view === 'iso' ? 0.55 : 0.12;
     cam.position.set(Math.sin(az) * Math.cos(el), Math.sin(el), Math.cos(az) * Math.cos(el)); cam.lookAt(0, 0, 0); cam.updateMatrixWorld();
@@ -186,7 +193,10 @@ export function makeIcons(DPR = 2) {
   IT.maca = () => { const g = new THREE.Group(); const a = Sp(0.045, 0xc8322a, { r: 0.4 }); a.scale.set(1, 0.9, 1); g.add(a); put(Cy(0.004, 0.004, 0.025, 6, 0x5a3a20), 0, 0.045, 0, g); const l = mesh(new THREE.SphereGeometry(0.014, 8, 6), 0x4a8a32); l.scale.set(1.4, 0.3, 0.8); put(l, 0.015, 0.052, 0, g); return g; };
   IT.sumo = () => { const g = new THREE.Group(); put(RB(0.06, 0.1, 0.04, 0.006, 0xf2a03a), 0, 0, 0, g); put(B(0.061, 0.03, 0.041, 0xffffff), 0, 0.02, 0, g); put(Cy(0.003, 0.003, 0.05, 6, 0xffffff), 0.015, 0.07, 0, g).rotation.z = -0.2; return g; };
   IT.cafe = () => { const g = new THREE.Group(); put(Cy(0.028, 0.028, 0.1, 18, 0x6a4a32, { m: 0.6, r: 0.35 }), 0, 0, 0, g); put(Cy(0.0285, 0.0285, 0.03, 18, 0xe8e2d4), 0, 0.02, 0, g); put(Cy(0.024, 0.028, 0.008, 18, 0xc6cacb, { m: 0.9 }), 0, 0.053, 0, g); return g; };
-  IT.m4 = IT.rifle;
+  // armas: o mesmo desenho detalhado que se vê na mão (guns.js), de lado
+  const GM = { v: new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.62, metalness: 0.08 }), m: new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.36, metalness: 0.62 }) };
+  const gunIcon = k => () => { const b = new Builder(0); GUNS[k](b); const g = new THREE.Group(); for (const mk of [...b.buckets.keys()]) { const geo = b.merged(mk); if (geo) g.add(new THREE.Mesh(geo, GM[mk] || GM.v)); } g.rotation.y = Math.PI / 2; const w = new THREE.Group(); w.add(g); return w; };
+  IT.m4 = gunIcon('m4'); IT.ak = gunIcon('ak'); IT.smg = gunIcon('smg'); IT.pistol = gunIcon('pistola'); IT.revolver = gunIcon('revolver'); IT.shotgun = gunIcon('cacadeira'); IT.hunting = gunIcon('caca');
   IT.lampada = () => { const g = new THREE.Group(); put(Cy(0.012, 0.016, 0.5, 8, 0x3a3c3e, { m: 0.5 }), 0, -0.05, 0, g); put(B(0.1, 0.015, 0.1, 0x3a3c3e, { m: 0.5 }), 0, -0.3, 0, g); put(B(0.016, 0.016, 0.1, 0x3a3c3e), 0, 0.2, 0.04, g); put(Cy(0.03, 0.035, 0.07, 10, 0x3a3c3e, { m: 0.5 }), 0, 0.16, 0.09, g); put(Cy(0.026, 0.03, 0.055, 10, 0xffd9a0, { e: 0xffb860, ei: 1.2 }), 0, 0.16, 0.09, g); g.rotation.y = 0.5; return g; };
   // armas pesadas
   const bolt = (o) => { const g = new THREE.Group(), c = o.col; put(RB(0.62, 0.085, 0.06, 0.015, c, { m: 0.35, r: 0.5 }), 0, 0, 0, g); put(X(Cy(o.br, o.br, o.blen, 12, BLK, { m: 0.5 })), 0.31 + o.blen / 2, 0.012, 0, g);
@@ -226,7 +236,7 @@ export function makeIcons(DPR = 2) {
     const sc = new THREE.Scene(); sc.environment = env; sc.environmentIntensity = 0.55; lights().forEach(l => sc.add(l));
     const p = person({ beard: 0x6a4a32, helmet: eq.head ? (eq.head === true ? 0x5f6844 : eq.head) : null, vest: eq.vest ? (eq.vest === true ? TAN : eq.vest) : null, nvg: !!eq.eyes, ghillie: !!eq.suit, pack: eq.back ? 0x7a5f3c : null, slung: eq.rifle ? {} : null, ...PCOL, hair: 0x2a211b, ...L, beard: L.beardS === 0 ? null : (L.hair ?? 0x2a211b) === 0x2a211b ? 0x6a4a32 : L.hair, arms: [[0.05, 0.12, -0.1], [0.05, -0.12, -0.1]] });
     p.rotation.y = -0.45; sc.add(p);
-    const cam = new THREE.PerspectiveCamera(24, W / H, 0.1, 20); cam.position.set(0, 1.2, 5.4); cam.lookAt(0, 0.98, 0);
+    const cam = new THREE.PerspectiveCamera(22, W / H, 0.1, 20); cam.position.set(0, 1.25, 5.4); cam.lookAt(0, 0.99, 0); // corpo inteiro, dos pés à cabeça
     ir.render(sc, cam); return ir.domElement.toDataURL('image/png');
   };
   return { IT, iconOf, portrait, setLook, dispose: () => { ir.dispose(); } };

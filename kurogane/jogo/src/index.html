@@ -241,7 +241,7 @@ body.touch #bottom{bottom:calc(8px + var(--sb))}
 .ibody{flex:1;min-height:0;display:grid;gap:8px 14px;padding-top:8px;grid-template-columns:auto minmax(200px,250px) auto;grid-template-rows:auto auto 1fr;grid-template-areas:"box eq bag" "box belt bag" "box hint bag";justify-content:center;align-items:start}
 .ipan{min-height:0}
 #cBox{grid-area:box;align-self:stretch;display:flex;flex-direction:column;justify-content:flex-start;min-width:calc(var(--cs) * 6 + 10px)}
-#cEq{grid-area:eq;align-self:start}
+#cEq{grid-area:eq;align-self:start;min-height:max-content}#cBelt{min-height:max-content}@media (max-height:430px){#inv .ihint{display:none}}
 #cBelt{grid-area:belt}
 .ihint{grid-area:hint;margin:4px 0 0;max-width:250px;display:flex;flex-direction:column;gap:5px;font-size:12.5px;line-height:1.3;color:#8f897f}.ihint b{display:inline-block;min-width:74px;font:600 12px "Roboto Condensed",sans-serif;letter-spacing:.06em;text-transform:uppercase;color:var(--tx2)}
 #cBag{grid-area:bag;align-self:start}
@@ -255,7 +255,13 @@ body.touch #bottom{bottom:calc(8px + var(--sb))}
 .eqw{display:flex;gap:6px;align-items:flex-end}
 
 canvas.nvg{filter:grayscale(1) sepia(1) hue-rotate(50deg) saturate(2.4) brightness(1.06) contrast(1.08)}
-#portrait{width:calc(var(--slot) * 1.3);height:calc(var(--slot) * 2 + 4px);object-fit:cover;object-position:50% 20%;background:radial-gradient(ellipse at 50% 40%,rgba(255,255,255,.06),rgba(255,255,255,0))}
+/* equipamento à volta da personagem de corpo inteiro (cabeça, olhos e fato à esquerda; colete e costas à direita) */
+.doll{display:grid;grid-template-columns:var(--slot) 1fr var(--slot);gap:4px;align-items:stretch;width:100%}
+.eqc{display:grid;grid-template-rows:repeat(3,var(--slot));gap:4px}
+.slot.vazio{background:none;box-shadow:none;pointer-events:none}
+.pfw{position:relative;min-width:calc(var(--slot) * 1.55);height:calc(var(--slot) * 3 + 8px);border-radius:2px;background:radial-gradient(ellipse 60% 55% at 50% 58%,rgba(255,236,200,.09),rgba(255,255,255,0) 70%),linear-gradient(180deg,rgba(255,255,255,.02),rgba(255,255,255,.045));overflow:hidden}
+.pfw::after{content:'';position:absolute;left:18%;right:18%;bottom:6%;height:7%;border-radius:50%;background:radial-gradient(closest-side,rgba(0,0,0,.45),rgba(0,0,0,0))}
+#portrait{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;object-position:50% 100%;z-index:1}
 .eqs{display:grid;grid-template-columns:repeat(3,var(--slot));gap:4px}
 .slot{width:var(--slot);height:var(--slot);background:rgba(255,255,255,.04);position:relative;display:block;overflow:hidden;border-radius:2px}
 .slot img{position:absolute;inset:3px;width:calc(100% - 6px);height:calc(100% - 6px);object-fit:contain}
@@ -530,6 +536,8 @@ input[type=range]{width:160px;accent-color:#E6E2DA;height:30px}
 #cEq,#cBag{width:calc(var(--cs) * 6 + 10px);max-width:100%}#cEq .eqw{justify-content:flex-start}
 #cBelt .beltI{grid-template-columns:repeat(6,var(--slot))}
 #cBelt .ph{display:none}
+#inv.nobox .ibody{grid-template-rows:auto auto auto auto;align-content:start}#inv.nobox #cBox .empty{padding:2px;font-size:13px}#inv.nobox #boxV .ph{display:none}
+.pfw{height:calc(var(--slot) * 3 + 8px)}
 .tabs button{padding:0 11px;font-size:14px}.ihead{gap:8px}
 #iBar{width:calc(100vw - 16px - var(--sl) - var(--sr));max-height:min(62dvh,560px)}
 #start{background:linear-gradient(0deg,rgba(12,11,10,.96) 48%,rgba(12,11,10,.35) 100%);align-items:flex-end;padding:calc(20px + var(--st)) calc(20px + var(--sr)) calc(18px + var(--sb)) calc(20px + var(--sl))}
@@ -728,7 +736,7 @@ body.mir #touch .tb>*,body.mir #touch .ghost{transform:scaleX(-1)}
       <div id="craftV" class="col" hidden><div class="ph"><span>Fabricar com o que tens</span></div><div class="scroll" id="recipes"></div></div>
       <div id="skillV" class="col" hidden><div class="ph"><span>O teu corpo</span><em>perde-se ao morrer</em></div><div class="scroll" id="skl"></div></div>
     </section>
-    <section class="ipan" id="cEq"><div class="ph"><span>Equipamento</span></div><div class="eqw"><img id="portrait" alt=""><div class="eqs"><div class="slot" data-eq="head"><span class="lb">Cabeça</span></div><div class="slot" data-eq="eyes"><span class="lb">Olhos</span></div><div class="slot" data-eq="suit"><span class="lb">Fato</span></div><div class="slot" data-eq="vest"><span class="lb">Colete</span></div><div class="slot" data-eq="back"><span class="lb">Costas</span></div></div></div></section>
+    <section class="ipan" id="cEq"><div class="ph"><span>Equipamento</span></div><div class="eqw doll"><div class="eqc"><div class="slot" data-eq="head"><span class="lb">Cabeça</span></div><div class="slot" data-eq="eyes"><span class="lb">Olhos</span></div><div class="slot" data-eq="suit"><span class="lb">Fato</span></div></div><div class="pfw"><img id="portrait" alt="A tua personagem"></div><div class="eqc"><div class="slot" data-eq="vest"><span class="lb">Colete</span></div><div class="slot" data-eq="back"><span class="lb">Costas</span></div><div class="slot vazio" aria-hidden="true"></div></div></div></section>
     <section class="ipan" id="cBelt"><div class="ph"><span>Cinto</span></div><div class="beltI" id="beltI"></div></section>
     <p class="ihint" id="iHint"></p>
     <section class="ipan" id="iBar" hidden role="dialog" aria-labelledby="iName"><div class="t"><div class="tt"><b id="iName"></b><span class="cat" id="iCat"></span></div><button class="close" id="iBarX" aria-label="Fechar">{{x}}</button></div><p id="iDesc"></p><div class="acts" id="iAct"></div></section>
@@ -746,7 +754,7 @@ body.mir #touch .tb>*,body.mir #touch .ghost{transform:scaleX(-1)}
   <nav class="menu"><button class="mi pri" id="sCont" hidden><b>Continuar</b><em>Voltas onde ficaste</em></button><button class="mi pri" id="sPlay"><b>Jogar</b><em>Acordas perto de uma vila ou monumento</em></button><button class="mi" id="sSet"><b>Definições</b><em>Controlos, imagem e som</em></button></nav>
   <div class="onl" id="sOnl" role="status"><i class="dot" aria-hidden="true"></i><span><b>Servidor</b><em id="sOnT">A ver quem está a jogar…</em></span></div>
   <div class="keys" id="sKeys"></div>
-  <div class="foot">Protótipo 0.30 · um servidor para todos · quem sai fica a dormir no mundo</div>
+  <div class="foot">Protótipo 0.31 · um servidor para todos · quem sai fica a dormir no mundo</div>
 </div><button id="sMus" aria-label="Música do menu"><span class="on">{{volume-2}}</span><span class="off">{{volume-x}}</span></button><a class="credit" href="https://dinissousa.pt" target="_blank" rel="noopener">feito por dinissousa.pt</a></div>
 <div id="pfm" class="ov" hidden><div class="pfbox"><div class="pfh"><b id="pfT"></b><button class="close" id="pfX" aria-label="Fechar">{{x}}</button></div><div id="pfB" class="pfb"></div></div></div>
 <div id="adm" class="ov" hidden><div class="sp2"><div class="ihead"><b class="cond adh">Administração</b><span class="admr" id="admR"></span><div class="tabs" id="admTabs"><button data-t="p" class="on">Jogadores</button><button data-t="e">Eu</button><button data-t="b">Banidos</button><button data-t="c">Clãs</button></div><button class="close" id="admX" aria-label="Fechar">{{x}}</button></div><div class="sbody" id="admB"></div></div></div>

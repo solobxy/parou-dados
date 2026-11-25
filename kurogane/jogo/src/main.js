@@ -73,9 +73,9 @@ async function boot() {
   // noite: lanterna (com sombras, por isso as paredes tapam), luz fraca à volta de ti e candeeiros por perto
   const torch = new THREE.SpotLight(0xfff0d8, 0, 28, 0.5, 0.55, 1.3); torch.castShadow = true; torch.shadow.camera.layers.enable(1); torch.shadow.mapSize.set(512, 512); torch.shadow.bias = -0.0008; torch.shadow.camera.near = 0.04; scene.add(torch, torch.target); // near pequeno: encostado a uma parede, a parede ainda entra no mapa de sombras (senão a luz passava para o outro lado)
   const glow = new THREE.PointLight(0xa8b8d8, 0, 4.5, 1.6); // luz fraca à volta do boneco de noite (curta, para não se notar através de paredes) scene.add(glow);
-  const lampL = [0, 1, 2, 3, 4, 5].map(() => { const l = new THREE.PointLight(0xffc27a, 0, 20, 1.6); scene.add(l); return l; }); // os candeeiros mais perto da câmara acendem a sério
+  const lampL = [0, 1, 2, 3].map(() => { const l = new THREE.PointLight(0xffc27a, 0, 20, 1.6); scene.add(l); return l; }); // os candeeiros mais perto da câmara acendem a sério
   // o lume e os candeeiros da base mais perto: luz com sombra (as paredes da base, mesmo baixas, tapam-na; camada 1 = cópias inteiras das paredes)
-  const baseL = [0, 1].map(() => { const l = new THREE.PointLight(0xff9a4a, 0, 9, 1.7); l.castShadow = true; l.shadow.mapSize.set(256, 256); l.shadow.camera.near = 0.08; l.shadow.camera.far = 9; l.shadow.bias = -0.004; l.shadow.camera.layers.enable(1); scene.add(l); return l; });
+  const baseL = [0].map(() => { const l = new THREE.PointLight(0xff9a4a, 0, 9, 1.7); l.castShadow = true; l.shadow.mapSize.set(256, 256); l.shadow.camera.near = 0.08; l.shadow.camera.far = 9; l.shadow.bias = -0.004; l.shadow.camera.layers.enable(1); scene.add(l); return l; });
   const FOGD = new THREE.Color(0xb7a991), FOGS = new THREE.Color(0x9a6a52), FOGN = new THREE.Color(0x0c1018), SUNC = new THREE.Color(0xffc896), MOONC = new THREE.Color(0x8aa2d8), _fc = new THREE.Color(), _rc = new THREE.Color();
   const sm = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
 
@@ -122,7 +122,36 @@ async function boot() {
   const atlasTex = A.texture();
   mats.sign = new THREE.MeshStandardMaterial({ map: atlasTex, emissiveMap: atlasTex, emissive: 0xffffff, emissiveIntensity: 1.05, roughness: 0.5, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }); // placas e janelas acesas à frente da parede: sem tremer ao longe na luneta
   mats.paint = new THREE.MeshStandardMaterial({ map: atlasTex, roughness: 0.85, alphaTest: 0.4, polygonOffset: true, polygonOffsetFactor: -3, polygonOffsetUnits: -3 });
-  const tW0 = performance.now(); const W = buildWorld(scene, mats, A); W.buildMs = Math.round(performance.now() - tW0);
+  // ---------- detalhe nas construções (paredes, chão, móveis, prateleiras): uma textura de 256 px feita aqui, posta pelas coordenadas do mundo
+  // (reboco com grão, manchas, escorridos de chuva e sujidade junto ao chão; chão com desgaste). Uma leitura de textura por píxel: quase não pesa.
+  const DET = (() => { const N = 256, c = document.createElement('canvas'); c.width = c.height = N; const x = c.getContext('2d'), im = x.createImageData(N, N);
+    const rnd = (i, j, s) => { const h = Math.sin(i * 127.1 + j * 311.7 + s * 74.7) * 43758.5453; return h - Math.floor(h); };
+    const vn = (u, v, f, s) => { const X = u * f, Y = v * f, i = Math.floor(X), j = Math.floor(Y), fx = X - i, fy = Y - j, w = q => q * q * (3 - 2 * q), m = (a) => ((a % f) + f) % f;
+      const a = rnd(m(i), m(j), s), b = rnd(m(i + 1), m(j), s), cc = rnd(m(i), m(j + 1), s), d = rnd(m(i + 1), m(j + 1), s); return a + (b - a) * w(fx) + (cc - a) * w(fy) + (a - b - cc + d) * w(fx) * w(fy); };
+    for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) { const u = i / N, v = j / N, o = (j * N + i) * 4;
+      const big = vn(u, v, 4, 1) * 0.55 + vn(u, v, 8, 2) * 0.3 + vn(u, v, 16, 3) * 0.15; // manchas largas
+      const fine = vn(u, v, 64, 4) * 0.5 + vn(u, v, 128, 5) * 0.3 + rnd(i, j, 6) * 0.2; // grão
+      const streak = vn(u, v * 0.06 + 0.3, 32, 7) * 0.7 + vn(u, v, 8, 8) * 0.3; // escorridos (verticais)
+      im.data[o] = big * 255; im.data[o + 1] = fine * 255; im.data[o + 2] = streak * 255; im.data[o + 3] = 255; }
+    x.putImageData(im, 0, 0); const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.generateMipmaps = true; t.minFilter = THREE.LinearMipmapLinearFilter; t.anisotropy = 2; return t; })();
+  const detail = (m, amt, key) => { m.onBeforeCompile = sh => { sh.uniforms.uDet = { value: DET };
+      sh.vertexShader = 'varying vec3 vDetP; varying vec3 vDetN;\n' + sh.vertexShader.replace('#include <project_vertex>', '#include <project_vertex>\n vec4 dwp = vec4( transformed, 1.0 );\n#ifdef USE_INSTANCING\n dwp = instanceMatrix * dwp;\n#endif\n vDetP = ( modelMatrix * dwp ).xyz; vDetN = normalize( mat3( modelMatrix ) * objectNormal );');
+      sh.fragmentShader = 'uniform sampler2D uDet; varying vec3 vDetP; varying vec3 vDetN;\n' + sh.fragmentShader.replace('#include <color_fragment>', `#include <color_fragment>
+      { vec3 an = abs( vDetN ); bool up = an.y > 0.6; vec2 du = up ? vDetP.xz : ( an.x > an.z ? vDetP.zy : vDetP.xy );
+        vec4 d1 = texture2D( uDet, du * 0.21 ), d2 = texture2D( uDet, du * 1.37 );
+        float k = ( d1.r - 0.5 ) * 0.34 + ( d2.g - 0.5 ) * 0.22;
+        if ( !up ) { k -= smoothstep( 0.55, 0.95, texture2D( uDet, vec2( du.x * 0.35, du.y * 0.02 ) ).b ) * 0.12; k -= ( 1.0 - smoothstep( 0.0, 0.55, vDetP.y ) ) * 0.14; } // escorridos e sujidade junto ao chão
+        else { k = ( d1.r - 0.5 ) * 0.14 + ( d2.g - 0.5 ) * 0.16 + ( d2.r - 0.5 ) * 0.08; // chão: menos manchas
+          vec3 c0 = diffuseColor.rgb; float lum = dot( c0, vec3( 0.299, 0.587, 0.114 ) ), sat = max( c0.r, max( c0.g, c0.b ) ) - min( c0.r, min( c0.g, c0.b ) );
+          { // chãos dos prédios: mosaico nos claros, tábuas nos castanhos
+            if ( lum > 0.45 && sat < 0.12 ) { vec2 g = abs( fract( vDetP.xz / 0.6 ) - 0.5 ); float ln = smoothstep( 0.485, 0.497, max( g.x, g.y ) ); k -= ln * 0.22; k += ( texture2D( uDet, floor( vDetP.xz / 0.6 ) * 0.137 ).g - 0.5 ) * 0.08; }
+            else if ( c0.r > c0.g && c0.g > c0.b && sat > 0.08 ) { float row = floor( vDetP.z / 0.19 ), off = fract( row * 0.618 ) * 1.7; float seam = abs( fract( vDetP.z / 0.19 ) - 0.5 ), joint = abs( fract( ( vDetP.x + off ) / 1.7 ) - 0.5 );
+              k -= smoothstep( 0.46, 0.5, seam ) * 0.2 + smoothstep( 0.485, 0.5, joint ) * 0.16; k += ( texture2D( uDet, vec2( row * 0.173, vDetP.x * 0.05 ) ).g - 0.5 ) * 0.16 + ( texture2D( uDet, vec2( vDetP.x * 0.9, vDetP.z * 6.0 ) ).g - 0.5 ) * 0.08; } } }
+        diffuseColor.rgb *= 1.0 + k * ${amt.toFixed(2)}; }`).replace('#include <roughnessmap_fragment>', `#include <roughnessmap_fragment>
+      roughnessFactor = clamp( roughnessFactor + ( texture2D( uDet, ( abs( vDetN.y ) > 0.6 ? vDetP.xz : vDetP.xy + vDetP.zy ) * 0.9 ).g - 0.5 ) * 0.18, 0.04, 1.0 );`); };
+    m.customProgramCacheKey = () => 'det-' + key; return m; };
+  const wmats = { ...mats, v: detail(S(), 1, 'v'), vf: detail(S({ flatShading: true }), 1, 'vf'), m: detail(S({ roughness: 0.38, metalness: 0.55 }), 0.55, 'm') }; // só o que está construído no mapa (personagens e armas ficam sem isto)
+  const tW0 = performance.now(); const W = buildWorld(scene, wmats, A); W.buildMs = Math.round(performance.now() - tW0);
   atlasTex.needsUpdate = true;
   // sombras dos prédios mesmo com o telhado e as paredes de cima escondidos (quando estás lá dentro): o sol e a lanterna nunca atravessam telhados nem paredes,
   // só entram por janelas (o vidro não faz sombra) e portas abertas. Cópias só para sombra, na camada 1, que a câmara não desenha
@@ -252,19 +281,26 @@ async function boot() {
   W.containers.forEach((c, i) => c.wid = i); W.doors.forEach((D, i) => D.wid = i); nodes.forEach((n, i) => n.key = 'c' + i);
   const WV = (() => { let h = 0; const t = W.zones.map(z => z.name + Math.round(z.x) + ',' + Math.round(z.z)).join('|') + W.containers.map(c => c.table || '').join(''); for (let i = 0; i < t.length; i++) h = (h * 31 + t.charCodeAt(i)) | 0; return [W.containers.length, W.doors.length, nodes.length, (h >>> 0).toString(36)].join('.'); })();
   // contorno das portas e janelas que estão escondidas atrás de paredes e telhados (raio-x)
-  { const b = new Builder(0); const DOOR = new THREE.Color(0xf2a33a), WIN = new THREE.Color(0x8fc3e8);
-    for (const o of W.openings) { if (o.y0 > 2.5) continue; const c = o.k === 'd' ? DOOR : WIN, th = 0.06, w = o.w, hgt = o.y1 - o.y0, cy = (o.y0 + o.y1) / 2;
-      b.push(o.x, 0, o.z, o.horiz ? 0 : Math.PI / 2);
-      b.box(w, th, th, 0, o.y1, 0, c); b.box(th, hgt, th, -w / 2, cy, 0, c); b.box(th, hgt, th, w / 2, cy, 0, c); if (o.k !== 'd') b.box(w, th, th, 0, o.y0, 0, c); else b.box(w * 0.5, th, th, 0, 0.06, 0, c);
-      b.pop(); }
-    const g = b.merged('v'); if (g) { const m = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ vertexColors: true, depthFunc: THREE.GreaterDepth, depthWrite: false, transparent: true, opacity: 0.5, fog: true })); m.renderOrder = 4; m.frustumCulled = false; scene.add(m); G0.xray = m; } }
+  { const DOOR = new THREE.Color(0xf2a33a), WIN = new THREE.Color(0x8fc3e8), CHK = 64, byC = new Map(); // em blocos de 64 m: só se desenham os que a câmara vê (antes eram 113 mil triângulos do mapa inteiro em cada imagem)
+    for (const o of W.openings) { if (o.y0 > 2.5) continue; const k = Math.floor(o.x / CHK) + ',' + Math.floor(o.z / CHK); if (!byC.has(k)) byC.set(k, []); byC.get(k).push(o); }
+    const xm = new THREE.MeshBasicMaterial({ vertexColors: true, depthFunc: THREE.GreaterDepth, depthWrite: false, transparent: true, opacity: 0.5, fog: true }), grp = new THREE.Group();
+    for (const L of byC.values()) { const b = new Builder(0);
+      for (const o of L) { const c = o.k === 'd' ? DOOR : WIN, th = 0.06, w = o.w, hgt = o.y1 - o.y0, cy = (o.y0 + o.y1) / 2;
+        b.push(o.x, 0, o.z, o.horiz ? 0 : Math.PI / 2);
+        b.box(w, th, th, 0, o.y1, 0, c); b.box(th, hgt, th, -w / 2, cy, 0, c); b.box(th, hgt, th, w / 2, cy, 0, c); if (o.k !== 'd') b.box(w, th, th, 0, o.y0, 0, c); else b.box(w * 0.5, th, th, 0, 0.06, 0, c);
+        b.pop(); }
+      const g = b.merged('v'); if (g) { g.computeBoundingSphere(); const m = new THREE.Mesh(g, xm); m.renderOrder = 4; grp.add(m); } }
+    scene.add(grp); G0.xray = grp; }
   // ---------- portas: folhas de madeira que rodam na dobradiça; fechadas travam pessoas, zombies e balas
   const DN = W.doors.reduce((n, D) => n + D.leaves.length, 0);
   const leafGeo = geo1(b => { b.box(1, 2.275, 0.05, 0.5, 1.1475, 0, 0xffffff); for (const zz of [0.028, -0.028]) { b.box(0.78, 0.84, 0.008, 0.5, 1.68, zz, 0xd9d4cc); b.box(0.78, 0.9, 0.008, 0.5, 0.64, zz, 0xd9d4cc); } });
   const knobGeo = geo1(b => { for (const zz of [0.05, -0.05]) { b.box(0.12, 0.025, 0.025, 0.86, 1.02, zz, 0xc9c4b8); b.box(0.05, 0.07, 0.012, 0.9, 1.0, zz * 0.6, 0xb8b2a6); } });
-  const leafM = new THREE.InstancedMesh(leafGeo, mats.v, Math.max(1, DN)), knobM = new THREE.InstancedMesh(knobGeo, mats.m, Math.max(1, DN)); leafM.renderOrder = knobM.renderOrder = 3;
-  for (const m of [leafM, knobM]) { m.castShadow = true; m.receiveShadow = true; m.frustumCulled = false; scene.add(m); }
-  { let i = 0; const c = new THREE.Color(); for (const D of W.doors) for (const L of D.leaves) { L.i = i; leafM.setColorAt(i, c.setHex(D.col)); i++; } if (leafM.instanceColor) leafM.instanceColor.needsUpdate = true; }
+  // em blocos de 64 m (antes eram as ~720 portas do mapa inteiro em cada imagem, mais as sombras): só se desenham os blocos que se veem
+  const DCH = 64, dBlk = new Map();
+  for (const D of W.doors) for (const L of D.leaves) { const k = Math.floor(L.hx / DCH) + ',' + Math.floor(L.hz / DCH); if (!dBlk.has(k)) dBlk.set(k, []); dBlk.get(k).push([D, L]); }
+  for (const [k, list] of dBlk) { const [a, b] = k.split(',').map(Number), lm = new THREE.InstancedMesh(leafGeo, mats.v, list.length), km = new THREE.InstancedMesh(knobGeo, mats.m, list.length), sph = new THREE.Sphere(new THREE.Vector3((a + 0.5) * DCH, 8, (b + 0.5) * DCH), DCH * 0.72 + 14);
+    for (const m of [lm, km]) { m.castShadow = true; m.receiveShadow = true; m.renderOrder = 3; m.boundingSphere = sph; scene.add(m); }
+    const c = new THREE.Color(); list.forEach(([D, L], i) => { L.i = i; L.lm = lm; L.km = km; lm.setColorAt(i, c.setHex(D.col)); }); if (lm.instanceColor) lm.instanceColor.needsUpdate = true; }
   const _dm = new THREE.Matrix4(), _dq = new THREE.Quaternion(), _dv = new THREE.Vector3(), _ds = new THREE.Vector3(), _up = new THREE.Vector3(0, 1, 0);
   const easeD = t => t * t * (3 - 2 * t);
   const doorMats = () => {
@@ -272,8 +308,7 @@ async function boot() {
       if (D.base) continue;
       const C = D.C, L = D.lv, show = L === 0 || !C.g[L] || C.g[L].visible, cut = D.cut && C.gt[L] && !C.gt[L].visible && !G.fp;
       const key = (show ? 1 : 0) + (cut ? 2 : 0) + D.t * 4; if (D.key === key) continue; D.key = key;
-      for (const lf of D.leaves) { const a = lf.tc + (lf.to - lf.tc) * easeD(D.t); _dq.setFromAxisAngle(_up, a); _dv.set(lf.hx, (C.fh || 3.7) * L, lf.hz); _ds.set(show ? lf.w : 0, show ? (cut ? 0.5 : 1) : 0, show ? 1 : 0); _dm.compose(_dv, _dq, _ds); leafM.setMatrixAt(lf.i, _dm); knobM.setMatrixAt(lf.i, _dm); }
-      leafM.instanceMatrix.needsUpdate = true; knobM.instanceMatrix.needsUpdate = true;
+      for (const lf of D.leaves) { const a = lf.tc + (lf.to - lf.tc) * easeD(D.t); _dq.setFromAxisAngle(_up, a); _dv.set(lf.hx, (C.fh || 3.7) * L, lf.hz); _ds.set(show ? lf.w : 0, show ? (cut ? 0.5 : 1) : 0, show ? 1 : 0); _dm.compose(_dv, _dq, _ds); lf.lm.setMatrixAt(lf.i, _dm); lf.km.setMatrixAt(lf.i, _dm); lf.lm.instanceMatrix.needsUpdate = true; lf.km.instanceMatrix.needsUpdate = true; }
     }
   };
   const doorBlocked = D => { const r = D.rc, m = 0.34, inR = o => (o.lv || 0) === D.lv && o.x > r.x0 - m && o.x < r.x1 + m && o.z > r.z0 - m && o.z < r.z1 + m; if (G.p && G.p.alive && inR(G.p)) return true; for (const z of G.zs) if (z.state !== 'dead' && inR(z)) return true; if (G.net && G.net.on) for (const o of G.net.R.values()) if (o.s1 && o.s1[10] && inR({ x: o.x, z: o.z, lv: o.s1[4] })) return true; return false; };
@@ -392,6 +427,7 @@ async function boot() {
     refresh(); G.ui.refresh(true); };
   const mkRemote = L => { const b = new Body(mats, lookCol(L && typeof L === 'object' ? L : {})); scene.add(b.root); return b; };
   const fauna = new Fauna(scene, mats.v, 160); // animais (veados, javalis, lobos, cães, galinhas)
+  const _vf = new THREE.Frustum(), _vfM = new THREE.Matrix4();
   const horde = new Horde(scene, mats, 900, null); // zombies sem silhueta vermelha: atrás de paredes simplesmente não se veem
   const bagM = bagMesh(mats), bodyBagM = bagMesh(mats, true);
   // sacos no chão: contorno quente que pulsa quando estás perto (casca por trás do saco, sem custo de pós-processamento)
@@ -447,7 +483,8 @@ async function boot() {
   // ---------- ícones dos objetos
   const I3 = makeIcons(2); const ICONS = {}, CELLPX = 46;
   for (const k in ITEMS) { const d = ITEMS[k]; ICONS[k] = I3.iconOf(d.icon, d.w * CELLPX + (d.w - 1) * 2, d.h * CELLPX + (d.h - 1) * 2, d.v || 'side', d.w === 1 && d.h === 1 ? 0.7 : 0.82, d.tint); }
-  G.ICONS = ICONS; G.portrait = eq => { const t = s => eq[s] ? ITEMS[eq[s].k].tint ?? true : null; return I3.portrait({ head: t('head'), vest: t('vest'), back: !!eq.back, eyes: !!eq.eyes, suit: !!eq.suit }, 120, 184); }; I3.setLook((Conta.ativo() || {}).look);
+  const ICONS_SQ = {}; for (const k in ITEMS) { const d = ITEMS[k]; if (d.w >= d.h * 2 && d.w >= 3) ICONS_SQ[k] = I3.iconOf(d.icon, 96, 96, 'side', 0.94, d.tint, -0.62); } G.ICONS_SQ = ICONS_SQ;
+  G.ICONS = ICONS; G.portrait = eq => { const t = s => eq[s] ? ITEMS[eq[s].k].tint ?? true : null; return I3.portrait({ head: t('head'), vest: t('vest'), back: !!eq.back, eyes: !!eq.eyes, suit: !!eq.suit }, 160, 300); }; I3.setLook((Conta.ativo() || {}).look);
   G.portraitLook = L => I3.portrait({}, 168, 252, L); G.LOOK_OPTS = LOOK_OPTS;
   G.setLook = L => { myLook = lookCol(L); const o = body, nb = mkBody(L); nb.root.position.copy(o.root.position); nb.root.rotation.copy(o.root.rotation); nb.root.visible = o.root.visible; scene.remove(o.root); body = nb; I3.setLook(L); if (G.p && G.inv) refresh(); G.lookV = (G.lookV || 0) + 1; };
 
@@ -752,7 +789,7 @@ async function boot() {
   G.lazyTick = lazyTick;
   // só para testes: vista de cima (ortográfica) de um quadrado de lado L à volta de (x, z), devolvida como imagem
   G.TR = { PRICE, SELL, TRADERS }; G.trade = tradeFn; npcInit(); G.npcs = npcs; initPWA(G);
-  G.dbgDoors = () => W.doors; G.vm = vm; G.dbgL = { torch, baseL }; G.dbgHurtZ = (z, d) => hurtZombie(z, d, 0, 0, {});
+  G.dbgDoors = () => W.doors; G.vm = vm; G.dbgL = { torch, baseL, scene, cam }; G.dbgHurtZ = (z, d) => hurtZombie(z, d, 0, 0, {});
   G.dbgCam = (pos, at, fov = 30, w = 800, h = 600) => { const pc = new THREE.PerspectiveCamera(fov, w / h, 0.05, 300); pc.position.set(...pos); pc.lookAt(...at); const s0 = new THREE.Vector2(); renderer.getSize(s0); const r0 = renderer.getPixelRatio(); renderer.setPixelRatio(1); renderer.setSize(w, h, false); fireFrame(G.t, renderer, pc); renderer.render(scene, pc); const url = renderer.domElement.toDataURL('image/jpeg', 0.88); renderer.setPixelRatio(r0); renderer.setSize(s0.x, s0.y, false); return url; }; // testes: vista de perto
   G.dbgTop = (x, z, L, px = 900) => { for (let i = 0; i < 80 && lazyTick(x, z); i++); const oc = new THREE.OrthographicCamera(-L / 2, L / 2, L / 2, -L / 2, 1, 400); oc.position.set(x, 200, z + 0.01); oc.lookAt(x, 0, z); const s0 = new THREE.Vector2(); renderer.getSize(s0); const r0 = renderer.getPixelRatio(); renderer.setPixelRatio(1); renderer.setSize(px, px, false); const fg = scene.fog; scene.fog = null; renderer.render(scene, oc); scene.fog = fg; const url = renderer.domElement.toDataURL('image/jpeg', 0.85); renderer.setPixelRatio(r0); renderer.setSize(s0.x, s0.y, false); return url; };
   G.weather = (on = true) => { G.rainT = on ? 1 : 0; WX.t = on ? 300 : 900; };
@@ -1336,7 +1373,14 @@ async function boot() {
   };
 
   G.buzz = ms => { if (G.cfg && G.cfg.haptics) try { navigator.vibrate && navigator.vibrate(ms); } catch (e) { } };
-  G.applyGfx = c => { const sh = !!c.shadows; if (renderer.shadowMap.enabled !== sh) { renderer.shadowMap.enabled = sh; sun.castShadow = sh; scene.traverse(o => { if (o.material) (Array.isArray(o.material) ? o.material : [o.material]).forEach(m => { m.needsUpdate = true; }); }); } renderer.setPixelRatio(PR * (c.lowres ? 0.65 : 1)); renderer.setSize(innerWidth, innerHeight, false); };
+  G.applyGfx = c => { const sh = !!c.shadows; if (renderer.shadowMap.enabled !== sh) { renderer.shadowMap.enabled = sh; sun.castShadow = sh; scene.traverse(o => { if (o.material) (Array.isArray(o.material) ? o.material : [o.material]).forEach(m => { m.needsUpdate = true; }); }); } G.prUser = c.lowres ? 0.65 : 1; renderer.setPixelRatio(PR * G.prUser * DYN.k); renderer.setSize(innerWidth, innerHeight, false); };
+  // resolução automática: se o telemóvel não aguenta ~50 imagens por segundo, desenha com menos píxeis (a imagem fica um pouco mais suave, o resto igual); volta a subir quando há folga
+  const DYN = { k: 1, acc: 0, n: 0, hold: 0, off: !!navigator.webdriver }; G.dyn = DYN;
+  const dynTick = rawMs => { if (DYN.off || !G.playing) return; DYN.acc += Math.min(rawMs, 100); DYN.n++; DYN.hold -= rawMs / 1000; if (DYN.n < 45) return; const avg = DYN.acc / DYN.n; DYN.acc = 0; DYN.n = 0; if (document.hidden) return;
+    let k = DYN.k; DYN.capT = (DYN.capT || 0) - 0.75;
+    if (DYN.chk) { const c = DYN.chk; DYN.chk = null; if (avg > c.avg * 0.93) { k = c.k; DYN.capT = 60; } } // baixar não ajudou: o limite é do ecrã (ex.: modo de poupança a 30 Hz), não do desenho; volta atrás
+    else if (avg > 21 && k > 0.55 && DYN.capT <= 0) { DYN.chk = { avg, k }; k = Math.max(0.55, k - (avg > 30 ? 0.15 : 0.08)); } else if (avg < 17.6 && k < 1 && DYN.hold <= 0) k = Math.min(1, k + 0.05);
+    if (k !== DYN.k) { DYN.hold = k < DYN.k ? 5 : 2; DYN.k = k; renderer.setPixelRatio(PR * (G.prUser || 1) * k); renderer.setSize(innerWidth, innerHeight, false); } };
   // ---------- interface
   G.ui = initUI(G); fitCam(); topProj(); visifyScene();
 
@@ -1349,7 +1393,7 @@ async function boot() {
   const v3a = new THREE.Vector3(), v3b = new THREE.Vector3(), _frus = new THREE.Frustum(), _pm = new THREE.Matrix4(), _sph = new THREE.Sphere(new THREE.Vector3(), 1.3);
   const loop = () => {
     requestAnimationFrame(loop);
-    const now = performance.now(); let dt = Math.min(0.05, (now - last) / 1000); last = now; if (window.__fixedDt) dt = window.__fixedDt;
+    const now = performance.now(); dynTick(now - last); let dt = Math.min(0.05, (now - last) / 1000); last = now; if (window.__fixedDt) dt = window.__fixedDt;
     frames++; fpsT += dt; if (fpsT > 0.5) { G.fps = frames / fpsT; frames = 0; fpsT = 0; }
     G.t += dt;
     const p = G.p;
@@ -1597,7 +1641,8 @@ async function boot() {
     pl.forEach((o, i) => { parts.setMatrixAt(i, mat4(o.x, o.y, o.z, o.t * 9, o.t * 7)); parts.setColorAt(i, o.c); }); parts.count = pl.length; parts.instanceMatrix.needsUpdate = true; if (parts.instanceColor) parts.instanceColor.needsUpdate = true;
     { const pa = trGeo.attributes.position, ca = trGeo.attributes.color; for (let i = 0; i < TRN; i++) { const o = trl[i]; if (o) { o.t -= dt; const f = Math.max(0, o.t / 0.07) * o.k; pa.setXYZ(i * 2, ...o.a); pa.setXYZ(i * 2 + 1, ...o.b); ca.setXYZ(i * 2, 0.6 * f, 0.45 * f, 0.2 * f); ca.setXYZ(i * 2 + 1, 1.6 * f, 1.3 * f, 0.7 * f); } else { pa.setXYZ(i * 2, 0, -9, 0); pa.setXYZ(i * 2 + 1, 0, -9, 0); } } pa.needsUpdate = true; ca.needsUpdate = true; while (trl.length && trl[0].t <= 0) trl.shift(); }
     for (const s of smoke) { s.userData.t = (s.userData.t + dt * 0.12) % 1; const t = s.userData.t; s.position.set(W.smoke[0] + t * 5, W.smoke[1] + t * 11, W.smoke[2] - t * 2.5); const sc = 1.4 + t * 5; s.scale.set(sc, sc, 1); s.material.opacity = 0.55 * (1 - t) * Math.min(1, t * 6); }
-    horde.update(G.zs, G.fp); fauna.update(G.zs, camT);
+    { cam.updateMatrixWorld(); _vfM.multiplyMatrices(cam.projectionMatrix, cam.matrixWorldInverse); _vf.setFromProjectionMatrix(_vfM); } // o que a câmara vê: zombies e animais fora disto não se desenham
+    horde.update(G.zs, G.fp, _vf); fauna.update(G.zs, camT, _vf);
     // comerciantes: respiram parados e viram-se para quem chega perto
     if (G.p) for (const N of npcs) { const dx = G.p.x - N.T.x, dz = G.p.z - N.T.z, d = Math.hypot(dx, dz); if (d > 90) { N.b.root.visible = false; continue; } N.b.root.visible = true; const want = d < 7 ? Math.atan2(dx, dz) : N.T.yaw; N.yaw += angDiff(want, N.yaw) * Math.min(1, dt * 3); N.b.root.rotation.y = N.yaw; N.b.pose(dt, 0, 0); if (G.ui.trOpenNow() && G.ui.trWho && G.ui.trWho() === N.T && d > TRADE_R + 2) G.ui.trClose(); }
     // câmara e sol

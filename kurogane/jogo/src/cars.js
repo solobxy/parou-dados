@@ -66,7 +66,7 @@ export function makeCars({ scene, G, W, collide, solidAt, tallAt = () => 0, grou
   const place = c => { c.m.g.position.set(c.x, groundY(c.x, c.z, 0) + (c.alt || 0), c.z); c.m.g.rotation.set(VT[c.k].fly ? -(c.pt || 0) : 0, c.yaw, VT[c.k].two ? (c.seats[0] ? (c.lean || 0) : 0.28) : VT[c.k].fly ? c.rl || 0 : 0, 'YXZ'); }; // motas e bicicletas paradas ficam no descanso
   const burnt = M(0x2a2624, { r: 0.95, m: 0.1 });
   const wreck = c => { if (c.dead) return; c.dead = true; c.v = 0; c.m.g.traverse(o => { if (o.isMesh && o.material !== glass && o.material !== tyre) o.material = burnt; }); };
-  const HL = [0, 1].map(i => { const L = new THREE.SpotLight(0xfff2d6, 0, 42, 0.62, 0.6, 1.1); if (!i) { L.castShadow = true; L.shadow.mapSize.set(512, 512); L.shadow.bias = -0.0008; L.shadow.camera.near = 0.5; L.shadow.camera.layers.enable(1); } scene.add(L, L.target); return L; });
+  const HL = [0].map(i => /* um só farol a sério (cada luz a mais pesa em cada píxel do ecrã) */ { const L = new THREE.SpotLight(0xfff2d6, 0, 42, 0.62, 0.6, 1.1); if (!i) { L.castShadow = true; L.shadow.mapSize.set(512, 512); L.shadow.bias = -0.0008; L.shadow.camera.near = 0.5; L.shadow.camera.layers.enable(1); } scene.add(L, L.target); return L; });
   const onRoad = (x, z) => { for (const r of W.roads) if (x > r.x0 - 0.5 && x < r.x1 + 0.5 && z > r.z0 - 0.5 && z < r.z1 + 0.5) return true; return false; };
   const me = () => (G.net && G.net.on ? G.net.id : -1);
   // helicóptero: acelerar inclina o nariz e ganha velocidade aos poucos; trás trava até pairar (não há marcha-atrás) e, já parado, desce a pique
@@ -221,7 +221,7 @@ export function makeCars({ scene, G, W, collide, solidAt, tallAt = () => 0, grou
         HL.forEach((L, i) => { const q = on[i]; if (!q) { L.intensity = 0; return; } const fx = Math.sin(q.yaw), fz = Math.cos(q.yaw);
           // helicóptero no ar: holofote por baixo, a apontar ao chão um pouco à frente; um círculo largo que cresce com a altura
           if (VT[q.k].fly && (q.alt || 0) > 1.5) { const a = q.alt, gy = groundY(q.x, q.z, 0); L.angle = 0.72; L.penumbra = 0.75; L.distance = a + 40; L.position.set(q.x + fx * 1.2, gy + a - 0.2, q.z + fz * 1.2); L.target.position.set(q.x + fx * a * 0.12, gy, q.z + fz * a * 0.12); L.intensity = (5 + night * 100) * Math.pow(Math.max(1, a / 5), 1.15); return; }
-          L.angle = 0.62; L.penumbra = 0.6; L.distance = 42; L.position.set(q.x + fx * 2.2, 0.85, q.z + fz * 2.2); L.target.position.set(q.x + fx * 20, 0, q.z + fz * 20); L.intensity = 6 + night * 140; }); }
+          L.angle = 0.62; L.penumbra = 0.6; L.distance = 42; L.position.set(q.x + fx * 2.2, 0.85, q.z + fz * 2.2); L.target.position.set(q.x + fx * 20, 0, q.z + fz * 20); L.intensity = night > 0.12 ? 6 + night * 140 : 0; }); HL.forEach(L => { L.shadow.autoUpdate = L.intensity > 0; }); } // de dia os faróis não se notam: sem luz nem sombra (poupa uma passagem inteira de desenho)
       const c = G.car, p = G.p; if (!c || !p) { if (audio.engine) audio.engine(0, 0); return; }
       const T = VT[c.k], [sx0, , sz] = T.seats[G.carSeat] || T.seats[0]; const cs = Math.cos(c.yaw), sn = Math.sin(c.yaw);
       // passageiro a apontar: debruça-se pela janela (fica à mostra, fora da carroçaria); quem conduz não dispara

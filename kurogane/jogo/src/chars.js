@@ -2,6 +2,7 @@
 import * as THREE from 'three';
 import { Builder, mat4, shade } from './builder.js';
 import { ITEMS, TINTS } from './items.js';
+import { GUNS } from './guns.js';
 
 export const HIP = 0.92, SHY = 1.42, SHX = 0.27;
 export const LONG = ['m4', 'ak', 'smg', 'cacadeira', 'caca', 'cheytac', 'barrett', 'm249', 'pkm'];
@@ -146,21 +147,21 @@ export function weaponGeos() {
   const BLK = 0x1c1e21, WOOD = 0x7a5232, ST = 0x8f8d86;
   const inHand = fn => geoOf(b => { b.push(0, -0.56, 0, 0, Math.PI / 2, 0); fn(b); b.pop(); });
   return {
-    m4: geoOf(b => { b.push(0.07, SHY - HIP - 0.12, 0.16); b.rbox(0.07, 0.11, 0.5, 0.015, 0, 0, 0.12, BLK, { mat: 'm' }); b.rbox(0.08, 0.09, 0.34, 0.02, 0, 0, 0.5, 0x5a5a4e); b.cyl(0.016, 0.016, 0.32, 8, 0, 0.005, 0.82, BLK, { rx: Math.PI / 2, mat: 'm' }); b.rbox(0.06, 0.13, 0.28, 0.02, 0, -0.02, -0.24, 0x5a5a4e); b.rbox(0.05, 0.2, 0.08, 0.015, 0, -0.13, 0.18, BLK, { rx: 0.25 }); b.rbox(0.045, 0.12, 0.06, 0.012, 0, -0.1, -0.02, BLK, { rx: -0.3 }); b.pop(); }),
-    pistola: inHand(b => { b.rbox(0.035, 0.05, 0.21, 0.012, 0, 0.03, 0.06, 0x2a2c2e, { mat: 'm' }); b.rbox(0.036, 0.12, 0.05, 0.012, 0, -0.04, -0.02, BLK, { rx: 0.28 }); }),
+    m4: geoOf(b => { b.push(0.07, SHY - HIP - 0.12, 0.16); GUNS.m4(b); b.pop(); }),
+    pistola: inHand(b => GUNS.pistola(b)),
     pedra: inHand(b => { b.ico(0.07, 0, 0.02, 0.03, ST, { mat: 'vf', sx: 1.1, sy: 0.9, sz: 1.2 }); }),
     machado: inHand(b => { b.cyl(0.018, 0.02, 0.5, 8, 0, 0, 0.16, WOOD, { rx: Math.PI / 2 }); b.ico(0.06, 0, 0.07, 0.38, ST, { mat: 'vf', sx: 0.55, sy: 1.5, sz: 0.7 }); }),
     picareta: inHand(b => { b.cyl(0.018, 0.02, 0.55, 8, 0, 0, 0.18, WOOD, { rx: Math.PI / 2 }); b.cyl(0.022, 0.012, 0.34, 6, 0, 0, 0.42, ST, { mat: 'vf' }); }),
     lanca: inHand(b => { b.cyl(0.016, 0.018, 1.5, 8, 0, 0, 0.35, 0x8a6a42, { rx: Math.PI / 2 }); b.add(new THREE.ConeGeometry(0.03, 0.18, 6), 0x5a4030, 'vf', mat4(0, 0, 1.18, 0, Math.PI / 2)); }),
-    revolver: inHand(b => { b.cyl(0.014, 0.014, 0.18, 8, 0, 0.035, 0.1, 0x2a2c2e, { rx: Math.PI / 2, mat: 'm' }); b.cyl(0.028, 0.028, 0.05, 6, 0, 0.03, 0.0, 0x3a3c3e, { rx: Math.PI / 2, mat: 'm' }); b.rbox(0.034, 0.11, 0.05, 0.012, 0, -0.04, -0.04, 0x6a4a2e, { rx: 0.3 }); }),
+    revolver: inHand(b => GUNS.revolver(b)),
     faca: inHand(b => { b.box(0.022, 0.03, 0.12, 0, 0, 0.0, 0x2a2a2a); b.box(0.006, 0.035, 0.2, 0, 0, 0.16, 0xd6dade, { mat: 'm' }); }),
     bastao: inHand(b => { b.cyl(0.02, 0.038, 0.8, 10, 0, 0, 0.32, 0xc9a877, { rx: Math.PI / 2 }); }),
     pecabra: inHand(b => { b.cyl(0.013, 0.013, 0.55, 6, 0, 0, 0.2, 0xb8322a, { rx: Math.PI / 2, mat: 'm' }); b.box(0.02, 0.07, 0.03, 0, 0.03, 0.47, 0xb8322a, { mat: 'm' }); }),
     machete: inHand(b => { b.box(0.024, 0.035, 0.13, 0, 0, 0.0, 0x2a2a2a); b.box(0.006, 0.06, 0.45, 0, 0.01, 0.28, 0xb8bcc0, { mat: 'm' }); }),
-    smg: geoOf(b => { b.push(0.07, SHY - HIP - 0.12, 0.2); b.rbox(0.06, 0.09, 0.36, 0.015, 0, 0, 0.1, BLK, { mat: 'm' }); b.cyl(0.014, 0.014, 0.14, 8, 0, 0.01, 0.34, BLK, { rx: Math.PI / 2 }); b.rbox(0.04, 0.17, 0.045, 0.01, 0, -0.12, 0.16, BLK); b.rbox(0.045, 0.1, 0.05, 0.012, 0, -0.08, 0.0, BLK, { rx: -0.3 }); b.box(0.02, 0.025, 0.2, 0, 0, -0.16, 0x3a3c3e); b.pop(); }),
-    ak: geoOf(b => { b.push(0.07, SHY - HIP - 0.12, 0.16); b.rbox(0.065, 0.1, 0.5, 0.015, 0, 0, 0.12, 0x3a3c3e, { mat: 'm' }); b.rbox(0.07, 0.07, 0.24, 0.015, 0, -0.005, 0.46, 0x8a5a32); b.cyl(0.013, 0.013, 0.3, 8, 0, 0.01, 0.74, BLK, { rx: Math.PI / 2, mat: 'm' }); b.rbox(0.045, 0.2, 0.07, 0.015, 0, -0.14, 0.22, 0x3a3c3e, { rx: 0.4 }); b.rbox(0.055, 0.12, 0.3, 0.02, 0, -0.03, -0.25, 0x8a5a32); b.pop(); }),
-    cacadeira: geoOf(b => { b.push(0.07, SHY - HIP - 0.12, 0.16); b.cyl(0.024, 0.024, 0.8, 10, 0, 0.03, 0.48, BLK, { rx: Math.PI / 2, mat: 'm' }); b.cyl(0.02, 0.02, 0.62, 10, 0, -0.02, 0.4, 0x2a2c2e, { rx: Math.PI / 2, mat: 'm' }); b.rbox(0.07, 0.07, 0.22, 0.02, 0, -0.02, 0.36, WOOD); b.rbox(0.07, 0.12, 0.26, 0.02, 0, 0.0, 0.02, BLK, { mat: 'm' }); b.rbox(0.06, 0.12, 0.34, 0.03, 0, -0.04, -0.28, WOOD); b.pop(); }),
-    caca: geoOf(b => { b.push(0.07, SHY - HIP - 0.12, 0.16); b.cyl(0.016, 0.016, 0.66, 10, 0, 0.03, 0.62, BLK, { rx: Math.PI / 2, mat: 'm' }); b.rbox(0.065, 0.07, 0.62, 0.025, 0, -0.005, 0.22, 0x7a4a2a); b.rbox(0.06, 0.12, 0.32, 0.03, 0, -0.03, -0.24, 0x7a4a2a); b.pop(); }),
+    smg: geoOf(b => { b.push(0.07, SHY - HIP - 0.12, 0.16); GUNS.smg(b); b.pop(); }),
+    ak: geoOf(b => { b.push(0.07, SHY - HIP - 0.12, 0.16); GUNS.ak(b); b.pop(); }),
+    cacadeira: geoOf(b => { b.push(0.07, SHY - HIP - 0.12, 0.16); GUNS.cacadeira(b); b.pop(); }),
+    caca: geoOf(b => { b.push(0.07, SHY - HIP - 0.12, 0.16); GUNS.caca(b); b.pop(); }),
     // armas pesadas: duas de precisão (ferrolho .408 e semiautomática .50) e duas metralhadoras com caixa de fita
     cheytac: geoOf(b => { b.push(0.07, SHY - HIP - 0.12, 0.16); const C = 0x6b6450; b.rbox(0.065, 0.1, 0.52, 0.015, 0, 0, 0.12, C); b.cyl(0.017, 0.017, 0.72, 8, 0, 0.01, 0.72, BLK, { rx: Math.PI / 2, mat: 'm' }); b.cyl(0.03, 0.03, 0.07, 8, 0, 0.01, 1.1, BLK, { rx: Math.PI / 2, mat: 'm' }); b.rbox(0.06, 0.13, 0.32, 0.02, 0, -0.02, -0.27, C); b.box(0.05, 0.03, 0.14, 0, 0.06, -0.3, C); b.rbox(0.05, 0.1, 0.07, 0.012, 0, -0.1, 0.14, BLK); b.rbox(0.045, 0.12, 0.06, 0.012, 0, -0.1, -0.04, BLK, { rx: -0.3 }); for (const s of [-1, 1]) b.cyl(0.006, 0.006, 0.26, 5, s * 0.012, -0.016, 0.62, BLK, { rx: Math.PI / 2 }); b.pop(); }),
     barrett: geoOf(b => { b.push(0.07, SHY - HIP - 0.12, 0.16); const C = 0x2b2d30; b.rbox(0.08, 0.13, 0.64, 0.02, 0, 0, 0.12, C, { mat: 'm' }); b.cyl(0.024, 0.024, 0.6, 8, 0, 0.015, 0.74, BLK, { rx: Math.PI / 2, mat: 'm' }); b.rbox(0.1, 0.05, 0.11, 0.01, 0, 0.015, 1.08, BLK, { mat: 'm' }); b.rbox(0.07, 0.14, 0.3, 0.02, 0, -0.02, -0.33, C); b.rbox(0.06, 0.15, 0.11, 0.012, 0, -0.13, 0.2, BLK); b.rbox(0.05, 0.13, 0.06, 0.012, 0, -0.11, -0.06, BLK, { rx: -0.3 }); for (const s of [-1, 1]) b.cyl(0.008, 0.008, 0.28, 5, s * 0.016, -0.02, 0.7, BLK, { rx: Math.PI / 2 }); b.pop(); }),
@@ -304,11 +305,12 @@ export class Horde {
     for (let i = 0; i < max; i++) { c.set(tints[i % tints.length]); for (const m of this.parts) m.setColorAt(i, c); }
     this._m = new THREE.Matrix4();
   }
-  update(list, noSil = false) {
-    const { _m } = this; let n = 0, ns = 0, nh = 0, nv = 0; const c = this._c || (this._c = new THREE.Color()), K = this.K, PT = this.parts;
+  update(list, noSil = false, fr = null) {
+    const { _m } = this, sp = this._sp || (this._sp = new THREE.Sphere(new THREE.Vector3(), 3.5)); let n = 0, ns = 0, nh = 0, nv = 0; const c = this._c || (this._c = new THREE.Color()), K = this.K, PT = this.parts;
     for (const z of list) {
       if (n >= this.max) break;
       if (z.hide || z.an) continue; // os animais têm desenho próprio (animals.js)
+      if (fr) { sp.center.set(z.x, (z.base || 0) + 1, z.z); if (!fr.intersectsSphere(sp)) continue; } // fora da vista (e longe demais para a sombra entrar nela): nem se calcula
       const dead = z.state === 'dead', M = zombiePose(z, this.M || (this.M = newPose()));
       for (let k = 0; k < K.length; k++) PT[k].setMatrixAt(n, M[K[k]]);
       z.inst = n;
@@ -317,9 +319,9 @@ export class Horde {
       if (this.sil && z.sees && !dead && !noSil) { const S = this.sil; for (let k = 0; k < K.length; k++) { PT[k].getMatrixAt(n, _m); S[k].setMatrixAt(ns, _m); } ns++; }
       n++;
     }
-    for (const m of PT) { m.count = n; m.instanceMatrix.needsUpdate = true; }
-    for (const [m, k] of [[this.helm, nh], [this.vest, nv]]) { m.count = k; m.instanceMatrix.needsUpdate = true; if (m.instanceColor) m.instanceColor.needsUpdate = true; }
-    if (this.sil) for (const m of this.sil) { m.count = ns; m.instanceMatrix.needsUpdate = true; }
+    for (const m of PT) { m.count = n; m.visible = n > 0; m.instanceMatrix.needsUpdate = true; } // vazias: nem chamada de desenho
+    for (const [m, k] of [[this.helm, nh], [this.vest, nv]]) { m.count = k; m.visible = k > 0; m.instanceMatrix.needsUpdate = true; if (m.instanceColor) m.instanceColor.needsUpdate = true; }
+    if (this.sil) for (const m of this.sil) { m.count = ns; m.visible = ns > 0; m.instanceMatrix.needsUpdate = true; }
   }
 }
 

@@ -46,7 +46,7 @@ export const ITEMS = {
   cPist: { n: 'Carregador de pistola', s: 'Carreg. 9', w: 1, h: 1, cat: 'g', icon: 'pmag', clip: { cap: 12, ammo: ['a9', 'a9s'] }, desc: '12 balas de 9 mm, para a pistola.' },
   cSmg: { n: 'Carregador de SMG', s: 'Carreg. SMG', w: 1, h: 2, cat: 'g', icon: 'pmag', clip: { cap: 30, ammo: ['a9', 'a9s'] }, desc: '30 balas de 9 mm, para a submetralhadora.' },
   cStanag: { n: 'Carregador de M4', s: 'Carreg. M4', w: 1, h: 2, cat: 'g', icon: 'mag', clip: { cap: 30, ammo: ['a556'] }, desc: '30 balas de 5,56, para a M4.' },
-  cAk: { n: 'Carregador de AK', s: 'Carreg. AK', w: 1, h: 2, cat: 'g', icon: 'mag', clip: { cap: 30, ammo: ['a762'] }, desc: '30 balas de 7,62×39, para a AK.' },
+  cAk: { n: 'Carregador de AK', s: 'Carreg. AK', w: 1, h: 2, cat: 'g', icon: 'mag', tint: 0x6a3a22, clip: { cap: 30, ammo: ['a762'] }, desc: '30 balas de 7,62×39, para a AK.' },
   c308: { n: 'Carregador .308', s: 'Carreg. .308', w: 1, h: 1, cat: 'g', icon: 'pmag', clip: { cap: 5, ammo: ['a308'] }, desc: '5 balas .308, para a espingarda de caça.' },
   mira8: { n: 'Mira 8x', s: 'Mira 8x', w: 2, h: 1, cat: 'g', icon: 'scope8', att: 'scope', mag: 8, rare: 1, desc: 'Espingarda de caça, CheyTac e Barrett. A vista vai até 70 m, mas treme mais.' },
   c408: { n: 'Carregador .408', s: 'Carreg. .408', w: 1, h: 1, cat: 'g', icon: 'pmag', clip: { cap: 7, ammo: ['a408'] }, desc: '7 balas .408, para a CheyTac.' },

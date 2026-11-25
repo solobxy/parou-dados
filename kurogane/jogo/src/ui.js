@@ -98,7 +98,7 @@ export function initUI(G) {
   };
   const P = n => n * CS + (n - 1) * GAP;
   const catOf = d => 't-' + d.cat;
-  const itemHTML = (it, small) => { const d = ITEMS[it.k]; const ct = d.gun ? `<span class="ct am">${d.gun.clip && !it.mg ? '—' : it.ammo}</span>` : d.clip ? `<span class="ct am">${it.am || 0}</span>` : it.n > 1 ? `<span class="ct">${it.n}</span>` : ''; return `<img src="${G.ICONS[it.k]}" alt="">${small ? '' : `<span class="nm">${d.s}</span>`}${ct}`; };
+  const itemHTML = (it, small) => { const d = ITEMS[it.k]; const ct = d.gun ? `<span class="ct am">${d.gun.clip && !it.mg ? '—' : it.ammo}</span>` : d.clip ? `<span class="ct am">${it.am || 0}</span>` : it.n > 1 ? `<span class="ct">${it.n}</span>` : ''; return `<img src="${(small && G.ICONS_SQ && G.ICONS_SQ[it.k]) || G.ICONS[it.k]}" alt="">${small ? '' : `<span class="nm">${d.s}</span>`}${ct}`; }; // nas casas quadradas (cinto, equipamento) as armas compridas vão na diagonal e ficam grandes
   const renderGrid = (el, grid, rows, kind) => {
     el.innerHTML = ''; el.dataset.kind = kind; if (!grid) { el.style.width = el.style.height = '0px'; return; }
     const R = grid.rows; el.style.width = P(grid.cols) + 'px'; el.style.height = P(R) + 'px';
@@ -125,6 +125,7 @@ export function initUI(G) {
     $('boxName').textContent = B ? B.label.replace(/^(Abrir|Revistar) /, '').replace(/^./, c => c.toUpperCase()) : 'Perto de ti';
     renderGrid(gBox, B ? B.grid : null, B && B.grid ? B.grid.rows : 0, 'box');
     $('boxEmpty').hidden = !!(B && B.grid && !B.grid.empty); if (B && B.grid && B.grid.empty) $('boxEmpty').textContent = 'Vazio. Volta mais tarde: as coisas reaparecem.'; else if (!B) $('boxEmpty').textContent = 'Nada aberto. Aproxima-te de um armário, caixa, carro ou saco e revista.';
+    inv.classList.toggle('nobox', tab === 'inv' && !B); // nada aberto: o espaço vai para a mochila (ao alto)
     $('takeAll').hidden = !(B && B.grid && !B.grid.empty); { const fu = $('furn'), F = B && B.dep && (B.dep.k === 'fornalha' || B.dep.k === 'fogueira') ? B.dep : null; fu.hidden = !F; if (F) { fu.textContent = F.on ? 'Apagar' : 'Acender'; fu.classList.toggle('pri', !F.on); } }
     if (tab === 'craft') renderCraft();
     renderBar();

@@ -16,7 +16,7 @@ const angLerp = (a, b, f) => { let d = b - a; while (d > Math.PI) d -= 2 * Math.
 // onde está agora (para desenhar); devolve null se ainda não há nada
 export const sample = (T, now, out) => {
   const B = T.buf; if (!B.length) return null;
-  const want = Math.min(350, Math.max(80, 55 + T.jit * 2.2)); T.delay += (want - T.delay) * 0.02;
+  const want = Math.min(320, Math.max(58, 36 + T.jit * 2.2)); // com 30 imagens por segundo chega menos atraso (antes 80 ms no mínimo) T.delay += (want - T.delay) * 0.02;
   const rt = now - T.off - T.delay;
   let a = B[0], b = null;
   if (rt <= a.ts) { out.x = a.x; out.z = a.z; out.y = a.y; out.yaw = a.yaw; out.s = a; out.lag = 0; return out; }
