@@ -88,6 +88,7 @@ export const ITEMS = {
   bancada1: { n: 'Bancada nível 1', s: 'Bancada 1', w: 2, h: 2, cat: 'g', icon: 'bench1', deploy: 'bancada1', desc: 'Perto dela fabricas pistolas, caçadeiras, carregadores e pólvora.' },
   bancada2: { n: 'Bancada nível 2', s: 'Bancada 2', w: 2, h: 2, cat: 'g', icon: 'bench2', deploy: 'bancada2', desc: 'SMG, espingarda de caça, miras, silenciador de pistola e balas de espingarda.' },
   bancada3: { n: 'Bancada nível 3', s: 'Bancada 3', w: 2, h: 2, cat: 'g', icon: 'bench3', deploy: 'bancada3', desc: 'M4, AK, mira 8x, silenciador de espingarda e explosivos.' },
+  candeeiro: { n: 'Candeeiro', s: 'Candeeiro', w: 1, h: 2, cat: 'g', icon: 'lampada', deploy: 'candeeiro', desc: 'Candeeiro a óleo num poste. De noite ilumina a base à volta. Apanha-se outra vez com um toque.' },
   cama: { n: 'Cama', s: 'Cama', w: 2, h: 2, cat: 'g', icon: 'bed', deploy: 'cama', desc: 'Quando morres, podes renascer aqui.' },
   saco: { n: 'Saco-cama', s: 'Saco-cama', w: 1, h: 2, cat: 'g', icon: 'sbag', deploy: 'saco', desc: 'Barato. Quando morres, podes renascer aqui.' },
   lanterna: { n: 'Lanterna', s: 'Lanterna', w: 1, h: 1, cat: 'g', icon: 'torch', desc: 'Liga e desliga com F ou com o botão da lanterna. Acesa, os zombies veem-te mais longe.' },
@@ -134,6 +135,7 @@ export const RECIPES = [
   { k: 'bau', n: 1, need: { madeira: 120 } },
   { k: 'fornalha', n: 1, need: { pedraR: 200, madeira: 50 } },
   { k: 'bancada1', n: 1, need: { madeira: 200, metal: 60 } },
+  { k: 'candeeiro', n: 1, need: { madeira: 40, metal: 20 } },
   { k: 'a9', n: 10, need: { metal: 10, enxofre: 15 } },
   { k: 'c12', n: 6, need: { metal: 8, enxofre: 12 } },
   { k: 'faca', n: 1, need: { metal: 30, madeira: 20 } },
@@ -181,6 +183,6 @@ export const RECIPES = [
 
 // peso de cada unidade, em kg
 export const KG = {"gasolina": 16, "granada": 0.4, "explosivo": 0.15, "c4": 1.2, "metalR": 0.02, "carvao": 0.01, "polvora": 0.01, "planta": 0.1, "martelo": 1.0, "bau": 8, "bauG": 15, "fornalha": 25, "bancada1": 15, "bancada2": 22, "bancada3": 30, "cama": 12, "saco": 2, "reddot": 0.25, "lantArma": 0.2, "cPist": 0.08, "cSmg": 0.15, "cStanag": 0.12, "cAk": 0.33, "c308": 0.1, "pedra": 0.5, "machado": 1.6, "picareta": 2.2, "lanca": 1.2, "katana": 1.3, "faca": 0.3, "bastao": 0.9, "pecabra": 1.5, "machete": 0.7, "pistola": 0.8, "m4": 3.3, "revolver": 1.1, "smg": 2.8, "cacadeira": 3.4, "caca": 4.2, "ak": 3.6, "a9": 0.012, "a9s": 0.012, "a556": 0.012, "a762": 0.017, "a308": 0.025, "a357": 0.016, "c12": 0.04, "c12s": 0.045, "silP": 0.25, "silR": 0.6, "mira4": 0.5, "mira8": 0.7, "ligadura": 0.05, "medkit": 0.6, "lata": 0.4, "onigiri": 0.15, "racao": 0.5, "agua": 1.0, "bebida": 0.35, "sardinhas": 0.15, "ramen": 0.1, "chocolate": 0.1, "maca": 0.2, "sumo": 0.25, "cafe": 0.25, "madeira": 0.01, "pedraR": 0.01, "enxofre": 0.01, "metal": 0.01, "lanterna": 0.3, "capacete": 1.4, "colete": 3.5, "mochila": 1.2};
-Object.assign(KG, { cheytac: 12.5, barrett: 13.6, m249: 7.5, pkm: 7.5, a408: 0.07, a50: 0.12, a754: 0.024, c408: 0.2, c50: 0.35, cM249: 0.4, cPKM: 0.5, ghillie: 2.5, nvg: 0.5 });
+Object.assign(KG, { candeeiro: 3, cheytac: 12.5, barrett: 13.6, m249: 7.5, pkm: 7.5, a408: 0.07, a50: 0.12, a754: 0.024, c408: 0.2, c50: 0.35, cM249: 0.4, cPKM: 0.5, ghillie: 2.5, nvg: 0.5 });
 for (const t in TINTS) { KG['capacete' + t] = KG.capacete; KG['colete' + t] = KG.colete; }
 for (const k in ITEMS) ITEMS[k].kg = KG[k] ?? 0.5;

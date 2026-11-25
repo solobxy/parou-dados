@@ -187,6 +187,7 @@ export function makeIcons(DPR = 2) {
   IT.sumo = () => { const g = new THREE.Group(); put(RB(0.06, 0.1, 0.04, 0.006, 0xf2a03a), 0, 0, 0, g); put(B(0.061, 0.03, 0.041, 0xffffff), 0, 0.02, 0, g); put(Cy(0.003, 0.003, 0.05, 6, 0xffffff), 0.015, 0.07, 0, g).rotation.z = -0.2; return g; };
   IT.cafe = () => { const g = new THREE.Group(); put(Cy(0.028, 0.028, 0.1, 18, 0x6a4a32, { m: 0.6, r: 0.35 }), 0, 0, 0, g); put(Cy(0.0285, 0.0285, 0.03, 18, 0xe8e2d4), 0, 0.02, 0, g); put(Cy(0.024, 0.028, 0.008, 18, 0xc6cacb, { m: 0.9 }), 0, 0.053, 0, g); return g; };
   IT.m4 = IT.rifle;
+  IT.lampada = () => { const g = new THREE.Group(); put(Cy(0.012, 0.016, 0.5, 8, 0x3a3c3e, { m: 0.5 }), 0, -0.05, 0, g); put(B(0.1, 0.015, 0.1, 0x3a3c3e, { m: 0.5 }), 0, -0.3, 0, g); put(B(0.016, 0.016, 0.1, 0x3a3c3e), 0, 0.2, 0.04, g); put(Cy(0.03, 0.035, 0.07, 10, 0x3a3c3e, { m: 0.5 }), 0, 0.16, 0.09, g); put(Cy(0.026, 0.03, 0.055, 10, 0xffd9a0, { e: 0xffb860, ei: 1.2 }), 0, 0.16, 0.09, g); g.rotation.y = 0.5; return g; };
   // armas pesadas
   const bolt = (o) => { const g = new THREE.Group(), c = o.col; put(RB(0.62, 0.085, 0.06, 0.015, c, { m: 0.35, r: 0.5 }), 0, 0, 0, g); put(X(Cy(o.br, o.br, o.blen, 12, BLK, { m: 0.5 })), 0.31 + o.blen / 2, 0.012, 0, g);
     put(X(Cy(o.br * 1.9, o.br * 1.9, 0.09, 12, BLK, { m: 0.5 })), 0.31 + o.blen + 0.04, 0.012, 0, g); for (const z of [-1, 1]) put(B(0.06, 0.02, 0.012, BLK), 0.31 + o.blen + 0.04, 0.012, z * 0.022, g);

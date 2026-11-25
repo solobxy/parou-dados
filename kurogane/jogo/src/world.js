@@ -568,6 +568,16 @@ export function buildWorld(scene, mats, A) {
   // arbustos e troncos caídos
   for (let i = 0; i < 3100; i++) { const x = rr(-CORE + 3, CORE - 3), z = rr(-CORE + 3, CORE - 3); if (blocked(x, z) || tooClose(x, z, 1.6)) continue; for (let k = 0; k < 3; k++) b.ico(rr(0.4, 0.75), x + rr(-0.6, 0.6), 0.3, z + rr(-0.6, 0.6), pick([0x3f5a2a, 0x4a6a32, 0x56703a]), { mat: 'vf', det: 1, sy: 0.75 }); }
   for (let i = 0; i < 270; i++) { const x = rr(-CORE + 6, CORE - 6), z = rr(-CORE + 6, CORE - 6); if (blocked(x, z, 2) || tooClose(x, z, 3)) continue; const ry = rr(0, 3.14), L = rr(3, 5); b.cyl(0.28, 0.32, L, 8, x, 0.28, z, 0x5a4230, { rz: Math.PI / 2, ry }); const c = Math.cos(ry), s = Math.sin(ry); for (let t = -L / 2 + 0.4; t < L / 2; t += 0.8) circ(x + c * t, z - s * t, 0.32, 'l'); }
+  // candeeiros de rua nas vilas, monumentos e bases (de 30 em 30 m, alternando o lado, virados para a estrada): de noite vê-se por onde se anda
+  { const near = (x, z) => W.zones.some(zn => zn.kind !== 'forest' && (x - zn.x) ** 2 + (z - zn.z) ** 2 < (zn.r + 45) ** 2), lp = [];
+    const free = (x, z) => { if (x > CITY.x0 - 6 && x < CITY.x1 + 6 && z > CITY.z0 - 6 && z < CITY.z1 + 6) return false; if (Math.abs(x) > CORE - 4 || Math.abs(z) > CORE - 4) return false; if (W.wet && W.wet(x, z, 1)) return false;
+      for (const r of W.roads) if (x > r.x0 - 0.4 && x < r.x1 + 0.4 && z > r.z0 - 0.4 && z < r.z1 + 0.4) return false;
+      const l = bgrid.get(Math.floor(x / BG) * 1000 + Math.floor(z / BG)); if (l) for (const r of l) if (x > r.x0 - 0.6 && x < r.x1 + 0.6 && z > r.z0 - 0.6 && z < r.z1 + 0.6) return false;
+      for (const q of W.circles) if (Math.abs(q.x - x) < q.r + 0.6 && Math.abs(q.z - z) < q.r + 0.6) return false;
+      for (const q of lp) if ((q[0] - x) ** 2 + (q[1] - z) ** 2 < 15 * 15) return false; for (const q of W.lamps) if ((q[0] - x) ** 2 + (q[2] - z) ** 2 < 12 * 12) return false; return true; };
+    W.roads.forEach((r, ri) => { const hor = r.x1 - r.x0 >= r.z1 - r.z0, L = hor ? r.x1 - r.x0 : r.z1 - r.z0, hw = (hor ? r.z1 - r.z0 : r.x1 - r.x0) / 2; if (L < 20 || hw > 9) return;
+      for (let t = 10, i = ri; t < L - 6; t += 30, i++) { const side = i % 2 ? 1 : -1, a = (hor ? r.x0 : r.z0) + t, c = (hor ? (r.z0 + r.z1) / 2 : (r.x0 + r.x1) / 2) + side * (hw + 0.9);
+        const x = hor ? a : c, z = hor ? c : a; if (!near(x, z) || !free(x, z)) continue; lp.push([x, z]); lamp(x, z, hor ? (side > 0 ? Math.PI : 0) : (side > 0 ? -Math.PI / 2 : Math.PI / 2)); } }); }
   // postes de eletricidade ao longo da estrada fora da cidade
   { const ps = []; for (let x = -CORE + 4; x < CORE; x += 18) { if (x > CITY.x0 - 2 && x < CITY.x1 + 2) continue; ps.push(pole(x, 5.4, 9)); } for (let i = 0; i < ps.length - 1; i++) if (Math.abs(ps[i + 1][0] - ps[i][0]) < 20) wires(ps[i], ps[i + 1]); }
   // limite do mapa: muro que só trava (não tapa a vista nem faz sombra) e uma linha contínua no chão, a mesma cor de dia e de noite

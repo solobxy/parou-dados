@@ -68,8 +68,8 @@ async function boot() {
   const RAINFOG = new THREE.Color(0x6f7680);
   // noite: lanterna (com sombras, por isso as paredes tapam), luz fraca à volta de ti e candeeiros por perto
   const torch = new THREE.SpotLight(0xfff0d8, 0, 28, 0.5, 0.55, 1.3); torch.castShadow = true; torch.shadow.camera.layers.enable(1); torch.shadow.mapSize.set(512, 512); torch.shadow.bias = -0.0008; torch.shadow.camera.near = 0.3; scene.add(torch, torch.target);
-  const glow = new THREE.PointLight(0xa8b8d8, 0, 7, 1.4); scene.add(glow);
-  const lampL = [0, 1, 2].map(() => { const l = new THREE.PointLight(0xffc27a, 0, 18, 1.5); scene.add(l); return l; });
+  const glow = new THREE.PointLight(0xa8b8d8, 0, 4.5, 1.6); // luz fraca à volta do boneco de noite (curta, para não se notar através de paredes) scene.add(glow);
+  const lampL = [0, 1, 2, 3, 4, 5].map(() => { const l = new THREE.PointLight(0xffc27a, 0, 20, 1.6); scene.add(l); return l; }); // os candeeiros mais perto da câmara acendem a sério
   const FOGD = new THREE.Color(0xb7a991), FOGS = new THREE.Color(0x9a6a52), FOGN = new THREE.Color(0x0c1018), SUNC = new THREE.Color(0xffc896), MOONC = new THREE.Color(0x8aa2d8), _fc = new THREE.Color(), _rc = new THREE.Color();
   const sm = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
 
@@ -362,6 +362,11 @@ async function boot() {
   };
   G.dbgNav = { nav, walkLine: (a, b, c, d, lv) => walkLine(a, b, c, d, lv || 0), find: (a, b, c, d, lv) => nav.find(a, b, c, d, lv || 0) };
   // bases construídas pelo jogador
+  // mancha de luz no chão por baixo de cada candeeiro (barata: dá para todos os do mapa ao mesmo tempo)
+  G.poolTex = (() => { const c = document.createElement('canvas'); c.width = c.height = 128; const x = c.getContext('2d'), g = x.createRadialGradient(64, 64, 0, 64, 64, 64); g.addColorStop(0, 'rgba(255,255,255,1)'); g.addColorStop(0.35, 'rgba(255,255,255,.55)'); g.addColorStop(0.7, 'rgba(255,255,255,.14)'); g.addColorStop(1, 'rgba(255,255,255,0)'); x.fillStyle = g; x.fillRect(0, 0, 128, 128); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t; })();
+  // manchas de luz dos candeeiros do mapa (uma só malha com todas)
+  let lampPools = null; { const L = W.lamps; if (L.length) { const m = new THREE.InstancedMesh(new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ map: G.poolTex, color: 0xffc27a, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending }), L.length); const o = new THREE.Object3D();
+    L.forEach((l, i) => { const r = l[1] > 9 ? 40 : 13; o.position.set(l[0], 0.06, l[2]); o.scale.set(r, 1, r); o.updateMatrix(); m.setMatrixAt(i, o.matrix); }); m.renderOrder = 3; m.frustumCulled = false; scene.add(m); lampPools = m; } }
   G.base = makeBase({ scene, W, G, audio, addRect, removeRect, visDirty, inCity, toast: m => G.ui && G.ui.toast(m) });
   G.doorAt = doorAt;
   const newPlayer = (x, z) => ({ x, z, y: 0.03, lv: 0, h: 0, vy: 0, base: 0, onGround: true, climb: null, root: Math.atan2(-x, -z), aim: Math.atan2(-x, -z), vx: 0, vz: 0, yaw: Math.atan2(-x, -z), hp: 100, food: 82, water: 78, stam: 100, sk: { res: 0, mira: 0, rec: 0 }, bleed: 0, alive: true, cd: 0, swing: -1, swingHit: false, recoil: 0, reload: 0, use: null, kills: 0, born: G.t, mv: 0, hurtT: 0, sprint: false, cause: '' });
@@ -1447,14 +1452,15 @@ async function boot() {
       if (p && G.playing && p.alive) {
         glow.position.set(p.x, p.y + 1.8, p.z); glow.intensity = G.car ? 0 : nt * 3.5;
         if (G.lightOn && !hasLight()) G.lightOn = false;
-        const wl = gunLight(), fy = p.yaw;
-        if (wl) { torch.intensity = G.lightOn ? 95 : 0; torch.angle = 0.34; torch.distance = 36; if (G.fp && AIM.on) { torch.position.copy(AIM.eye).addScaledVector(AIM.dir, 0.5); torch.target.position.copy(AIM.eye).addScaledVector(AIM.dir, 20); } else { torch.position.set(p.x + Math.sin(fy) * 0.7, p.y + 1.32, p.z + Math.cos(fy) * 0.7); if (AIM.on && AIM.Aw) torch.target.position.copy(AIM.Aw); else torch.target.position.set(p.x + Math.sin(fy) * 12, p.y + 0.3, p.z + Math.cos(fy) * 12); } }
-        else { torch.intensity = G.lightOn ? 70 : 0; torch.angle = 0.5; torch.distance = 28; torch.position.set(p.x + Math.sin(fy) * 0.3, p.y + 1.45, p.z + Math.cos(fy) * 0.3); torch.target.position.set(p.x + Math.sin(fy) * 9, p.y + 0.2, p.z + Math.cos(fy) * 9); }
+        const wl = gunLight(), fy = p.yaw, fw = Math.max(0.04, Math.min(0.7, ray(p.x, p.z, Math.sin(fy), Math.cos(fy), 0.9, null, 's', p.lv) - 0.15)); // a lanterna nunca sai do outro lado de uma parede encostada
+        if (wl) { torch.intensity = G.lightOn ? 95 : 0; torch.angle = 0.34; torch.distance = 36; if (G.fp && AIM.on) { torch.position.copy(AIM.eye).addScaledVector(AIM.dir, Math.min(0.5, fw)); torch.target.position.copy(AIM.eye).addScaledVector(AIM.dir, 20); } else { torch.position.set(p.x + Math.sin(fy) * fw, p.y + 1.32, p.z + Math.cos(fy) * fw); if (AIM.on && AIM.Aw) torch.target.position.copy(AIM.Aw); else torch.target.position.set(p.x + Math.sin(fy) * 12, p.y + 0.3, p.z + Math.cos(fy) * 12); } }
+        else { torch.intensity = G.lightOn ? 70 : 0; torch.angle = 0.5; torch.distance = 28; torch.position.set(p.x + Math.sin(fy) * Math.min(0.3, fw), p.y + 1.45, p.z + Math.cos(fy) * Math.min(0.3, fw)); torch.target.position.set(p.x + Math.sin(fy) * 9, p.y + 0.2, p.z + Math.cos(fy) * 9); }
         torch.target.updateMatrixWorld();
       } else { glow.intensity = 0; torch.intensity = 0; }
       G.lampT = (G.lampT || 0) - dt;
-      if (G.lampT <= 0) { G.lampT = 0.5; const cx = camT.x, cz = camT.z; const near3 = W.lamps.map(l => [l, (l[0] - cx) ** 2 + (l[2] - cz) ** 2]).filter(a => a[1] < 900).sort((a, b) => a[1] - b[1]).slice(0, 3); lampL.forEach((L, i) => { const q = near3[i]; if (q) { L.position.set(q[0][0], q[0][1], q[0][2]); L.userData.on = 1; } else L.userData.on = 0; }); }
-      lampL.forEach(L => { L.intensity = L.userData.on ? nt * 22 : 0; });
+      if (G.lampT <= 0) { G.lampT = 0.5; const cx = camT.x, cz = camT.z; const near3 = W.lamps.concat(G.base.lights()).map(l => [l, (l[0] - cx) ** 2 + (l[2] - cz) ** 2]).filter(a => a[1] < 1600).sort((a, b) => a[1] - b[1]).slice(0, lampL.length); lampL.forEach((L, i) => { const q = near3[i]; if (q) { L.position.set(q[0][0], q[0][1] - 0.4, q[0][2]); L.userData.on = 1; L.userData.big = q[0][1] > 9; } else L.userData.on = 0; }); }
+      lampL.forEach(L => { L.intensity = L.userData.on ? nt * (L.userData.big ? 200 : 26) : 0; L.distance = L.userData.big ? 48 : 20; });
+      G.base.night(nt); if (lampPools) lampPools.material.opacity = nt * 0.5;
     }
     // os zombies de pisos que não estás a ver não aparecem (a não ser que se vejam pelas escadas)
     // e fora do círculo de visão também não (igual para todos os ecrãs); na mira em primeira pessoa vês o que a mira vê

@@ -154,7 +154,7 @@ const mkBag = (x, z, y, lv, it, o = {}) => {
 // ---------- bases partilhadas: peças (fundação, paredes, portas, janelas, tetos) e objetos (baús, fornalha, bancadas, camas)
 // Só o dono e o clã dele mexem numa base (construir ao lado, melhorar, demolir, abrir as portas); os explosivos partem tudo.
 const CELL = 3, TIER_HP = [250, 600, 1200], BED_CD = { cama: 120e3, saco: 300e3 };
-const DEP = { bau: 300, bauG: 500, fornalha: 500, bancada1: 400, bancada2: 600, bancada3: 900, cama: 200, saco: 80 };
+const DEP = { bau: 300, bauG: 500, fornalha: 500, bancada1: 400, bancada2: 600, bancada3: 900, cama: 200, saco: 80, candeeiro: 150 };
 const EXB = { gran: { br: 1.8, bdmg: 40 }, c4: { br: 1.7, bdmg: 560 } };
 const uidOf = tok => 'u' + crypto.createHash('sha1').update(tok).digest('hex').slice(0, 10);
 const ally = (a, b) => a === b || !!(S.tokens[a] && S.tokens[a].clan && S.tokens[b] && S.tokens[a].clan === S.tokens[b].clan);

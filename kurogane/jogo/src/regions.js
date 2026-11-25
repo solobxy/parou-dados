@@ -58,6 +58,8 @@ export function buildRegions(H, house, shop) {
     for (const sx of [-1, 1]) for (const sz of [-1, 1]) b.box(0.12, 1.6, 0.12, x + sx * 1.6, 7.9, z + sz * 1.6, c); b.box(3.9, 0.18, 3.9, x, 8.75, z, 0x4a4a3a, { rx: 0.06 });
     b.box(0.5, 0.35, 0.5, x + 1, 7.5, z - 1, LIT(1.8, 1.7, 1.4), { mat: 'lit' });
     crate(x + 2.3, z, Math.PI / 2, 'Abrir caixa da torre', tbl); };
+  // torre de iluminação (aeroporto, bases): mastro de 12 m com quatro projetores; de noite ilumina uma área grande
+  const mast = (x, z) => { W.lamps.push([x, 12, z]); b.cyl(0.16, 0.24, 12, 8, x, 6, z, 0x8a8e92, { mat: 'm' }); b.box(2.4, 0.16, 0.16, x, 12.2, z, 0x6a6e72, { mat: 'm' }); for (const dx of [-0.9, -0.3, 0.3, 0.9]) { b.box(0.5, 0.36, 0.22, x + dx, 12.0, z, 0x3a3c3e, { mat: 'm' }); b.box(0.42, 0.28, 0.04, x + dx, 11.95, z - 0.12, new THREE.Color(1.9, 1.75, 1.4), { mat: 'lit', rx: 0.5 }); } circ(x, z, 0.3); };
   const bunker = (x0, z0, x1, z1, door, tbl = 'paiol', name = 'Bunker') => { const mid = door === 'n' || door === 's' ? (x0 + x1) / 2 : (z0 + z1) / 2;
     shell(x0, z0, x1, z1, { name, wall: 0x7a7c74, floor: 0x5a5c56, h: 2.8, roofC: 0x55574f, mapc: '#5c5e56', trim: 0x3a3c36, doorC: 0x4a5056, ops: { [door]: [{ at: mid, w: 1.4, k: 'd' }] } });
     const D = W.doors[W.doors.length - 1]; D.lock = { hp: 1400, max: 1400 }; D.t = D.target = 0;
@@ -294,6 +296,7 @@ export function buildRegions(H, house, shop) {
     // placa, avental, terminal e torre de controlo
     lazy(2380, -2740, 3010, -2500, () => { b.floor(2400, -2738, 3000, -2610, 0.022, 0xffffff, 'conc'); mp(2400, -2738, 3000, -2610, '#8e8a82');
       for (let x = 2420; x < 2980; x += 40) { b.box(0.2, 0.01, 20, x, 0.035, -2675, 0xe0b23a, { mat: 'decal' }); }
+      for (const mx of [2420, 2490, 2560, 2620, 2700, 2770, 2840, 2910, 2980]) for (const mz of [-2625, -2725]) mast(mx, mz); mast(2546, -2552); mast(2654, -2552); // torres de luz no avental e no parque
       shell(2560, -2606, 2640, -2580, { name: 'Terminal', wall: 0xdedcd6, floor: 0xc8c4bc, h: 4.4, mapc: '#8a8f92', roofC: 0x5a6068, trim: 0x3a4048, ops: { n: [{ at: 2575, w: 2.2, k: 'd' }, { at: 2625, w: 2.2, k: 'd' }, ...[2565, 2585, 2595, 2605, 2615, 2635].map(at => ({ at, w: 2.2, k: 'w' }))], s: [{ at: 2590, w: 2.4, k: 'd' }, { at: 2610, w: 2.4, k: 'd' }, ...[2566, 2574, 2582, 2600, 2618, 2626, 2634].map(at => ({ at, w: 2.2, k: 'w' }))], w: [{ at: -2593, w: 1.4, k: 'd' }], e: [{ at: -2593, w: 1.8, k: 'w' }] } });
       { const s = A.sign('空港 · AEROPORTO', { w: 512, h: 96, bg: '#1d2a3a', fg: '#e8e4da', pad: 0.12 }); b.box(16.2, 1.7, 0.2, 2600, 5.6, -2579.9, 0x1d2a3a); b.plane(16, 1.5, 2600, 5.6, -2579.78, 0xffffff, { mat: 'sign', uv: s }); }
       for (let i = 0; i < 6; i++) { const x = 2566 + i * 6; counter(x, -2600, x + 4, -2599, 0xc8ccd0); container(x + 2, -2598.4, 'Revistar balcão de check-in', i % 3 ? 'casa' : 'policia', { y: 1.0 }); }
@@ -326,6 +329,7 @@ export function buildRegions(H, house, shop) {
     lazy(2140, -2730, 2380, -2550, () => { b.floor(2160, -2720, 2360, -2560, 0.022, 0xffffff, 'conc'); mp(2160, -2720, 2360, -2560, '#6e7062');
       fenceBox(2160, -2720, 2360, -2560, [['s', 2300, 2312], ['e', -2650, -2635]]); barrier(2306, -2556, 0);
       for (const [x, z] of [[2165, -2715], [2355, -2715], [2165, -2565], [2355, -2565], [2260, -2715]]) wtower(x + (x < 2260 ? 3 : x > 2260 ? -3 : 0), z + (z < -2600 ? 3 : -3));
+      for (const [mx, mz] of [[2200, -2580], [2320, -2580], [2260, -2660], [2350, -2700]]) mast(mx, mz);
       bunker(2180, -2700, 2192, -2690, 's'); bunker(2205, -2700, 2217, -2690, 's'); bunker(2330, -2640, 2340, -2628, 'w', 'paiol', 'Paiol do aeroporto');
       for (const [x0, z0] of [[2230, -2700], [2275, -2700]]) { shell(x0, z0, x0 + 20, z0 + 9, { name: 'Caserna', wall: 0x6e7458, floor: 0x7a7a70, h: 3.2, roofC: 0x4a5236, mapc: '#5a6048', trim: 0x3a3f2a, ops: { s: [{ at: x0 + 5, w: 1.4, k: 'd' }, { at: x0 + 12, w: 1.4, k: 'w' }, { at: x0 + 16, w: 1.4, k: 'w' }] } });
         for (let i = 0; i < 4; i++) bed(x0 + 1.4 + i * 1.6, z0 + 1.6, 0, 0x6a7058); cabinet(x0 + 18, z0 + 0.6, 1.2, 'Abrir cacifo militar', 'militar', 0, 0x5a6048); crate(x0 + 14, z0 + 6.4, 0, 'Abrir caixa militar', 'militar'); }

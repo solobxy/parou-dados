@@ -31,6 +31,7 @@ export const DEPLOY = {
   bancada3: { n: 'Bancada (nível 3)', lvl: 3, hp: 900, r: [1.9, 0.9], h: 1.0 },
   cama: { n: 'Cama', bed: 1, hp: 200, r: [1.1, 2.1], h: 0.5 },
   saco: { n: 'Saco-cama', bed: 1, hp: 80, r: [0.85, 2.0], h: 0.15 },
+  candeeiro: { n: 'Candeeiro', light: 1, hp: 150, r: [0.45, 0.45], h: 2.3 },
 };
 
 const canvasTex = (base, draw) => { const c = document.createElement('canvas'); c.width = c.height = 256; const x = c.getContext('2d'); x.fillStyle = base; x.fillRect(0, 0, 256, 256); draw(x); const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; return t; };
@@ -80,7 +81,7 @@ export function makeBase({ scene, W, G, audio, addRect, removeRect, visDirty, in
   const tierMat = t => MAT[t];
   const CUT = 0.42; // altura das paredes baixas (42%: cerca de 1,3 m acima da fundação)
   const buildMesh = P => {
-    if (P.g) { root.remove(P.g); P.g.traverse(o => o.geometry && o.geometry.dispose()); }
+    if (P.g) { root.remove(P.g); P.g.traverse(o => o.geometry && o.geometry.dispose()); } if (P.sh) { root.remove(P.sh); P.sh = null; }
     const g = new THREE.Group(), m = tierMat(P.tier); P.g = g; root.add(g);
     if (P.t === 'fund') { const x0 = P.i * CELL, z0 = P.j * CELL; const b = box(CELL, FH, CELL, x0 + CELL / 2, FH / 2, z0 + CELL / 2, m, g); uvScale(b, CELL, FH); box(CELL - 0.06, 0.02, CELL - 0.06, x0 + CELL / 2, FH + 0.005, z0 + CELL / 2, m, g); }
     else if (P.t === 'teto') { const x0 = P.i * CELL, z0 = P.j * CELL; const b = box(CELL + 0.04, 0.2, CELL + 0.04, x0 + CELL / 2, FH + WH + 0.1, z0 + CELL / 2, m, g); uvScale(b, CELL, CELL); P.roof = g; }
@@ -111,7 +112,7 @@ export function makeBase({ scene, W, G, audio, addRect, removeRect, visDirty, in
     const D = { base: P, x: E.horiz ? (s0 + s1) / 2 : fixed, z: E.horiz ? fixed : (s0 + s1) / 2, horiz: E.horiz, inward: 1, lv: 0, C: null, col: 0, w, leaves: [], ro: [], t: 0, target: 0, auto: false };
     D.rc = { x0: E.horiz ? s0 : fixed - 0.1, z0: E.horiz ? fixed - 0.1 : s0, x1: E.horiz ? s1 : fixed + 0.1, z1: E.horiz ? fixed + 0.1 : s1, k: 's', h: FH + 2.25, lv: 0, door: D, base: P };
     addRect(D.rc); W.doors.push(D);
-    const leaf = new THREE.Mesh(doorGeo, MAT[Math.min(2, P.dtier ?? P.tier)]); leaf.castShadow = leaf.receiveShadow = true; leaf.scale.x = w;
+    const leaf = new THREE.Mesh(doorGeo, MAT[Math.min(2, P.dtier ?? P.tier)]); leaf.castShadow = leaf.receiveShadow = true; leaf.userData.leaf = 1; leaf.scale.x = w;
     leaf.position.set(E.horiz ? s0 : fixed, FH, E.horiz ? fixed : s0); leaf.userData.a0 = E.horiz ? 0 : -Math.PI / 2; root.add(leaf); D.mesh = leaf; P.door = D;
   };
   const rmDoor = P => { const D = P.door; if (!D) return; removeRect(D.rc); const i = W.doors.indexOf(D); if (i >= 0) W.doors.splice(i, 1); root.remove(D.mesh); P.door = null; };
@@ -121,7 +122,7 @@ export function makeBase({ scene, W, G, audio, addRect, removeRect, visDirty, in
     if (t === 'fund') addStep(P); if (t === 'porta') mkDoor(P);
     visDirty(); return P;
   };
-  const remove = P => { pieces.delete(P.k); if (P.g) root.remove(P.g); for (const r of P.rects || []) removeRect(r); rmDoor(P); if (P.step) { const i = W.steps.indexOf(P.step); if (i >= 0) W.steps.splice(i, 1); } visDirty(); };
+  const remove = P => { pieces.delete(P.k); if (P.g) root.remove(P.g); if (P.sh) { root.remove(P.sh); P.sh = null; } for (const r of P.rects || []) removeRect(r); rmDoor(P); if (P.step) { const i = W.steps.indexOf(P.step); if (i >= 0) W.steps.splice(i, 1); } visDirty(); };
 
   // ---------- custos
   const can = need => Object.entries(need).every(([k, n]) => G.inv.count(k) >= n);
@@ -171,6 +172,9 @@ export function makeBase({ scene, W, G, audio, addRect, removeRect, visDirty, in
     else { const E = edgeGeom(P.k); hl.scale.set(E.horiz ? CELL + 0.05 : 0.3, WH + 0.05, E.horiz ? 0.3 : CELL + 0.05); hl.position.set(E.horiz ? (E.x0 + E.x1) / 2 : E.x, FH + WH / 2, E.horiz ? E.z : (E.z0 + E.z1) / 2); } };
 
   // ---------- objetos colocados
+  // candeeiro: vidro que acende de noite e uma mancha de luz no chão (a luz a sério vem das luzes perto da câmara)
+  const LAMPM = new THREE.MeshStandardMaterial({ color: 0xffe2b0, emissive: 0xffc070, emissiveIntensity: 0.2, roughness: 0.3 });
+  const POOLG = new THREE.PlaneGeometry(9, 9), POOLM = new THREE.MeshBasicMaterial({ map: G.poolTex, color: 0xffc27a, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending });
   const depMesh = (k, tier) => {
     const g = new THREE.Group(), W0 = MAT[0], ST = MAT[1], MT = MAT[2];
     const iron = new THREE.MeshStandardMaterial({ color: 0x3a3c3e, metalness: 0.5, roughness: 0.6 });
@@ -178,6 +182,9 @@ export function makeBase({ scene, W, G, audio, addRect, removeRect, visDirty, in
     else if (k === 'fornalha') { box(0.95, 1.1, 0.95, 0, 0.55, 0, ST, g); box(0.7, 0.35, 0.7, 0, 1.27, 0, ST, g); box(0.24, 0.5, 0.24, 0, 1.6, 0, iron, g); const mouth = box(0.5, 0.34, 0.05, 0, 0.42, 0.48, new THREE.MeshStandardMaterial({ color: 0x120b08, emissive: 0xff6a1a, emissiveIntensity: 0 }), g); g.userData.mouth = mouth; }
     else if (k.startsWith('bancada')) { const lv = +k.slice(-1); box(1.6, 0.08, 0.8, 0, 0.9, 0, lv >= 3 ? MT : W0, g); for (const [x, z] of [[-0.72, -0.32], [0.72, -0.32], [-0.72, 0.32], [0.72, 0.32]]) box(0.08, 0.9, 0.08, x, 0.45, z, lv >= 2 ? iron : W0, g); box(1.5, 0.05, 0.7, 0, 0.3, 0, W0, g); box(0.3, 0.12, 0.2, -0.4, 0.99, 0, iron, g); if (lv >= 2) box(0.18, 0.3, 0.18, 0.55, 1.08, -0.15, iron, g); if (lv >= 3) { box(0.5, 0.25, 0.35, 0.3, 1.07, 0.1, MT, g); box(1.6, 0.6, 0.05, 0, 1.25, -0.42, MT, g); } }
     else if (k === 'cama') { box(1.0, 0.25, 2.0, 0, 0.2, 0, W0, g); box(0.92, 0.14, 1.9, 0, 0.38, 0, new THREE.MeshStandardMaterial({ color: 0xd8d2c4, roughness: 1 }), g); box(0.6, 0.1, 0.35, 0, 0.5, -0.72, new THREE.MeshStandardMaterial({ color: 0xece6da, roughness: 1 }), g); box(0.94, 0.06, 1.1, 0, 0.47, 0.35, new THREE.MeshStandardMaterial({ color: 0x5a6a4a, roughness: 1 }), g); }
+    else if (k === 'candeeiro') { const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.07, 2.2, 8), iron); pole.position.y = 1.1; g.add(pole); box(0.36, 0.06, 0.36, 0, 0.03, 0, iron, g); box(0.07, 0.07, 0.42, 0, 2.15, 0.17, iron, g);
+      const cage = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.13, 0.26, 8), iron); cage.position.set(0, 1.98, 0.36); g.add(cage); const glass = new THREE.Mesh(new THREE.CylinderGeometry(0.095, 0.11, 0.2, 8), LAMPM); glass.position.set(0, 1.97, 0.36); g.add(glass);
+      const pool = new THREE.Mesh(POOLG, POOLM); pool.rotation.x = -Math.PI / 2; pool.position.set(0, 0.07, 0.36); pool.renderOrder = 3; g.add(pool); g.userData.light = [0, 2.2, 0.36]; }
     else if (k === 'saco') { box(0.8, 0.1, 1.85, 0, 0.05, 0, new THREE.MeshStandardMaterial({ color: 0x4f6a3a, roughness: 1 }), g); const r = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.14, 0.8, 12), new THREE.MeshStandardMaterial({ color: 0x5a7544, roughness: 1 })); r.rotation.z = Math.PI / 2; r.position.set(0, 0.14, -0.85); r.castShadow = true; g.add(r); }
     g.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
     return g;
@@ -192,6 +199,7 @@ export function makeBase({ scene, W, G, audio, addRect, removeRect, visDirty, in
     if (D.slots) { d.c = { id: 'b' + Math.random().toString(36).slice(2, 8), did: o.nid, x, z, y: y + 0.6, lv: 0, own: true, dep: d, label: (k === 'fornalha' ? 'Abrir ' : 'Abrir ') + D.n.toLowerCase(), slots: D.slots, grid: o.grid || new Grid(D.slots[0], D.slots[1]) }; W.containers.push(d.c); }
     else if (D.lvl) { d.c = { id: 'b' + Math.random().toString(36).slice(2, 8), x, z, y: y + 0.9, lv: 0, own: true, dep: d, bench: D.lvl, label: 'Usar ' + D.n.toLowerCase(), slots: [0, 0], grid: null }; W.containers.push(d.c); }
     else if (D.bed) { d.c = { id: 'b' + Math.random().toString(36).slice(2, 8), x, z, y: y + 0.3, lv: 0, own: true, dep: d, bed: 1, label: bedLabel(d), slots: [0, 0], grid: null }; W.containers.push(d.c); }
+    else if (D.light) { d.c = { id: 'b' + Math.random().toString(36).slice(2, 8), x, z, y: y + 1.0, lv: 0, own: true, dep: d, lamp: 1, label: 'Apanhar candeeiro', slots: [0, 0], grid: null }; W.containers.push(d.c); }
     deps.push(d); visDirty(); return d;
   };
   const removeDep = d => { const i = deps.indexOf(d); if (i >= 0) deps.splice(i, 1); root.remove(d.g); if (d.rc) removeRect(d.rc); if (d.c) { const j = W.containers.indexOf(d.c); if (j >= 0) W.containers.splice(j, 1); } visDirty(); };
@@ -245,6 +253,8 @@ export function makeBase({ scene, W, G, audio, addRect, removeRect, visDirty, in
       for (const P of pieces.values()) if (P.t === 'teto' && P.g) P.g.visible = !inside;
       for (const P of pieces.values()) if (P.door) { const D = P.door, e = D.t * D.t * (3 - 2 * D.t); D.mesh.rotation.y = D.mesh.userData.a0 + e * Math.PI / 2 * 0.95; }
       // paredes da base perto de ti ficam baixas (vista de cima vês o vão da porta e lá dentro); na primeira pessoa ficam inteiras
+      // a parede baixa continua a fazer sombra inteira (cópia só para sombras, camada 1): a lanterna e o sol não passam por cima dela
+      for (const P of pieces.values()) { if (P.t === 'fund' || P.t === 'teto' || !P.g || P.sh) continue; const sh = P.g.clone(); const drop = []; sh.traverse(o => { if (o.userData && o.userData.leaf) drop.push(o); o.layers.set(1); if (o.isMesh) { o.castShadow = true; o.receiveShadow = false; } }); drop.forEach(o => o.parent && o.parent.remove(o)); P.g.traverse(o => { if (o.isMesh && !(o.userData && o.userData.leaf)) o.castShadow = false; }); root.add(sh); P.sh = sh; }
       for (const P of pieces.values()) { if (P.t === 'fund' || P.t === 'teto' || !P.g) continue; const E = P.E || (P.E = edgeGeom(P.k)), mx = E.horiz ? (E.x0 + E.x1) / 2 : E.x, mz = E.horiz ? E.z : (E.z0 + E.z1) / 2;
         const want = p && (p.lv || 0) === 0 && !G.fp && Math.hypot(mx - p.x, mz - p.z) < 6.5 ? CUT : 1; P.cut = (P.cut ?? 1) + (want - (P.cut ?? 1)) * 0.18; if (Math.abs(P.cut - want) < 0.005) P.cut = want;
         P.g.scale.y = P.cut; P.g.position.y = FH * (1 - P.cut); if (P.door) { P.door.mesh.scale.y = P.cut; } }
@@ -294,7 +304,10 @@ export function makeBase({ scene, W, G, audio, addRect, removeRect, visDirty, in
       if (it.n > 1) it.n--; else { const w = G.inv.where(it); if (w) { if (w.t === 'bag') G.inv.bag.remove(it); else if (w.t === 'belt') G.inv.belt[w.i] = null; else if (w.t === 'eq') G.inv.eq[w.s] = null; } }
       if (!G.inv.where(it) || it.n <= 0) this.cancelPlace(); PL.pin = null; G.refresh && G.refresh(); return true; },
     // interagir com o que foi colocado
-    use(c) { const d = c.dep; if (c.bed) { G.ui.bedMenu(d); return true; } return false; },
+    use(c) { const d = c.dep; if (c.bed) { G.ui.bedMenu(d); return true; } if (c.lamp) { this.pickBed(d); return true; } return false; },
+    // candeeiros postos: onde está a luz de cada um (para as luzes perto da câmara) e o brilho conforme a noite
+    lights() { const out = []; for (const d of deps) if (d.k === 'candeeiro' && d.g) { const L = d.g.userData.light, c = Math.cos(d.yaw), s = Math.sin(d.yaw); out.push([d.x + L[2] * s, d.y + L[1], d.z + L[2] * c]); } return out; },
+    night(nt) { LAMPM.emissiveIntensity = 0.2 + nt * 2.6; POOLM.opacity = nt * 0.55; },
     // bancada mais alta a menos de 4 m
     benchNear() { const p = G.p; let lv = 0; if (!p) return 0; for (const d of deps) { const D = DEPLOY[d.k]; if (D.lvl && Math.hypot(d.x - p.x, d.z - p.z) < 4 && (p.lv || 0) === 0) lv = Math.max(lv, D.lvl); } return lv; },
     // fornalha: com madeira acesa, cada 2,5 s queima 1 de madeira (dá carvão) e refina 1 de minério de metal
