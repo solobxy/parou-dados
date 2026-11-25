@@ -48,7 +48,7 @@ export function buildRegions(H, house, shop) {
   const fenceL = (x0, z0, x1, z1, h = 2.4) => { const hor = Math.abs(z1 - z0) < 0.01, L = hor ? x1 - x0 : z1 - z0; if (L <= 0.05) return;
     b.box(hor ? L : 0.04, h, hor ? 0.04 : L, (x0 + x1) / 2, h / 2, (z0 + z1) / 2, 0x9aa0a4, { mat: 'fence' });
     const n = Math.ceil(L / 3.5); for (let i = 0; i <= n; i++) b.cyl(0.05, 0.05, h + 0.12, 5, hor ? x0 + L * i / n : x0, (h + 0.12) / 2, hor ? z0 : z0 + L * i / n, 0x6a6e72, { mat: 'm' });
-    if (hor) rect(x0, z0 - 0.08, x1, z0 + 0.08, 's', h); else rect(x0 - 0.08, z0, x0 + 0.08, z1, 's', h); };
+    if (hor) rect(x0, z0 - 0.08, x1, z0 + 0.08, 'g', h); else rect(x0 - 0.08, z0, x0 + 0.08, z1, 'g', h); }; // 'g': trava, mas vê-se e dispara-se através dela
   // retângulo de vedação com portões (gaps: lista de [lado, a0, a1])
   const fenceBox = (x0, z0, x1, z1, gaps = [], h = 2.4) => { const seg = (sd, a0, a1, f) => { let pts = [[a0, a1]]; for (const [s, g0, g1] of gaps) if (s === sd) pts = pts.flatMap(([p, q]) => g1 <= p || g0 >= q ? [[p, q]] : [[p, Math.max(p, g0)], [Math.min(q, g1), q]]); for (const [p, q] of pts) if (q - p > 0.3) f(p, q); };
     seg('n', x0, x1, (p, q) => fenceL(p, z0, q, z0, h)); seg('s', x0, x1, (p, q) => fenceL(p, z1, q, z1, h)); seg('w', z0, z1, (p, q) => fenceL(x0, p, x0, q, h)); seg('e', z0, z1, (p, q) => fenceL(x1, p, x1, q, h)); };
@@ -61,9 +61,10 @@ export function buildRegions(H, house, shop) {
   const bunker = (x0, z0, x1, z1, door, tbl = 'paiol', name = 'Bunker') => { const mid = door === 'n' || door === 's' ? (x0 + x1) / 2 : (z0 + z1) / 2;
     shell(x0, z0, x1, z1, { name, wall: 0x7a7c74, floor: 0x5a5c56, h: 2.8, roofC: 0x55574f, mapc: '#5c5e56', trim: 0x3a3c36, doorC: 0x4a5056, ops: { [door]: [{ at: mid, w: 1.4, k: 'd' }] } });
     const D = W.doors[W.doors.length - 1]; D.lock = { hp: 1400, max: 1400 }; D.t = D.target = 0;
-    // terra por cima e dos lados (só se vê, não trava mais do que as paredes)
+    // terra dos lados (trava como as paredes)
     const cx = (x0 + x1) / 2, cz = (z0 + z1) / 2, w = x1 - x0, d = z1 - z0;
-    for (const [sd, ux, uz] of [['n', 0, -1], ['s', 0, 1], ['w', -1, 0], ['e', 1, 0]]) if (sd !== door) { const hor = uz !== 0; b.box(hor ? w + 2 : 2.2, 2.4, hor ? 2.2 : d + 2, cx + ux * (w / 2 + 0.9), 1.0, cz + uz * (d / 2 + 0.9), 0x5e6a3e, { mat: 'vf', rx: hor ? -uz * 0.5 : 0, rz: hor ? 0 : ux * 0.5 }); }
+    for (const [sd, ux, uz] of [['n', 0, -1], ['s', 0, 1], ['w', -1, 0], ['e', 1, 0]]) if (sd !== door) { const hor = uz !== 0; b.box(hor ? w + 2 : 2.2, 2.4, hor ? 2.2 : d + 2, cx + ux * (w / 2 + 0.9), 1.0, cz + uz * (d / 2 + 0.9), 0x5e6a3e, { mat: 'vf', rx: hor ? -uz * 0.5 : 0, rz: hor ? 0 : ux * 0.5 });
+      if (hor) rect(cx - w / 2 - 1, uz < 0 ? z0 - 2 : z1, cx + w / 2 + 1, uz < 0 ? z0 : z1 + 2, 's', 2.4); else rect(ux < 0 ? x0 - 2 : x1, cz - d / 2 - 1, ux < 0 ? x0 : x1 + 2, cz + d / 2 + 1, 's', 2.4); } // a terra também trava (antes dava para entrar nela)
     for (let i = 0; i < 2; i++) crate(x0 + 1.4 + i * (w - 2.8), z0 + (door === 'n' ? d - 1.1 : 1.1), 0, 'Abrir caixa do bunker', tbl);
     cabinet(door === 'w' ? x1 - 0.5 : x0 + 0.5, cz, 1.1, 'Abrir armário do bunker', tbl, door === 'w' ? -Math.PI / 2 : Math.PI / 2, 0x4a5056); };
   const truck = (x, z, ry, c = OD) => { b.push(x, 0, z, ry); b.rbox(2.3, 2.0, 2.0, 0.2, 0, 1.4, 3.0, c, { mat: 'm' }); b.box(2.0, 0.7, 0.06, 0, 2.0, 4.02, 0x1f2a33, { mat: 'win' }); b.box(2.4, 1.0, 5.0, 0, 1.2, -0.6, c, { mat: 'm' }); b.add(new THREE.CylinderGeometry(1.25, 1.25, 5.0, 10, 1, false, 0, Math.PI), shade(c, 0.8), 'v', mat4(0, 1.7, -0.6, 0, Math.PI / 2, 0, 1, 1, 1));

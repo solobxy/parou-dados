@@ -69,15 +69,25 @@ export function makeCars({ scene, G, W, collide, solidAt, groundY, addRect, remo
     if (c.alt < 6) { const o = { x: c.x, z: c.z, lv: 0, h: 0 }; collide(o, 2.4); if (Math.abs(o.x - c.x) + Math.abs(o.z - c.z) > 1e-3) { c.x = o.x; c.z = o.z; if (sp > 6) { c.hp = Math.max(1, c.hp - sp); audio.play('partir', 0.6); G.shakeT = 0.3; } c.vx *= -0.2; c.vz *= -0.2; } }
     if (ok) c.fuel = Math.max(0, c.fuel - dt * (c.rot > 0.1 ? 0.05 + sp * 0.002 : 0)); c.spin += c.rot * dt * 40;
   };
+  // um veículo parado aqui consegue sair para longe? procura em largura numa grelha de 2 m, com a largura de um carro;
+  // as casas por onde já se saiu ficam marcadas e servem de atalho às procuras seguintes
+  const GOOD = new Set(), gk = (x, z) => Math.round(x / 2) * 8192 + Math.round(z / 2);
+  const escapes = (x0, z0, R) => { const S = 2, H = Math.ceil(R / S) + 1, N = H * 2 + 1, seen = new Uint8Array(N * N), q = new Int32Array(N * N); let qh = 0, qt = 0; q[qt++] = H * N + H; seen[H * N + H] = 1; const path = [];
+    while (qh < qt) { const c = q[qh++], i = (c % N) - H, j = ((c / N) | 0) - H, x = x0 + i * S, z = z0 + j * S; path.push(c);
+      if (i * i + j * j >= (R / S) * (R / S) || GOOD.has(gk(x, z))) { for (let n = 0; n < path.length; n += 7) { const p = path[n]; GOOD.add(gk(x0 + ((p % N) - H) * S, z0 + (((p / N) | 0) - H) * S)); } return true; }
+      for (let d = 0; d < 4; d++) { const a = i + (d === 0 ? 1 : d === 1 ? -1 : 0), b = j + (d === 2 ? 1 : d === 3 ? -1 : 0); if (a < -H || a > H || b < -H || b > H) continue; const k = (b + H) * N + a + H; if (seen[k]) continue; seen[k] = 1;
+        const px = x0 + a * S, pz = z0 + b * S; if (Math.abs(px) > 3990 || Math.abs(pz) > 3990 || solidAt(px, pz, 2.35) || W.wet(px, pz, 1)) continue; q[qt++] = k; } }
+    return false; };
   const C = {
-    list,
+    list, escapes, goodClear: () => GOOD.clear(),
     get mine() { return G.car || null; },
     // onde há carros no início: na estrada, perto das vilas (iguais em todos os aparelhos)
-    spawnPoints() { const out = [];
+    spawnPoints(raw) { const out = [];
       const roadYaw = (x, z) => { for (const r of W.roads) if (x > r.x0 - 0.5 && x < r.x1 + 0.5 && z > r.z0 - 0.5 && z < r.z1 + 0.5) return r.x1 - r.x0 > r.z1 - r.z0 ? Math.PI / 2 : 0; return null; };
       for (const zn of W.zones) { const mil = zn.kind === 'mil', big = zn.r > 100, n = mil ? 2 : zn.kind === 'city' ? 3 : big ? 4 : zn.kind === 'town' || (zn.small && zn.kind === 'mon') ? 1 : 0; let made = 0;
         for (let k = 0; k < 80 && made < n; k++) { const a = k * 2.39996, d = 10 + (k % 10) * (big ? 9 : 3), x = zn.x + Math.sin(a) * d, z = zn.z + Math.cos(a) * d;
           const y = roadYaw(x, z), pad = mil && W.paved(x, z); if ((y === null && !pad) || solidAt(x, z, 2.8)) continue; if (out.some(q => Math.hypot(q[0] - x, q[1] - z) < 7)) continue;
+          if (!raw && !escapes(x, z, Math.min(mil ? zn.r + 40 : 120, 520))) continue; // nada de carros presos atrás de vedações ou muros
           out.push([+x.toFixed(1), +z.toFixed(1), y ?? 0, pickVT(out.length + Math.round(zn.x) * 0.013 + Math.round(zn.z) * 0.007, mil)]); made++; } }
       for (const [x, z, yaw] of HELIPADS) out.push([x, z, yaw, 'heli']);
       return out; },
@@ -100,15 +110,25 @@ export function makeCars({ scene, G, W, collide, solidAt, groundY, addRect, remo
     drive(dt, inp) {
       const c = G.car; if (!c || G.carSeat !== 0) return; const T = VT[c.k], pedal = T.fuel === false;
       if (T.fly) return fly(c, T, dt, inp);
+      // pedais e volante: acelerar/travar (t) e virar (s, positivo = esquerda); chegam aos poucos, como num carro a sério
       let t = 0, sy = 0;
       if (inp.kb) { t = inp.t; sy = inp.s; }
       else if (inp.m > 0.15) { const diff = angDiff(inp.yaw, c.yaw); if (Math.abs(diff) > 2.2 && c.v < 2) { t = -inp.m; sy = -clamp(angDiff(inp.yaw + Math.PI, c.yaw) * 1.4, -1, 1); } else { t = inp.m * (Math.abs(diff) > 1.6 ? 0.35 : 1); sy = clamp(diff * 1.4, -1, 1); } }
-      if (c.hp <= 0 || (!pedal && c.fuel <= 0)) t = 0;
-      const road = onRoad(c.x, c.z), vmax = t >= 0 ? (road ? T.vmax : T.voff) : (T.two ? 1.5 : MAXR), ACC = T.acc;
-      if (t > 0) c.v += (c.v < 0 ? BRK : ACC) * t * dt; else if (t < 0) c.v += (c.v > 0 ? BRK : ACC * 0.7) * t * dt; else c.v -= Math.sign(c.v) * Math.min(Math.abs(c.v), 2.2 * dt);
-      c.v = clamp(c.v, -MAXR, Math.max(vmax, c.v)); if (c.v > vmax) c.v = Math.max(vmax, c.v - 6 * dt);
-      c.lean = (c.lean || 0) + ((T.two ? -sy * Math.min(1, Math.abs(c.v) / 8) * 0.35 : 0) - (c.lean || 0)) * Math.min(1, dt * 6); c.yaw += sy * T.turn * Math.min(1, Math.abs(c.v) / 5) * Math.sign(c.v || 1) * dt;
-      const fx = Math.sin(c.yaw), fz = Math.cos(c.yaw), ox0 = c.x, oz0 = c.z; c.x += fx * c.v * dt; c.z += fz * c.v * dt;
+      if (c.hp <= 0 || (!pedal && c.fuel <= 0)) t = t < 0 && c.v > 0.3 ? t : 0; // sem gasolina ou desfeito: só trava
+      const to = (a, b, r) => a + clamp(b - a, -r, r); c.thr = to(c.thr || 0, t, dt * (t ? 5 : 9)); c.st = to(c.st || 0, sy, dt * (sy ? (Math.sign(sy) !== Math.sign(c.st || 0) ? 7 : 3.6) : 6));
+      const road = onRoad(c.x, c.z), vtop = road ? T.vmax : T.voff, ACC = T.acc, th = c.thr, sp0 = Math.abs(c.v);
+      // motor (perde força perto da velocidade máxima), travão, marcha-atrás e, sem pedal, o carro rola até parar
+      if (th > 0.02) { if (c.v < -0.3) c.v += BRK * th * dt; else c.v += ACC * th * Math.max(0.15, 1 - Math.max(0, c.v) / vtop) * 1.35 * dt; }
+      else if (th < -0.02) { if (c.v > 0.3) c.v += BRK * th * dt; else c.v += ACC * 0.75 * th * Math.max(0, 1 + c.v / (T.two ? 1.5 : MAXR)) * dt; }
+      else c.v -= Math.sign(c.v) * Math.min(sp0, (1.4 + sp0 * 0.06) * dt);
+      if (c.v > vtop) c.v = Math.max(vtop, c.v - 6 * dt); c.v = Math.max(c.v, -(T.two ? 1.5 : MAXR));
+      // direção (modelo de bicicleta): o volante vira menos quanto mais depressa vais, por isso a alta velocidade não fica nervoso
+      const sv = Math.abs(c.v), wb = T.len * 0.6, agil = T.turn / 1.75, ang = c.st * (0.5 + (0.11 - 0.5) * Math.min(1, sv / (T.vmax * 0.95))) * agil, yr = c.v / wb * Math.tan(ang);
+      c.yaw += yr * dt;
+      // um pouco de deriva nas curvas rápidas (mais fora da estrada); o carro endireita sozinho
+      c.slip = to(c.slip || 0, -yr * sv * (road ? 0.012 : 0.03), dt * 6);
+      c.lean = (c.lean || 0) + ((T.two ? -c.st * Math.min(1, sv / 8) * 0.38 : -c.slip * 0.04) - (c.lean || 0)) * Math.min(1, dt * 6);
+      const fx = Math.sin(c.yaw), fz = Math.cos(c.yaw), ox0 = c.x, oz0 = c.z; c.x += (fx * c.v + Math.cos(c.yaw) * c.slip) * dt; c.z += (fz * c.v - Math.sin(c.yaw) * c.slip) * dt;
       // água: o carro não entra (para à beira)
       { const s = Math.sign(c.v) || 1, h = T.len / 2 + 0.2; if (W.wet(c.x + fx * h * s, c.z + fz * h * s)) { c.x = ox0; c.z = oz0; if (Math.abs(c.v) > 6) c.hp = Math.max(0, c.hp - (Math.abs(c.v) - 6) * 6); c.v = 0; if (!c.wetT || G.t > c.wetT) { c.wetT = G.t + 4; G.ui.toast('O carro não entra na água'); } } }
       if (!pedal) c.fuel = Math.max(0, c.fuel - Math.abs(c.v) * dt * USE * (c.k === 'humvee' ? 1.8 : c.k === 'moto' ? 0.4 : 1));

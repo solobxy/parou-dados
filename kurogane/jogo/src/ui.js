@@ -73,7 +73,7 @@ export function initUI(G) {
     const el = $(id), kn = el.querySelector('.knob'), ki = kn.querySelector('i'); let pid = null, ox = 0, oy = 0, lx = 0, ly = 0, t0 = 0, maxM = 0, trk = false, moved = 0; const R = 50;
     el.addEventListener('pointerdown', e => { if (pid !== null || !G.playing || G.invOpen) return; pid = e.pointerId; el.setPointerCapture(pid); ox = lx = e.clientX; oy = ly = e.clientY; t0 = performance.now(); maxM = 0; moved = 0; trk = key === 'R' && gunHeld(); $(key === 'L' ? 'gL' : 'gR').style.opacity = 0; if (trk) { if (!G.aimS.on) G.aimStart(); return; } kn.style.left = mx(ox) + 'px'; kn.style.top = oy + 'px'; kn.classList.add('on'); ki.style.transform = ''; G.sticks[key] = { x: 0, y: 0, m: 0 }; });
     el.addEventListener('pointermove', e => { if (e.pointerId !== pid) return; if (trk) { const dx = e.clientX - lx, dy = e.clientY - ly; lx = e.clientX; ly = e.clientY; moved += Math.abs(dx) + Math.abs(dy); G.aimDrag(dx, dy); return; } let dx = e.clientX - ox, dy = e.clientY - oy; const l = Math.hypot(dx, dy); if (l > R) { dx *= R / l; dy *= R / l; if (key === 'L' && l > R * 1.6) { ox = e.clientX - dx * 1.0; oy = e.clientY - dy * 1.0; kn.style.left = mx(ox) + 'px'; kn.style.top = oy + 'px'; } } const m = Math.min(1, l / R); maxM = Math.max(maxM, m); G.sticks[key] = { x: dx / R, y: dy / R, m }; ki.style.transform = `translate(${cfg.mirror ? -dx : dx}px,${dy}px)`; });
-    const up = e => { if (e.pointerId !== pid) return; pid = null; kn.classList.remove('on'); G.sticks[key] = null; if (key !== 'R') return; const quick = performance.now() - t0 < 260; if (trk) { if (quick && moved < 10) G.relock(); return; } if (quick && maxM < 0.35) G.tapAttack(); };
+    const up = e => { if (e.pointerId !== pid) return; pid = null; kn.classList.remove('on'); G.sticks[key] = null; if (key !== 'R') return; const quick = performance.now() - t0 < 260; if (quick && maxM < 0.35 && G.base.placing()) { G.base.pin(G.groundAt(e.clientX, e.clientY)); return; } /* a colocar um objeto: o toque escolhe o sítio */ if (trk) { if (quick && moved < 10) G.relock(); return; } if (quick && maxM < 0.35) G.tapAttack(); };
     el.addEventListener('pointerup', up); el.addEventListener('pointercancel', up);
   };
   pad('padL', 'L'); pad('padR', 'R');
@@ -143,7 +143,7 @@ export function initUI(G) {
     if (loc.t === 'box') { add('Tirar', () => takeToMe(it, loc), true); }
     else {
       if (d.use) add('Usar', () => { G.use(it); if (G.TOUCH) closeInv(); });
-      if (d.deploy) add('Colocar', () => { if (G.base.deploy(it)) { if (it.n > 1) it.n--; else { removeAt(it, loc); sel = null; } closeInv(); } }, true);
+      if (d.deploy) add('Colocar', () => { G.base.deploy(it); sel = null; closeInv(); }, true); // escolhe-se o sítio no mundo (fantasma) e depois Colocar
       if (d.eq && loc.t !== 'eq') add('Equipar', () => move(it, loc, { t: 'eq', s: d.eq }) || toast('Não dá para equipar agora'), !d.use);
       if (loc.t === 'eq') add('Tirar', () => toBag(it, loc), true);
       if (loc.t === 'bag' && !d.eq) add('Para o cinto', () => { const i = G.inv.belt.indexOf(null); if (i < 0) return toast('Cinto cheio'); move(it, loc, { t: 'belt', i }); }, !d.use);
@@ -297,7 +297,7 @@ export function initUI(G) {
     sel = sel && sel.it === D.it ? null : { it: D.it }; audio.play('ui'); render();
   };
   inv.addEventListener('pointerup', endDrag); inv.addEventListener('pointercancel', e => { if (drag && drag.pid !== undefined && e.pointerId !== drag.pid) return; if (drag && drag.el) drag.el.classList.remove('drag'); if (drag && drag.it && !drag.none) drag.it.r = drag.r0; drag = null; ghost.hidden = true; prev.remove(); render(); });
-  const quick = (it, loc) => { if (!loc) return; const d = ITEMS[it.k]; if (loc.t === 'box') takeToMe(it, loc); else if (loc.t === 'eq' || loc.t === 'belt') toBag(it, loc); else if (G.box) toBox(it, loc); else if (d.eq) move(it, loc, { t: 'eq', s: d.eq }); else if (d.use) G.use(it); else { const i = G.inv.belt.indexOf(null); if (i >= 0) move(it, loc, { t: 'belt', i }); } sel = null; G.refresh(); };
+  const quick = (it, loc) => { if (!loc) return; const d = ITEMS[it.k]; if (d.use && loc.t !== 'box') G.use(it); /* dois toques num consumível: come, bebe ou trata */ else if (loc.t === 'box') takeToMe(it, loc); else if (loc.t === 'eq' || loc.t === 'belt') toBag(it, loc); else if (G.box) toBox(it, loc); else if (d.eq) move(it, loc, { t: 'eq', s: d.eq }); else if (d.use) G.use(it); else { const i = G.inv.belt.indexOf(null); if (i >= 0) move(it, loc, { t: 'belt', i }); } sel = null; G.refresh(); };
 
   const openInv = (box, t) => { G.invOpen = true; G.sticks.L = G.sticks.R = null; G.box = box || null; if (G.box) tab = 'inv'; if (t) tab = t; inv.querySelectorAll('.tabs button').forEach(x => x.classList.toggle('on', x.dataset.tab === tab)); inv.hidden = false; inv.classList.toggle('has-box', !!G.box); layout(); sel = null; render(); audio.play('ui'); };
   const closeInv = () => { G.invOpen = false; inv.hidden = true; G.box = null; sel = null; drag = null; ghost.hidden = true; };
@@ -483,6 +483,22 @@ export function initUI(G) {
     el.addEventListener('pointermove', e => { if (e.pointerId !== pid) return; const dx = e.clientX - lx, dy = e.clientY - ly; lx = e.clientX; ly = e.clientY; if (gunHeld()) G.aimDrag(dx, dy); });
     const end = e => { if (e.pointerId !== pid) return; pid = null; G.fireUp(); }; el.addEventListener('pointerup', end); el.addEventListener('pointercancel', end); }
   hold($('tScope'), () => G.scopeToggle());
+  // versão nova no site: aviso que tapa o jogo e um botão para recarregar (só na página do servidor)
+  if (window.KG_ONLINE && window.KG_BUILD) { let shown = false; const chk = () => { if (shown || document.hidden) return; fetch('versao.txt?t=' + Date.now(), { cache: 'no-store' }).then(r => r.ok ? r.text() : null).then(v => { v = v && v.trim(); if (!v || v === window.KG_BUILD || !/^[0-9a-f]{12}$/.test(v)) return; shown = true; $('upd').hidden = false; $('updB').focus(); }).catch(() => {}); };
+    $('updB').onclick = () => { G.updating = true; $('updB').textContent = 'A atualizar…'; location.reload(); }; setInterval(chk, 60000); document.addEventListener('visibilitychange', chk); setTimeout(chk, 15000); }
+  // sugestão: a sangrar, com pouca vida, fome ou sede, mostra o melhor que tens para isso (um toque usa)
+  let sugIt = null, sugT = 0; const sugEl = $('tSug');
+  hold(sugEl, () => { if (sugIt) { G.use(sugIt); sugT = 0; } });
+  const suggest = () => { const p = G.p, I = G.inv; if (!p || !p.alive || p.use || G.car || G.fp || !G.playing) return null; const all = [...I.belt.filter(Boolean), ...I.bag.list.map(e => e.it)], U = it => ITEMS[it.k].use || {};
+    const best = (f, sc) => { let b = null, bs = -1e9; for (const it of all) { const u = U(it); if (!f(u)) continue; const s = sc(u, it); if (s > bs) { bs = s; b = it; } } return b; };
+    if (p.bleed) { const it = best(u => u.bleed, u => -(u.hp || 0)); if (it) return [it, 'Parar a hemorragia', 1]; }
+    if (p.hp < 45) { const it = best(u => u.hp && !u.food, u => u.hp); if (it) return [it, 'Tratar-te', 1]; }
+    if (p.water < 25) { const it = best(u => (u.water || 0) > 10, u => -Math.abs((u.water || 0) - (100 - p.water)) - Math.max(0, (u.food || 0) - (100 - p.food)) * 0.8); if (it) return [it, 'Beber', p.water < 10]; }
+    if (p.food < 25) { const it = best(u => (u.food || 0) > 8, u => -Math.abs((u.food || 0) - (100 - p.food)) + Math.min(0, u.water || 0) - Math.max(0, (u.water || 0) - (100 - p.water)) * 0.8); if (it) return [it, 'Comer', p.food < 10]; }
+    return null; };
+  // conduzir: cada botão conta enquanto o dedo estiver em cima (dá para acelerar e virar ao mesmo tempo, um polegar de cada lado)
+  G.dIn = { u: 0, d: 0, l: 0, r: 0 };
+  for (const [id, k] of [['dUp', 'u'], ['dDn', 'd'], ['dL', 'l'], ['dR', 'r']]) { const el = $(id); hold(el, () => { G.dIn[k] = 1; el.classList.add('dn'); G.buzz && G.buzz(8); }, () => { G.dIn[k] = 0; el.classList.remove('dn'); }); }
   hold($('tLower'), () => G.aimEnd());
   addEventListener('keydown', e => { if (e.code === 'Escape' && G.aimS && G.aimS.on) G.aimEnd(); });
   hold($('tBreath'), () => G.breath(true), () => G.breath(false));
@@ -880,11 +896,14 @@ export function initUI(G) {
         if (vals.hold !== key) { vals.hold = key; const half = (55 / sc.mag / 2) * Math.PI / 180, B = G.ballis, ak = it.ak || ammoOf(gun)[0], e0 = B.elevFor(ak, v0, zero); let h = ''; for (let d = Math.ceil((zero + 1) / 100) * 100; d <= 800; d += 100) { const u = (B.elevFor(ak, v0, d) - e0) / half * 100; if (u > 94) break; if (u < 2) continue; const w = d % 200 ? 4 : 7; h += `<path d="M${-w} ${u.toFixed(2)}H${w}"/>` + (d % 200 ? '' : `<text x="${w + 2}" y="${(u + 2).toFixed(2)}">${d / 100}</text>`); } $('scHold').innerHTML = h; } }
       const br = scEl.querySelector('.breath'); br.classList.toggle('on', A.breathOn || A.breathT > 0.05); $('scBr').style.width = (100 - A.breathT / 4 * 100).toFixed(0) + '%'; }
     else { scEl.hidden = true; $('szero').hidden = true; }
+    sugT -= dt; if (sugT <= 0) { sugT = 0.5; const s = suggest(); sugIt = s ? s[0] : null; sugEl.hidden = !s; if (s) { const key = s[0].k + s[1] + s[2]; if (vals.sug !== key) { vals.sug = key; sugEl.querySelector('img').src = G.ICONS[s[0].k]; sugEl.querySelector('span').textContent = s[1] + ' · ' + ITEMS[s[0].k].s; sugEl.classList.toggle('urg', !!s[2]); } } }
     // no carro: sem botões de armas, saltar ou correr
-    { const inCar = !!G.car; if (vals.car !== inCar) { vals.car = inCar; for (const id of ['tFire', 'tScope', 'tLower', 'tBreath', 'tJump', 'tSprint']) $(id).style.visibility = inCar ? 'hidden' : ''; } }
+    { const inCar = !!G.car; if (vals.car !== inCar) { vals.car = inCar; for (const id of ['tFire', 'tScope', 'tLower', 'tBreath', 'tJump', 'tSprint']) $(id).style.visibility = inCar ? 'hidden' : ''; }
+      const drv = inCar && G.carSeat === 0 && p.alive; if (vals.drv !== drv) { vals.drv = drv; document.body.classList.toggle('driving', drv); if (!drv) for (const k in G.dIn) G.dIn[k] = 0; document.querySelectorAll('.dv.dn').forEach(e => e.classList.remove('dn')); }
+      if (drv) { const lb = G.car.v > 0.5 ? 'Travar' : 'Trás'; if (vals.dlb !== lb) { vals.dlb = lb; $('dDn').querySelector('em').textContent = lb; } } }
     // botões das armas
     const fb = $('tFire'), armed = !!gun && A.raise >= 1; if (fb.classList.contains('armed') !== armed) fb.classList.toggle('armed', armed); if (fb.classList.contains('melee') !== !gun) fb.classList.toggle('melee', !gun); { const bk = G.buildK === 'planta' || G.buildK === 'martelo', hk2 = (G.inv.belt[G.sel] || {}).k, bm = hk2 === 'granada' || hk2 === 'c4'; if (fb.classList.contains('build') !== bk) fb.classList.toggle('build', bk); if (fb.classList.contains('boom') !== bm) fb.classList.toggle('boom', bm); }
-    const hk = (G.inv.belt[G.sel] || {}).k, fl = G.buildK === 'planta' ? 'Construir' : G.buildK === 'martelo' ? 'Melhorar' : hk === 'granada' ? 'Lançar' : hk === 'c4' ? 'Colocar' : gun ? (armed || cfg.quick ? 'Disparar' : A.on ? '' : 'Levantar') : 'Bater'; if (vals.fl !== fl) { vals.fl = fl; fb.querySelector('em').textContent = fl; }
+    const hk = (G.inv.belt[G.sel] || {}).k, fl = G.base.placing() ? 'Colocar' : G.buildK === 'planta' ? 'Construir' : G.buildK === 'martelo' ? 'Melhorar' : hk === 'granada' ? 'Lançar' : hk === 'c4' ? 'Colocar' : gun ? (armed || cfg.quick ? 'Disparar' : A.on ? '' : 'Levantar') : 'Bater'; if (vals.fl !== fl) { vals.fl = fl; fb.querySelector('em').textContent = fl; }
     const hasSc = !!(gun && it.att && it.att.scope); $('tScope').hidden = !hasSc; $('tLower').hidden = !(gun && A.on); $('tScope').classList.toggle('on', !!A.scope); $('tBreath').hidden = !fp || !!(it && it.att && it.att.scope === 'reddot'); $('tBreath').classList.toggle('on', !!A.breathOn);
     $('padR').querySelector('.knob').style.visibility = gun ? 'hidden' : ''; if (fp) { $('gR').style.opacity = 0; $('gL').style.opacity = 0; }
     // avisos

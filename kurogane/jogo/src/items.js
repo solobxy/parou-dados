@@ -57,7 +57,7 @@ export const ITEMS = {
   medkit: { n: 'Kit de primeiros socorros', s: 'Kit médico', w: 1, h: 1, cat: 'm', icon: 'medkit', v: 'iso', st: 3, use: { t: 4.0, hp: 50, bleed: true }, desc: 'Cura 50 de vida.' },
   lata: { n: 'Lata de feijão', s: 'Lata', w: 1, h: 1, cat: 'f', icon: 'can', v: 'iso', st: 10, use: { t: 1.6, food: 30 }, desc: '+30 de comida.' },
   onigiri: { n: 'Onigiri', s: 'Onigiri', w: 1, h: 1, cat: 'f', icon: 'onigiri', st: 10, use: { t: 1.2, food: 18, water: 4 }, desc: '+18 de comida.' },
-  racao: { n: 'Ração militar', s: 'Ração', w: 1, h: 1, cat: 'f', icon: 'ration', v: 'top', st: 10, use: { t: 2.2, food: 50, water: 5 }, desc: '+50 de comida.' },
+  racao: { n: 'Ração militar (MRE)', s: 'Ração', w: 1, h: 1, cat: 'f', icon: 'ration', v: 'top', st: 10, use: { t: 2.6, food: 100, water: 100 }, desc: 'Pack completo, com refeição e bebida: enche a comida e a água.' },
   agua: { n: 'Garrafa de água', s: 'Água', w: 1, h: 1, cat: 'f', icon: 'water', st: 5, use: { t: 1.4, water: 40 }, desc: '+40 de água.' },
   bebida: { n: 'Bebida energética', s: 'Energia', w: 1, h: 1, cat: 'f', icon: 'drink', st: 10, use: { t: 1.0, water: 22, stam: 100 }, desc: '+22 de água e energia cheia.' },
   sardinhas: { n: 'Lata de sardinhas', s: 'Sardinhas', w: 1, h: 1, cat: 'f', icon: 'can2', v: 'iso', st: 10, use: { t: 1.5, food: 26, water: 2 }, desc: '+26 de comida.' },

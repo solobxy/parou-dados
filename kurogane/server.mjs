@@ -571,7 +571,7 @@ setInterval(() => { if (S.w.zs.length) return; const now = Date.now(), L = [...p
 setInterval(() => { const now = Date.now(); for (const car of Object.values(S.w.cars)) if (car.hp <= 0 && now - car.dead > 1200e3 && zNear(car.sx, car.sz, 30) === 0) { const T = vt(car.k); Object.assign(car, { x: car.sx, z: car.sz, yaw: car.syaw, v: 0, alt: 0, hp: T.hp, fuel: T.tank ? +(T.tank * (0.2 + Math.random() * 0.45)).toFixed(1) : 0, dead: 0, s: T.seats.map(() => 0) }); dirty = true; } }, 30000);
 // ---------- lançamentos aéreos: a cada 30 min (só com gente ligada) um avião cai num sítio ao calhas, longe das terras, da água e das bases.
 // 90 s antes, todos recebem o aviso e a zona no mapa; na queda ficam 3 caixas com loot militar do melhor e 10 soldados zombies à volta
-const CARV = 2; // tipos de veículo (0.23)
+const CARV = 3; // 3: sem veículos presos atrás de vedações (0.25)
 const DROP_MS = 30 * 60e3, DROP_WARN = 90e3, DROP_LIFE = 40 * 60e3;
 if (!S.drop) S.drop = { next: Date.now() + 12 * 60e3 };
 if (process.env.KG_DROP_MS) S.drop.next = Date.now() + +process.env.KG_DROP_MS; // testes

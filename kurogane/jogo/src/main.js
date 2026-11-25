@@ -405,7 +405,7 @@ async function boot() {
   const vol = (x, z) => clamp(1 - Math.hypot(x - G.p.x, z - G.p.z) / 34, 0, 1);
   const GK = ['head', 'vest', 'suit', 'eyes', 'back']; // equipamento que os outros veem (chaves dos itens, pela mesma ordem do servidor)
   const refresh = () => { body.setGear(G.inv.eq); const d = heldDef(); body.setWeapon(held() ? (d.gun || d.melee ? held().k : null) : null, held() && held().att || {}); G.ui.refresh(); };
-  G.refresh = refresh; G.mkItem = mkItem; G.dbgBody = () => body; /* testes */
+  G.refresh = refresh; G.mkItem = mkItem; G.dbgBody = () => body; G.dbgNodes = () => nodes; /* testes */
   const select = i => { if (G.sel === i) return; G.sel = i; if (G.aimEnd) G.aimEnd(); AIM.raise = 0; G.p.reload = 0; G.p.use = null; G.p.swing = -1; audio.play('ui'); refresh(); };
   G.select = select;
   // ---------- treino: o corpo habitua-se ao que fazes. Cada ganho é proporcional ao que falta (sobe depressa no início, devagar perto do máximo); perde-se tudo ao morrer
@@ -698,6 +698,7 @@ async function boot() {
     let best = null, bd = 9;
     for (const n of nodes) { if (!n.alive || p.lv) continue; const d = Math.hypot(n.x - p.x, n.z - p.z) - n.r; if (d > m.rng || d > bd) continue; const a = Math.abs(angDiff(Math.atan2(n.x - p.x, n.z - p.z), p.yaw)); if (a > 0.9) continue; best = n; bd = d; }
     if (!best) return;
+    if (best.hp > 0 && !G.farm) { G.farm = best; if (!G.farmTip) { G.farmTip = 1; G.ui.toast('Continuas a bater até partir · mexe-te para parar'); } } // um golpe num recurso: continua sozinho
     const g = m.g, kind = best.kind; let k, n, extra = 0;
     if (kind === 'tree') { k = 'madeira'; n = g.wood; } else if (kind === 'stone') { k = 'pedraR'; n = g.stone; } else { k = kind === 'sulfur' ? 'enxofre' : 'metal'; n = g.ore; extra = Math.round(g.stone * 0.4); }
     n = Math.max(1, Math.min(n, best.hp)); best.hp -= n; best.shake = 0.25; { const f = n * 0.5 * sk('rec'); n += Math.floor(f) + (Math.random() < f % 1 ? 1 : 0); } skUp('rec', 0.0077);
@@ -1036,7 +1037,7 @@ async function boot() {
     return t < dangerUntil;
   };
   G.askQuit = () => { if (!G.playing) return; if (!G.inCombat()) { G.toMenu(); return; } G.quit = { t: 5, hp: G.p.hp, x: G.p.x, z: G.p.z }; G.ui.quitTick(5); };
-  addEventListener('beforeunload', e => { if (G.inCombat && G.inCombat()) { save(); e.preventDefault(); e.returnValue = ''; } });
+  addEventListener('beforeunload', e => { if (!G.updating && G.inCombat && G.inCombat()) { save(); e.preventDefault(); e.returnValue = ''; } });
   setInterval(save, 12000); addEventListener('pagehide', () => { save(); Conta.enviar(true, true); }); document.addEventListener('visibilitychange', () => { if (document.hidden) { save(); Conta.enviar(true, true); } });
   G.hasSave = !!Conta.lerPersonagem();
   G.start = (cont, kit) => {
@@ -1106,6 +1107,9 @@ async function boot() {
   const _pv = new THREE.Vector3();
   const toScreen = (v, out = {}) => { _pv.copy(v).project(cam); out.x = (_pv.x + 1) / 2 * innerWidth; out.y = (1 - _pv.y) / 2 * innerHeight; out.ok = _pv.z < 1; return out; };
   // o que está debaixo de um ponto do ecrã: zona de um zombie, ou um ponto à altura da arma
+  // ponto do chão por baixo de um ponto do ecrã (para escolher onde pôr as coisas)
+  const _gr = new THREE.Raycaster(), _gp = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0), _gv = new THREE.Vector2(), _gq = new THREE.Vector3();
+  G.groundAt = (sx, sy) => { _gv.set(sx / innerWidth * 2 - 1, -(sy / innerHeight) * 2 + 1); _gr.setFromCamera(_gv, cam); _gp.constant = -((G.p && G.p.base) || 0); return _gr.ray.intersectPlane(_gp, _gq) ? { x: _gq.x, z: _gq.z } : null; };
   const pick = (sx, sy, inflate = 1.1) => {
     ndc.set(sx / innerWidth * 2 - 1, -(sy / innerHeight) * 2 + 1); ray3.setFromCamera(ndc, cam);
     const o = ray3.ray.origin, d = ray3.ray.direction; _a.copy(o); const end = new THREE.Vector3().copy(o).addScaledVector(d, 140);
@@ -1176,8 +1180,9 @@ async function boot() {
   G.dbgFire = () => { const it = held(), d = heldDef(); G.p.cd = 0; return d.gun ? fire(it, d.gun) : false; }; // testes
   G.fireDown = () => { if (G.car && (!G.carSeat || G.car.hp <= 0)) return; // de passageiro dispara-se da janela; quem conduz não
     const p = G.p; if (!G.playing || !p.alive || G.invOpen) return; const d = heldDef();
+    if (G.base.placing()) { G.base.placeNow(); return; } // baú, fornalha, cama…: põe onde está o fantasma
     { const it = held(); if (it && it.k === 'planta') { G.base.place(); return; } if (it && it.k === 'martelo') { G.base.upgrade(); return; } if (it && it.k === 'granada') { throwGrenade(it); return; } if (it && it.k === 'c4') { plantC4(it); return; } }
-    if (!d.gun) { G.tapAttack(); return; }
+    if (!d.gun) { G.fireHeld = true; G.holdT0 = G.t; G.tapAttack(); return; }
     G.fireHeld = true; AIM.idle = 0;
     if (!AIM.on) { aimStart(); if (G.cfg.quick) AIM.pend = true; return; }
     if (AIM.raise < 1) { AIM.pend = true; return; }
@@ -1191,13 +1196,14 @@ async function boot() {
     if (e.pointerType !== 'mouse') return; mouse.x = e.clientX; mouse.y = e.clientY; mouse.has = true;
     if (e.button === 2) { AIM.rmb = true; aimStart(true); return; }
     if (e.button !== 0) return; mouse.down = true;
-    if (heldDef().gun) G.fireDown(); else attack();
+    if (G.base.placing()) { G.base.pin(G.groundAt(e.clientX, e.clientY)); G.base.placeNow(); return; } // no PC: clica onde queres pôr
+    if (heldDef().gun) G.fireDown(); else { G.fireHeld = true; G.holdT0 = G.t; attack(); }
   });
   addEventListener('pointerup', e => { if (e.pointerType !== 'mouse') return; if (e.button === 0) { mouse.down = false; G.fireUp(); } if (e.button === 2) { AIM.rmb = false; if (AIM.on) aimEnd(); } });
   canvas.addEventListener('contextmenu', e => e.preventDefault());
   // corpo a corpo no telemóvel: toque rápido vira-se para o mais perto e ataca
   const faceTo = yaw => { const p = G.p; p.aim = yaw; p.yaw = yaw; if (Math.abs(angDiff(yaw, p.root)) > 1.2) p.root = yaw - Math.sign(angDiff(yaw, p.root)) * 1.2; G.aimHold = 0.5; };
-  G.tapAttack = () => { const p = G.p; if (!p.alive || p.climb) return; if (G.car && !heldDef().gun) return; if (heldDef().gun) { G.fireDown(); G.fireUp(); return; } const best = bestTarget(); if (best && Math.hypot(best.x - p.x, best.z - p.z) < 3.2) faceTo(Math.atan2(best.x - p.x, best.z - p.z)); attack(); };
+  G.tapAttack = () => { const p = G.p; if (!p.alive || p.climb) return; if (G.car && !heldDef().gun) return; if (heldDef().gun) { G.fireDown(); G.fireUp(); return; } const best = bestTarget(); if (best && Math.hypot(best.x - p.x, best.z - p.z) < 3.2) faceTo(Math.atan2(best.x - p.x, best.z - p.z)); else if (!p.lv) { let nb = null, nd = 2.2; for (const n of nodes) { if (!n.alive || Math.abs(n.x - p.x) > 6 || Math.abs(n.z - p.z) > 6) continue; const d = Math.hypot(n.x - p.x, n.z - p.z) - n.r; if (d < nd) { nd = d; nb = n; } } if (nb) faceTo(Math.atan2(nb.x - p.x, nb.z - p.z)); } /* sem zombie perto, vira-se para a árvore ou rocha ao lado */ attack(); };
   G.toggleLight = () => { if (!G.playing || !G.p.alive) return; if (!G.lightOn && !hasLight()) { G.ui.toast('Precisas de uma lanterna'); return; } G.lightOn = !G.lightOn; audio.play('ui'); G.ui.refresh(true); };
   // saltar; se houver algo trepável à frente, trepa
   G.jump = () => {
@@ -1246,10 +1252,15 @@ async function boot() {
       if (sticks.L) { ix = sticks.L.x; iy = -sticks.L.y; }
       if (G.frozen) { ix = 0; iy = 0; G.autoRun = false; } // congelado pela equipa do jogo
       let il = Math.hypot(ix, iy); if (il > 1) { ix /= il; iy /= il; il = 1; }
+      // bater sozinho: num recurso até partir, ou depois de segurar Bater 2 s; para ao mexer, ao trocar para arma, no carro ou com um zombie em cima
+      { const melee = !heldDef().gun && !G.car && p.alive && !p.climb && !G.invOpen;
+        if (melee && G.fireHeld && !G.autoHit && G.t - (G.holdT0 ?? G.t) > 2) { G.autoHit = true; G.ui.toast('Bater automático · mexe-te para parar'); }
+        if (!melee || il > 0.25 || (G.farm && (!G.farm.alive || Math.hypot(G.farm.x - p.x, G.farm.z - p.z) - G.farm.r > 2.2))) { G.farm = null; if (il > 0.25 || !melee) G.autoHit = false; }
+        if ((G.farm || G.autoHit) && melee && p.cd <= 0 && !p.use && p.swing < 0) { if (G.farm) { faceTo(Math.atan2(G.farm.x - p.x, G.farm.z - p.z)); attack(); } else G.tapAttack(); } }
       // eixos do movimento: na vista de cima, os do ecrã; na mira (primeira pessoa), para a frente é para onde estás a olhar
       let Fx = FWD.x, Fz = FWD.y, Rx = RGT.x, Rz = RGT.y; if (G.fp && AIM.fy != null) { Fx = Math.sin(AIM.fy); Fz = Math.cos(AIM.fy); Rx = -Fz; Rz = Fx; }
-      if (G.car) { if (G.carSeat === 0 && p.alive) { const kb = keys.has('KeyW') || keys.has('KeyS') || keys.has('KeyA') || keys.has('KeyD') || keys.has('ArrowUp') || keys.has('ArrowDown');
-          G.cars.drive(dt, G.dbgDrive ? G.dbgDrive : kb ? { kb: true, t: (keys.has('KeyW') || keys.has('ArrowUp') ? 1 : 0) - (keys.has('KeyS') || keys.has('ArrowDown') ? 1 : 0), s: (keys.has('KeyA') || keys.has('ArrowLeft') ? 1 : 0) - (keys.has('KeyD') || keys.has('ArrowRight') ? 1 : 0) } : { yaw: Math.atan2(Rx * ix + Fx * iy, Rz * ix + Fz * iy), m: il }); }
+      if (G.car) { if (G.carSeat === 0 && p.alive) { const k = c => keys.has(c) ? 1 : 0, D = G.dIn || {}; // teclado (WASD/setas) ou botões do ecrã: à esquerda acelerar/trás, à direita virar
+          G.cars.drive(dt, G.dbgDrive ? G.dbgDrive : { kb: true, t: clamp(k('KeyW') + k('ArrowUp') + (D.u ? 1 : 0) - k('KeyS') - k('ArrowDown') - (D.d ? 1 : 0), -1, 1), s: clamp(k('KeyA') + k('ArrowLeft') + (D.l ? 1 : 0) - k('KeyD') - k('ArrowRight') - (D.r ? 1 : 0), -1, 1) }); }
         ix = iy = il = 0; if (G.autoRun) G.setAuto(false); if (AIM.on && !G.carSeat) aimEnd(); } // de passageiro pode apontar (debruça-se)
       // correr sempre: segue em frente sem tocar no polegar; o polegar vira; puxar para trás, mirar ou abrir o inventário para
       if (G.autoRun) {
@@ -1364,7 +1375,7 @@ async function boot() {
       if (p.use) { p.use.t += dt; if (p.use.t >= p.use.dur) { const it = p.use.it, u = ITEMS[it.k].use; if (u.hp) p.hp = Math.min(100, p.hp + u.hp); if (u.bleed) p.bleed = 0; if (u.food) p.food = Math.min(100, p.food + u.food); if (u.water) p.water = clamp(p.water + u.water, 0, 100); if (u.stam) p.stam = Math.min(100, p.stam + u.stam); consume(it); p.use = null; G.ui.refresh(); } }
       // corpo
       if (p.alive) {
-        const met = 1 - 0.15 * sk('res'); p.food = Math.max(0, p.food - dt * 100 / 1300 * met); p.water = Math.max(0, p.water - dt * 100 / (p.sprint ? 600 : 900) * met);
+        const met = 1 - 0.15 * sk('res'); p.food = Math.max(0, p.food - dt * 100 / 1300 * met); p.water = Math.max(0, p.water - dt * 100 / (p.sprint ? 1050 : 1500) * met); // sede: 25 min a andar até secar (17 a correr)
         if (p.bleed) p.hp -= dt * 0.6;
         // a vida volta sozinha, mas gasta comida e água: mais depressa de barriga cheia, parada logo a seguir a levar dano
         p.regen = 0;
@@ -1408,7 +1419,7 @@ async function boot() {
       for (const n of nodes) if (n.shake > 0) { n.shake -= dt; const a = Math.sin(n.shake * 60) * n.shake * 0.12; _hm.copy(n.m0).multiply(mat4(0, 0, 0, 0, a, a * 0.5)); if (n.alive) { n.mesh.setMatrixAt(n.idx, n.shake > 0 ? _hm : n.m0); n.mesh.instanceMatrix.needsUpdate = true; } }
       // câmara: segue-te com suavidade, sem olhar à frente (todos veem o mesmo à tua volta)
       vc.set(p.x, p.y, p.z);
-      { const kx = 1 - Math.exp(-dt * 9), ky = 1 - Math.exp(-dt * 6); camT.x += (p.x - camT.x) * kx; camT.z += (p.z - camT.z) * kx; camT.y += (p.base - camT.y) * ky; }
+      { const kx = 1 - Math.exp(-dt * 9), ky = 1 - Math.exp(-dt * 6), c = G.car; G.camLA = G.camLA || { x: 0, z: 0 }; const la = c ? Math.min(14, Math.abs(c.v) * 0.75) * Math.sign(c.v || 0) : 0, kl = 1 - Math.exp(-dt * 2.2); /* a conduzir, a câmara olha um pouco para onde vais */ G.camLA.x += ((c ? Math.sin(c.yaw) * la : 0) - G.camLA.x) * kl; G.camLA.z += ((c ? Math.cos(c.yaw) * la : 0) - G.camLA.z) * kl; camT.x += (p.x + G.camLA.x - camT.x) * kx; camT.z += (p.z + G.camLA.z - camT.z) * kx; camT.y += (p.base - camT.y) * ky; }
       updBullets(dt);
       // linha de mira no chão quando a arma está levantada
       if (AIM.on && !G.fp && AIM.raise > 0.3 && p.alive) { const L = Math.min(Math.hypot(AIM.A.x - p.x, AIM.A.z - p.z), ray(p.x, p.z, Math.sin(p.yaw), Math.cos(p.yaw), 60, null, 's', p.lv)); aimLine.visible = true; aimLine.position.set(p.x + Math.sin(p.yaw) * 0.5, p.y + 0.06, p.z + Math.cos(p.yaw) * 0.5); aimLine.rotation.y = p.yaw + Math.PI; aimLine.scale.set(1, 1, Math.max(0.5, L - 0.5)); aimLine.material.opacity = 0.35 + 0.65 * AIM.raise; } else aimLine.visible = false;

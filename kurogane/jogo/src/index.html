@@ -106,6 +106,8 @@ svg{width:18px;height:18px;flex:none}
 #hm i{position:absolute;width:3px;height:11px;margin:-5.5px 0 0 -1.5px;background:#F4EFE6;box-shadow:0 0 2px #000;border-radius:1px}
 #hm i:nth-child(1){transform:rotate(45deg) translateY(-12px)}#hm i:nth-child(2){transform:rotate(135deg) translateY(-12px)}#hm i:nth-child(3){transform:rotate(225deg) translateY(-12px)}#hm i:nth-child(4){transform:rotate(315deg) translateY(-12px)}
 #hm.kill i{background:#FF5A4A}#hm.head i{background:#FF5A4A;height:15px}#hm.stop i{background:#9AA8B8}
+/* versão nova: tapa o jogo até atualizar */
+#upd[hidden]{display:none}#upd{position:fixed;inset:0;z-index:400;display:grid;place-items:center;background:rgba(8,8,7,.82);padding:24px}#upd .ub{width:min(380px,100%);background:var(--bg2);padding:22px 22px 20px;display:flex;flex-direction:column;gap:12px;box-shadow:inset 0 1px 0 var(--edge)}#upd h2{margin:0;font:700 20px "Roboto Condensed",sans-serif;letter-spacing:.04em;color:var(--tx)}#upd p{margin:0;color:var(--tx2);line-height:1.45}#upd .btn{height:50px;font-size:17px}
 #scope{position:absolute;inset:0;z-index:0;pointer-events:none;--r:40vmin;--hr:0px;--ro:0;--cx:50%;--cy:50%}
 #scope .hole{position:absolute;inset:0;background:radial-gradient(circle at var(--cx) var(--cy),rgba(0,0,0,0) calc(var(--hr) - 1px),rgba(0,0,0,.6) calc(var(--hr) + 1px),#030405 calc(var(--hr) + 16px))}
 #scope .ret{position:absolute;left:var(--cx);top:var(--cy);width:calc(var(--r) * 2);height:calc(var(--r) * 2);margin:calc(-1 * var(--r)) 0 0 calc(-1 * var(--r));opacity:var(--ro);fill:none;stroke:#0b0b0b;stroke-width:1.4}
@@ -144,6 +146,10 @@ svg{width:18px;height:18px;flex:none}
 .tb em{font:600 10px/1 "Roboto Condensed",sans-serif;letter-spacing:.05em;text-transform:uppercase;font-style:normal;color:var(--tx2)}
 .tb:active{--fill:#23272b}
 #tFire{--sz:78px;--bd:rgba(230,226,218,.6);--fill:rgba(30,22,15,.92)}
+/* a conduzir: pedais à esquerda, volante à direita (os botões grandes, para não falhar com o polegar) */
+.dv{--sz:84px;display:none}.dv svg{width:30px;height:30px}.dv.dn{--fill:#3b4046;--bd:rgba(230,226,218,.55)}
+body.driving.touch .dv{display:flex}body.driving .pad,body.driving #gL,body.driving #gR{display:none}
+body.driving #bottom,body.driving #tLight{display:none}body.driving #ammo{left:50%;right:auto;transform:translateX(-50%);bottom:calc(14px + var(--sb));max-width:none}
 #tFire svg{width:28px;height:28px;color:var(--amb)}
 #tFire .ic-m,#tFire .ic-b,#tFire .ic-x{display:none}#tFire.boom .ic-g,#tFire.boom .ic-m{display:none}#tFire.boom .ic-x{display:block}#tFire.melee .ic-g{display:none}#tFire.melee .ic-m{display:block}#tFire.build .ic-g,#tFire.build .ic-m{display:none}#tFire.build .ic-b{display:block}
 #tFire em{color:#E8D9C2}
@@ -157,6 +163,9 @@ svg{width:18px;height:18px;flex:none}
 /* revistar e portas: placa com a ação em âmbar */
 #tUse{--sz:auto;width:auto;height:50px;padding:0 18px 0 12px;flex-direction:row;gap:10px;font:600 16px "Roboto Condensed",sans-serif;letter-spacing:.03em;white-space:nowrap;overflow:hidden;clip-path:polygon(0 0,calc(100% - var(--cut)) 0,100% var(--cut),100% 100%,0 100%);--bd:rgba(230,226,218,.55)}
 #tUse i{display:grid;place-items:center;color:var(--amb);flex:none}
+/* sugestão: o que tens para comer, beber ou tratar quando precisas */
+#tSug{--sz:auto;width:auto;height:48px;padding:0 16px 0 6px;flex-direction:row;gap:8px;font:600 15px "Roboto Condensed",sans-serif;letter-spacing:.03em;white-space:nowrap;clip-path:polygon(0 0,calc(100% - var(--cut)) 0,100% var(--cut),100% 100%,0 100%);--bd:rgba(230,226,218,.5)}
+#tSug img{width:36px;height:36px;object-fit:contain}#tSug.urg{--bd:rgba(208,96,62,.9)}body.driving #tSug{display:none}
 #tLock{--sz:auto;width:auto;height:44px;padding:0 14px 0 10px;flex-direction:row;gap:8px}#tLock svg{width:18px;height:18px;color:var(--amb)}#tLock em{font-style:normal}
 .kp-lead{margin:0;color:#C9C3B8;line-height:1.45}.kp-dots{display:flex;justify-content:center;gap:14px;padding:6px 0 2px}.kp-dots i{width:16px;height:16px;border-radius:50%;box-shadow:inset 0 0 0 2px rgba(255,255,255,.35);transition:background .1s}.kp-dots i.on{background:var(--amb);box-shadow:none}.kp-dots.shake{animation:kpShake .32s}@keyframes kpShake{20%,60%{transform:translateX(-7px)}40%,80%{transform:translateX(7px)}}
 .kp-msg{margin:0;min-height:18px;text-align:center;color:#F08A7A;font-size:14px}.kp{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}.kp .kp-k{height:56px;font:600 24px "Roboto Condensed",sans-serif}.kp .kp-ok{font-size:17px}@media (orientation:landscape) and (max-height:520px){#pfm.kpw .pfbox{width:min(600px,100%)}#pfm.kpw #pfB{display:grid;grid-template-columns:1fr 264px;grid-template-rows:auto auto 1fr;column-gap:22px;row-gap:10px;align-items:start}#pfm.kpw .kp{grid-column:2;grid-row:1/span 3}#pfm.kpw .kp-dots{justify-content:flex-start}#pfm.kpw .kp-msg{text-align:left}.kp .kp-k{height:48px}}.kp .kp-ok:disabled{opacity:.4}.kp .kp-x svg{width:22px;height:22px}
@@ -478,8 +487,9 @@ input[type=range]{width:160px;accent-color:#E6E2DA;height:30px}
 #tScope{right:calc(108px + var(--sr));bottom:calc(140px + var(--sb))}
 #tLower{right:calc(34px + var(--sr));bottom:calc(182px + var(--sb))}
 #tBreath{right:calc(176px + var(--sr));bottom:calc(196px + var(--sb))}
-#tUse{right:calc(16px + var(--sr));bottom:calc(254px + var(--sb));max-width:min(260px,calc(50vw - 190px))}#tLock{right:calc(16px + var(--sr));bottom:calc(312px + var(--sb))}
+#tUse{right:calc(16px + var(--sr));bottom:calc(254px + var(--sb));max-width:min(260px,calc(50vw - 190px))}#tSug{left:50%;transform:translateX(-50%);bottom:calc(124px + var(--sb))}#tLock{right:calc(16px + var(--sr));bottom:calc(312px + var(--sb))}
 #tSprint{left:calc(16px + var(--sl));bottom:calc(214px + var(--sb))}
+#dUp{left:calc(26px + var(--sl));bottom:calc(112px + var(--sb))}#dDn{left:calc(26px + var(--sl));bottom:calc(16px + var(--sb))}#dL{right:calc(118px + var(--sr));bottom:calc(30px + var(--sb))}#dR{right:calc(22px + var(--sr));bottom:calc(30px + var(--sb))}
 #tLight{left:calc(16px + var(--sl));bottom:calc(148px + var(--sb))}
 #gL{left:calc(80px + var(--sl));bottom:calc(52px + var(--sb))}#gR{right:calc(170px + var(--sr));bottom:calc(150px + var(--sb))}
 #toast{top:auto;bottom:calc(84px + var(--sb))}
@@ -498,8 +508,9 @@ input[type=range]{width:160px;accent-color:#E6E2DA;height:30px}
 #tScope{right:calc(168px + var(--sr));bottom:calc(122px + var(--sb))}
 #tLower{right:calc(18px + var(--sr));bottom:calc(274px + var(--sb))}
 #tBreath{left:calc(16px + var(--sl));bottom:calc(252px + var(--sb))}
-#tUse{left:50%;transform:translateX(-50%);bottom:calc(266px + var(--sb));max-width:calc(100vw - 170px)}#tLock{left:50%;transform:translateX(-50%);bottom:calc(322px + var(--sb))}
+#tUse{left:50%;transform:translateX(-50%);bottom:calc(266px + var(--sb));max-width:calc(100vw - 170px)}#tSug{left:calc(16px + var(--sl));bottom:calc(252px + var(--sb))}#tLock{left:50%;transform:translateX(-50%);bottom:calc(322px + var(--sb))}
 #tSprint{left:calc(16px + var(--sl));bottom:calc(186px + var(--sb))}
+#dUp{left:calc(20px + var(--sl));bottom:calc(222px + var(--sb))}#dDn{left:calc(20px + var(--sl));bottom:calc(126px + var(--sb))}#dL{right:calc(112px + var(--sr));bottom:calc(160px + var(--sb))}#dR{right:calc(18px + var(--sr));bottom:calc(160px + var(--sb))}
 #tLight{left:calc(16px + var(--sl));bottom:calc(118px + var(--sb))}
 #gL{left:calc(124px + var(--sl));bottom:calc(206px + var(--sb))}#gR{display:none}
 #toast{top:calc(12px + var(--st) + var(--mmw) + 50px);max-width:calc(100vw - 32px)}
@@ -673,6 +684,7 @@ body.mir #touch .tb>*,body.mir #touch .ghost{transform:scaleX(-1)}
     <div class="ghost" id="gL">Mover</div><div class="ghost" id="gR">Arrasta<br>para apontar</div>
     <button class="tb" id="tReload" data-h="reload" aria-label="Recarregar">{{rotate-ccw}}<em>Carregar</em></button>
     <button class="tb" id="tLock" hidden aria-label="Fechadura">{{lock-keyhole}}<em>Código</em></button>
+    <button class="tb" id="tSug" hidden><img alt=""><span></span></button>
     <button class="tb" id="tUse" data-h="use" hidden><i><span class="ic-h">{{hand}}</span><span class="ic-d">{{door-open}}</span></i><span></span></button>
     <button class="tb" id="tFire" data-h="fire" aria-label="Disparar ou bater"><span class="ic-g">{{crosshair}}</span><span class="ic-m">{{hand-fist}}</span><span class="ic-b">{{hammer}}</span><span class="ic-x">{{bomb}}</span><em></em></button>
     <button class="tb" id="tScope" data-h="scope" aria-label="Mira" hidden>{{scan-eye}}<em>Mira</em></button>
@@ -680,6 +692,10 @@ body.mir #touch .tb>*,body.mir #touch .ghost{transform:scaleX(-1)}
     <button class="tb" id="tBreath" data-h="breath" aria-label="Suster a respiração" hidden>{{wind}}<em>Respirar</em></button>
     <button class="tb" id="tJump" data-h="jump" aria-label="Saltar">{{chevrons-up}}<em>Saltar</em></button>
     <button class="tb" id="tSprint" data-h="sprint" aria-label="Correr sempre">{{footprints}}<em>Auto</em></button>
+    <button class="tb dv" id="dUp" aria-label="Acelerar">{{chevron-up}}<em>Acelerar</em></button>
+    <button class="tb dv" id="dDn" aria-label="Travar e marcha-atrás">{{chevron-down}}<em>Travar</em></button>
+    <button class="tb dv" id="dL" aria-label="Virar à esquerda">{{chevron-left}}</button>
+    <button class="tb dv" id="dR" aria-label="Virar à direita">{{chevron-right}}</button>
     <button class="tb" id="tLight" data-h="light" aria-label="Lanterna">{{flashlight}}<em>Luz</em></button>
   </div>
   <div id="vit" data-h="vit"><div id="status"></div>
@@ -717,7 +733,7 @@ body.mir #touch .tb>*,body.mir #touch .ghost{transform:scaleX(-1)}
   <nav class="menu"><button class="mi pri" id="sCont" hidden><b>Continuar</b><em>Voltas onde ficaste</em></button><button class="mi pri" id="sPlay"><b>Jogar</b><em>Acordas perto de uma vila ou monumento</em></button><button class="mi" id="sSet"><b>Definições</b><em>Controlos, imagem e som</em></button></nav>
   <div class="onl" id="sOnl" role="status"><i class="dot" aria-hidden="true"></i><span><b>Servidor</b><em id="sOnT">A ver quem está a jogar…</em></span></div>
   <div class="keys" id="sKeys"></div>
-  <div class="foot">Protótipo 0.24 · um servidor para todos · quem sai fica a dormir no mundo</div>
+  <div class="foot">Protótipo 0.25 · um servidor para todos · quem sai fica a dormir no mundo</div>
 </div><button id="sMus" aria-label="Música do menu"><span class="on">{{volume-2}}</span><span class="off">{{volume-x}}</span></button><a class="credit" href="https://dinissousa.pt" target="_blank" rel="noopener">feito por dinissousa.pt</a></div>
 <div id="pfm" class="ov" hidden><div class="pfbox"><div class="pfh"><b id="pfT"></b><button class="close" id="pfX" aria-label="Fechar">{{x}}</button></div><div id="pfB" class="pfb"></div></div></div>
 <div id="adm" class="ov" hidden><div class="sp2"><div class="ihead"><b class="cond adh">Administração</b><span class="admr" id="admR"></span><div class="tabs" id="admTabs"><button data-t="p" class="on">Jogadores</button><button data-t="e">Eu</button><button data-t="b">Banidos</button><button data-t="c">Clãs</button></div><button class="close" id="admX" aria-label="Fechar">{{x}}</button></div><div class="sbody" id="admB"></div></div></div>
@@ -729,5 +745,6 @@ body.mir #touch .tb>*,body.mir #touch .ghost{transform:scaleX(-1)}
 <div id="intro" hidden><svg class="seal" viewBox="0 0 100 100" aria-hidden="true"><defs><filter id="ink3" x="-5%" y="-5%" width="110%" height="110%"><feTurbulence type="fractalNoise" baseFrequency="1.6" numOctaves="2" seed="7" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="2.6"/></filter></defs><g filter="url(#ink3)"><rect x="4" y="4" width="92" height="92" rx="9" fill="#b42418"/><rect x="11" y="11" width="78" height="78" rx="5" fill="none" stroke="#f3e6d2" stroke-width="2.6"/><text x="50" y="46" text-anchor="middle" font-family="KJP" font-weight="900" font-size="33" fill="#f3e6d2">黒</text><text x="50" y="80" text-anchor="middle" font-family="KJP" font-weight="900" font-size="33" fill="#f3e6d2">鉄</text></g></svg><div class="iw"><b>KUROGANE</b><span>新黒鉄区</span></div></div>
 <div id="err" hidden></div>
 <script>/*JS*/</script>
+<div id="upd" hidden role="alertdialog" aria-labelledby="updT"><div class="ub"><h2 id="updT">Há uma versão nova</h2><p>Atualiza para continuar a jogar. A personagem e o inventário ficam guardados.</p><button class="btn pri" id="updB">Atualizar agora</button></div></div>
 </body>
 </html>

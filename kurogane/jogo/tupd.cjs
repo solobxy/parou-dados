@@ -1,0 +1,11 @@
+const { chromium } = require('playwright');
+const http = require('http'), fs = require('fs'), path = require('path');
+const root = path.join(__dirname, 'dist', 'web'); let ver = fs.readFileSync(root + '/versao.txt', 'utf8');
+const srv = http.createServer((q, r) => { const u = q.url.split('?')[0]; if (u === '/versao.txt') { r.writeHead(200); return r.end(ver); } fs.readFile(path.join(root, u === '/' ? 'index.html' : u), (e, d) => { if (e) { r.writeHead(404); return r.end(); } r.writeHead(200, { 'Content-Type': u.endsWith('.html') || u === '/' ? 'text/html' : 'application/octet-stream' }); r.end(d); }); });
+srv.listen(0, async () => { const b = await chromium.launch({ channel: 'chrome', args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader'] }); const p = await (await b.newContext({ viewport: { width: 844, height: 390 } })).newPage();
+  await p.goto('http://localhost:' + srv.address().port + '/'); await p.waitForFunction('window.__ready === true || window.__failed', null, { timeout: 240000 });
+  await p.waitForTimeout(20000); console.log('mesma versão, aviso escondido:', await p.evaluate(() => document.getElementById('upd').hidden));
+  ver = 'abcdef123456'; await p.evaluate(() => document.dispatchEvent(new Event('visibilitychange'))); await p.waitForTimeout(1500);
+  console.log('versão nova, aviso à vista:', await p.evaluate(() => !document.getElementById('upd').hidden)); await p.screenshot({ path: path.join(__dirname, 'shots', 'upd.png') });
+  await p.click('#updB'); await p.waitForTimeout(3000); console.log('recarregou:', await p.evaluate(() => !window.G || !window.G.updating));
+  await b.close(); srv.close(); });

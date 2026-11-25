@@ -154,7 +154,7 @@ export function makeBase({ scene, W, G, audio, addRect, removeRect, visDirty, in
   const B = { mode: 'fund', tgt: null };
   const showGhost = (tg, mode) => {
     if (!tg || (tg.x0 === undefined && !tg.E)) { ghost.visible = false; return; }
-    ghost.visible = true; ghost.material = GHOST[tg.bad || !can(PIECES[mode].cost) ? 1 : 0];
+    ghost.visible = true; ghost.rotation.set(0, 0, 0); ghost.material = GHOST[tg.bad || !can(PIECES[mode].cost) ? 1 : 0];
     if (mode === 'fund') { ghost.scale.set(CELL, FH, CELL); ghost.position.set(tg.x0 + CELL / 2, FH / 2, tg.z0 + CELL / 2); }
     else if (mode === 'teto') { ghost.scale.set(CELL, 0.2, CELL); ghost.position.set(tg.x0 + CELL / 2, FH + WH + 0.1, tg.z0 + CELL / 2); }
     else { const E = tg.E; ghost.scale.set(E.horiz ? CELL : 0.24, WH, E.horiz ? 0.24 : CELL); ghost.position.set(tg.mx, FH + WH / 2, tg.mz); }
@@ -197,6 +197,27 @@ export function makeBase({ scene, W, G, audio, addRect, removeRect, visDirty, in
   const removeDep = d => { const i = deps.indexOf(d); if (i >= 0) deps.splice(i, 1); root.remove(d.g); if (d.rc) removeRect(d.rc); if (d.c) { const j = W.containers.indexOf(d.c); if (j >= 0) W.containers.splice(j, 1); } visDirty(); };
 
   // ---------- API
+  // ---------- colocar objetos: o sítio tem de estar livre, à vista (sem atravessar paredes) e perto de ti
+  const PL = { it: null, pin: null, t: 0, ok: false, why: '', x: 0, z: 0, yaw: 0, y: 0 }, PIN_R = 5;
+  const segHits = (ax, az, bx, bz, r) => { let t0 = 0, t1 = 1; const dx = bx - ax, dz = bz - az; for (const [p, q] of [[-dx, ax - r.x0], [dx, r.x1 - ax], [-dz, az - r.z0], [dz, r.z1 - az]]) { if (Math.abs(p) < 1e-9) { if (q < 0) return false; } else { const t = q / p; if (p < 0) { if (t > t1) return false; if (t > t0) t0 = t; } else { if (t < t0) return false; if (t < t1) t1 = t; } } } return true; };
+  const placeWhy = (k, x, z, yaw) => { const D = DEPLOY[k], p = G.p, [w, l] = D.r, c = Math.abs(Math.cos(yaw)), s2 = Math.abs(Math.sin(yaw)), hw = (w * c + l * s2) / 2 + 0.04, hl2 = (w * s2 + l * c) / 2 + 0.04;
+    if ((p.lv || 0) !== 0) return 'Só no chão';
+    const onF = hasFund(Math.floor(x / CELL), Math.floor(z / CELL)); PL.y = onF ? FH : 0;
+    if (inCity(x, z)) return 'Na cidade não';
+    for (const zn of W.zones) if (Math.hypot(x - zn.x, z - zn.z) < zn.r + 10) return 'Muito perto de ' + zn.name;
+    if (!onF && W.paved(x, z)) return 'Só em terreno natural';
+    if (Math.abs(p.x - x) < hw + 0.15 && Math.abs(p.z - z) < hl2 + 0.15) return 'Estás em cima do sítio';
+    for (const r of W.rects) { if ((r.lv || 0) !== 0 || r.off || r.k === 'l') continue;
+      if (r.x0 < x + hw && r.x1 > x - hw && r.z0 < z + hl2 && r.z1 > z - hl2 && r.h > (onF ? FH + 0.1 : 0.4)) return 'Não há espaço aqui';
+      if (r.h > (onF ? FH + 0.3 : 0.6) && segHits(p.x, p.z, x, z, r)) return 'Há uma parede pelo meio'; }
+    for (const q of W.circles) if (q.on !== false && (q.lv || 0) === 0 && q.x + q.r > x - hw && q.x - q.r < x + hw && q.z + q.r > z - hl2 && q.z - q.r < z + hl2) return 'Não há espaço aqui';
+    return null; };
+  const placeCheck = () => { const it = PL.it, p = G.p; if (!it) return; const k = ITEMS[it.k].deploy, D = DEPLOY[k];
+    if (PL.pin && Math.hypot(PL.pin.x - p.x, PL.pin.z - p.z) > PIN_R + 1) PL.pin = null;
+    let x, z; if (PL.pin) { x = PL.pin.x; z = PL.pin.z; } else { const dist = 0.9 + Math.max(D.r[0], D.r[1]) / 2; x = p.x + Math.sin(p.yaw) * dist; z = p.z + Math.cos(p.yaw) * dist; }
+    const face = Math.atan2(p.x - x, p.z - z), yaw = Math.round(face / (Math.PI / 2)) * (Math.PI / 2);
+    PL.x = x; PL.z = z; PL.yaw = yaw; PL.why = placeWhy(k, x, z, yaw) || ''; PL.ok = !PL.why; };
+  const showPlace = () => { const it = PL.it; const D = DEPLOY[ITEMS[it.k].deploy]; ghost.visible = true; ghost.material = GHOST[PL.ok ? 0 : 1]; ghost.scale.set(D.r[0], Math.max(0.15, D.h), D.r[1]); ghost.rotation.set(0, PL.yaw, 0); ghost.position.set(PL.x, PL.y + Math.max(0.15, D.h) / 2, PL.z); };
   const Base = {
     B, pieces, deps,
     // camas: lista, renascer (com espera), mudar o nome, apanhar e remover
@@ -212,7 +233,11 @@ export function makeBase({ scene, W, G, audio, addRect, removeRect, visDirty, in
     frame() {
       const p = G.p, it = G.inv && G.inv.belt[G.sel];
       const k = p && p.alive && G.playing && !G.invOpen && it ? it.k : null;
-      if (k === 'planta') { B.tgt = target(B.mode); showGhost(B.tgt, B.mode); showHl(null); B.hp = null; }
+      // objeto para colocar: o que está na mão (cinto) ou o que escolheste no inventário; sai do modo ao trocar de mão, ao gastar ou ao morrer
+      if (PL.it && (!G.inv.where(PL.it) || !(p && p.alive) || (PL.src === 'held' && it !== PL.it) || (PL.src === 'inv' && PL.sel !== G.sel))) { PL.it = null; PL.pin = null; }
+      if (!PL.it && it && ITEMS[it.k] && ITEMS[it.k].deploy) { PL.it = it; PL.src = 'held'; PL.pin = null; PL.t = 0; }
+      if (PL.it && p && p.alive && G.playing && !G.invOpen && !G.car) { PL.t -= 1 / 60; if (PL.t <= 0) { PL.t = 0.12; placeCheck(); } showPlace(); showHl(null); B.tgt = null; }
+      else if (k === 'planta') { B.tgt = target(B.mode); showGhost(B.tgt, B.mode); showHl(null); B.hp = null; }
       else if (k === 'martelo') { ghost.visible = false; const P = aimPiece(); B.tgt = P; showHl(P); }
       else { ghost.visible = false; hl.visible = false; B.tgt = null; }
       // tetos: escondem-se quando estás em cima de uma fundação (dentro da base)
@@ -253,24 +278,21 @@ export function makeBase({ scene, W, G, audio, addRect, removeRect, visDirty, in
       remove(P); for (const [k, n] of Object.entries(PIECES[P.t].cost)) { const it = mkItem(k, Math.floor(n / 2)); const left = G.inv.give(it); if (left) { it.n = left; G.dropItem(it); } }
       audio.play('partir'); G.save && G.save(); return true; },
     // colocar um baú, fornalha, bancada ou cama à tua frente
-    deploy(it) { if (!it || !ITEMS[it.k] || !ITEMS[it.k].deploy) return false; const k = ITEMS[it.k].deploy, D = DEPLOY[k], p = G.p; if ((p.lv || 0) !== 0) { toast('Só no chão'); return false; }
-      const yaw = Math.round((p.yaw + Math.PI) / (Math.PI / 2)) * (Math.PI / 2), [w, l] = D.r, c = Math.abs(Math.cos(yaw)), s2 = Math.abs(Math.sin(yaw)), hw = (w * c + l * s2) / 2 + 0.04, hl2 = (w * s2 + l * c) / 2 + 0.04;
-      let why = 'Não há espaço aqui';
-      const cands = []; for (const da of [0, 0.35, -0.35, 0.7, -0.7, 1.05, -1.05]) for (const dist of [1.3, 1.0, 1.7, 0.8, 2.1]) cands.push([p.yaw + da, dist]);
-      for (const [ang, dist] of cands) {
-        const x = p.x + Math.sin(ang) * dist, z = p.z + Math.cos(ang) * dist, onF = hasFund(Math.floor(x / CELL), Math.floor(z / CELL)), y = onF ? FH : 0;
-        if (inCity(x, z)) { why = 'Na cidade não'; continue; }
-        let zn0 = null; for (const zn of W.zones) if (Math.hypot(x - zn.x, z - zn.z) < zn.r + 10) zn0 = zn; if (zn0) { why = 'Muito perto de ' + zn0.name; continue; }
-        if (!onF && W.paved(x, z)) { why = 'Só em terreno natural'; continue; }
-        if (Math.hypot(x - p.x, z - p.z) < 0.3) continue;
-        let hit = false; for (const r of W.rects) if ((r.lv || 0) === 0 && !r.off && r.k !== 'l' && r.x0 < x + hw && r.x1 > x - hw && r.z0 < z + hl2 && r.z1 > z - hl2 && r.h > (onF ? FH + 0.1 : 0.4)) { hit = true; break; } if (hit) continue;
-        for (const q of W.circles) if (q.on !== false && (q.lv || 0) === 0 && q.x + q.r > x - hw && q.x - q.r < x + hw && q.z + q.r > z - hl2 && q.z - q.r < z + hl2) { hit = true; break; } if (hit) continue;
-        // não pode ficar por cima de ti
-        if (Math.abs(p.x - x) < hw + 0.15 && Math.abs(p.z - z) < hl2 + 0.15) continue;
-        if (NET) { const name = D.bed ? D.n + ' ' + (deps.filter(e => e.k === k && e.u === NET.uid).length + 1) : null; pend.set('bd:' + k, { [Object.keys(ITEMS).find(q => ITEMS[q].deploy === k)]: 1 }); NET.send({ t: 'bd', k, x: +x.toFixed(2), z: +z.toFixed(2), yaw: +yaw.toFixed(3), y, name }); audio.play('construir'); return true; }
-        const d = placeDep(k, x, z, yaw, { y }); if (D.bed) toast(d.name + ': quando morreres, podes renascer aqui'); audio.play('construir'); G.save && G.save(); return true;
-      }
-      toast(why); return false; },
+    // colocar objetos (baús, fornalha, bancadas, camas): primeiro aparece um fantasma onde vai ficar (verde = dá, vermelho = não dá);
+    // segue para onde estás virado ou fica no sítio onde tocaste no chão; o botão Colocar (ou o de bater) põe-no lá
+    deploy(it) { if (!it || !ITEMS[it.k] || !ITEMS[it.k].deploy) return false; PL.it = it; PL.src = G.inv.belt[G.sel] === it ? 'held' : 'inv'; PL.sel = G.sel; PL.pin = null; PL.t = 0; if (!PL.tip) { PL.tip = 1; toast('Vira-te ou toca no chão para escolher o sítio · depois Colocar'); } return false; },
+    placing() { return !!PL.it; },
+    placeOk() { return !!(PL.it && PL.ok); },
+    cancelPlace() { PL.it = null; PL.pin = null; ghost.visible = false; },
+    pin(pt) { if (!PL.it || !pt) return; const p = G.p; if (Math.hypot(pt.x - p.x, pt.z - p.z) > PIN_R) { toast('Mais perto'); return; } PL.pin = { x: pt.x, z: pt.z }; PL.t = 0; },
+    placeNow() { const it = PL.it; if (!it) return false; PL.t = 0; placeCheck(); if (!PL.ok) { toast(PL.why); audio.play('vazio', 0.6); return false; }
+      const k = ITEMS[it.k].deploy, D = DEPLOY[k], { x, z, yaw, y } = PL;
+      if (NET) { const name = D.bed ? D.n + ' ' + (deps.filter(e => e.k === k && e.u === NET.uid).length + 1) : null; pend.set('bd:' + k, { [it.k]: 1 }); NET.send({ t: 'bd', k, x: +x.toFixed(2), z: +z.toFixed(2), yaw: +yaw.toFixed(3), y, name }); }
+      else { const d = placeDep(k, x, z, yaw, { y }); if (D.bed) toast(d.name + ': quando morreres, podes renascer aqui'); G.save && G.save(); }
+      audio.play('construir');
+      // gasta o objeto (do cinto, da mochila ou de onde estiver)
+      if (it.n > 1) it.n--; else { const w = G.inv.where(it); if (w) { if (w.t === 'bag') G.inv.bag.remove(it); else if (w.t === 'belt') G.inv.belt[w.i] = null; else if (w.t === 'eq') G.inv.eq[w.s] = null; } }
+      if (!G.inv.where(it) || it.n <= 0) this.cancelPlace(); PL.pin = null; G.refresh && G.refresh(); return true; },
     // interagir com o que foi colocado
     use(c) { const d = c.dep; if (c.bed) { G.ui.bedMenu(d); return true; } return false; },
     // bancada mais alta a menos de 4 m

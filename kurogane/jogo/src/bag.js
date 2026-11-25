@@ -42,8 +42,8 @@ export class Inv {
     const d = ITEMS[it.k];
     if (d.st) for (const b of this.belt) if (b && b.k === it.k && b.n < d.st) { const m = Math.min(d.st - b.n, it.n); b.n += m; it.n -= m; if (!it.n) return 0; }
     if (d.melee || d.gun) { const i = this.belt.indexOf(null); if (i >= 0) { this.belt[i] = it; return 0; } }
+    if (d.eq && !this.eq[d.eq]) { this.eq[d.eq] = it; return 0; } // equipamento com o lugar vazio: veste-se logo
     const left = this.bag.insert(it, this.rows()); if (!left) return 0;
-    if (d.eq && !this.eq[d.eq]) { this.eq[d.eq] = it; return 0; }
     const i = this.belt.indexOf(null); if (i >= 0) { this.belt[i] = it; return 0; }
     return left;
   }
