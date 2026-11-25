@@ -98,6 +98,10 @@ for (const feed of FEEDS) {
 ok('[percurso] testou-se pelo menos 40 viagens', testadas >= 40, String(testadas));
 
 // ------------------------------------------------------------ 3. planeador
+// Próximo dia útil às 10:30 (os horários só cobrem as próximas semanas: uma data fixa deixa de ter viagens)
+const diaUtil = new Date(Date.now() + 86400000);
+while ([0, 6].includes(diaUtil.getUTCDay())) diaUtil.setUTCDate(diaUtil.getUTCDate() + 1);
+const quandoTeste = `${diaUtil.toISOString().slice(0, 10)}T10:30`;
 const sitio = (id) => db.prepare('SELECT stop_lat AS lat, stop_lon AS lon FROM stops WHERE stop_id = ?').get(id);
 const noeda = sitio('stcp:NDA1'), freixo = sitio('stcp:FRX2');
 const PARES = [
@@ -112,7 +116,7 @@ const OPERADORES_PELO_MAPA = new RegExp(process.env.SEM_DESENHO || '(?!)', 'i');
 let trocosTransito = 0, trocosComCaminho = 0, paresComTransporte = 0;
 for (const [nome, o, d] of PARES) {
   if (!o || !d) { nota(`${nome}: sem coordenadas na base`); continue; }
-  const { status, corpo } = await get(`/api/transit/plan-route?originLat=${o.lat}&originLon=${o.lon}&destLat=${d.lat}&destLon=${d.lon}&destName=Destino&quando=${encodeURIComponent('2026-10-20T10:30')}`);
+  const { status, corpo } = await get(`/api/transit/plan-route?originLat=${o.lat}&originLon=${o.lon}&destLat=${d.lat}&destLon=${d.lon}&destName=Destino&quando=${encodeURIComponent(quandoTeste)}`);
   if (status !== 200 || !corpo?.routes) { ok(`[planeador] ${nome}: o servidor respondeu`, false, `HTTP ${status}`); continue; }
   const trocos = corpo.routes.flatMap((r) => r.legs).filter((l) => l.mode === 'TRANSIT' && l.pontos?.length > 1);
   if (!trocos.length) { nota(`${nome}: sem troços de transporte nesta hora`); continue; }
@@ -136,7 +140,7 @@ for (const [nome, o, d] of PARES) {
   }
   ok(`[planeador] ${nome}: ${trocos.length} troços de transporte, todos com o caminho pela estrada`, problemas.length === 0, problemas.slice(0, 3).join(' | '));
 }
-ok('[planeador] pelo menos 3 viagens com transporte foram testadas', paresComTransporte >= 3, String(paresComTransporte));
+ok(`[planeador] todas as viagens de teste têm transporte num dia útil (${quandoTeste})`, paresComTransporte === PARES.length, `${paresComTransporte}/${PARES.length}`);
 nota(`troços de transporte com caminho: ${trocosComCaminho}/${trocosTransito}`);
 
 // ------------------------------------------------------------ 4. UNIR: percurso da linha e opções de viagem
@@ -177,16 +181,13 @@ if (temRotaDesenhos) {
     ...(corpo.routes || []).flatMap((r) => r.legs || []).filter((l) => l.mode === 'TRANSIT' && /^UNIR/i.test(String(l.operatorName || '')))
       .map((l) => ({ linha: l.lineCode, pontos: l.pontos, caminho: l.caminho })),
   ];
-  const diaUtil = new Date(Date.now() + 86400000);
-  while ([0, 6].includes(diaUtil.getUTCDay())) diaUtil.setUTCDate(diaUtil.getUTCDate() + 1);
-  const quandoUnir = `${diaUtil.toISOString().slice(0, 10)}T10:30`;
   let testados = 0; const semCaminho = [], maus = [];
   for (const { r, d } of amostra) {
     if (testados >= 6) break;
     const seq = db.prepare('SELECT s.stop_lat AS lat, s.stop_lon AS lon FROM stop_routes sr JOIN stops s ON s.stop_id = sr.stop_id WHERE sr.route_id = ? AND sr.direction_id = ? ORDER BY sr.stop_sequence').all(r, d);
     if (seq.length < 8) continue;
     const o = seq[1], dest = seq[Math.min(seq.length - 2, 9)];
-    const { status, corpo } = await get(`/api/transit/plan-route?originLat=${o.lat}&originLon=${o.lon}&destLat=${dest.lat}&destLon=${dest.lon}&destName=Destino&quando=${encodeURIComponent(quandoUnir)}`);
+    const { status, corpo } = await get(`/api/transit/plan-route?originLat=${o.lat}&originLon=${o.lon}&destLat=${dest.lat}&destLon=${dest.lon}&destName=Destino&quando=${encodeURIComponent(quandoTeste)}`);
     if (status !== 200 || !corpo) { maus.push(`${r}/${d}: plan-route HTTP ${status}`); continue; }
     for (const c of doCorpo(corpo)) {
       if (!c?.pontos || c.pontos.length < 2) continue;
@@ -197,7 +198,7 @@ if (temRotaDesenhos) {
       else if (c.pontos.filter((q) => aLinha(q, linha) <= 120).length / c.pontos.length < 0.8) maus.push(`${c.linha}: paragens longe do caminho`);
     }
   }
-  nota(`troços da UNIR testados (${quandoUnir}): ${testados}; sem caminho: ${semCaminho.length}`);
+  nota(`troços da UNIR testados (${quandoTeste}): ${testados}; sem caminho: ${semCaminho.length}`);
   ok('[UNIR] planeador: há opções com a UNIR e todas trazem o caminho pela estrada', testados >= 2 && semCaminho.length === 0 && maus.length === 0, [...semCaminho.slice(0, 2).map((l) => `${l}: sem caminho`), ...maus.slice(0, 2)].join(' | '));
 } else {
   ok('[UNIR] a base tem os desenhos das linhas da UNIR (tabela route_shapes)', false, 'tabela route_shapes inexistente');
