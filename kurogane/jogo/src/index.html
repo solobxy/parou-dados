@@ -278,6 +278,10 @@ canvas.nvg{filter:grayscale(1) sepia(1) hue-rotate(50deg) saturate(2.4) brightne
 .item{position:absolute;overflow:hidden;cursor:grab;touch-action:none;border-radius:2px;box-shadow:inset 0 1px 0 rgba(255,255,255,.08)}
 .item img{position:absolute;left:0;top:12px;width:100%;height:calc(100% - 13px);object-fit:contain;pointer-events:none}
 .item .nm{position:absolute;left:4px;top:3px;right:4px;overflow:hidden;text-overflow:ellipsis;font:600 11px/1.05 "Roboto Condensed",sans-serif;letter-spacing:0;color:rgba(238,233,224,.92);white-space:normal;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;hyphens:auto;text-shadow:0 1px 2px rgba(0,0,0,.95);pointer-events:none}
+.item:not(.tall) .nm{-webkit-line-clamp:1;white-space:nowrap;display:block;left:3px;right:3px;letter-spacing:-.15px}.item:not(.tall) img{top:15px;height:calc(100% - 16px)}.item.tall img{top:28px;height:calc(100% - 30px)}
+.atts{position:absolute;left:3px;bottom:3px;display:flex;gap:2px;pointer-events:none}.atts i{width:13px;height:13px;border:1px dashed rgba(230,226,218,.45);border-radius:2px;background:rgba(0,0,0,.45);position:relative}.atts i.on{border:1px solid rgba(230,226,218,.55)}.atts i img{position:absolute!important;left:0!important;top:0!important;width:100%!important;height:100%!important;transform:none!important;object-fit:contain}.atts i.tgt{border:1.5px solid #A9C46E;background:rgba(169,196,110,.3)}
+.btn.att{display:flex;align-items:center;gap:10px;text-align:left;padding:6px 10px;min-height:52px;grid-column:1/-1;flex-basis:100%}.btn.att .ag{position:relative;flex:none;width:78px;height:42px;background:rgba(0,0,0,.25);border-radius:2px}.btn.att .ag>img{position:absolute;inset:2px 2px 14px;width:calc(100% - 4px);height:calc(100% - 16px);object-fit:contain}.btn.att .atts{left:2px;bottom:2px}.btn.att .at{display:flex;flex-direction:column;gap:2px;min-width:0}.btn.att small{font-size:11px;letter-spacing:.04em;opacity:.75}
+.item.fit,.slot.fit{box-shadow:inset 0 0 0 2px #A9C46E!important}.slot .atts{left:4px;bottom:4px}
 .item .ct{position:absolute;right:3px;bottom:3px;font:700 12px/1 "Roboto Condensed",sans-serif;padding:2px 4px;background:rgba(0,0,0,.7);font-variant-numeric:tabular-nums;pointer-events:none}
 .item .ct.am{color:var(--amb)}
 .item.sel{box-shadow:inset 0 0 0 2px var(--amb)}
@@ -294,7 +298,7 @@ canvas.nvg{filter:grayscale(1) sepia(1) hue-rotate(50deg) saturate(2.4) brightne
 #dragG img{position:absolute;left:0;top:0}
 /* objeto escolhido: nome, para que serve e as ações, ao alcance dos dois polegares */
 #iBar{position:fixed;z-index:30;left:0;top:0;width:300px;max-height:calc(100dvh - 16px);overflow:auto;overscroll-behavior:contain;background:#171a1e;border:1px solid rgba(255,255,255,.09);border-radius:4px;padding:10px 10px 10px 14px;display:flex;flex-direction:column;gap:8px;box-shadow:0 22px 56px rgba(0,0,0,.62),0 2px 8px rgba(0,0,0,.4)}
-#iBar[hidden]{display:none}
+#iBar[hidden]{display:none}#iBar>*{flex-shrink:0}
 #iBar .t{display:flex;align-items:flex-start;gap:8px}
 #iBar .tt{flex:1;min-width:0;padding-top:4px}
 #iBar b{display:block;font:700 19px/1.1 "Roboto Condensed",sans-serif;letter-spacing:.02em}
@@ -758,7 +762,7 @@ body.mir #touch .tb>*,body.mir #touch .ghost{transform:scaleX(-1)}
   <nav class="menu"><button class="mi pri" id="sCont" hidden><b>Continuar</b><em>Voltas onde ficaste</em></button><button class="mi pri" id="sPlay"><b>Jogar</b><em>Acordas perto de uma vila ou monumento</em></button><button class="mi" id="sSet"><b>Definições</b><em>Controlos, imagem e som</em></button></nav>
   <div class="onl" id="sOnl" role="status"><i class="dot" aria-hidden="true"></i><span><b>Servidor</b><em id="sOnT">A ver quem está a jogar…</em></span></div>
   <div class="keys" id="sKeys"></div>
-  <div class="foot">Protótipo 0.33 · um servidor para todos · quem sai fica a dormir no mundo</div>
+  <div class="foot">Protótipo 0.34 · um servidor para todos · quem sai fica a dormir no mundo</div>
 </div><button id="sMus" aria-label="Música do menu"><span class="on">{{volume-2}}</span><span class="off">{{volume-x}}</span></button><a class="credit" href="https://dinissousa.pt" target="_blank" rel="noopener">feito por dinissousa.pt</a></div>
 <div id="pfm" class="ov" hidden><div class="pfbox"><div class="pfh"><b id="pfT"></b><button class="close" id="pfX" aria-label="Fechar">{{x}}</button></div><div id="pfB" class="pfb"></div></div></div>
 <div id="adm" class="ov" hidden><div class="sp2"><div class="ihead"><b class="cond adh">Administração</b><span class="admr" id="admR"></span><div class="tabs" id="admTabs"><button data-t="p" class="on">Jogadores</button><button data-t="e">Eu</button><button data-t="b">Banidos</button><button data-t="c">Clãs</button></div><button class="close" id="admX" aria-label="Fechar">{{x}}</button></div><div class="sbody" id="admB"></div></div></div>

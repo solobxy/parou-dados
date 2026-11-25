@@ -1481,7 +1481,7 @@ async function boot() {
           eyePos(AIM.eye); const yy = AIM.fy + swY, pp = AIM.fpit + swP + AIM.kick;
           AIM.dir.set(Math.sin(yy) * Math.cos(pp), Math.sin(pp), Math.cos(yy) * Math.cos(pp)); aimYaw = AIM.fy;
           const end = _a.copy(AIM.eye).addScaledVector(AIM.dir, 160); let bz = null; for (const z of G.zs) { if (z.state === 'dead') continue; const r = zoneHit(z, AIM.eye, end); if (r && (!bz || r.s < bz.s)) bz = r; }
-          const ws = wallHit(AIM.eye, end); AIM.zone = bz && bz.s < ws ? bz.zone : null; AIM.dist = (bz && bz.s < ws ? bz.s : ws) * 160;
+          const ws = wallHit(AIM.eye, end), ph = plHit(AIM.eye, end); if (ph && ph.s < ws && (!bz || ph.s < bz.s)) bz = ph; /* outro jogador à frente: a mira também mostra cabeça ou corpo */ AIM.zone = bz && bz.s < ws ? bz.zone : null; AIM.dist = (bz && bz.s < ws ? bz.s : ws) * 160;
         } else {
           if (AIM.reseed && !G.fp) { AIM.reseed = false; AIM.off = null; if (TOUCH) { const s0 = toScreen(_c.set(p.x + Math.sin(AIM.fy) * 8, p.y + 1.25, p.z + Math.cos(AIM.fy) * 8)); if (s0.ok) { AIM.sx = s0.x; AIM.sy = s0.y; } } }
           if (!TOUCH) { if (mouse.has) { AIM.sx = mouse.x; AIM.sy = mouse.y; } }

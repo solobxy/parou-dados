@@ -98,14 +98,21 @@ export function initUI(G) {
   };
   const P = n => n * CS + (n - 1) * GAP;
   const catOf = d => 't-' + d.cat;
-  const itemHTML = (it, small) => { const d = ITEMS[it.k]; const ct = d.gun ? `<span class="ct am">${d.gun.clip && !it.mg ? '—' : it.ammo}</span>` : d.clip ? `<span class="ct am">${it.am || 0}</span>` : it.n > 1 ? `<span class="ct">${it.n}</span>` : ''; return `<img src="${(small && G.ICONS_SQ && G.ICONS_SQ[it.k]) || G.ICONS[it.k]}" alt="">${small ? '' : `<span class="nm">${d.s}</span>`}${ct}`; }; // nas casas quadradas (cinto, equipamento) as armas compridas vão na diagonal e ficam grandes
+  // acessório que serve nesta arma (e que ainda não está lá montado)
+  const fits = (g, it) => { const gd = ITEMS[g.k].gun, d = ITEMS[it.k]; if (!gd || !d.att || (g.att && g.att[d.att] === it.k)) return false; return d.att === 'sup' ? gd.sup === it.k : d.att === 'light' ? !!gd.light : d.rd ? !!(gd.scope || gd.rd) : !!gd.scope && (it.k !== 'mira8' || gd.scope >= 2); };
+  // encaixes da arma (mira, cano, calha): cheio mostra a peça, vazio fica tracejado; o que vai receber o acessório escolhido acende
+  const slotsHTML = (it, want) => { const gd = ITEMS[it.k].gun; if (!gd) return ''; let h = ''; for (const [s, ok] of [['scope', gd.scope || gd.rd], ['sup', gd.sup], ['light', gd.light]]) { if (!ok) continue; const a = it.att && it.att[s]; h += `<i class="${a ? 'on' : ''}${want === s ? ' tgt' : ''}" title="${{ scope: 'Mira', sup: 'Cano', light: 'Calha' }[s]}">${a ? `<img src="${G.ICONS[a]}" alt="">` : ''}</i>`; } return h ? `<span class="atts">${h}</span>` : ''; };
+  const itemHTML = (it, small, want) => { const d = ITEMS[it.k]; const ct = d.gun ? `<span class="ct am">${d.gun.clip && !it.mg ? '—' : it.ammo}</span>` : d.clip ? `<span class="ct am">${it.am || 0}</span>` : it.n > 1 ? `<span class="ct">${it.n}</span>` : ''; return `<img src="${(small && G.ICONS_SQ && G.ICONS_SQ[it.k]) || G.ICONS[it.k]}" alt="">${small ? '' : `<span class="nm">${d.s}</span>`}${ct}${small ? '' : slotsHTML(it, want)}`; }; // nas casas quadradas (cinto, equipamento) as armas compridas vão na diagonal e ficam grandes
   const renderGrid = (el, grid, rows, kind) => {
     el.innerHTML = ''; el.dataset.kind = kind; if (!grid) { el.style.width = el.style.height = '0px'; return; }
     const R = grid.rows; el.style.width = P(grid.cols) + 'px'; el.style.height = P(R) + 'px';
     let h = '';
     for (let y = 0; y < R; y++) for (let x = 0; x < grid.cols; x++) h += `<div class="cell${y >= rows ? ' off' : ''}" style="left:${x * (CS + GAP)}px;top:${y * (CS + GAP)}px"></div>`;
-    for (const e of grid.list) { const d = ITEMS[e.it.k], w = P(IW(e.it)), hh = P(IH(e.it)); h += `<div class="item ${catOf(d)}${d.rare ? ' rare' : ''}${e.it.r ? ' rot' : ''}${sel && sel.it === e.it ? ' sel' : ''}" data-src="${kind}:${e.it.id}" style="left:${e.x * (CS + GAP)}px;top:${e.y * (CS + GAP)}px;width:${w}px;height:${hh}px;--bw:${w}px;--bh:${hh}px">${itemHTML(e.it)}</div>`; }
+    const sa = sel && ITEMS[sel.it.k].att ? sel.it : null; // acessório escolhido: as armas onde serve ficam marcadas
+    for (const e of grid.list) { const d = ITEMS[e.it.k], w = P(IW(e.it)), hh = P(IH(e.it)), fit = sa && fits(e.it, sa); h += `<div class="item ${catOf(d)}${d.rare ? ' rare' : ''}${e.it.r ? ' rot' : ''}${hh > CS ? ' tall' : ''}${sel && sel.it === e.it ? ' sel' : ''}${fit ? ' fit' : ''}" data-src="${kind}:${e.it.id}" style="left:${e.x * (CS + GAP)}px;top:${e.y * (CS + GAP)}px;width:${w}px;height:${hh}px;--bw:${w}px;--bh:${hh}px">${itemHTML(e.it, false, fit ? ITEMS[sa.k].att : null)}</div>`; }
     el.innerHTML = h;
+    // nome numa linha por cima do desenho: se não couber, a letra encolhe um pouco (até 8 px) antes de cortar com reticências
+    { const rg = document.createRange(); for (const n of el.querySelectorAll('.item:not(.tall) .nm')) { rg.selectNodeContents(n); let f = parseFloat(getComputedStyle(n).fontSize); while (rg.getBoundingClientRect().width > n.clientWidth - 0.5 && f > 8) { f -= 0.5; n.style.fontSize = f + 'px'; } } } // mede o texto a sério (com reticências, scrollWidth arredonda e engana)
   };
   const slotHTML = (it, label, key) => it ? `${key ? `<span class="k">${key}</span>` : ''}${itemHTML(it, true)}` : `${key ? `<span class="k">${key}</span>` : ''}${label ? `<span class="lb">${label}</span>` : ''}`;
   const render = () => {
@@ -116,7 +123,8 @@ export function initUI(G) {
     // equipamento e cinto
     for (const s of ['head', 'eyes', 'suit', 'vest', 'back']) { const el = inv.querySelector(`[data-eq="${s}"]`), it = I.eq[s]; el.innerHTML = slotHTML(it, { head: 'Cabeça', eyes: 'Olhos', suit: 'Fato', vest: 'Colete', back: 'Costas' }[s]); el.dataset.src = it ? 'eq:' + s : ''; el.classList.toggle('sel', !!(sel && it && sel.it === it)); el.className = 'slot' + (it ? ' ' + catOf(ITEMS[it.k]) : '') + (sel && it && sel.it === it ? ' sel' : ''); }
     const bI = $('beltI'); if (!bI.children.length) for (let i = 0; i < 6; i++) { const d = document.createElement('div'); d.className = 'slot'; d.dataset.belt = i; bI.appendChild(d); }
-    [...bI.children].forEach((el, i) => { const it = I.belt[i]; el.innerHTML = slotHTML(it, '', i + 1); el.dataset.src = it ? 'belt:' + i : ''; el.className = 'slot' + (it ? ' ' + catOf(ITEMS[it.k]) : '') + (sel && it && sel.it === it ? ' sel' : ''); });
+    const sa = sel && ITEMS[sel.it.k].att ? sel.it : null;
+    [...bI.children].forEach((el, i) => { const it = I.belt[i], fit = !!(sa && it && fits(it, sa)); el.innerHTML = slotHTML(it, '', i + 1) + (fit ? slotsHTML(it, ITEMS[sa.k].att) : ''); el.dataset.src = it ? 'belt:' + i : ''; el.className = 'slot' + (it ? ' ' + catOf(ITEMS[it.k]) : '') + (sel && it && sel.it === it ? ' sel' : '') + (fit ? ' fit' : ''); });
     const pk = ['head', 'eyes', 'suit', 'vest', 'back'].map(s => I.eq[s] ? I.eq[s].k : '').join() + (I.belt.some(b => b && b.k === 'm4') ? 'r' : '') + (G.lookV || 0);
     if (pk !== lastPortrait) { lastPortrait = pk; $('portrait').src = G.portrait(I.eq); }
     // caixa / chão
@@ -140,7 +148,7 @@ export function initUI(G) {
     nm.textContent = d.n + (it.n > 1 ? ' × ' + it.n : ''); ct.textContent = d.rare ? 'Raro · ' + CAT[d.cat] : CAT[d.cat]; ct.className = 'cat' + (d.rare ? ' rare' : '');
     const attTxt = d.gun && it.att ? Object.values(it.att).filter(Boolean).map(k => ITEMS[k].s).join(', ') : '';
     ds.textContent = d.desc + (d.gun ? (d.gun.clip && !it.mg ? ' Sem carregador.' : ` Carregada: ${it.ammo}/${capOf(it)} de ${ITEMS[it.ak || ammoOf(d.gun)[0]].s}.`) + (attTxt ? ' Tem: ' + attTxt.replace(/\.$/, '') + '.' : '') : '') + (d.clip ? ` Tem ${it.am || 0}/${d.clip.cap}` + (it.am ? ` de ${ITEMS[it.ak].s}.` : '.') : '') + (d.bal ? ` Perfuração ${d.bal.pen}: os coletes de nível igual ou maior travam-na.` : '');
-    const add = (label, fn, pri, cls) => { const b = document.createElement('button'); b.className = 'btn sm' + (pri ? ' pri' : '') + (cls ? ' ' + cls : ''); b.textContent = label; b.onclick = () => { audio.play('ui'); fn(); G.refresh(); }; ac.appendChild(b); };
+    const add = (label, fn, pri, cls, html) => { const b = document.createElement('button'); b.className = 'btn sm' + (pri ? ' pri' : '') + (cls ? ' ' + cls : ''); if (html) { b.innerHTML = html; b.setAttribute('aria-label', label); } else b.textContent = label; b.onclick = () => { audio.play('ui'); fn(); G.refresh(); }; ac.appendChild(b); };
     // tirar só as balas (de uma arma ou de um carregador), direto para a mochila; a arma ou o carregador ficam onde estão
     const unload = () => { const q = d.gun ? it.ammo | 0 : it.am | 0, k = it.ak || (d.gun ? ammoOf(d.gun)[0] : d.clip && d.clip.ammo[0]); if (!q || !k) return; const a = mkItem(k, q); const left = G.inv.give(a); const got = q - (left || 0); if (!got) return toast('Mochila cheia');
       if (d.gun) it.ammo = q - got; else it.am = q - got; feed(k, got); audio.play('recarregar', 0.5); if (left) toast('Mochila cheia: ficaram ' + left + ' balas'); };
@@ -155,11 +163,11 @@ export function initUI(G) {
       if (loc.t === 'belt') add('Para a mochila', () => toBag(it, loc));
       if (G.box) add('Pôr na caixa', () => toBox(it, loc));
       // acessórios: montar numa arma compatível, ou tirar
-      if (d.att) { const guns = [...G.inv.belt.filter(Boolean), ...G.inv.bag.list.map(e => e.it)].filter(g => { const gd = ITEMS[g.k].gun; if (!gd || (g.att && g.att[d.att] === it.k)) return false; return d.att === 'sup' ? gd.sup === it.k : d.att === 'light' ? !!gd.light : d.rd ? !!(gd.scope || gd.rd) : !!gd.scope && (it.k !== 'mira8' || gd.scope >= 2); });
+      if (d.att) { const guns = [...G.inv.belt.filter(Boolean), ...G.inv.bag.list.map(e => e.it)].filter(g => fits(g, it));
         if (!guns.length) add('Sem arma compatível', () => toast(d.att === 'sup' ? 'Este silenciador não serve nas armas que tens' : d.att === 'light' ? 'Não tens arma onde a montar' : 'Esta mira não serve nas armas que tens'));
         // se a arma já tem uma peça nesse encaixe, troca e a antiga vai para a mochila
         const SLOT = { scope: 'mira', sup: 'cano', light: 'calha' };
-        for (const g of guns.slice(0, 3)) { const old = g.att && g.att[d.att]; add((old ? 'Trocar na ' : 'Pôr na ') + ITEMS[g.k].s + ' (' + SLOT[d.att] + ')' + (old ? ' · substitui ' + ITEMS[old].s : ''), () => { removeAt(it, loc); g.att = g.att || {}; if (old) { const o = mkItem(old); const left = G.inv.give(o); if (left) { G.dropItem(o); toast('Sem espaço: ' + ITEMS[old].s + ' ficou no chão'); } } g.att[d.att] = it.k; audio.play('recarregar', 0.6); sel = null; }, !old); } }
+        for (const g of guns.slice(0, 3)) { const old = g.att && g.att[d.att], lab = (old ? 'Trocar na ' : 'Pôr na ') + ITEMS[g.k].s + ' (' + SLOT[d.att] + ')'; /* a arma com os encaixes: o que recebe a peça acende */ add(lab + (old ? ' · substitui ' + ITEMS[old].s : ''), () => { removeAt(it, loc); g.att = g.att || {}; if (old) { const o = mkItem(old); const left = G.inv.give(o); if (left) { G.dropItem(o); toast('Sem espaço: ' + ITEMS[old].s + ' ficou no chão'); } } g.att[d.att] = it.k; audio.play('recarregar', 0.6); sel = null; }, !old, 'att', `<span class="ag"><img src="${G.ICONS[g.k]}" alt="">${slotsHTML(g, d.att)}</span><span class="at"><b>${lab}</b>${old ? `<small>Substitui: ${ITEMS[old].s}</small>` : ''}</span>`); } }
       if (d.gun && it.att) for (const slot of ['scope', 'sup', 'light']) if (it.att[slot]) add('Tirar ' + ITEMS[it.att[slot]].s, () => { const a = mkItem(it.att[slot]); const left = G.inv.give(a); if (left) { G.dropItem(a); toast('Sem espaço: ficou no chão'); } it.att[slot] = null; });
       // carregadores: encher, esvaziar, meter numa arma; e tirar o carregador da arma
       if (d.clip) {
