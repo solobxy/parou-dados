@@ -365,27 +365,32 @@ async function boot() {
 
   // ---------- linha de vista: paredes altas e portas fechadas tapam; janelas e portas abertas deixam ver.
   // O que não vês fica mais escuro e os zombies e sacos lá não aparecem. De dentro de casa só vês para fora pelas janelas e portas, e de fora só vês para dentro por elas.
-  const VN = 384, VS = 2 * CAP; // máscara de VN×VN píxeis a cobrir VS metros à tua volta (sem limite de distância: fora dela vê-se tudo)
-  const vcan = document.createElement('canvas'); vcan.width = vcan.height = VN; const vx = vcan.getContext('2d');
-  const visTex = new THREE.CanvasTexture(vcan); visTex.flipY = false; visTex.minFilter = visTex.magFilter = THREE.LinearFilter; visTex.generateMipmaps = false; visTex.wrapS = visTex.wrapT = THREE.ClampToEdgeWrapping;
+  const VN = 512, VS = 2 * CAP; // máscara de VN×VN píxeis a cobrir VS metros à tua volta (sem limite de distância: fora dela vê-se tudo)
+  // a máscara desenha-se na placa gráfica, em cada imagem, a partir de onde estás agora (antes era um desenho 2D 30 vezes por segundo: as sombras andavam aos saltos)
+  const visRT = new THREE.WebGLRenderTarget(VN, VN, { samples: 4, depthBuffer: false, stencilBuffer: false, minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, generateMipmaps: false }), visTex = visRT.texture;
+  const VMAXV = 9000, vPos = new Float32Array(VMAXV * 3), vGeo = new THREE.BufferGeometry(); vGeo.setAttribute('position', new THREE.BufferAttribute(vPos, 3).setUsage(THREE.DynamicDrawUsage)); vGeo.setDrawRange(0, 0);
+  const vMesh = new THREE.Mesh(vGeo, new THREE.ShaderMaterial({ vertexShader: 'void main() { gl_Position = vec4( position.xy, 0.0, 1.0 ); }', fragmentShader: 'void main() { gl_FragColor = vec4( 0.0, 0.0, 0.0, 1.0 ); }', depthTest: false, depthWrite: false, side: THREE.DoubleSide, toneMapped: false })); vMesh.frustumCulled = false;
+  const vScene = new THREE.Scene(); vScene.add(vMesh); const vCam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1), _vcc = new THREE.Color();
   const VU = { uVis: { value: visTex }, uVisO: { value: new THREE.Vector2() }, uVisS: { value: VS }, uVisK: { value: 1 } };
   const blocksSight = (r, lv, C) => !r.off && !r.edge && ((r.k === 's' && r.h >= 2.4) || r.door) && ((r.lv || 0) === lv || (lv > 0 && (r.lv || 0) === 0 && C && !(r.x0 >= C.x0 - 0.3 && r.x1 <= C.x1 + 0.3 && r.z0 >= C.z0 - 0.3 && r.z1 <= C.z1 + 0.3)));
   const VIS = { x: 1e9, z: 1e9, lv: -1, t: 0, key: '' };
   const visDirty = () => { VIS.x = 1e9; VIS.key = ''; VIS.t = 0; };
   const drawVis = (px, pz, lv, C) => { const t0 = performance.now();
-    const k = VN / VS, ox = px - VS / 2, oz = pz - VS / 2, T = (x, z) => [(x - ox) * k, (z - oz) * k];
-    vx.globalCompositeOperation = 'source-over'; vx.fillStyle = '#fff'; vx.fillRect(0, 0, VN, VN);
-    vx.fillStyle = '#000'; vx.beginPath();
-    const ext = (x, z) => { const dx = x - px, dz = z - pz, l = Math.hypot(dx, dz) || 1e-3, s = (VS * 1.5) / l; return T(px + dx * s, pz + dz * s); };
-    const edge = (ax, az, bx, bz) => { const A = T(ax, az), B = T(bx, bz), B2 = ext(bx, bz), A2 = ext(ax, az); vx.moveTo(A[0], A[1]); vx.lineTo(B[0], B[1]); vx.lineTo(B2[0], B2[1]); vx.lineTo(A2[0], A2[1]); vx.closePath(); };
+    const ox = px - VS / 2, oz = pz - VS / 2; let n = 0; // coordenadas do recorte: -1..1 (x do mundo → u, z → v)
+    const put = (x, z) => { vPos[n * 3] = (x - ox) / VS * 2 - 1; vPos[n * 3 + 1] = (z - oz) / VS * 2 - 1; vPos[n * 3 + 2] = 0; n++; };
+    const ext = (x, z) => { const dx = x - px, dz = z - pz, l = Math.hypot(dx, dz) || 1e-3, s = (VS * 1.5) / l; return [px + dx * s, pz + dz * s]; };
+    const edge = (ax, az, bx, bz) => { if (n + 6 > VMAXV) return; const B2 = ext(bx, bz), A2 = ext(ax, az); put(ax, az); put(bx, bz); put(B2[0], B2[1]); put(ax, az); put(B2[0], B2[1]); put(A2[0], A2[1]); };
     near(px - CAP, pz - CAP, px + CAP, pz + CAP, r => {
       if (!blocksSight(r, lv, C)) return; if (px > r.x0 && px < r.x1 && pz > r.z0 && pz < r.z1) return;
       // a sombra começa nas faces de trás, para a parede em si continuar à vista
       if (px > r.x0) edge(r.x0, r.z0, r.x0, r.z1); if (px < r.x1) edge(r.x1, r.z0, r.x1, r.z1);
       if (pz > r.z0) edge(r.x0, r.z0, r.x1, r.z0); if (pz < r.z1) edge(r.x0, r.z1, r.x1, r.z1);
     });
-    vx.fill();
-    visTex.needsUpdate = true; VU.uVisO.value.set(px, pz); VIS.ms = (VIS.ms || 0) * 0.9 + (performance.now() - t0) * 0.1; VIS.n = (VIS.n || 0) + 1;
+    const at = vGeo.attributes.position; at.clearUpdateRanges(); at.addUpdateRange(0, n * 3); at.needsUpdate = true; vGeo.setDrawRange(0, n);
+    const prt = renderer.getRenderTarget(), ca = renderer.getClearAlpha(); renderer.getClearColor(_vcc); const se = renderer.shadowMap.autoUpdate; renderer.shadowMap.autoUpdate = false;
+    renderer.setRenderTarget(visRT); renderer.setClearColor(0xffffff, 1); renderer.clear(true, false, false); renderer.render(vScene, vCam);
+    renderer.setRenderTarget(prt); renderer.setClearColor(_vcc, ca); renderer.shadowMap.autoUpdate = se;
+    VU.uVisO.value.set(px, pz); VIS.ms = (VIS.ms || 0) * 0.9 + (performance.now() - t0) * 0.1; VIS.n = (VIS.n || 0) + 1;
   };
   // linha de vista entre dois pontos (mesmas regras da máscara)
   const sees = (ax, az, bx, bz, lv, C) => { const dx = bx - ax, dz = bz - az; let ok = true; near(Math.min(ax, bx), Math.min(az, bz), Math.max(ax, bx), Math.max(az, bz), r => { if (!ok || !blocksSight(r, lv, C)) return; let t0 = 0, t1 = 1; for (const [o, d, lo, hi] of [[ax, dx, r.x0, r.x1], [az, dz, r.z0, r.z1]]) { if (Math.abs(d) < 1e-9) { if (o <= lo || o >= hi) return; } else { let ta = (lo - o) / d, tb = (hi - o) / d; if (ta > tb) [ta, tb] = [tb, ta]; t0 = Math.max(t0, ta); t1 = Math.min(t1, tb); if (t0 >= t1) return; } } if (t0 < 0.999 && t1 > 0.001) ok = false; }); return ok; };
@@ -395,7 +400,7 @@ async function boot() {
     const prev = m.onBeforeCompile;
     m.onBeforeCompile = (sh, r) => { if (prev) prev(sh, r); Object.assign(sh.uniforms, VU);
       sh.vertexShader = 'varying vec3 vVisW;\n' + sh.vertexShader.replace('#include <project_vertex>', '#include <project_vertex>\n vec4 vwp = vec4( transformed, 1.0 );\n#ifdef USE_INSTANCING\n vwp = instanceMatrix * vwp;\n#endif\n vVisW = ( modelMatrix * vwp ).xyz;');
-      sh.fragmentShader = 'uniform sampler2D uVis; uniform vec2 uVisO; uniform float uVisS; uniform float uVisK; varying vec3 vVisW;\nfloat visS( vec2 u ) { float o = 0.9 / 384.0; return ( texture2D( uVis, u ).r * 2.0 + texture2D( uVis, u + vec2( o, 0.0 ) ).r + texture2D( uVis, u - vec2( o, 0.0 ) ).r + texture2D( uVis, u + vec2( 0.0, o ) ).r + texture2D( uVis, u - vec2( 0.0, o ) ).r ) / 6.0; }\n' + sh.fragmentShader.replace('#include <tonemapping_fragment>', ' { vec2 vuv = ( vVisW.xz - uVisO ) / uVisS + 0.5; float vv = ( vuv.x < 0.0 || vuv.y < 0.0 || vuv.x > 1.0 || vuv.y > 1.0 ) ? 1.0 : visS( vuv ); vec3 vc0 = gl_FragColor.rgb; float vl = dot( vc0, vec3( 0.299, 0.587, 0.114 ) ); gl_FragColor.rgb = mix( vec3( vl ) * uVisK * vec3( 0.9, 0.96, 1.1 ), vc0, vv ); }\n#include <tonemapping_fragment>'); };
+      sh.fragmentShader = 'uniform sampler2D uVis; uniform vec2 uVisO; uniform float uVisS; uniform float uVisK; varying vec3 vVisW;\nfloat visS( vec2 u ) { float o = 1.1 / 512.0; return ( texture2D( uVis, u ).r * 2.0 + texture2D( uVis, u + vec2( o, 0.0 ) ).r + texture2D( uVis, u - vec2( o, 0.0 ) ).r + texture2D( uVis, u + vec2( 0.0, o ) ).r + texture2D( uVis, u - vec2( 0.0, o ) ).r ) / 6.0; }\n' + sh.fragmentShader.replace('#include <tonemapping_fragment>', ' { vec2 vuv = ( vVisW.xz - uVisO ) / uVisS + 0.5; float vv = ( vuv.x < 0.0 || vuv.y < 0.0 || vuv.x > 1.0 || vuv.y > 1.0 ) ? 1.0 : visS( vuv ); vec3 vc0 = gl_FragColor.rgb; float vl = dot( vc0, vec3( 0.299, 0.587, 0.114 ) ); gl_FragColor.rgb = mix( vec3( vl ) * uVisK * vec3( 0.9, 0.96, 1.1 ), vc0, vv ); }\n#include <tonemapping_fragment>'); };
     const key = m.customProgramCacheKey ? m.customProgramCacheKey.bind(m) : () => ''; m.customProgramCacheKey = () => key() + '|vis'; m.needsUpdate = true;
   };
   const visifyScene = () => scene.traverse(o => { if (!o.isMesh || o.userData.sil || o === aimLine) return; (Array.isArray(o.material) ? o.material : [o.material]).forEach(visify); });
@@ -785,7 +790,8 @@ async function boot() {
   };
   G.sectors = SECTORS;
   // vilas e monumentos longe do centro: constrói o mais perto que falta (um por imagem) e larga os que ficaram longe
-  const lazyTick = (px, pz) => { let best = null, bd = 1e9; for (const L of W.lazy) { const d = Math.max(L.x0 - px, px - L.x1, L.z0 - pz, pz - L.z1, 0); if (L.meshes) { if (d > 430) W.lazyDrop(L); } else if (d < 250 && d < bd) { bd = d; best = L; } } if (best) { W.lazyBuild(best); return true; } return false; };
+  // sliced (a jogar): no máximo ~4 ms por imagem a fazer malhas das zonas que se aproximam; sem isso (arranque, testes) faz tudo de uma vez
+  const lazyTick = (px, pz, sliced = false) => { if (sliced && W.lazyStep(performance.now() + 4)) return true; let best = null, bd = 1e9; for (const L of W.lazy) { const d = Math.max(L.x0 - px, px - L.x1, L.z0 - pz, pz - L.z1, 0); if (L.meshes || L.job) { if (d > 430) W.lazyDrop(L); } else if (d < 250 && d < bd) { bd = d; best = L; } } if (best) { W.lazyBuild(best, sliced); return true; } return false; };
   G.lazyTick = lazyTick;
   // só para testes: vista de cima (ortográfica) de um quadrado de lado L à volta de (x, z), devolvida como imagem
   G.TR = { PRICE, SELL, TRADERS }; G.trade = tradeFn; npcInit(); G.npcs = npcs; initPWA(G);
@@ -959,7 +965,7 @@ async function boot() {
       const dMe = me ? Math.hypot(me.x - z.x, me.z - z.z) : 99;
       const dx = p.x - z.x, dz = p.z - z.z, d = Math.hypot(dx, dz), zl = z.lv || 0, same = zl === p.lv;
       // longe de ti e fora da vista pensa menos vezes (mais leve); à vista (por exemplo na luneta) anda a cada imagem, sem saltos
-      let dt = dt0; if (d > 90 && z.state !== 'chase' && z.hide) { z.acc = (z.acc || 0) + dt0; if (z.acc < 0.5) continue; dt = z.acc; z.acc = 0; } else z.acc = 0;
+      let dt = dt0; const thr = z.state === 'chase' || !z.hide ? 0 : d > 90 ? 0.5 : z.state === 'wander' && d > 25 ? 0.2 : 0; /* fora da vista e a vaguear: pensa e anda 5 vezes por segundo (ninguém vê a diferença; poupa o telemóvel na cidade) */ if (thr) { z.acc = (z.acc || 0) + dt0; if (z.acc < thr) continue; dt = z.acc; z.acc = 0; } else z.acc = 0;
       z.think -= dt;
       if (z.think <= 0) {
         z.think = 0.22 + Math.random() * 0.12;
@@ -1398,7 +1404,7 @@ async function boot() {
     G.t += dt;
     const p = G.p;
     if (G.paused) { G.ui.frame(0); renderer.render(scene, cam); return; }
-    updDoors(dt); updBooms(dt); updWeather(dt); wreckTick(dt); mats.water.normalMap.offset.set((G.t * 0.011) % 1, (G.t * 0.006) % 1); if (G.playing && G.p) { SECTORS.tick(G.p.x, G.p.z); lazyTick(G.p.x, G.p.z); } if (G.base) { G.base.tick(dt); G.buildK = G.base.frame(); }
+    updDoors(dt); updBooms(dt); updWeather(dt); wreckTick(dt); mats.water.normalMap.offset.set((G.t * 0.011) % 1, (G.t * 0.006) % 1); if (G.playing && G.p) { if (!SECTORS.tick(G.p.x, G.p.z)) lazyTick(G.p.x, G.p.z, true); } /* um setor ou um bocado de zona por imagem, nunca os dois */ if (G.base) { G.base.tick(dt); G.buildK = G.base.frame(); }
     if (G.playing && p) {
       // movimento relativo ao ecrã, com peso: acelera e trava, o corpo vira para onde andas
       const cfg = G.cfg;
@@ -1665,7 +1671,7 @@ async function boot() {
       sun.target.position.set(tx, ty, tz); sun.position.set(tx, ty, tz).addScaledVector(SUNDIR, 70); sun.target.updateMatrixWorld(); }
     // círculo de visão
     // máscara da linha de vista (refeita quando te mexes ou uma porta muda)
-    if (p && G.playing && p.alive && !G.fp) { VU.uVisK.value = 0.06 + 0.03 * (G.day ?? 1); VIS.t -= dt; const dk = W.doors.reduce((a, D) => a + (D.rc.off ? 1 : 0), 0) + ':' + p.lv + ':' + Math.round((AIM.lean || 0) * 4); VIS.cd = (VIS.cd || 0) - dt; if ((VIS.cd <= 0 && Math.hypot(p.x - VIS.x, p.z - VIS.z) > 0.04) || dk !== VIS.key || VIS.t <= 0) { VIS.x = p.x; VIS.z = p.z; VIS.key = dk; VIS.t = 0.5; VIS.cd = G.cfg.lowres ? 1 / 15 : 1 / 30; const lo = (AIM.lean || 0) * LEAN; drawVis(p.x + Math.cos(p.yaw) * lo, p.z - Math.sin(p.yaw) * lo, p.lv, p.bld && p.lv > 0 ? p.bld : null); } }
+    if (p && G.playing && p.alive && !G.fp) { VU.uVisK.value = 0.06 + 0.03 * (G.day ?? 1); VIS.t -= dt; const dk = W.doors.reduce((a, D) => a + (D.rc.off ? 1 : 0), 0) + ':' + p.lv + ':' + Math.round((AIM.lean || 0) * 4); VIS.cd = (VIS.cd || 0) - dt; const lo = (AIM.lean || 0) * LEAN, vcx = p.x + Math.cos(p.yaw) * lo, vcz = p.z - Math.sin(p.yaw) * lo; if (Math.hypot(vcx - VIS.x, vcz - VIS.z) > 0.002 || dk !== VIS.key || VIS.t <= 0) { VIS.x = vcx; VIS.z = vcz; VIS.key = dk; VIS.t = 0.5; drawVis(vcx, vcz, p.lv, p.bld && p.lv > 0 ? p.bld : null); } }
     else VU.uVisK.value = 1;
     if (G0.xray) G0.xray.visible = !G.fp && !onRoof(G.p); // em cima de um telhado, os contornos das portas lá de baixo atravessavam-no
     body.root.visible = !!(p && G.playing && p.alive && !G.fp && (!G.car || G.leanOut));

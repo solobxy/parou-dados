@@ -19,6 +19,23 @@ const _v = new THREE.Vector3(), _c = new THREE.Color(), _q = new THREE.Quaternio
 export const mat4 = (x = 0, y = 0, z = 0, ry = 0, rx = 0, rz = 0, sx = 1, sy = sx, sz = sx) =>
   new THREE.Matrix4().compose(_v.set(x, y, z), _q.setFromEuler(_e.set(rx, ry, rz, 'YXZ')), _s.set(sx, sy, sz));
 
+// moldes: cada forma base faz-se uma vez (já sem índice) e depois só se copia e estica; antes cada caixa e cilindro era criado e convertido de novo
+// (era o que mais pesava ao construir uma vila nova enquanto andas)
+const TPL = new Map();
+const tpl = (key, mk) => { let g = TPL.get(key); if (!g) { g = mk(); if (g.index) { const n = g.toNonIndexed(); g.dispose(); g = n; } for (const k of Object.keys(g.attributes)) if (!KEEP.includes(k)) g.deleteAttribute(k); if (!g.attributes.normal) g.computeVertexNormals(); TPL.set(key, g); }
+  if (!g.rec) { g.computeBoundingBox(); const bb = g.boundingBox; g.rec = { tpl: true, p: g.attributes.position.array, n: g.attributes.normal.array, uv: g.attributes.uv ? g.attributes.uv.array : null, bb: [bb.min.x, bb.min.y, bb.min.z, bb.max.x, bb.max.y, bb.max.z], dispose() {} }; } return g.rec; };
+const _lm = new THREE.Matrix4(), _nm = new THREE.Matrix3();
+// peça adiada (molde + matriz + cor): faz agora as contas para dentro das listas finais
+const _nm2 = new THREE.Matrix3(), _mm = new THREE.Matrix4();
+const writeJob = (r, P, N, U, C, o) => { const g = r.src, n = r.count, e = r.M; _mm.fromArray(e); const q = _nm2.getNormalMatrix(_mm).elements, S = g.p, NN = g.n, UU = g.uv, sc = UVS[r.mat];
+  for (let i = 0, k = 0, w = o * 3; i < n; i++, k += 3, w += 3) { const x = S[k], y = S[k + 1], z = S[k + 2]; const X = e[0] * x + e[4] * y + e[8] * z + e[12], Y = e[1] * x + e[5] * y + e[9] * z + e[13], Z = e[2] * x + e[6] * y + e[10] * z + e[14]; P[w] = X; P[w + 1] = Y; P[w + 2] = Z;
+    const a = NN[k], b = NN[k + 1], c = NN[k + 2]; let nx = q[0] * a + q[3] * b + q[6] * c, ny = q[1] * a + q[4] * b + q[7] * c, nz = q[2] * a + q[5] * b + q[8] * c; const l = Math.hypot(nx, ny, nz) || 1; N[w] = nx / l; N[w + 1] = ny / l; N[w + 2] = nz / l;
+    const u = (o + i) * 2; if (r.mat === 'fence') { U[u] = (X + Z) / 0.5; U[u + 1] = Y / 0.5; } else if (sc) { U[u] = X / sc; U[u + 1] = -Z / sc; } else if (UU) { U[u] = UU[i * 2]; U[u + 1] = UU[i * 2 + 1]; } else { U[u] = 0; U[u + 1] = 0; }
+    C[w] = r.r; C[w + 1] = r.g; C[w + 2] = r.b; } };
+const writeRec = (r, P, N, U, C, o) => { if (r.job) writeJob(r, P, N, U, C, o); else { P.set(r.p, o * 3); N.set(r.n, o * 3); U.set(r.uv, o * 2); C.set(r.c, o * 3); } };
+// junta listas de números numa geometria só (posição, normal, uv, cor)
+const mergeRecs = L => { if (!L.length) return null; let n = 0; for (const r of L) n += r.count; const P = new Float32Array(n * 3), N = new Float32Array(n * 3), U = new Float32Array(n * 2), C = new Float32Array(n * 3); let o = 0; for (const r of L) { writeRec(r, P, N, U, C, o); o += r.count; }
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(P, 3)); g.setAttribute('normal', new THREE.BufferAttribute(N, 3)); g.setAttribute('uv', new THREE.BufferAttribute(U, 2)); g.setAttribute('color', new THREE.BufferAttribute(C, 3)); return g; };
 export class Builder {
   constructor(chunk = 40) { this.chunk = chunk; this.buckets = new Map(); this.stack = [new THREE.Matrix4()]; this.cut = null; this.single = chunk === 0; this.log = []; }
   // desfazer: marca e volta atrás (para tirar mobília que ficou a tapar escadas)
@@ -27,28 +44,33 @@ export class Builder {
   get m() { return this.stack[this.stack.length - 1]; }
   push(x = 0, y = 0, z = 0, ry = 0, rx = 0, rz = 0) { this.stack.push(this.m.clone().multiply(mat4(x, y, z, ry, rx, rz))); return this; }
   pop() { this.stack.pop(); return this; }
-  // junta uma geometria já criada (é consumida)
+  // junta uma geometria (é consumida) ou um molde: guarda só as listas de números (posição, normal, uv, cor), sem criar objetos do three.js para cada peça
   add(g, hex, mat = 'v', local = null, jit = 0) {
     // a seco (só colisões e loot, sem geometria): gasta o mesmo número de sorteios para o resultado ser igual quando se constrói a sério
-    if (this.dry) { g.dispose(); if (jit) rr(-jit, jit); return null; }
-    let geo = g.index ? g.toNonIndexed() : g;
-    if (geo !== g) g.dispose();
-    for (const k of Object.keys(geo.attributes)) if (!KEEP.includes(k)) geo.deleteAttribute(k);
-    if (!geo.attributes.normal) geo.computeVertexNormals();
-    const n = geo.attributes.position.count;
-    if (!geo.attributes.uv) geo.setAttribute('uv', new THREE.Float32BufferAttribute(new Float32Array(n * 2), 2));
-    const M = local ? this.m.clone().multiply(local) : this.m;
-    geo.applyMatrix4(M);
-    if (mat === 'fence') { const p = geo.attributes.position, uv = geo.attributes.uv; for (let i = 0; i < n; i++) uv.setXY(i, (p.getX(i) + p.getZ(i)) / 0.5, p.getY(i) / 0.5); }
-    else if (UVS[mat]) { const p = geo.attributes.position, uv = geo.attributes.uv, s = UVS[mat]; for (let i = 0; i < n; i++) uv.setXY(i, p.getX(i) / s, -p.getZ(i) / s); }
+    if (this.dry) { if (g && g.dispose) g.dispose(); if (jit) rr(-jit, jit); return null; }
+    if (this.defer && g.tpl) return this.addJob(g, hex, mat, local, jit);
+    let P, N, U;
+    if (g.tpl) { P = g.p; N = g.n; U = g.uv; }
+    else { let geo = g.index ? g.toNonIndexed() : g; if (geo !== g) g.dispose(); if (!geo.attributes.normal) geo.computeVertexNormals(); P = geo.attributes.position.array; N = geo.attributes.normal.array; U = geo.attributes.uv ? geo.attributes.uv.array : null; geo.dispose(); }
+    const n = P.length / 3;
+    const M = local ? _lm.multiplyMatrices(this.m, local) : this.m, e = M.elements, q = _nm.getNormalMatrix(M).elements;
+    const pos = new Float32Array(n * 3), nor = new Float32Array(n * 3), uv = new Float32Array(n * 2), col = new Float32Array(n * 3);
+    let x0 = Infinity, y0 = Infinity, z0 = Infinity, x1 = -Infinity, y1 = -Infinity, z1 = -Infinity;
+    for (let i = 0, k = 0; i < n; i++, k += 3) { const x = P[k], y = P[k + 1], z = P[k + 2];
+      const X = e[0] * x + e[4] * y + e[8] * z + e[12], Y = e[1] * x + e[5] * y + e[9] * z + e[13], Z = e[2] * x + e[6] * y + e[10] * z + e[14]; pos[k] = X; pos[k + 1] = Y; pos[k + 2] = Z;
+      if (X < x0) x0 = X; if (X > x1) x1 = X; if (Y < y0) y0 = Y; if (Y > y1) y1 = Y; if (Z < z0) z0 = Z; if (Z > z1) z1 = Z;
+      const a = N[k], b = N[k + 1], c = N[k + 2]; let nx = q[0] * a + q[3] * b + q[6] * c, ny = q[1] * a + q[4] * b + q[7] * c, nz = q[2] * a + q[5] * b + q[8] * c; const l = Math.hypot(nx, ny, nz) || 1; nor[k] = nx / l; nor[k + 1] = ny / l; nor[k + 2] = nz / l; }
+    if (mat === 'fence') { for (let i = 0; i < n; i++) { uv[i * 2] = (pos[i * 3] + pos[i * 3 + 2]) / 0.5; uv[i * 2 + 1] = pos[i * 3 + 1] / 0.5; } }
+    else if (UVS[mat]) { const sc = UVS[mat]; for (let i = 0; i < n; i++) { uv[i * 2] = pos[i * 3] / sc; uv[i * 2 + 1] = -pos[i * 3 + 2] / sc; } }
+    else if (U) uv.set(U.subarray(0, n * 2));
     if (typeof hex === 'object' && hex.isColor) _c.copy(hex); else _c.set(hex);
     if (jit) _c.multiplyScalar(1 + rr(-jit, jit));
-    const col = new Float32Array(n * 3); for (let i = 0; i < n; i++) { col[i * 3] = _c.r; col[i * 3 + 1] = _c.g; col[i * 3 + 2] = _c.b; }
-    geo.setAttribute('color', new THREE.BufferAttribute(col, 3));
+    for (let i = 0; i < n; i++) { col[i * 3] = _c.r; col[i * 3 + 1] = _c.g; col[i * 3 + 2] = _c.b; }
+    const geo = { p: pos, n: nor, uv, c: col, count: n, dispose() {} };
     // coisas finas ou pequenas (cabos, postes, placas, cadeiras, carros) desenham-se depois da silhueta do jogador: tapam-no normalmente mas não o põem em raio-X.
     // Só paredes, edifícios, camiões, pilares e lajes por cima (viaduto, pisos) acendem a silhueta, porque só essas o escondem a sério
     let thin = false;
-    if (!this.single && !['decal', 'lit', 'gl', 'sign'].includes(mat)) { geo.computeBoundingBox(); const bb = geo.boundingBox, dx = bb.max.x - bb.min.x, dy = bb.max.y - bb.min.y, dz = bb.max.z - bb.min.z; thin = this.thin || mat === 'fence' || !((dy >= 2.0 && Math.max(dx, dz) >= 1.2) || (Math.min(dx, dz) >= 2.5 && bb.min.y >= 2.2 && dy >= 0.12)); }
+    if (!this.single && !['decal', 'lit', 'gl', 'sign'].includes(mat)) { const dx = x1 - x0, dy = y1 - y0, dz = z1 - z0; thin = this.thin || mat === 'fence' || !((dy >= 2.0 && Math.max(dx, dz) >= 1.2) || (Math.min(dx, dz) >= 2.5 && y0 >= 2.2 && dy >= 0.12)); }
     let key;
     if (this.single) key = mat;
     else if (this.cut) key = 'cut|' + this.cut + '|' + mat;
@@ -57,23 +79,71 @@ export class Builder {
     let b = this.buckets.get(key); if (!b) this.buckets.set(key, b = []); b.push(geo); this.log.push(b);
     return geo;
   }
-  box(w, h, d, x, y, z, hex, o = {}) { return this.add(new THREE.BoxGeometry(w, h, d), hex, o.mat, mat4(x, y, z, o.ry || 0, o.rx || 0, o.rz || 0), o.jit); }
-  rbox(w, h, d, r, x, y, z, hex, o = {}) { return this.add(new RoundedBoxGeometry(w, h, d, o.seg || 2, Math.min(r, Math.min(w, h, d) / 2 - 0.001)), hex, o.mat, mat4(x, y, z, o.ry || 0, o.rx || 0, o.rz || 0), o.jit); }
-  cyl(r1, r2, h, n, x, y, z, hex, o = {}) { return this.add(new THREE.CylinderGeometry(r1, r2, h, n, 1, !!o.open), hex, o.mat, mat4(x, y, z, o.ry || 0, o.rx || 0, o.rz || 0), o.jit); }
-  sph(r, x, y, z, hex, o = {}) { return this.add(new THREE.SphereGeometry(r, o.ws || 14, o.hs || 10, 0, Math.PI * 2, 0, o.th || Math.PI), hex, o.mat, mat4(x, y, z, o.ry || 0, o.rx || 0, o.rz || 0, o.sx || 1, o.sy || o.sx || 1, o.sz || o.sx || 1), o.jit); }
-  ico(r, x, y, z, hex, o = {}) { return this.add(new THREE.IcosahedronGeometry(r, o.det || 0), hex, o.mat, mat4(x, y, z, o.ry || 0, o.rx || 0, o.rz || 0, o.sx || 1, o.sy || o.sx || 1, o.sz || o.sx || 1), o.jit); }
+  box(w, h, d, x, y, z, hex, o = {}) { if (this.dry) return this.add(new THREE.BufferGeometry(), hex, o.mat, null, o.jit); return this.add(tpl('b', () => new THREE.BoxGeometry(1, 1, 1)), hex, o.mat, mat4(x, y, z, o.ry || 0, o.rx || 0, o.rz || 0, w, h, d), o.jit); }
+  rbox(w, h, d, r, x, y, z, hex, o = {}) { if (this.dry) return this.add(new THREE.BufferGeometry(), hex, o.mat, null, o.jit); const sg = o.seg || 2, rr2 = Math.min(r, Math.min(w, h, d) / 2 - 0.001); return this.add(tpl('r' + [w, h, d, sg, rr2].join(','), () => new RoundedBoxGeometry(w, h, d, sg, rr2)), hex, o.mat, mat4(x, y, z, o.ry || 0, o.rx || 0, o.rz || 0), o.jit); }
+  cyl(r1, r2, h, n, x, y, z, hex, o = {}) { if (this.dry) return this.add(new THREE.BufferGeometry(), hex, o.mat, null, o.jit); const op = !!o.open, R = Math.max(r1, r2) || 1e-6, a = +(r1 / R).toFixed(5), b2 = +(r2 / R).toFixed(5); return this.add(tpl('c' + [a, b2, n, op].join(','), () => new THREE.CylinderGeometry(a, b2, 1, n, 1, op)), hex, o.mat, mat4(x, y, z, o.ry || 0, o.rx || 0, o.rz || 0, R, h, R), o.jit); }
+  sph(r, x, y, z, hex, o = {}) { if (this.dry) return this.add(new THREE.BufferGeometry(), hex, o.mat, null, o.jit); const ws = o.ws || 14, hs = o.hs || 10, th = o.th || Math.PI; return this.add(tpl('s' + [ws, hs, th].join(','), () => new THREE.SphereGeometry(1, ws, hs, 0, Math.PI * 2, 0, th)), hex, o.mat, mat4(x, y, z, o.ry || 0, o.rx || 0, o.rz || 0, r * (o.sx || 1), r * (o.sy || o.sx || 1), r * (o.sz || o.sx || 1)), o.jit); }
+  ico(r, x, y, z, hex, o = {}) { if (this.dry) return this.add(new THREE.BufferGeometry(), hex, o.mat, null, o.jit); const dt = o.det || 0; return this.add(tpl('i' + dt, () => new THREE.IcosahedronGeometry(1, dt)), hex, o.mat, mat4(x, y, z, o.ry || 0, o.rx || 0, o.rz || 0, r * (o.sx || 1), r * (o.sy || o.sx || 1), r * (o.sz || o.sx || 1)), o.jit); }
   cap(r, len, x, y, z, hex, o = {}) { return this.add(new THREE.CapsuleGeometry(r, len, 4, 12), hex, o.mat, mat4(x, y, z, o.ry || 0, o.rx || 0, o.rz || 0), o.jit); }
   // chão horizontal (retângulo em x/z)
   floor(x0, z0, x1, z1, y, hex, mat = 'v') { const g = new THREE.PlaneGeometry(x1 - x0, z1 - z0); g.rotateX(-Math.PI / 2); return this.add(g, hex, mat, mat4((x0 + x1) / 2, y, (z0 + z1) / 2)); }
   plane(w, h, x, y, z, hex, o = {}) { const g = new THREE.PlaneGeometry(w, h); if (o.uv) { const uv = g.attributes.uv; for (let i = 0; i < uv.count; i++) uv.setXY(i, o.uv.u0 + uv.getX(i) * (o.uv.u1 - o.uv.u0), o.uv.v0 + uv.getY(i) * (o.uv.v1 - o.uv.v0)); } return this.add(g, hex, o.mat, mat4(x, y, z, o.ry || 0, o.rx || 0, o.rz || 0), o.jit); }
   tube(points, r, hex, o = {}) { const c = new THREE.CatmullRomCurve3(points); const t0 = this.thin; this.thin = true; try { return this.add(new THREE.TubeGeometry(c, o.seg || 10, r, 4, false), hex, o.mat); } finally { this.thin = t0; } }
+  // adiado (zonas que se constroem enquanto andas): guarda só o molde, a matriz e a cor; as contas fazem-se aos bocados, nas imagens seguintes
+  addJob(g, hex, mat, local, jit) {
+    const M = local ? _lm.multiplyMatrices(this.m, local) : this.m, e = M.elements, B = g.bb;
+    let x0 = Infinity, y0 = Infinity, z0 = Infinity, x1 = -Infinity, y1 = -Infinity, z1 = -Infinity;
+    for (let i = 0; i < 8; i++) { const x = B[i & 1 ? 3 : 0], y = B[i & 2 ? 4 : 1], z = B[i & 4 ? 5 : 2]; const X = e[0] * x + e[4] * y + e[8] * z + e[12], Y = e[1] * x + e[5] * y + e[9] * z + e[13], Z = e[2] * x + e[6] * y + e[10] * z + e[14]; if (X < x0) x0 = X; if (X > x1) x1 = X; if (Y < y0) y0 = Y; if (Y > y1) y1 = Y; if (Z < z0) z0 = Z; if (Z > z1) z1 = Z; }
+    if (typeof hex === 'object' && hex.isColor) _c.copy(hex); else _c.set(hex);
+    if (jit) _c.multiplyScalar(1 + rr(-jit, jit));
+    const geo = { job: true, src: g, M: Float32Array.from(e), r: _c.r, g: _c.g, b: _c.b, mat, count: g.p.length / 3, dispose() {} };
+    let thin = false;
+    if (!this.single && !['decal', 'lit', 'gl', 'sign'].includes(mat)) { const dx = x1 - x0, dy = y1 - y0, dz = z1 - z0; thin = this.thin || mat === 'fence' || !((dy >= 2.0 && Math.max(dx, dz) >= 1.2) || (Math.min(dx, dz) >= 2.5 && y0 >= 2.2 && dy >= 0.12)); }
+    let key;
+    if (this.single) key = mat;
+    else if (this.cut) key = 'cut|' + this.cut + '|' + mat;
+    else { const ch = thin ? this.chunk * 2 : this.chunk; key = Math.floor(e[12] / ch) + ',' + Math.floor(e[14] / ch) + '|' + mat; }
+    if (thin) key += '|t';
+    let b = this.buckets.get(key); if (!b) this.buckets.set(key, b = []); b.push(geo); this.log.push(b);
+    return geo;
+  }
+  // construção aos bocados: devolve uma tarefa; step(até) faz o que couber até à hora dada e diz se acabou
+  sliced(parent, mats) {
+    const ents = [...this.buckets]; this.buckets = new Map(); this.log = [];
+    const job = { meshes: [], cuts: new Map(), done: false, cancel() { this.dead = true; } };
+    let bi = 0, ri = 0, P, N, U, C, o = 0;
+    job.step = until => { if (job.dead) return true;
+      while (bi < ents.length) {
+        const [key, recs] = ents[bi];
+        if (!P) { let n = 0; for (const r of recs) n += r.count; P = new Float32Array(n * 3); N = new Float32Array(n * 3); U = new Float32Array(n * 2); C = new Float32Array(n * 3); o = 0; ri = 0; }
+        while (ri < recs.length) { writeRec(recs[ri], P, N, U, C, o); o += recs[ri].count; ri++; if ((ri & 7) === 0 && performance.now() > until) return false; }
+        const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(P, 3)); g.setAttribute('normal', new THREE.BufferAttribute(N, 3)); g.setAttribute('uv', new THREE.BufferAttribute(U, 2)); g.setAttribute('color', new THREE.BufferAttribute(C, 3)); P = null;
+        this._mesh(key, g, parent, mats, job.cuts, job.meshes); bi++;
+        if (performance.now() > until) return bi >= ents.length ? (job.done = true) : false;
+      }
+      return (job.done = true); };
+    return job;
+  }
+  _mesh(key, g, parent, mats, cuts, out) {
+    const parts = key.split('|'), thin = parts[parts.length - 1] === 't'; if (thin) parts.pop(); const mat = parts[parts.length - 1];
+    g.computeBoundingSphere(); g.computeBoundingBox();
+    const m = new THREE.Mesh(g, mats[mat]);
+    const sh = !['gl', 'lit', 'sign', 'decal'].includes(mat);
+    m.castShadow = sh && mat !== 'water' && mat !== 'asph' && mat !== 'tile' && mat !== 'grass' && mat !== 'dirt'; m.receiveShadow = mat !== 'lit' && mat !== 'sign';
+    if (mat === 'gl') m.renderOrder = 2;
+    if (mat === 'decal') m.renderOrder = 1;
+    if (thin) { m.renderOrder = 3; m.userData.thin = true; }
+    if (parts[0] === 'cut') { let gr = cuts.get(parts[1]); if (!gr) { gr = new THREE.Group(); cuts.set(parts[1], gr); parent.add(gr); } gr.add(m); }
+    else parent.add(m);
+    out.push(m); return m;
+  }
   // um único BufferGeometry (para personagens e ícones)
-  merged(mat = 'v') { const b = this.buckets.get(mat) || []; const g = mergeGeometries(b, false); b.forEach(x => x.dispose()); this.buckets.delete(mat); return g; }
+  merged(mat = 'v') { const b = this.buckets.get(mat) || []; const g = mergeRecs(b); this.buckets.delete(mat); return g; }
   build(parent, mats, opts = {}) {
     const cuts = new Map(), out = [];
     for (const [key, geos] of this.buckets) {
       const parts = key.split('|'), thin = parts[parts.length - 1] === 't'; if (thin) parts.pop(); const mat = parts[parts.length - 1];
-      const g = mergeGeometries(geos, false); geos.forEach(x => x.dispose());
+      const g = mergeRecs(geos);
       g.computeBoundingSphere(); g.computeBoundingBox();
       const m = new THREE.Mesh(g, mats[mat]);
       const sh = !['gl', 'lit', 'sign', 'decal'].includes(mat);

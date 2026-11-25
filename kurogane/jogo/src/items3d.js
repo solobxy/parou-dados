@@ -196,7 +196,7 @@ export function makeIcons(DPR = 2) {
   // armas: o mesmo desenho detalhado que se vê na mão (guns.js), de lado
   const GM = { v: new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.62, metalness: 0.08 }), m: new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.36, metalness: 0.62 }) };
   const gunIcon = k => () => { const b = new Builder(0); GUNS[k](b); const g = new THREE.Group(); for (const mk of [...b.buckets.keys()]) { const geo = b.merged(mk); if (geo) g.add(new THREE.Mesh(geo, GM[mk] || GM.v)); } g.rotation.y = Math.PI / 2; const w = new THREE.Group(); w.add(g); return w; };
-  IT.m4 = gunIcon('m4'); IT.ak = gunIcon('ak'); IT.smg = gunIcon('smg'); IT.pistol = gunIcon('pistola'); IT.revolver = gunIcon('revolver'); IT.shotgun = gunIcon('cacadeira'); IT.hunting = gunIcon('caca');
+  IT.m4 = gunIcon('m4'); IT.ak = gunIcon('ak'); IT.smg = gunIcon('smg'); IT.pistol = gunIcon('pistola'); IT.revolver = gunIcon('revolver'); IT.shotgun = gunIcon('cacadeira'); IT.hunting = gunIcon('caca'); IT.cheytac = gunIcon('cheytac'); IT.barrett = gunIcon('barrett'); IT.m249 = gunIcon('m249'); IT.pkm = gunIcon('pkm');
   IT.lampada = () => { const g = new THREE.Group(); put(Cy(0.012, 0.016, 0.5, 8, 0x3a3c3e, { m: 0.5 }), 0, -0.05, 0, g); put(B(0.1, 0.015, 0.1, 0x3a3c3e, { m: 0.5 }), 0, -0.3, 0, g); put(B(0.016, 0.016, 0.1, 0x3a3c3e), 0, 0.2, 0.04, g); put(Cy(0.03, 0.035, 0.07, 10, 0x3a3c3e, { m: 0.5 }), 0, 0.16, 0.09, g); put(Cy(0.026, 0.03, 0.055, 10, 0xffd9a0, { e: 0xffb860, ei: 1.2 }), 0, 0.16, 0.09, g); g.rotation.y = 0.5; return g; };
   // armas pesadas
   const bolt = (o) => { const g = new THREE.Group(), c = o.col; put(RB(0.62, 0.085, 0.06, 0.015, c, { m: 0.35, r: 0.5 }), 0, 0, 0, g); put(X(Cy(o.br, o.br, o.blen, 12, BLK, { m: 0.5 })), 0.31 + o.blen / 2, 0.012, 0, g);
@@ -204,14 +204,14 @@ export function makeIcons(DPR = 2) {
     const st = RB(0.34, 0.11, 0.05, 0.02, c); st.rotation.z = 0.06; put(st, -0.46, -0.02, 0, g); put(RB(0.05, 0.12, 0.045, 0.012, c), -0.15, -0.09, 0, g).rotation.z = -0.3;
     put(X(Cy(0.032, 0.032, 0.34, 16, BLK, { m: 0.5, r: 0.35 })), -0.02, 0.1, 0, g); put(X(Cy(0.044, 0.034, 0.06, 16, BLK)), 0.16, 0.1, 0, g); put(X(Cy(0.04, 0.034, 0.05, 16, BLK)), -0.2, 0.1, 0, g); for (const x of [-0.08, 0.06]) put(B(0.03, 0.05, 0.03, BLK), x, 0.055, 0, g);
     put(RB(0.07, 0.1, 0.05, 0.012, BLK), o.magx, -0.09, 0, g); for (const s of [-1, 1]) { const l = Cy(0.007, 0.007, 0.2, 6, BLK); l.rotation.z = s * 0.5 + Math.PI; put(l, 0.36 + s * 0.04, -0.12, 0, g); } return g; };
-  IT.cheytac = () => bolt({ col: 0x6b6450, br: 0.017, blen: 0.42, magx: -0.05 });
-  IT.barrett = () => { const g = bolt({ col: 0x2b2d30, br: 0.024, blen: 0.4, magx: 0.0 }); put(RB(0.12, 0.13, 0.055, 0.012, BLK), 0.0, -0.11, 0, g); g.scale.setScalar(1.05); return g; };
+  IT.cheytac = gunIcon('cheytac');
+  IT.barrett = gunIcon('barrett');
   const lmg = (c, box) => { const g = new THREE.Group(); put(RB(0.54, 0.1, 0.07, 0.015, c, { m: 0.4 }), 0, 0, 0, g); put(X(Cy(0.016, 0.016, 0.42, 10, BLK, { m: 0.5 })), 0.47, 0.01, 0, g); put(X(Cy(0.03, 0.03, 0.2, 12, 0x2b2d30)), 0.37, 0.01, 0, g);
     put(B(0.03, 0.03, 0.03, BLK), 0.44, 0.07, 0, g); const st = RB(0.3, 0.1, 0.05, 0.02, c); st.rotation.z = 0.1; put(st, -0.4, -0.03, 0, g); put(RB(0.045, 0.1, 0.045, 0.012, c), -0.18, -0.08, 0, g).rotation.z = -0.3;
     put(RB(0.13, 0.13, 0.1, 0.015, box, { r: 0.8 }), 0.04, -0.12, 0.02, g); put(B(0.05, 0.03, 0.01, 0xc9a14a, { m: 0.8, r: 0.3 }), 0.1, -0.04, 0.045, g); put(X(Cy(0.012, 0.012, 0.1, 8, 0x3a3c3e)), -0.02, 0.09, 0, g);
     for (const s of [-1, 1]) { const l = Cy(0.007, 0.007, 0.2, 6, BLK); l.rotation.z = s * 0.5 + Math.PI; put(l, 0.5 + s * 0.04, -0.1, 0, g); } return g; };
-  IT.m249 = () => lmg(0x2b2d30, 0x4b5a32);
-  IT.pkm = () => { const g = lmg(0x3a3c3e, 0x3a3c3e); put(RB(0.22, 0.07, 0.055, 0.015, 0x8a5a32), -0.42, -0.03, 0, g); return g; };
+  IT.m249 = gunIcon('m249');
+  IT.pkm = gunIcon('pkm');
   IT.ammo408 = box(0x2f3a4a, 0xc9a14a, 3, 0.12, 0xb87333, false);
   IT.ammo50 = box(0x3a3226, 0xc9a14a, 3, 0.13, 0x2a2b2c, false);
   IT.boxmag = () => { const g = new THREE.Group(); put(RB(0.2, 0.14, 0.12, 0.015, 0x4b5a32, { r: 0.8 }), 0, 0, 0, g); put(B(0.12, 0.04, 0.002, 0xd9cfae), 0, 0.01, 0.061, g); for (let i = 0; i < 5; i++) { put(Cy(0.007, 0.007, 0.05, 8, 0xc9a14a, { m: 0.85, r: 0.3 }), 0.115 + i * 0.006, -0.02 - i * 0.022, 0.02, g).rotation.z = Math.PI / 2 - 0.3; } return g; };

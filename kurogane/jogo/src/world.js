@@ -530,11 +530,15 @@ export function buildWorld(scene, mats, A) {
     c.gt = []; c.g = []; c.mats = [];
     for (let L = 0; L < c.n; L++) { c.gt[L] = built.cuts.get(c.id + ':' + L + 't') || new THREE.Group(); if (L) { c.g[L] = built.cuts.get(c.id + ':' + L) || new THREE.Group(); c.mats[L] = []; c.g[L].traverse(m => { if (m.isMesh) { const m0 = m.material; m.material = m0.clone(); m.material.onBeforeCompile = m0.onBeforeCompile; m.material.customProgramCacheKey = m0.customProgramCacheKey; /* o clone perde o detalhe do shader */ m.material.userData.o0 = m.material.opacity; m.material.userData.t0 = m.material.transparent; c.mats[L].push(m.material); } }); } } c.fv = [];
     c.gR = built.cuts.get(c.id + ':R') || new THREE.Group(); };
-  W.lazyBuild = L => { if (L.meshes) return; const s = getSeed(), C = [cid, tid, eid], lens = {}; for (const k in W) if (Array.isArray(W[k])) lens[k] = W[k].length;
-    const bk = b.buckets, lg = b.log, cur = CUR; b.buckets = new Map(); b.log = []; setSeed(L.s0); [cid, tid, eid] = L.c0; let built; b.wet = true;
-    try { L.fn(); } finally { const ck = lzck(W.rects.slice(lens.rects), W.containers.slice(lens.containers)); if (ck !== L.ck) { console.warn('zona preguiçosa diferente', L.x0, L.z0); W.lazyBad = (W.lazyBad || 0) + 1; } built = b.build(scene, mats); for (const k in lens) W[k].length = lens[k]; setSeed(s); [cid, tid, eid] = C; b.buckets = bk; b.log = lg; CUR = cur; b.cut = null; b.wet = false; }
-    L.meshes = built.meshes; L.groups = [...built.cuts.values()]; for (const c of L.cuts) linkCut(c, built); W.onLazy && W.onLazy(L, true); };
-  W.lazyDrop = L => { if (!L.meshes) return; W.onLazy && W.onLazy(L, false);
+  // sliced: as peças guardam-se já, mas as malhas fazem-se aos bocados nas imagens seguintes (W.lazyStep), para andar sem soluços
+  W.lazyBuild = (L, sliced = false) => { if (L.meshes || L.job) return; const s = getSeed(), C = [cid, tid, eid], lens = {}; for (const k in W) if (Array.isArray(W[k])) lens[k] = W[k].length;
+    const bk = b.buckets, lg = b.log, cur = CUR; b.buckets = new Map(); b.log = []; setSeed(L.s0); [cid, tid, eid] = L.c0; let built = null; b.wet = true; b.defer = sliced;
+    try { L.fn(); } finally { const ck = lzck(W.rects.slice(lens.rects), W.containers.slice(lens.containers)); if (ck !== L.ck) { console.warn('zona preguiçosa diferente', L.x0, L.z0); W.lazyBad = (W.lazyBad || 0) + 1; } if (sliced) L.job = b.sliced(scene, mats); else built = b.build(scene, mats); for (const k in lens) W[k].length = lens[k]; setSeed(s); [cid, tid, eid] = C; b.buckets = bk; b.log = lg; CUR = cur; b.cut = null; b.wet = false; b.defer = false; }
+    if (built) lazyDone(L, built); };
+  const lazyDone = (L, built) => { L.job = null; L.meshes = built.meshes; L.groups = [...built.cuts.values()]; for (const c of L.cuts) linkCut(c, built); W.onLazy && W.onLazy(L, true); };
+  // continua a zona que está a meio; devolve true se ainda há trabalho
+  W.lazyStep = until => { for (const L of W.lazy) if (L.job) { if (L.job.step(until)) { const j = L.job; lazyDone(L, { meshes: j.meshes, cuts: j.cuts }); } return true; } return false; };
+  W.lazyDrop = L => { if (L.job) { L.job.cancel(); for (const m of L.job.meshes) { if (m.parent) m.parent.remove(m); m.geometry.dispose(); } for (const g of L.job.cuts.values()) if (g.parent) g.parent.remove(g); L.job = null; } if (!L.meshes) return; W.onLazy && W.onLazy(L, false);
     for (const m of L.meshes) { if (m.parent) m.parent.remove(m); m.geometry.dispose(); } for (const g of L.groups) if (g.parent) g.parent.remove(g);
     for (const c of L.cuts) { if (c.mats) for (const l of c.mats) if (l) l.forEach(m => m.dispose()); linkCut(c, { cuts: new Map() }); } L.meshes = L.groups = null; };
   const TW = buildTowns({ b, A, W, rect, circ, mp, container, shell, car, pole, wires, lamp, crate, cabinet, counter, table, chair, bed, shelf, fridge, woodFence, blood, bags, cone, barrier, hsign, vsign, bench, bike, vend, road, dirt, rr, ri, pick, rnd, shade, mat4, tower, lantern, sofa, books, stove, kfridge, toilet, sinkI, lampF, plantI, deskPC, boxes, tvI, wardrobe, rugI, clutter, level });

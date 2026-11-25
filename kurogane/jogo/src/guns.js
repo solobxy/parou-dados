@@ -91,4 +91,52 @@ export const GUNS = {
     b.rbox(0.045, 0.09, 0.1, 0.018, 0, -0.04, -0.1, WOOD, { rx: 0.32 }); b.rbox(0.055, 0.13, 0.28, 0.025, 0, -0.055, -0.27, WOOD, { rx: 0.06 }); b.rbox(0.03, 0.03, 0.14, 0.01, 0.015, 0.02, -0.25, WOOD); b.box(0.057, 0.135, 0.02, 0, -0.07, -0.415, 0x1a1a1a, { rx: 0.06 }); // coronha, apoio da face, coice
     b.cyl(0.004, 0.004, 0.02, 6, 0, -0.045, 0.5, 0x8a8e92, { mat: 'm' }); b.cyl(0.004, 0.004, 0.02, 6, 0, -0.13, -0.32, 0x8a8e92, { mat: 'm' }); // argolas da bandoleira
   },
+  // CheyTac M200: chassis cor de areia, cano grosso estriado com travão de boca, ferrolho, coronha ajustável e bipé
+  cheytac: b => { const C = 0x6b6450, D = 0x55503f;
+    b.rbox(0.066, 0.075, 0.5, 0.012, 0, -0.008, 0.14, C); b.box(0.06, 0.02, 0.48, 0, 0.038, 0.14, D); rail(b, 0.055, -0.08, 0.32, 0.03); // chassis e calha comprida
+    b.cyl(0.024, 0.024, 0.24, 12, 0, 0.012, 0.08, 0x3a3a34, { rx: R2, mat: 'm' }); b.cyl(0.005, 0.005, 0.06, 8, 0.035, 0.012, -0.02, BLK, { rz: R2, mat: 'm' }); b.sph(0.012, 0.068, 0.012, -0.02, BLK, { mat: 'm' }); // culatra e ferrolho
+    b.rbox(0.07, 0.07, 0.3, 0.012, 0, 0.0, 0.52, C); for (let i = 0; i < 5; i++) for (const sx of [-1, 1]) b.box(0.004, 0.03, 0.035, sx * 0.035, 0.0, 0.42 + i * 0.05, 0x2e2c24); // guarda-mão com aberturas
+    b.cyl(0.019, 0.017, 0.46, 12, 0, 0.012, 0.86, BLK, { rx: R2, mat: 'm' }); for (let i = 0; i < 4; i++) b.cyl(0.0205, 0.0205, 0.012, 12, 0, 0.012, 0.7 + i * 0.07, 0x111214, { rx: R2 }); // cano com estrias
+    b.cyl(0.03, 0.03, 0.07, 12, 0, 0.012, 1.105, BLK, { rx: R2, mat: 'm' }); for (const sx of [-1, 1]) b.box(0.004, 0.022, 0.05, sx * 0.03, 0.012, 1.105, 0x0b0b0c); // travão de boca
+    b.rbox(0.05, 0.09, 0.075, 0.01, 0, -0.085, 0.16, BLK); trig(b, -0.05, 0.03); // carregador e gatilho
+    b.rbox(0.042, 0.11, 0.055, 0.012, 0, -0.1, -0.04, BLK, { rx: -0.3 }); b.cyl(0.016, 0.016, 0.16, 10, 0, -0.008, -0.17, BLK, { rx: R2, mat: 'm' }); // punho e tubo
+    b.rbox(0.055, 0.13, 0.16, 0.015, 0, -0.035, -0.3, C); b.box(0.04, 0.035, 0.12, 0, 0.05, -0.29, D); b.box(0.058, 0.14, 0.018, 0, -0.035, -0.385, BLK); b.box(0.012, 0.04, 0.012, 0, -0.12, -0.34, BLK, { mat: 'm' }); // coronha, apoio da face, coice, monopé
+    for (const s2 of [-1, 1]) { b.cyl(0.006, 0.006, 0.26, 6, s2 * 0.012, -0.016, 0.62, BLK, { rx: R2, mat: 'm' }); b.box(0.016, 0.01, 0.02, s2 * 0.012, -0.016, 0.75, BLK); } b.box(0.036, 0.016, 0.03, 0, -0.026, 0.49, BLK, { mat: 'm' }); // bipé dobrado
+  },
+  // Barrett M82: corpo de chapa grosso, cano com travão de boca de duas câmaras, asa de transporte, carregador grande e bipé
+  barrett: b => { const C = 0x2b2d30;
+    b.rbox(0.08, 0.075, 0.6, 0.012, 0, 0.03, 0.14, C, { mat: 'm' }); b.rbox(0.074, 0.06, 0.5, 0.012, 0, -0.035, 0.08, 0x26282b, { mat: 'm' }); // corpo de cima e de baixo
+    for (let i = 0; i < 6; i++) for (const sx of [-1, 1]) b.cyl(0.006, 0.006, 0.003, 8, sx * 0.041, 0.03, -0.1 + i * 0.09, 0x151617, { rz: R2 }); // furos de alívio
+    rail(b, 0.072, -0.12, 0.3, 0.032); b.box(0.02, 0.05, 0.02, 0, 0.1, 0.32, BLK, { mat: 'm' }); b.box(0.02, 0.012, 0.16, 0, 0.125, 0.24, BLK, { mat: 'm' }); b.box(0.02, 0.05, 0.02, 0, 0.1, 0.16, BLK, { mat: 'm' }); // calha e asa de transporte
+    b.cyl(0.024, 0.022, 0.6, 12, 0, 0.03, 0.74, BLK, { rx: R2, mat: 'm' }); for (let i = 0; i < 6; i++) b.cyl(0.026, 0.026, 0.01, 12, 0, 0.03, 0.52 + i * 0.05, 0x111214, { rx: R2 });
+    b.rbox(0.1, 0.05, 0.11, 0.01, 0, 0.03, 1.08, BLK, { mat: 'm' }); for (const sx of [-1, 1]) for (const z of [1.055, 1.105]) b.box(0.004, 0.034, 0.03, sx * 0.05, 0.03, z, 0x0b0b0c); // travão de boca
+    b.rbox(0.058, 0.15, 0.11, 0.012, 0, -0.13, 0.2, BLK); b.box(0.06, 0.012, 0.115, 0, -0.205, 0.2, 0x3a3c3e); trig(b, -0.065, 0.06); // carregador de 10 e gatilho
+    b.rbox(0.05, 0.12, 0.06, 0.012, 0, -0.11, -0.06, BLK, { rx: -0.3 });
+    b.rbox(0.068, 0.13, 0.24, 0.02, 0, -0.01, -0.3, C, { mat: 'm' }); b.rbox(0.07, 0.15, 0.03, 0.01, 0, -0.02, -0.43, 0x1a1b1d); b.box(0.04, 0.03, 0.12, 0, 0.06, -0.3, 0x1a1b1d); // coronha com amortecedor
+    for (const s2 of [-1, 1]) { b.cyl(0.008, 0.008, 0.28, 6, s2 * 0.016, -0.02, 0.7, BLK, { rx: R2, mat: 'm' }); b.box(0.022, 0.012, 0.03, s2 * 0.016, -0.02, 0.845, BLK); } b.box(0.05, 0.02, 0.04, 0, -0.02, 0.56, BLK, { mat: 'm' }); // bipé
+  },
+  // M249: corpo de chapa, tampa de alimentação, caixa de 100, cano com pega de transporte, coronha e bipé
+  m249: b => { const C = 0x2b2d30, OD = 0x4b5a32;
+    b.box(0.076, 0.085, 0.36, 0, -0.005, 0.08, C, { mat: 'm' }); b.rbox(0.08, 0.035, 0.2, 0.01, 0, 0.05, 0.06, 0x232528, { mat: 'm' }); rail(b, 0.073, 0.0, 0.16, 0.03); // corpo e tampa
+    b.box(0.03, 0.04, 0.03, -0.045, 0.02, 0.0, 0x3a3c3e, { mat: 'm' }); for (let i = 0; i < 5; i++) b.cyl(0.0062, 0.0062, 0.026, 8, -0.06 - i * 0.004, 0.01 - i * 0.016, 0.015, 0xc9a14a, { mat: 'm' }); // janela de alimentação com a fita de balas
+    b.cyl(0.032, 0.032, 0.18, 10, 0, 0.012, 0.36, 0x3a3c3e, { rx: R2, mat: 'm' }); for (let i = 0; i < 8; i++) b.cyl(0.0335, 0.0335, 0.006, 10, 0, 0.012, 0.29 + i * 0.02, 0x1a1b1d, { rx: R2 }); // guarda-mão
+    b.cyl(0.016, 0.016, 0.42, 10, 0, 0.012, 0.62, BLK, { rx: R2, mat: 'm' }); b.cyl(0.02, 0.02, 0.04, 10, 0, 0.012, 0.84, BLK, { rx: R2, mat: 'm' }); b.box(0.018, 0.04, 0.02, 0, 0.045, 0.78, BLK, { mat: 'm' }); // cano, tapa-chamas, mira da frente
+    b.box(0.012, 0.05, 0.012, 0, 0.065, 0.46, BLK, { mat: 'm' }); b.box(0.012, 0.012, 0.08, 0, 0.09, 0.44, BLK, { mat: 'm', rx: -0.2 }); // pega de transporte do cano
+    b.rbox(0.13, 0.13, 0.1, 0.015, -0.015, -0.13, 0.12, OD); b.box(0.1, 0.03, 0.002, -0.015, -0.12, 0.171, 0xb8a878); b.box(0.004, 0.11, 0.08, 0.051, -0.13, 0.12, 0x3e4b2a); // caixa de 100
+    trig(b, -0.05, 0.0); b.rbox(0.045, 0.11, 0.06, 0.012, 0, -0.1, -0.04, BLK, { rx: -0.3 });
+    b.box(0.05, 0.035, 0.2, 0, -0.01, -0.17, C, { mat: 'm' }); b.rbox(0.06, 0.12, 0.18, 0.02, 0, -0.03, -0.3, C); b.box(0.062, 0.125, 0.016, 0, -0.03, -0.39, BLK); // coronha
+    for (const s2 of [-1, 1]) { b.cyl(0.006, 0.006, 0.22, 6, s2 * 0.012, -0.016, 0.68, BLK, { rx: R2, mat: 'm' }); b.box(0.014, 0.008, 0.018, s2 * 0.012, -0.016, 0.79, BLK); }
+  },
+  // PKM: corpo de chapa estampada, cano estriado com tapa-chamas, coronha de esqueleto em madeira e caixa de 100
+  pkm: b => { const C = 0x3a3c3e, W2 = 0x8a5a32;
+    b.box(0.07, 0.085, 0.36, 0, -0.005, 0.08, C, { mat: 'm' }); b.rbox(0.072, 0.032, 0.24, 0.008, 0, 0.05, 0.06, 0x34363a, { mat: 'm' }); for (let i = 0; i < 4; i++) b.box(0.002, 0.012, 0.012, 0.036, 0.0, -0.06 + i * 0.07, 0x1a1b1d); // corpo, tampa e rebites
+    b.box(0.03, 0.05, 0.06, 0, 0.06, 0.24, C, { mat: 'm' }); // mira de trás
+    b.cyl(0.018, 0.018, 0.52, 10, 0, 0.012, 0.6, BLK, { rx: R2, mat: 'm' }); for (let i = 0; i < 10; i++) b.cyl(0.0195, 0.0195, 0.008, 10, 0, 0.012, 0.36 + i * 0.03, 0x111214, { rx: R2 }); // cano estriado
+    b.cyl(0.03, 0.026, 0.07, 10, 0, 0.012, 0.88, BLK, { rx: R2, mat: 'm' }); for (let i = 0; i < 4; i++) b.box(0.004, 0.045, 0.04, Math.sin(i * 1.57) * 0.027, 0.012 + Math.cos(i * 1.57) * 0.027, 0.89, 0x0b0b0c, { rz: i * 1.57 }); // tapa-chamas com fendas
+    b.cyl(0.011, 0.011, 0.32, 8, 0, -0.022, 0.42, C, { rx: R2, mat: 'm' }); b.box(0.02, 0.05, 0.02, 0, 0.045, 0.82, BLK, { mat: 'm' }); b.box(0.012, 0.06, 0.012, 0, 0.06, 0.48, BLK, { mat: 'm' }); // tubo de gases, mira, pega
+    b.rbox(0.12, 0.13, 0.1, 0.015, -0.015, -0.13, 0.1, C, { mat: 'm' }); b.box(0.004, 0.1, 0.07, 0.046, -0.13, 0.1, 0x2a2b2d); // caixa
+    trig(b, -0.05, 0.0); b.rbox(0.045, 0.11, 0.06, 0.012, 0, -0.1, -0.04, W2, { rx: -0.3 });
+    b.box(0.045, 0.03, 0.32, 0, 0.012, -0.26, W2); b.box(0.045, 0.03, 0.26, 0, -0.07, -0.28, W2, { rx: -0.1 }); b.box(0.05, 0.13, 0.03, 0, -0.03, -0.41, 0x6a4026); // coronha de esqueleto
+    for (const s2 of [-1, 1]) { b.cyl(0.006, 0.006, 0.22, 6, s2 * 0.012, -0.016, 0.72, BLK, { rx: R2, mat: 'm' }); b.box(0.014, 0.008, 0.018, s2 * 0.012, -0.016, 0.83, BLK); }
+  },
 };
