@@ -69,6 +69,19 @@ def box(w, h, l, x, y, z, col, mat='v', bev=0.001, M=None, cutter=False, rx=0, r
 def sph(r, x, y, z, col, mat='m', sx=1, sy=1, sz=1, seg=16):
     bm = bmesh.new(); bmesh.ops.create_uvsphere(bm, u_segments=seg, v_segments=max(6, seg // 2), radius=r); _xf(bm, Matrix.Diagonal((sx, sy, sz, 1))); _xf(bm, Matrix.Translation((x, y, z)))
     return _reg(bm, col, mat, 0)
+def sweep(sec, path, col, mat='m', bev=0.0, closed=True):
+    """varre uma secção (lista de (x, y) no plano perpendicular) ao longo de um caminho no plano z-y (lista de (z, y))"""
+    bm = bmesh.new(); rings = []
+    for i, (z, y) in enumerate(path):
+        a = path[max(0, i - 1)]; b = path[min(len(path) - 1, i + 1)]; tz, ty = b[0] - a[0], b[1] - a[1]; l = math.hypot(tz, ty) or 1; tz, ty = tz / l, ty / l
+        nz, ny = -ty, tz  # normal no plano z-y
+        rings.append([bm.verts.new((sx, y + sy * ny, z + sy * nz)) for sx, sy in sec])
+    n = len(sec)
+    for r0, r1 in zip(rings, rings[1:]):
+        for k in range(n): bm.faces.new((r0[k], r0[(k + 1) % n], r1[(k + 1) % n], r1[k]))
+    if closed: bm.faces.new(rings[0][::-1]); bm.faces.new(rings[-1])
+    bmesh.ops.recalc_face_normals(bm, faces=bm.faces[:])
+    return _reg(bm, col, mat, bev, 1, 35)
 def cut(part, cutter):
     part.cuts.append(cutter.ob if isinstance(cutter, Part) else cutter)
 def rail(y, z0, z1, col, w=0.021, x=0.0, M=None):

@@ -146,7 +146,10 @@ export const gearKeys = eq => { const out = new Set(); for (const s in eq) { con
 export const RDP = { m4: [0.085, 0.12], ak: [0.085, 0.1], smg: [0.07, 0.06], caca: [0.075, 0.12], m249: [0.085, 0.06], pkm: [0.085, 0.06] };
 export const WPUSH = [0.07, SHY - HIP - 0.12, 0.16];
 for (const k of LONG) { const A = GUNA(k); if (!A) continue; if (RDP[k]) RDP[k] = [A.rail[0] + 0.026, A.rail[1] + 0.02]; } // ponto vermelho em cima da calha das armas novas
-export function weaponGeos() {
+// armas brancas e ferramentas novas (Blender): no lugar das antigas, com o mesmo encaixe na mão
+const MELEEK = ['pedra', 'machado', 'picareta', 'lanca', 'faca', 'bastao', 'pecabra', 'machete', 'katana'];
+export function weaponGeos() { const o = weaponGeos0(); for (const k of MELEEK) if (GUNA(k)) o[k] = geoOf(b => { b.push(0, -0.56, 0, 0, Math.PI / 2, 0); GUNS[k](b); b.pop(); }); return o; }
+function weaponGeos0() {
   const BLK = 0x1c1e21, WOOD = 0x7a5232, ST = 0x8f8d86;
   const inHand = fn => geoOf(b => { b.push(0, -0.56, 0, 0, Math.PI / 2, 0); fn(b); b.pop(); });
   return {

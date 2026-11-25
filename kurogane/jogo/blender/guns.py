@@ -155,23 +155,33 @@ def smg():
     prof([(-0.164, 0.02), (-0.178, 0.022), (-0.182, -0.082), (-0.168, -0.084), (-0.164, -0.06), (-0.164, 0.0)], 0.044, 0x1d1e20, 'v', bev=0.003)  # chapa
     return {'muzzle': [0.0, 0.373], 'rail': [0.034, 0.03], 'iron': 0.045, 'eyez': -0.15, 'light': [-0.036, 0.255], 'grip': [0.0, -0.07, -0.028], 'fore': [0.0, -0.012, 0.26], 'r': 0.019}
 
-def pistola():  # tipo Glock 17, no espaço "na mão" (eixo do cano em y 0,034)
-    SL, FR = 0x2b2d30, 0x26282b; Y = 0.034
-    sl = prof([(-0.032, 0.014), (-0.032, 0.050), (-0.028, 0.055), (0.150, 0.055), (0.156, 0.050), (0.156, 0.014)], 0.0255, SL, 'm', bev=0.0012)  # corrediça
+def pistola():  # Glock 17 Gen 6: contorno medido na foto de referência (coluna a coluna), no espaço "na mão" (cano em y 0,034)
+    SL, FR, D = 0x232528, 0x26282b, 0x101113
+    K = 0.000206; Y0 = 0.034
+    px = lambda x, y: ((x - 299) * K, (1003 - y) * K + Y0); P = lambda L: [px(*q) for q in L]; Z = lambda x: (x - 299) * K; Yy = lambda y: (1003 - y) * K + Y0
+    sl = prof(P([(128, 966), (134, 960), (1044, 960), (1056, 964), (1063, 978), (1063, 1094), (1058, 1110), (990, 1112), (990, 1078), (128, 1078)]), 0.0255, SL, 'm', bev=0.0011)  # corrediça
     for sx in (-1, 1):
-        for i in range(7): cut(sl, box(0.004, 0.026, 0.0022, sx * 0.0128, 0.034, -0.026 + i * 0.0045, SL, 'm', 0, cutter=True, rx=0.12))  # estrias de trás
-    cut(sl, box(0.03, 0.012, 0.042, 0.008, 0.053, 0.055, SL, 'm', 0, cutter=True))  # janela de ejeção
-    box(0.012, 0.008, 0.04, 0.003, 0.048, 0.055, 0x3a3d40, 'm', 0.0006)  # câmara à vista
-    cyl(0.0068, 0.153, 0.1565, 0x111214, 'v', y=Y, seg=16)
-    box(0.009, 0.006, 0.01, 0, 0.0585, -0.022, BLK, 'm', 0.0006); box(0.003, 0.007, 0.006, 0, 0.0585, 0.145, BLK, 'm', 0.0004); box(0.0016, 0.002, 0.002, 0, 0.0615, 0.142, 0xd8d0b0, 'v', 0)  # miras (ponto branco)
-    prof([(-0.034, 0.016), (0.150, 0.016), (0.152, 0.006), (0.146, -0.004), (0.060, -0.006), (0.054, -0.008), (-0.006, -0.008), (-0.034, 0.004)], 0.027, FR, 'v', bev=0.0014)  # armação
-    for i in range(3): box(0.028, 0.003, 0.004, 0, -0.006, 0.098 + i * 0.012, FR, 'v', 0)  # calha de acessórios
-    prof([(0.058, -0.006), (0.058, -0.016), (0.052, -0.026), (0.002, -0.028), (-0.004, -0.020), (-0.004, -0.008), (0.004, -0.008), (0.006, -0.020), (0.046, -0.021), (0.052, -0.014), (0.052, -0.006)], 0.008, FR, 'v', bev=0.0008)  # guarda-mato
-    prof([(0.028, -0.006), (0.030, -0.014), (0.027, -0.022), (0.023, -0.023), (0.023, -0.016), (0.024, -0.006)], 0.0055, BLK, 'v', bev=0.0005)  # gatilho
-    gp = prof([(-0.004, -0.008), (-0.010, -0.030), (-0.016, -0.052), (-0.022, -0.074), (-0.030, -0.098), (-0.064, -0.098), (-0.060, -0.070), (-0.052, -0.030), (-0.042, 0.004), (-0.034, 0.004)], 0.029, FR, 'v', bev=0.003, seg=3)
-    for sx in (-1, 1): cut(gp, prof([(-0.018, -0.030), (-0.024, -0.052), (-0.030, -0.080), (-0.054, -0.080), (-0.050, -0.052), (-0.044, -0.030)], 0.003, FR, 'v', x=sx * 0.0145, cutter=True))  # textura
-    prof([(-0.028, -0.096), (-0.068, -0.096), (-0.068, -0.104), (-0.030, -0.104)], 0.031, BLK, 'v', bev=0.0015)  # base do carregador
-    return {'muzzle': [Y, 0.157], 'grip': [0, -0.05, -0.03]}
+        for i in range(7): cut(sl, box(0.004, 0.019, 0.0024, sx * 0.0128, Yy(1018), Z(196 + i * 20), SL, 'm', 0, cutter=True))  # estrias de trás
+        for i in range(6): cut(sl, box(0.004, 0.019, 0.0024, sx * 0.0128, Yy(1018), Z(835 + i * 26), SL, 'm', 0, cutter=True))  # estrias da frente
+    cut(sl, box(0.0135, Yy(960) - Yy(1022) + 0.004, Z(645) - Z(432), 0.0065, Yy(991) + 0.002, (Z(432) + Z(645)) / 2, SL, 'm', 0, cutter=True))  # janela de ejeção
+    prof(P([(438, 975), (640, 975), (640, 1015), (600, 1020), (438, 1020)]), 0.012, 0x2e3033, 'm', x=0.0045, bev=0.0008)  # câmara do cano à vista
+    cyl(0.0058, Z(1062), Z(1064), D, 'v', y=Yy(1003), seg=16)  # boca do cano
+    cyl(0.0042, Z(1062), Z(1064), D, 'v', y=Yy(1060), seg=12)  # guia da mola
+    rs = prof(P([(140, 960), (178, 960), (176, 945), (168, 940), (148, 940), (142, 948)]), 0.022, D, 'm', bev=0.0005); cut(rs, box(0.004, 0.012, 0.03, 0, Yy(944), Z(159), D, 'm', 0, cutter=True))  # alça com entalhe
+    prof(P([(1006, 960), (1034, 960), (1032, 948), (1026, 934), (1014, 934), (1008, 948)]), 0.0045, D, 'm', bev=0.0004); box(0.002, 0.002, 0.002, 0, Yy(938), Z(1020) - 0.0012, 0xd8d0b0, 'v', 0)  # mira da frente com ponto
+    # armação de polímero: tampa do pó com calha, guarda-mato quadrado, punho inclinado com rebaixo para o polegar
+    fr = prof(P([(84, 1086), (124, 1080), (640, 1078), (995, 1078), (995, 1122), (986, 1138), (716, 1142), (704, 1148), (704, 1270), (716, 1276), (712, 1290), (520, 1290), (508, 1262), (476, 1259), (444, 1268), (348, 1530), (332, 1608), (124, 1608), (124, 1588), (92, 1569), (90, 1465), (108, 1428), (140, 1376), (172, 1314), (204, 1219), (214, 1150), (212, 1110), (140, 1101), (92, 1098)]), 0.0262, FR, 'v', bev=0.0016)
+    cut(fr, prof(P([(540, 1157), (668, 1157), (676, 1168), (676, 1264), (548, 1264), (536, 1220)]), 0.04, FR, 'v', cutter=True))  # abertura do guarda-mato
+    for sx in (-1, 1):
+        for i in range(3): cut(fr, box(0.004, 0.0026, Z(990) - Z(760), sx * 0.0131, Yy(1100 + i * 9), (Z(760) + Z(990)) / 2, FR, 'v', 0, cutter=True))  # calha
+        cut(fr, prof(P([(150, 1380), (205, 1240), (300, 1250), (420, 1300), (345, 1520), (330, 1590), (130, 1590), (115, 1500)]), 0.003, FR, 'v', x=sx * 0.0131, cutter=True))  # textura do punho (rebaixo)
+    for i in range(6): box(0.006, 0.0018, Z(708) - Z(696), 0, Yy(1200 + i * 12), Z(702), 0x1a1b1d, 'v', 0)  # estrias da frente do guarda-mato
+    prof(P([(482, 1160), (500, 1166), (512, 1190), (514, 1226), (508, 1250), (500, 1252), (502, 1226), (498, 1194), (486, 1176)]), 0.0065, 0x1a1b1d, 'v', bev=0.0006)  # gatilho
+    prof(P([(372, 1216), (440, 1216), (440, 1254), (372, 1254)]), 0.0278, 0x1d1e20, 'v', bev=0.0008)  # retém do carregador
+    prof(P([(560, 1086), (640, 1086), (640, 1110), (562, 1112)]), 0.0272, 0x1d1e20, 'v', bev=0.0006)  # retém da corrediça
+    cylx(0.0025, -0.0134, 0.0134, Yy(1127), Z(540), D, 'm', 10)  # pino
+    prof(P([(118, 1606), (346, 1606), (344, 1630), (126, 1632)]), 0.0285, 0x16171a, 'v', bev=0.0015)  # base do carregador
+    return {'muzzle': [Yy(1003), Z(1064)], 'grip': [0, -0.05, -0.03]}
 
 def revolver():  # revólver .357 de 4" (tipo 686): armação em L, cano com nervura e protetor do extrator, tambor de 6 com caneluras
     M, M2 = 0x3a3d40, 0x2c2e31; Y = 0.04
@@ -343,7 +353,84 @@ def pkm():  # PKM: corpo de chapa com rebites, cano estriado com tapa-chamas, tu
     for sx in (-1, 1): cyl(0.0058, 0.44, 0.66, M, 'm', y=-0.02, x=sx * 0.012, seg=10)  # bipé dobrado
     return {'muzzle': [0.0, 0.731], 'rail': [0.063, 0.0], 'iron': 0.0625, 'eyez': -0.2, 'light': [-0.04, 0.33], 'grip': [0.0, -0.1, -0.08], 'fore': [0.0, -0.03, 0.30], 'r': 0.03}
 
-GUNSF = {'cheytac': cheytac, 'barrett': barrett, 'm249': m249, 'pkm': pkm, 'm4': m4, 'ak': ak, 'smg': smg, 'pistola': pistola, 'revolver': revolver, 'cacadeira': cacadeira, 'caca': caca}
+# ---------- armas brancas e ferramentas (no espaço "na mão": punho na origem, cabo ao longo de +z, lâmina/cabeça para +y)
+def stone(r, x, y, z, col, sx=1, sy=1, sz=1, seed=0, seg=10):
+    import random
+    rnd = random.Random(seed); bm = bmesh.new(); bmesh.ops.create_icosphere(bm, subdivisions=2, radius=r)
+    for v in bm.verts:
+        n = v.co.normalized(); k = 1 + 0.18 * (math.sin(n.x * 7 + seed) * math.sin(n.y * 5 + seed * 2) + 0.6 * math.sin(n.z * 9 + seed * 3)) + rnd.uniform(-0.05, 0.05)
+        v.co = Vector((v.co.x * k * sx, v.co.y * k * sy, v.co.z * k * sz))
+    L._xf(bm, Matrix.Translation((x, y, z)))
+    o = L._reg(bm, col, 'vf', 0); return o
+def lash(z0, z1, r, col, x=0, y=0, n=6):  # atilho de corda/couro enrolado
+    for i in range(n): cyl(r, z0 + (z1 - z0) * i / n, z0 + (z1 - z0) * (i + 0.8) / n, col, 'v', x=x, y=y, seg=12, bev=0.0006)
+def pedra():
+    stone(0.045, 0, 0.0, 0.04, 0x8f8d86, 0.85, 0.7, 1.5, 3)
+    return {'grip': [0, 0, 0]}
+def machado():  # machado de pedra: cabo de madeira, cabeça de pedra lascada presa com tiras de couro
+    W = 0x7a5232
+    cyl(0.0155, -0.10, 0.42, W, 'v', seg=14, r1=0.0175, bev=0.002); cyl(0.0175, -0.115, -0.10, 0x6a4628, 'v', seg=14, bev=0.002)
+    hd = prof([(0.36, -0.03), (0.415, -0.03), (0.425, 0.03), (0.44, 0.115), (0.43, 0.125), (0.35, 0.125), (0.34, 0.115), (0.355, 0.03)], 0.024, 0x8a8880, 'vf', bev=0.004, seg=2)  # pedra lascada
+    prof([(0.34, 0.10), (0.44, 0.10), (0.44, 0.13), (0.34, 0.13)], 0.006, 0xa8a69e, 'vf', bev=0.002)  # gume
+    for d in (0.35, 0.39, 0.43): cyl(0.0205, d - 0.006, d + 0.006, 0x5a3a22, 'v', seg=12, bev=0.001)
+    lash(0.35, 0.44, 0.019, 0x5a3a22, n=5)
+    return {'grip': [0, 0, 0]}
+def picareta():
+    W = 0x7a5232
+    cyl(0.0155, -0.10, 0.46, W, 'v', seg=14, r1=0.0175, bev=0.002)
+    prof(bez((0.43, -0.20), (0.47, -0.06), (0.445, 0.0), 6) + bez((0.445, 0.0), (0.47, 0.06), (0.43, 0.20), 6)[1:] + bez((0.41, 0.20), (0.445, 0.04), (0.415, 0.0), 6)[:-1] + bez((0.415, 0.0), (0.445, -0.04), (0.41, -0.20), 6), 0.026, 0x8a8880, 'vf', bev=0.004, M=None)
+    lash(0.41, 0.48, 0.019, 0x5a3a22, n=5)
+    return {'grip': [0, 0, 0]}
+def lanca():
+    W = 0x8a6a42
+    cyl(0.0155, -0.45, 1.12, W, 'v', seg=12, bev=0.002)
+    prof([(1.10, -0.018), (1.16, -0.024), (1.26, 0.0), (1.16, 0.024), (1.10, 0.018)], 0.012, 0x6a6862, 'vf', bev=0.003)  # ponta de pedra
+    lash(1.07, 1.13, 0.018, 0x5a3a22, n=4)
+    return {'grip': [0, 0, 0]}
+def faca():  # faca de cozinha (chef): cabo preto com rebites, lâmina com fio e ponta
+    prof([(-0.065, 0.004), (0.058, 0.010), (0.058, -0.012), (-0.06, -0.010), (-0.068, -0.004)], 0.016, 0x1c1c1e, 'v', bev=0.004, seg=3)
+    for z in (-0.04, -0.005, 0.03): cylx(0.0028, -0.0085, 0.0085, -0.001, z, 0xc8ccd0, 'm', 10)
+    prof([(0.058, 0.012), (0.066, 0.014), (0.066, -0.016), (0.058, -0.014)], 0.012, 0xb8bcc0, 'm', bev=0.0015)  # reforço
+    prof([(0.066, 0.012), (0.24, 0.010), (0.27, 0.002), (0.245, -0.016), (0.12, -0.03), (0.066, -0.032)], 0.0032, 0xd6dade, 'm', bev=0.0012)  # lâmina
+    prof([(0.068, -0.026), (0.12, -0.026), (0.245, -0.013), (0.262, 0.0), (0.244, -0.017), (0.12, -0.031), (0.068, -0.031)], 0.0036, 0xeef0f2, 'm', bev=0.0008)  # fio
+    return {'grip': [0, 0, 0]}
+def machete():
+    prof([(-0.07, 0.010), (0.07, 0.012), (0.07, -0.014), (-0.07, -0.012), (-0.08, 0.0)], 0.022, 0x2a2a2a, 'v', bev=0.005, seg=3)
+    prof([(0.066, 0.016), (0.078, 0.016), (0.078, -0.03), (0.066, -0.03)], 0.016, 0x8a8e92, 'm', bev=0.0015)  # reforço
+    for z in (-0.04, 0.0, 0.04): cylx(0.003, -0.012, 0.012, 0.0, z, 0xb8bcc0, 'm', 10)
+    prof([(0.07, 0.012), (0.46, 0.022), (0.52, 0.010), (0.53, -0.02), (0.48, -0.046), (0.07, -0.024)], 0.004, 0xa8acb0, 'm', bev=0.0015)
+    prof([(0.075, -0.018), (0.48, -0.04), (0.525, -0.018), (0.48, -0.046), (0.075, -0.024)], 0.0045, 0xd6dade, 'm', bev=0.0008)
+    return {'grip': [0, 0, 0]}
+def bastao():  # bastão de basebol (freixo): torneado, nó no fim do cabo
+    prof_r = [(-0.09, 0.0), (-0.09, 0.022), (-0.08, 0.026), (-0.075, 0.016), (0.08, 0.0145), (0.25, 0.018), (0.42, 0.028), (0.62, 0.033), (0.70, 0.032), (0.72, 0.024), (0.725, 0.0)]
+    bm = bmesh.new(); vs = [bm.verts.new((r, 0, z)) for z, r in prof_r]
+    for a, b in zip(vs, vs[1:]): bm.edges.new((a, b))
+    bmesh.ops.spin(bm, geom=bm.verts[:] + bm.edges[:], cent=(0, 0, 0), axis=(0, 0, 1), angle=math.pi * 2, steps=20, use_duplicate=False)
+    bmesh.ops.remove_doubles(bm, verts=bm.verts[:], dist=1e-5); bmesh.ops.recalc_face_normals(bm, faces=bm.faces[:])
+    L._reg(bm, 0xc9a877, 'v', 0)
+    for i in range(6): cyl(0.0152, -0.07 + i * 0.022, -0.06 + i * 0.022, 0x2a2a2e, 'v', seg=14, bev=0.0005)  # fita do punho
+    return {'grip': [0, 0, 0]}
+def pecabra():  # pé-de-cabra: barra sextavada vermelha com gancho e unhas, ponta plana do outro lado
+    R = 0xb8322a; hx = [(0.0105 * math.cos(a), 0.0105 * math.sin(a)) for a in [k * math.pi / 3 + math.pi / 6 for k in range(6)]]
+    path = [(-0.08 + i * 0.04, 0.0) for i in range(12)] + [(0.40 + 0.055 * math.sin(a), 0.055 * (1 - math.cos(a))) for a in [k / 14 * math.pi * 0.92 for k in range(1, 15)]]
+    sweep(hx, path, R, 'm', bev=0.0006)
+    prof([(0.418, 0.097), (0.420, 0.119), (0.378, 0.117), (0.368, 0.109), (0.392, 0.099)], 0.022, R, 'm', bev=0.0015)  # unhas do gancho
+    prof([(-0.08, -0.008), (-0.10, -0.016), (-0.13, -0.020), (-0.13, -0.010), (-0.10, 0.006), (-0.08, 0.008)], 0.02, R, 'm', bev=0.0015)  # ponta plana
+    return {'grip': [0, 0, 0]}
+def katana():  # katana: tsuka entrançada, tsuba, habaki, lâmina curva com hamon
+    cyl(0.0145, -0.13, 0.12, 0x2a2230, 'v', seg=12, bev=0.002)
+    for i in range(9): box(0.031, 0.022, 0.012, 0, 0, -0.115 + i * 0.027, 0x3a3242, 'v', 0.003, ry=0, rz=0.8 if i % 2 else -0.8)  # entrançado
+    cyl(0.016, -0.14, -0.13, 0x8a7a4a, 'm', seg=12, bev=0.001)  # kashira
+    cyl(0.042, 0.12, 0.128, 0x3a3328, 'm', seg=24, bev=0.0012)  # tsuba
+    box(0.009, 0.034, 0.03, 0, -0.002, 0.143, 0xc9a14a, 'm', 0.0015)  # habaki
+    sori = lambda z: 0.0012 * ((z - 0.13) / 0.1) ** 2
+    up = [(0.13 + i * 0.07, 0.014 + sori(0.13 + i * 0.07)) for i in range(11)]; lo = [(z, y - 0.03 + 0.002 * i / 10) for i, (z, y) in enumerate(up)]
+    prof(up + [(0.86, 0.018 + sori(0.86))] + [(0.835, -0.006 + sori(0.835))] + lo[::-1], 0.0055, 0xc8ccd2, 'm', bev=0.0012)
+    prof([(z, y + 0.0) for z, y in lo] + [(z, y + 0.008) for z, y in lo[::-1]], 0.006, 0xeef0f2, 'm', bev=0.0006)  # fio (hamon)
+    return {'grip': [0, 0, 0]}
+MELEE = ['pedra', 'machado', 'picareta', 'lanca', 'faca', 'machete', 'bastao', 'pecabra', 'katana']
+
+GUNSF = {'cheytac': cheytac, 'barrett': barrett, 'm249': m249, 'pkm': pkm, 'm4': m4, 'ak': ak, 'smg': smg, 'pistola': pistola, 'revolver': revolver, 'cacadeira': cacadeira, 'caca': caca, 'pedra': pedra, 'machado': machado, 'picareta': picareta, 'lanca': lanca, 'faca': faca, 'machete': machete, 'bastao': bastao, 'pecabra': pecabra, 'katana': katana}
 if __name__ == '__main__':
     args = [a for a in sys.argv[1:] if not a.startswith('-')]; prev = '--preview' in sys.argv
     names = args or list(GUNSF)
