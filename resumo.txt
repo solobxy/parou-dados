@@ -1,0 +1,12 @@
+
+=== https://parou.pt/  (3 medições, todas: 57/81/81)
+  notas {"performance":81,"accessibility":100,"best-practices":96,"seo":100}
+  LCP 5.1 s | CLS 0.005 | TBT 70 ms | FCP 1.3 s | peso Total size was 736 KiB
+  ✗ [performance] Largest Contentful Paint: 5.1 s
+  ✗ [best-practices] Serves images with low resolution
+  ✗ [best-practices] Missing source maps for large first-party JavaScript
+  → Reduce unused JavaScript: ~540 ms
+  → Serve images in next-gen formats: ~750 ms
+
+=== Dados reais (CrUX, 28 dias, perfil mobile)
+https://parou.pt/ | página: sem dados | origem: sem dados
