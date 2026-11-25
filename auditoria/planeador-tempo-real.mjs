@@ -143,6 +143,20 @@ const C = {};
   const d = paragem('cm', 6, 'D', ponto(c, 8.05, 0)), ao = paragem('cm', 6, 'OC', ponto(c, 0.07, 0.02)), ad = paragem('cm', 6, 'DC', ponto(c, 8.07, 0.02));
   C.direto1 = { O, D, vA: linha('cm', 'A6', [[a, 0], [h, 15]], 30, 5), vB: linha('cm', 'B6', [[h, 0], [d, 10]], 30, 21), vC: linha('cm', 'C6', [[ao, 0], [ad, 50]], 60, 10) };
 }
+// 7) Previsões que andam para trás (a TML dá às vezes a uma paragem mais à frente uma hora antes da anterior): o A7 das 12:05 sai do
+//    O às 12:12 e "chega" ao H às 12:10. Não pode servir para apanhar o B7 das 12:13 no H (o autocarro não chega antes de partir).
+{
+  const c = CIDADE(7), O = ponto(c, 0, 0), D = ponto(c, 8, 0);
+  const a = paragem('cm', 7, 'O', ponto(c, 0.05, 0)), h = paragem('cm', 7, 'H', ponto(c, 4, 0));
+  const d = paragem('cm', 7, 'D', ponto(c, 8.05, 0)), ao = paragem('cm', 7, 'OC', ponto(c, 0.07, 0.02)), ad = paragem('cm', 7, 'DC', ponto(c, 8.07, 0.02));
+  C.paraTras = { O, D, vA: linha('cm', 'A7', [[a, 0], [h, 10]], 30, 5), vB: linha('cm', 'B7', [[h, 0], [d, 10]], 30, 13), vC: linha('cm', 'C7', [[ao, 0], [ad, 30]], 60, 10) };
+}
+// 8) Previsão de 25 min de avanço (veículo posto na viagem errada): fica o horário
+{
+  const c = CIDADE(8), O = ponto(c, 0, 0), D = ponto(c, 5, 0);
+  const a = paragem('cm', 8, 'O', ponto(c, 0.05, 0)), b = paragem('cm', 8, 'D', ponto(c, 5.05, 0));
+  C.adiantado = { O, D, vA: linha('cm', 'A8', [[a, 0], [b, 15]], 30, 5) };
+}
 B.batchInsertStops(paragens);
 
 for (let i = 0; i < 400 && !I.indicePronto(); i++) await new Promise((r) => setTimeout(r, 50));
@@ -156,6 +170,8 @@ const previsoesCm = (horaFicheiro) => ficheiroRt([
   { id: C.direto2.vA(12, 5), paragens: [{ seq: 1, paragem: '5O', hora: hora(12, 5) }, { seq: 2, paragem: '5H', hora: hora(12, 20) }] },
   { id: C.direto2.vB(12, 21), paragens: [{ seq: 1, paragem: '5H', hora: hora(12, 21) }, { seq: 2, paragem: '5D', hora: hora(12, 31) }] },
   { id: C.direto1.vA(12, 5), paragens: [{ seq: 1, paragem: '6O', hora: hora(12, 5) }, { seq: 2, paragem: '6H', hora: hora(12, 20) }] },
+  { id: C.paraTras.vA(12, 5), paragens: [{ seq: 1, paragem: '7O', hora: hora(12, 12) }, { seq: 2, paragem: '7H', hora: hora(12, 10) }] },
+  { id: C.adiantado.vA(12, 5), paragens: [{ seq: 1, paragem: '8O', hora: hora(11, 40) }, { seq: 2, paragem: '8D', hora: hora(11, 55) }] },
 ], horaFicheiro);
 const previsoesTub = () => ficheiroRt([
   { id: C.atraso.v7(12, 5), paragens: [{ seq: 1, paragem: '1O', hora: hora(12, 17) }, { seq: 2, paragem: '1D', hora: hora(12, 32) }] },
@@ -225,6 +241,24 @@ await new Promise((r) => setTimeout(r, 12_000)); // a TUB guarda o último fiche
   ok('[margem curta] e é o que chega primeiro (12:31 e pouco)', !!op && maisCedo(r) === op, resumo(r));
   const s = await plano('direto1');
   ok('[margem curta] só com uma das viagens em direto, não (fica a margem de 2 min)', !s.routes.some((o) => transito(o).some((l) => l.lineCode === 'B6' && l.departureTime === '12:21')), resumo(s));
+}
+{
+  const r = await plano('paraTras');
+  ok('[para trás] não usa a previsão que anda para trás para apanhar o B7 das 12:13', !r.routes.some((o) => transito(o).some((l) => l.lineCode === 'B7' && l.departureTime === '12:13')), resumo(r));
+  const a = await plano('adiantado');
+  const l = transito(maisCedo(a) || { legs: [] })[0];
+  ok('[adiantado] com 25 min de avanço fica o horário (o A8 das 12:05, sem "em direto")', l?.departureTime === '12:05' && !l?.isRealtime, resumo(a));
+  // em nenhum caso o percurso anda para trás: cada viagem chega depois de partir e a seguinte parte depois de a anterior chegar
+  const m = (h) => { const [x, y] = h.split(':').map(Number); return x * 60 + y; };
+  let maus = [];
+  for (const nome of Object.keys(C)) {
+    const q = await plano(nome);
+    for (const o of q.routes) {
+      const L = transito(o);
+      L.forEach((x, i) => { if (m(x.arrivalTime) < m(x.departureTime) || (i && m(x.departureTime) < m(L[i - 1].arrivalTime))) maus.push(`${nome}: ${resumo({ routes: [o], unir: [] })}`); });
+    }
+  }
+  ok('[todos] nenhum percurso com horas para trás', !maus.length, maus.slice(0, 3).join(' || '));
 }
 ok('as previsões foram pedidas poucas vezes (um pedido partilhado)', pedidos.cm >= 1 && pedidos.cm <= 3, JSON.stringify(pedidos));
 
