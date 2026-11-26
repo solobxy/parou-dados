@@ -255,8 +255,10 @@ export function makeVM() {
       arms.setPose(0, 'punho'); arms.setPose(1, 'punho');
       let pr = 0; if (t >= 0) pr = t < 0.35 ? ease(t / 0.35) : 1 - ease((t - 0.35) / 0.65);
       HR.set(hx - 0.1 * pr, hy + 0.05 + 0.07 * pr, -0.4 - 0.2 * pr); HL.set(-hx + 0.02, hy + 0.04, -0.43);
-      arms.place(1, V(0.2, -0.36, 0.08), HR, V(1, -1, 0.1 - 0.5 * pr), V(-0.45, 1, 0.1).normalize());
-      arms.place(0, V(-0.2, -0.36, 0.08), HL, V(-1, -1, 0.1), V(0.45, 1, 0.1).normalize());
+      // de mãos vazias não se vê nada (como no Rust): o punho só aparece no soco, a sair de baixo do ecrã e a voltar
+      arms.hide(0); if (t < 0) { arms.hide(1); return; }
+      const up = t < 0.35 ? ease(t / 0.35) : 1 - ease((t - 0.35) / 0.65); HR.set(hx - 0.12 * up, hy - 0.16 + 0.24 * up, -0.38 - 0.2 * up);
+      arms.place(1, V(0.2, -0.36, 0.08), HR, V(1, -1, 0.1 - 0.5 * pr), V(-0.2, 1, 0).normalize()); // soco direito: punho na vertical, polegar por cima
     },
   };
 }

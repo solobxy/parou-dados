@@ -549,13 +549,13 @@ mat4 zskin() { return zbm(segI.x) * segW.x + zbm(segI.y) * segW.y + zbm(segI.z) 
 }
 const _zi = new THREE.Matrix4(), _zk = new THREE.Matrix4();
 export class ZHorde {
-  constructor(scene, mat, vmat, caps = [96, 420]) {
+  constructor(scene, mat, vmat, caps = [96, 420, 420]) {
     const D = ZBODY; this.seg = D.seg; this.Ginv = D.seg.map(s => new THREE.Matrix4().makeTranslation(-D.bind[s][0], -D.bind[s][1], -D.bind[s][2]));
-    this.lods = [D.lod0, D.lod1].map((L, li) => {
+    this.lods = [D.lod0, D.lod1, D.lod1].map((L, li) => { // 0: perto (detalhe); 1: médio (leve, com sombra); 2: longe (leve, sem sombra: a sombra fica fora do mapa de sombras e custava o dobro)
       const cap = caps[li], data = new Float32Array(30 * cap * 4), tex = new THREE.DataTexture(data, 30, cap, THREE.RGBAFormat, THREE.FloatType); tex.needsUpdate = true;
       const uni = { boneTex: { value: tex } };
       const m = skinPatch(mat.clone(), uni, 'm' + li); m.map = mat.map; m.normalMap = mat.normalMap;
-      const mesh = new THREE.InstancedMesh(bodyGeo(L), m, cap); mesh.frustumCulled = false; mesh.castShadow = true; mesh.receiveShadow = true; mesh.count = 0; mesh.renderOrder = 3;
+      const mesh = new THREE.InstancedMesh(li === 2 && this._g1 ? this._g1 : bodyGeo(L), m, cap); if (li === 1) this._g1 = mesh.geometry; mesh.frustumCulled = false; mesh.castShadow = li < 2; mesh.receiveShadow = true; mesh.count = 0; mesh.renderOrder = 3;
       mesh.customDepthMaterial = skinPatch(new THREE.MeshDepthMaterial({ depthPacking: THREE.RGBADepthPacking }), uni, 'd' + li);
       mesh.customDistanceMaterial = skinPatch(new THREE.MeshDistanceMaterial(), uni, 'p' + li);
       const c = new THREE.Color(), tints = [0xffffff, 0xd8dcec, 0xeee2d0, 0xdce8d6, 0xe6d8dc, 0xc8ccd6, 0xf2ece0];
@@ -579,7 +579,7 @@ export class ZHorde {
     for (const z of list) {
       if (z.hide || z.an) continue;
       if (fr) { sp.center.set(z.x, (z.base || 0) + 1, z.z); if (!fr.intersectsSphere(sp)) continue; }
-      let li = near(z) ? 0 : 1; if (n[li] >= this.lods[li].cap) li = 1; if (n[li] >= this.lods[li].cap) continue; // cheio: os de perto passam para a versão leve
+      const t = near(z); let li = t === true ? 0 : t === false ? 1 : t; if (n[li] >= this.lods[li].cap) li = li ? 2 : 1; if (n[li] >= this.lods[li].cap) li = 2; if (n[li] >= this.lods[li].cap) continue; // cheio: passa para a versão mais leve
       const LL = this.lods[li], r = n[li]++;
       const M = zombiePose(z, P); LL.mesh.setMatrixAt(r, M.r); _zi.copy(M.r).invert();
       const d = LL.data, o0 = r * 120;
@@ -590,7 +590,7 @@ export class ZHorde {
       z.inst = r;
       if (z.state !== 'dead') { if (z.helm && nh < 400) { this.helm.setMatrixAt(nh, M.head); this.helm.setColorAt(nh++, this._c.set(this.realGear ? (z.kind === 'pol' ? 0x6a7c9a : 0xffffff) : (z.kind === 'pol' ? 0x2a3442 : 0x55603e))); } if (z.vest && nv < 400) { this.vest.setMatrixAt(nv, M.torso); this.vest.setColorAt(nv++, this._c.set(this.realGear ? (z.kind === 'pol' ? 0x5a6a8a : 0xffffff) : (z.kind === 'pol' ? 0x2c3a52 : 0x6a6448))); } }
     }
-    for (let li = 0; li < 2; li++) { const L = this.lods[li]; L.mesh.count = n[li]; L.mesh.visible = n[li] > 0; if (n[li]) { L.mesh.instanceMatrix.needsUpdate = true; L.tex.needsUpdate = true; } }
+    for (let li = 0; li < this.lods.length; li++) { const L = this.lods[li]; L.mesh.count = n[li]; L.mesh.visible = n[li] > 0; if (n[li]) { L.mesh.instanceMatrix.needsUpdate = true; L.tex.needsUpdate = true; } }
     for (const [m, k] of [[this.helm, nh], [this.vest, nv]]) { m.count = k; m.visible = k > 0; m.instanceMatrix.needsUpdate = true; if (m.instanceColor) m.instanceColor.needsUpdate = true; }
   }
 }

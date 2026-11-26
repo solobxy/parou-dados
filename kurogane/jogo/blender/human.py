@@ -85,18 +85,25 @@ if KIND != 'zombie':
             BW[b_] = arr
     CURL = float(os.environ.get('CURL', '1'))
     # poses das mãos da 1.ª pessoa (ângulos em radianos por articulação: base, meio, ponta; polegar: oposição, base, meio, ponta)
-    FPP = {'gatilho': {2: (0.15, 0.3, 0.15), 3: (1.0, 1.2, 0.45), 4: (1.05, 1.2, 0.45), 5: (1.1, 1.15, 0.45), 't': (0.7, 0.2, 0.2, 0.12), 'ab': -0.08},
-           'pega': {2: (0.95, 1.15, 0.45), 3: (1.0, 1.2, 0.45), 4: (1.05, 1.2, 0.45), 5: (1.1, 1.15, 0.45), 't': (0.7, 0.2, 0.2, 0.12)},
-           'larga': {2: (0.7, 0.85, 0.35), 3: (0.75, 0.9, 0.4), 4: (0.8, 0.9, 0.4), 5: (0.85, 0.85, 0.35), 't': (0.55, 0.15, 0.15, 0.1)},
-           'punho': {2: (1.45, 1.75, 0.9), 3: (1.5, 1.8, 0.9), 4: (1.5, 1.8, 0.9), 5: (1.55, 1.75, 0.85), 't': (0.9, 0.45, 0.4, 0.35)},
+    FPP = {'gatilho': {2: (0.3, 0.55, 0.3), 3: (1.0, 1.2, 0.45), 4: (1.05, 1.2, 0.45), 5: (1.1, 1.15, 0.45), 't': (1.1, 0.35, 0.5, 0.4), 'ab': -0.08},
+           'pega': {2: (0.95, 1.15, 0.45), 3: (1.0, 1.2, 0.45), 4: (1.05, 1.2, 0.45), 5: (1.1, 1.15, 0.45), 't': (1.1, 0.35, 0.5, 0.4)},
+           'larga': {2: (0.7, 0.85, 0.35), 3: (0.75, 0.9, 0.4), 4: (0.8, 0.9, 0.4), 5: (0.85, 0.85, 0.35), 't': (0.85, 0.25, 0.3, 0.2)},
+           'punho': {2: (1.45, 1.75, 0.9), 3: (1.5, 1.8, 0.9), 4: (1.5, 1.8, 0.9), 5: (1.55, 1.75, 0.85), 't': (1.05, 0.6, 0.75, 0.6)},
            'aberta': {2: (0.25, 0.3, 0.15), 3: (0.28, 0.32, 0.15), 4: (0.3, 0.34, 0.16), 5: (0.32, 0.35, 0.16), 't': (0.35, 0.1, 0.1, 0.1)}}
     POSE = FPP.get(os.environ.get('FPPOSE', 'pega')) if FP else None
+    if os.environ.get('FPDIAG'):
+        for sd in ('l', 'r'):
+            g = lambda f, k: J[f'joint-{sd}-finger-{f}-{k}']
+            lat = g(2, 1) - g(5, 1); mid = g(3, 2) - g(3, 1); n = np.cross(lat, mid); n /= np.linalg.norm(n)
+            ch = g(3, 4) - g(3, 1); bow = (g(3, 2) + g(3, 3)) / 2 - (g(3, 1) + g(3, 4)) / 2; bow -= ch * bow.dot(ch) / ch.dot(ch)
+            print('DIAG', sd, 'hand', np.round(J[f'joint-{sd}-hand'], 3), 'lat', np.round(lat, 3), 'mid', np.round(mid / np.linalg.norm(mid), 3), 'n', np.round(n, 3), 'bow', np.round(bow * 1000, 2), 'thumb', [np.round(g(1, k), 3) for k in (1, 2, 3, 4)], 'idx1', np.round(g(2, 1), 3))
+        sys.exit(0)
     def pose_hands(P0, POSE):
         P0 = P0.copy()
         for sd, sfx in (('l', '.L'), ('r', '.R')):
             lat = J[f'joint-{sd}-finger-2-1'] - J[f'joint-{sd}-finger-5-1']
             mid = J[f'joint-{sd}-finger-3-2'] - J[f'joint-{sd}-finger-3-1']; mid /= np.linalg.norm(mid)
-            pn = np.cross(lat, mid); pn /= np.linalg.norm(pn)  # normal da palma (o sentido acerta-se a seguir)
+            pn = np.cross(lat, mid); pn /= np.linalg.norm(pn)  # normal das costas da mão (o sentido acerta-se a seguir: a palma é -pn)
             tipm = rotm(np.cross(lat, mid), 0.5) @ (J[f'joint-{sd}-finger-3-4'] - J[f'joint-{sd}-finger-3-1'])
             if pn[1] < 0: pn = -pn  # normal da palma: na malha base (pose em A) a palma está virada para baixo, nas duas mãos
             fingers = ((2, (0.45, 0.7, 0.4)), (3, (0.5, 0.75, 0.45)), (4, (0.55, 0.8, 0.45)), (5, (0.65, 0.85, 0.5)), (1, (0.12, 0.2, 0.25)))
@@ -105,9 +112,12 @@ if KIND != 'zombie':
                 js = [J[f'joint-{sd}-finger-{f}-{k}'].copy() for k in (1, 2, 3, 4)]
                 d = js[1] - js[0]
                 if f != 1:
-                    ax = np.cross(lat, d)
-                    tip = rotm(ax, 0.5) @ (js[3] - js[0]) + js[0]
-                    if tip[1] > js[3][1]: ax = -ax
+                    # dobrar = rodar à volta do eixo que atravessa os nós dos dedos (perpendicular ao dedo, no plano da mão),
+                    # no sentido que leva a ponta para a palma. Antes rodava à volta da normal da mão: os dedos iam para o lado.
+                    # pn aponta para as costas da mão (o lado convexo dos dedos em repouso), por isso a palma é -pn
+                    ax = np.cross(d, pn); ax /= np.linalg.norm(ax)
+                    t0 = rotm(ax, 0.5) @ (js[3] - js[0])
+                    if np.dot(t0, pn) > np.dot(js[3] - js[0], pn): ax = -ax
                     axes = [ax, ax, ax]; ang3 = angs
                     if POSE and POSE.get('ab') and f == 2:  # indicador um pouco afastado (ao longo do guarda-mato)
                         R = rotm(pn, POSE['ab'] * (1 if sd == 'l' else -1)); w = sum(BW.get(f'finger{f}-{k}{sfx}', 0) for k in range(1, 4)); c = js[0]
@@ -118,9 +128,9 @@ if KIND != 'zombie':
                     td = js[1] - js[0]; td /= np.linalg.norm(td)
                     fx = np.cross(pn, td); fx /= np.linalg.norm(fx)
                     t0 = rotm(fx, 0.4) @ (js[3] - js[0])
-                    if np.dot(t0, pn) < np.dot(js[3] - js[0], pn): fx = -fx  # a dobra leva a ponta para o lado da palma
+                    if np.dot(t0, pn) > np.dot(js[3] - js[0], pn): fx = -fx  # a dobra leva a ponta para o lado da palma (-pn)
                     op = mid.copy(); t1 = rotm(op, 0.4) @ (js[3] - js[0])
-                    if np.dot(t1, pn) < np.dot(js[3] - js[0], pn): op = -op
+                    if np.dot(t1, pn) > np.dot(js[3] - js[0], pn): op = -op  # oposição: o polegar vem para a frente da palma
                     if POSE:
                         w = sum(BW.get(f'finger{f}-{k}{sfx}', 0) for k in range(1, 4)) + 0.5 * BW.get(f'metacarpal1{sfx}', 0)
                         R = rotm(op, angs[0]); c = js[0]; P0 += w[:, None] * (((P0 - c) @ R.T + c) - P0)
@@ -357,6 +367,14 @@ def preview(obj, tag, mat=None, cams=('frente', 'lado', 'costas', 'cara'), extra
     cam = bpy.data.cameras.new('c'); co = bpy.data.objects.new('c', cam); sc.collection.objects.link(co); sc.camera = co
     sc.render.resolution_x, sc.render.resolution_y = 520, 720; sc.cycles.samples = 32; out = []
     V = {'frente': ((0, -4.0, 0.95), (math.pi / 2, 0, 0), 55), 'lado': ((3.3, -1.6, 1.05), (math.pi / 2 - 0.04, 0, math.radians(63)), 55), 'costas': ((0, 4.0, 0.95), (math.pi / 2, 0, math.pi), 55), 'cara': ((0.0, -0.75, 1.62), (math.pi / 2, 0, 0), 60), 'nuca': ((0.56, 0.54, 1.66), (math.pi / 2 - 0.05, 0, math.radians(136)), 60), 'mao': ((0.5, -0.62, 0.8), (math.pi / 2 - 0.05, 0, math.radians(27)), 40)}
+    import mathutils
+    def look(loc, tgt, lens): d = mathutils.Vector(tgt) - mathutils.Vector(loc); return (loc, tuple(d.to_track_quat('-Z', 'Y').to_euler()), lens)
+    HC = (0.53, -0.27, 0.97)  # mão esquerda (vista da pré-visualização)
+    V.update({'maoP': look((0.18, -0.32, 1.0), HC, 50), 'maoC': look((0.62, -0.75, 1.15), HC, 60), 'maoF': look((0.55, -0.9, 0.95), HC, 60), 'maoB': look((0.95, -0.3, 1.0), HC, 55)})
+    if tag.startswith('fp'):  # mão esquerda: aponta as câmaras ao centro dos 12 cm mais baixos do braço do lado +x
+        bpy.context.view_layer.update(); W_ = [c.matrix_world @ v.co for v in c.data.vertices]; W_ = [w for w in W_ if w.x > 0.1]; zmin = min(w.z for w in W_); hs = [w for w in W_ if w.z < zmin + 0.12]
+        hc = sum(hs, mathutils.Vector()) / len(hs); off = mathutils.Vector(hc) - mathutils.Vector(HC)
+        for k in ('maoF', 'maoP', 'maoB', 'maoC'): V[k] = look(tuple(mathutils.Vector(V[k][0]) + off), tuple(hc), V[k][2])
     for nm in cams:
         co.location, co.rotation_euler, cam.lens = V[nm]; sc.render.filepath = f'/tmp/{tag}-{nm}.png'; bpy.ops.render.render(write_still=True); out.append(sc.render.filepath)
     bpy.data.objects.remove(c); bpy.data.objects.remove(co)
@@ -617,7 +635,7 @@ if FP:
         for o_ in list(sc.objects):
             if o_ is not fa: o_.hide_render = True
         pm = bpy.data.materials.new('pv'); pm.use_nodes = True; pn = pm.node_tree; ti = pn.nodes.new('ShaderNodeTexImage'); ti.image = bpy.data.images.load(os.path.join(ROOT, 'assets', 'tex', 'player.jpg')); pn.links.new(ti.outputs['Color'], pn.nodes['Principled BSDF'].inputs['Base Color'])
-        fa.hide_render = False; preview(fa, 'fp', mat=pm, cams=('mao', 'frente'))
+        fa.hide_render = False; preview(fa, 'fp-' + os.environ.get('FPPOSE', 'pega'), mat=pm, cams=('maoF', 'maoP', 'maoB', 'maoC'))
     sys.exit(0)
 OUTD = {'seg': SEG, 'bind': BIND, 'headC': hc.round(4).tolist(), 'headR': round(hr, 4), 'lod0': export(lo), 'lod1': export(lo1)}
 def export_rigid(o):  # cabelo: preso só à cabeça (coordenadas em relação ao ponto de rotação da cabeça)

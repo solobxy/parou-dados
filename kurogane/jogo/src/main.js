@@ -42,6 +42,7 @@ async function boot() {
   // ---------- renderer, cena, luz
   const canvas = document.getElementById('c');
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
+  window.__rinfo = () => ({ calls: renderer.info.render.calls, tris: renderer.info.render.triangles, geos: renderer.info.memory.geometries, tex: renderer.info.memory.textures, progs: renderer.info.programs ? renderer.info.programs.length : 0 }); // testes: o peso do que se desenha
   const PR = Math.min(devicePixelRatio || 1, TOUCH ? 1.5 : 2);
   renderer.setPixelRatio(PR); renderer.setSize(innerWidth, innerHeight, false);
   renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFShadowMap;
@@ -1316,6 +1317,7 @@ async function boot() {
   const clearShot = z => { const p = G.p, lo = (G.aimS.lean || 0) * 0.45; _sa.set(p.x + Math.cos(p.yaw) * lo, p.y + 1.35, p.z - Math.sin(p.yaw) * lo); for (const h of [1.25, 1.62]) { _sb.set(z.x, (z.y || 0) + h, z.z); if (wallHit(_sa, _sb) > 0.995) return true; } return false; };
   G.dbgSpawn = () => spawnPoint(false);
   G.wallAhead = (x, z, yaw, lv) => ray(x, z, Math.sin(yaw), Math.cos(yaw), 1.0, null, 's', lv || 0, 1.2);
+  G.dbgRay = (sx, sy) => { const rc = new THREE.Raycaster(), v = new THREE.Vector2(sx / innerWidth * 2 - 1, -(sy / innerHeight) * 2 + 1); rc.setFromCamera(v, cam); const h = rc.intersectObjects(scene.children, true).slice(0, 3); return h.map(o => [o.object.name || o.object.type, +o.distance.toFixed(2), o.object.parent && (o.object.parent.name || o.object.parent.type)]); };
   G.dbg = { vis: () => [+(VIS.ms || 0).toFixed(2), VIS.n || 0], pick: (x, y) => { const r = pick(x, y, 1); return [r.zone || null, !!r.pl, +r.point.x.toFixed(2), +r.point.y.toFixed(2), +r.point.z.toFixed(2)]; }, plHit: (a, b) => plHit(new THREE.Vector3(...a), new THREE.Vector3(...b), true), cam: () => [cam.position.x, cam.position.y, cam.position.z], cols: (x, z, r) => { const out = []; near(x - r, z - r, x + r, z + r, R => { out.push(['r', R.k, +R.x0.toFixed(2), +R.z0.toFixed(2), +R.x1.toFixed(2), +R.z1.toFixed(2), R.h, R.yb || 0]); }, C => { out.push(['c', +C.x.toFixed(2), +C.z.toFixed(2), C.r, C.node ? C.node.kind + ':' + C.node.alive : (C.k || C.kind || '?'), C.on]); }); return out; }, scr: (x, y, z) => { const q = toScreen(new THREE.Vector3(x, y, z)); return [q.x, q.y, q.ok]; }, shoulder: () => { const p = G.p; return [p.x + Math.sin(p.yaw) * 0.15, p.y + 1.35, p.z + Math.cos(p.yaw) * 0.15]; }, aimA: () => [AIM.A.x, AIM.A.y, AIM.A.z, AIM.zone, !!AIM.lock], wallHit: (a, b) => wallHit(new THREE.Vector3(...a), new THREE.Vector3(...b)), item: (k, n) => mkItem(k, n), deplete: n => { n.hp = 0; n.alive = false; n.col.on = false; n.respawn = G.t + 180; hideNode(n); if (G.net.on && n.key) G.net.node(n.key); }, nodes: () => nodes, fire: () => { const it = held(), g = it && ITEMS[it.k].gun; return g ? fire(it, g) : false; }, canSee: (a, b) => canSee(a, b), clearShot: z => clearShot(z), zoneHit: (z, P, Q, k) => zoneHit(z, P, Q, k), horde: () => horde, hurt: (d, c) => hurtPlayer(d, c || 'zombie'), hitZ: (z, zone, k) => { const B = ITEMS[k].bal; hitZombie(z, zone, { dmg: B.dmg, pen: B.pen, pel: B.pel, v: new THREE.Vector3(B.v, 0, 0), v0: B.v, dist: 10, fall: B.fall || 1 }, { x: z.x, y: 1.3, z: z.z }); } }; G.V3 = THREE.Vector3; G.M4 = THREE.Matrix4; G.RC = new THREE.Raycaster();
   const lockable = z => { if (!inView(z) || !G.p) return false; if (z._lkT > G.t) return z._lk; z._lkT = G.t + 0.12; return (z._lk = canSee(G.p, z) && clearShot(z)); };
   const bestTarget = () => { const p = G.p, d = heldDef(), range = d.gun ? Math.min(d.gun.rng, 40) : 3; let best = null, bs = 1e9; for (const z of G.zs) { if (!inView(z)) continue; const dd = Math.hypot(z.x - p.x, z.z - p.z); if (dd > range) continue; const a = Math.abs(angDiff(Math.atan2(z.x - p.x, z.z - p.z), p.yaw)); if (dd > 3 && a > 1.25) continue; if (!lockable(z)) continue; const sc = dd + a * 3; if (sc < bs) { bs = sc; best = z; } } return best; };
@@ -1748,7 +1750,7 @@ async function boot() {
     { const pa = trGeo.attributes.position, ca = trGeo.attributes.color; for (let i = 0; i < TRN; i++) { const o = trl[i]; if (o) { o.t -= dt; const f = Math.max(0, o.t / 0.07) * o.k; pa.setXYZ(i * 2, ...o.a); pa.setXYZ(i * 2 + 1, ...o.b); ca.setXYZ(i * 2, 0.6 * f, 0.45 * f, 0.2 * f); ca.setXYZ(i * 2 + 1, 1.6 * f, 1.3 * f, 0.7 * f); } else { pa.setXYZ(i * 2, 0, -9, 0); pa.setXYZ(i * 2 + 1, 0, -9, 0); } } pa.needsUpdate = true; ca.needsUpdate = true; while (trl.length && trl[0].t <= 0) trl.shift(); }
     for (const s of smoke) { s.userData.t = (s.userData.t + dt * 0.12) % 1; const t = s.userData.t; s.position.set(W.smoke[0] + t * 5, W.smoke[1] + t * 11, W.smoke[2] - t * 2.5); const sc = 1.4 + t * 5; s.scale.set(sc, sc, 1); s.material.opacity = 0.55 * (1 - t) * Math.min(1, t * 6); }
     { cam.updateMatrixWorld(); _vfM.multiplyMatrices(cam.projectionMatrix, cam.matrixWorldInverse); _vf.setFromProjectionMatrix(_vfM); } // o que a câmara vê: zombies e animais fora disto não se desenham
-    { const p = G.p, nr = G.fp ? 22 : 8; horde.update(G.zs, _vf, z => !!p && Math.abs(z.x - p.x) < nr && Math.abs(z.z - p.z) < nr); } // perto do jogador: o corpo com mais detalhe fauna.update(G.zs, camT, _vf);
+    { const p = G.p, nr = G.fp ? 22 : 8; horde.update(G.zs, _vf, z => { if (!p) return 2; const dx = Math.abs(z.x - p.x), dz = Math.abs(z.z - p.z); return dx < nr && dz < nr ? 0 : dx < 26 && dz < 26 ? 1 : 2; }); } // perto do jogador: o corpo com mais detalhe fauna.update(G.zs, camT, _vf);
     // árvores ao longe (só na 1.ª pessoa, que vê até à neblina): a versão simples a partir de ~65 m
     G.lodT = (G.lodT || 0) - dt; if (G.lodT <= 0) { G.lodT = 0.25; const c = cam.position, fpL = !!G.fp; for (const T of TLOD) { const far = fpL && Math.hypot(T.x - c.x, T.z - c.z) > 65; if (T.hi.visible === far) { T.hi.visible = !far; T.lo.visible = far; } } }
     // comerciantes: respiram parados e viram-se para quem chega perto
@@ -1824,6 +1826,7 @@ async function boot() {
     doorMats();
     G.vmOn = G.fp && vm.on;
     G.ui.frame(dt);
+    if (window.__rinfoOn) { renderer.info.autoReset = false; renderer.info.reset(); }
     fireFrame(G.t, renderer, cam); renderer.render(scene, cam);
     if (G.vmOn) { renderer.autoClear = false; renderer.clearDepth(); renderer.render(vm.scene, vm.cam); renderer.autoClear = true; }
   };
