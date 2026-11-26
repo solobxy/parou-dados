@@ -1,0 +1,403 @@
+== 2026-11-26T12:51:09Z acao=comando
+IP: 2.31.13.85
+== Saída no servidor
+== diagGps
+// Diagnóstico da localização (26/11/2026: «A localizar…» sem fim num Android real, que não se reproduz em simulação).
+// Regista os pedidos ao GPS e as respostas (só tempos, tipo de pedido e código de erro — nunca a posição) e, se a app
+// ficar presa a pedir a localização, manda um resumo ao servidor (uma vez por visita), pelo canal dos erros do browser.
+import { reportarErro } from '../components/ProtecaoErros';
+
+interface Evento { t: number; e: string }
+const eventos: Evento[] = [];
+const inicio = typeof performance !== 'undefined' ? performance.now() : 0;
+const marca = (e: string) => {
+  eventos.push({ t: Math.round((typeof performance !== 'undefined' ? performance.now() : 0) - inicio), e });
+  if (eventos.length > 80) eventos.shift();
+};
+let enviado = false;
+
+/** Embrulha o GPS do browser para registar cada pedido e cada resposta (chamar uma vez, antes de a app pedir a posição) */
+export function ligarDiagnosticoGps(): void {
+  try {
+    if (typeof navigator === 'undefined' || !('geolocation' in navigator)) return;
+    const g: any = navigator.geolocation;
+    if (!g || g.__diag) return;
+    const gcp = g.getCurrentPosition.bind(g);
+    const wp = g.watchPosition.bind(g);
+    const cw = g.clearWatch.bind(g);
+    const tipo = (o?: PositionOptions) => `${o?.enableHighAccuracy ? 'H' : 'L'}${o?.timeout ? `/${Math.round(o.timeout / 1000)}s` : ''}`;
+    let n = 0;
+    g.getCurrentPosition = (ok: PositionCallback, err?: PositionErrorCallback | null, o?: PositionOptions) => {
+      const id = ++n;
+      marca(`g${id}:${tipo(o)}`);
+      return gcp((p: GeolocationPosition) => { marca(`g${id}:ok:${Math.round(p.coords.accuracy)}m`); ok(p); },
+        (x: GeolocationPositionError) => { marca(`g${id}:erro${x.code}`); err?.(x); }, o);
+    };
+    g.watchPosition = (ok: PositionCallback, err?: PositionErrorCallback | null, o?: PositionOptions) => {
+      const id = ++n;
+      let primeiras = 0;
+      marca(`w${id}:${tipo(o)}`);
+      const r = wp((p: GeolocationPosition) => { if (primeiras++ < 3) marca(`w${id}:ok:${Math.round(p.coords.accuracy)}m`); ok(p); },
+        (x: GeolocationPositionError) => { marca(`w${id}:erro${x.code}`); err?.(x); }, o);
+      marca(`w${id}=#${r}`);
+      return r;
+    };
+    g.clearWatch = (id: number) => { marca(`x#${id}`); cw(id); };
+    g.__diag = true;
+  } catch { /* sem diagnóstico */ }
+}
+
+let desdePedir = 0;
+let mudancas: number[] = [];
+/** O estado da localização na app mudou: regista e vê se ficou presa a pedir */
+export function estadoGps(estado: string, motivo?: string | null): void {
+  marca(`st:${estado}${motivo ? `/${motivo}` : ''}`);
+  const agora = Date.now();
+  mudancas = [...mudancas.filter((x) => agora - x < 30_000), agora];
+  if (estado === 'requesting') { if (!desdePedir) desdePedir = agora; } else desdePedir = 0;
+  if (mudancas.length >= 8) enviar('muitas mudanças de estado em 30 s');
+}
+
+/** Chamado de tempos a tempos: a pedir há mais de 15 s sem resposta */
+export function vigiarGps(): void {
+  if (desdePedir && Date.now() - desdePedir > 15_000) enviar('a pedir a localização há mais de 15 s');
+}
+
+async function enviar(motivo: string): Promise<void> {
+  if (enviado) return;
+  enviado = true;
+  let perm = '?';
+  try { perm = (await navigator.permissions?.query({ name: 'geolocation' as PermissionName }))?.state || '?'; } catch { /* sem Permissions API */ }
+  const vis = typeof document !== 'undefined' ? document.visibilityState : '?';
+  reportarErro('gps', `${motivo} | permissão ${perm} | ${vis}`, eventos.map((x) => `${x.t}:${x.e}`).join(' '));
+}
+== quem usa diag
+src/hooks/useUserLocation.ts:5:import { estadoGps, vigiarGps } from '../utils/diagGps';
+src/main.tsx:5:import { ligarDiagnosticoGps } from './utils/diagGps';
+== useUserLocation 140-360
+  const watchIdRef = useRef<number | null>(null);
+  // Última vez que o browser deu uma leitura (mesmo que o filtro a tenha posto de parte): se o GPS "adormece", recomeça-se
+  const ultimaLeituraRef = useRef(0);
+  const reiniciarGpsRef = useRef<(() => void) | null>(null);
+  const ultimoReinicioRef = useRef(0);
+  const reiniciosSeguidosRef = useRef(0);
+  const pararMovimentoRef = useRef<(() => void) | null>(null);
+  const previousCoordsRef = useRef<UserCoords | null>(memoriaPosicao && !memoriaPosicao.isManual ? memoriaPosicao : null);
+  // O que o ecrã já recebeu: só se avisa a página quando há mudança que se veja (poupa trabalho ao telemóvel)
+  const emitidoRef = useRef<UserCoords | null>(memoriaPosicao);
+  const statusAtualRef = useRef<LocationPermissionStatus>(status);
+  statusAtualRef.current = status;
+  // Diagnóstico: cada mudança de estado e, de 5 em 5 s, se está presa a pedir
+  useEffect(() => { estadoGps(status, motivoBloqueio); }, [status, motivoBloqueio]);
+  useEffect(() => { const i = setInterval(vigiarGps, 5000); return () => clearInterval(i); }, []);
+  const setCoords = useCallback((c: UserCoords | null) => {
+    emitidoRef.current = c;
+    if (!c || c.isManual) reiniciarPosicaoSuave(); // posição nova à mão ou perdida: o filtro recomeça
+    lembrarPosicao(c);
+    setCoordsEstado(c);
+  }, []);
+
+  // Stop tracking and clean up
+  const stopLocation = useCallback(() => {
+    if (watchIdRef.current !== null && typeof navigator !== 'undefined' && 'geolocation' in navigator) {
+      navigator.geolocation.clearWatch(watchIdRef.current);
+      watchIdRef.current = null;
+    }
+    pararMovimentoRef.current?.();
+    pararMovimentoRef.current = null;
+    reiniciarGpsRef.current = null;
+    setStatus('idle');
+    setCoords(null);
+    esquecerPosicao();
+    previousCoordsRef.current = null;
+    setErrorMessage(null);
+    // Fica registado: ao abrir a app outra vez a localização não liga sozinha (só com "Ativar localização")
+    try {
+      localStorage.setItem(CHAVE_DESLIGADA, '1');
+      localStorage.removeItem(CHAVE_LOCALIZACAO_OK);
+    } catch {}
+  }, [setCoords]);
+
+  // Request & activate location (with high accuracy priority + graceful standard fallback)
+  const activateLocation = useCallback((forceHighAccuracy: boolean = true) => {
+    if (typeof window === 'undefined' || !('geolocation' in navigator)) {
+      setStatus('unavailable');
+      setErrorMessage('Geolocalização não é suportada pelo seu navegador.');
+      return;
+    }
+
+    try { localStorage.removeItem(CHAVE_DESLIGADA); } catch {}
+    // Pedido nascido de um toque? (só esse pode abrir o aviso do Android)
+    try { if ((navigator as any).userActivation?.isActive === true) toqueRef.current = Date.now(); } catch {}
+    ultimaLeituraRef.current = Date.now();
+    reiniciosSeguidosRef.current = 0;
+    // Acelerómetro: com o telemóvel quieto o filtro não deixa o ponto andar sozinho dentro de casa
+    pararMovimentoRef.current?.();
+    pararMovimentoRef.current = ligarMovimento();
+    // Com uma posição já conhecida o ecrã continua a mostrá-la enquanto o GPS atualiza
+    if (!previousCoordsRef.current) {
+      setStatus('requesting');
+      // Sem posição no ecrã: a última conhecida aparece já (se o browser não recusar logo, ex.: localização desligada),
+      // e o GPS substitui-a quando responder. Com «precisão baixa» o primeiro GPS demora 20 s; assim não se espera.
+      const guardada = lerPosicaoGuardada();
+      if (guardada) {
+        setTimeout(() => {
+          if (previousCoordsRef.current || statusAtualRef.current !== 'requesting') return;
+          previousCoordsRef.current = guardada;
+          memoriaPosicao = guardada;
+          emitidoRef.current = guardada;
+          setCoordsEstado(guardada);
+          setStatus('active');
+        }, 400);
+      }
+    }
+    setErrorMessage(null);
+
+    // Clear any previous watcher
+    if (watchIdRef.current !== null) {
+      navigator.geolocation.clearWatch(watchIdRef.current);
+      watchIdRef.current = null;
+    }
+
+    const handleSuccess = (position: GeolocationPosition, source: 'gps_high' | 'gps_low' = 'gps_high') => {
+      ultimaLeituraRef.current = Date.now();
+      reiniciosSeguidosRef.current = 0;
+      const lat = Number(position?.coords?.latitude);
+      const lon = Number(position?.coords?.longitude);
+
+      if (!Number.isFinite(lat) || !Number.isFinite(lon) || isNaN(lat) || isNaN(lon)) {
+        console.warn('[PAROU GPS] Posição com coordenadas inválidas recebida:', position?.coords);
+        setStatus('unavailable');
+        setErrorMessage('Sinal GPS com coordenadas inválidas.');
+        return;
+      }
+
+      // Filtro: junta a leitura ao que já se sabe (velocidade, precisão, rumo). Se a leitura foi posta de parte
+      // (repetida, antiga, ou "por rede" com o GPS bom), fica a estimativa atual.
+      filtroGps.aparelho = estadoAparelho();
+      const est = filtroGps.atualizar(leituraDoBrowser(position)) ?? filtroGps.atual();
+      if (!est) return;
+      const rumoBruto = position.coords.heading;
+      const newCoords: UserCoords = {
+        latitude: est.lat,
+        longitude: est.lon,
+        accuracy: Math.round(est.precisao),
+        heading: est.rumo ?? (typeof rumoBruto === 'number' && Number.isFinite(rumoBruto) ? rumoBruto : null),
+        speed: Math.round(est.velocidade * 3.6),
+        timestamp: est.t,
+        source,
+        isManual: false,
+      };
+      const timestamp = newCoords.timestamp;
+
+      gpsNestaSessao = true;
+      previousCoordsRef.current = newCoords;
+
+      // Só avisa a página se o ponto andou ≥ 3 m, a precisão mudou, ou já passaram 15 s
+      const visto = emitidoRef.current;
+      if (
+        visto && !visto.isManual && statusAtualRef.current === 'active' &&
+        metrosEntrePontos(visto.latitude, visto.longitude, newCoords.latitude, newCoords.longitude) < 3 &&
+        Math.abs(visto.accuracy - newCoords.accuracy) < 5 &&
+        timestamp - visto.timestamp < 15_000
+      ) {
+        return;
+      }
+      setMotivoBloqueio(null);
+      setSemAvisoSistema(false);
+      setCoords(newCoords);
+      setStatus('active');
+      setErrorMessage(null);
+      try { localStorage.setItem(CHAVE_LOCALIZACAO_OK, '1'); } catch {}
+    };
+
+    // 1. Posição rápida: a aproximada (rede/Wi-Fi ou a última do telemóvel) chega quase de
+    //    imediato e já dá para mostrar as paragens; o GPS afina a seguir, sem a pessoa esperar.
+    navigator.geolocation.getCurrentPosition(
+      (pos) => handleSuccess(pos, 'gps_low'),
+      (err) => {
+        if (err.code === err.PERMISSION_DENIED) handlePositionError(err);
+      },
+      { enableHighAccuracy: false, timeout: 6000, maximumAge: 10 * 60_000 }
+    );
+
+    // 2. Posição precisa (GPS)
+    const primaryOptions: PositionOptions = {
+      enableHighAccuracy: forceHighAccuracy,
+      timeout: 15000,
+      maximumAge: forceHighAccuracy ? 0 : 5000,
+    };
+
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        handleSuccess(pos, forceHighAccuracy ? 'gps_high' : 'gps_low');
+        setFollowMode(true);
+      },
+      (err) => {
+        // If high accuracy failed or timed out, attempt lower accuracy fallback
+        if (forceHighAccuracy) {
+          console.warn('[PAROU GPS] Falha em Alta Precisão, a tentar fallback normal:', err.message);
+          navigator.geolocation.getCurrentPosition(
+            (fallbackPos) => handleSuccess(fallbackPos, 'gps_low'),
+            (fallbackErr) => handlePositionError(fallbackErr),
+            { enableHighAccuracy: false, timeout: 12000, maximumAge: 30000 }
+          );
+        } else {
+          handlePositionError(err);
+        }
+      },
+      primaryOptions
+    );
+
+    // Seguimento contínuo. Fica numa função para se poder recomeçar se o GPS adormecer (ver o vigia mais abaixo)
+    const iniciarSeguimento = () => {
+      if (watchIdRef.current !== null) {
+        try { navigator.geolocation.clearWatch(watchIdRef.current); } catch {}
+        watchIdRef.current = null;
+      }
+      try {
+        const id = navigator.geolocation.watchPosition(
+          (pos) => handleSuccess(pos, 'gps_high'),
+          (err) => {
+            console.warn('[PAROU GPS watchPosition error]:', err.code, err.message);
+            // If already got a position from getCurrentPosition, keep active
+            if (!previousCoordsRef.current || err.code === err.PERMISSION_DENIED) {
+              handlePositionError(err);
+            }
+          },
+          { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+        );
+        watchIdRef.current = id;
+      } catch (err) {
+        console.error('[PAROU GPS] Exceção watchPosition:', err);
+      }
+    };
+    reiniciarGpsRef.current = () => {
+      iniciarSeguimento();
+      // Um pedido único acorda o recetor de GPS; a leitura entra no mesmo filtro
+      try {
+        navigator.geolocation.getCurrentPosition(
+          (pos) => handleSuccess(pos, 'gps_high'),
+          () => {},
+          { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+        );
+      } catch {}
+    };
+    iniciarSeguimento();
+    setFollowMode(true);
+  }, [setCoords]);
+
+  const handlePositionError = (error: GeolocationPositionError) => {
+    console.warn('[PAROU GPS] Erro de geolocalização:', error.code, error.message);
+    if (error.code === error.PERMISSION_DENIED) {
+      previousCoordsRef.current = null;
+      setCoords(null);
+      largarPosicao();
+      setStatus('denied');
+      setErrorMessage('Permissão de localização recusada no navegador.');
+      // Descobre a causa: bloqueio do site, localização do telemóvel desligada ou pedido fechado
+== 600-700
+      if (desligadaPelaPessoa() || memoriaPosicao?.isManual) return false;
+      // a autorização do site lê-se no máximo a cada 10 s (pode mudar nas definições do browser)
+      if (autorizado === null || Date.now() - ultimaConsulta > 10_000) {
+        ultimaConsulta = Date.now();
+        try {
+          if (navigator.permissions?.query) {
+            const r = await navigator.permissions.query({ name: 'geolocation' as PermissionName });
+            autorizado = r.state === 'granted';
+          } else {
+            autorizado = jaDeuLocalizacao();
+          }
+        } catch {
+          autorizado = jaDeuLocalizacao();
+        }
+      }
+      return autorizado === true;
+    };
+    const id = setInterval(async () => {
+      if (parado || sondaRef.current || document.visibilityState !== 'visible') return;
+      const st = statusRef.current;
+      // Também quando o pedido está pendurado há mais de 8 s (com a localização do telemóvel desligada, o Chrome pode
+      // nem responder): é quando a app já mostra «Liga a localização»
+      const pendurado = st === 'requesting' && pedirDesdeRef.current > 0 && Date.now() - pedirDesdeRef.current > 8000;
+      const desligadaNoTelemovel = (st === 'denied' && motivoRef.current === 'sistema') || st === 'unavailable' || pendurado;
+      if (!desligadaNoTelemovel) return;
+      sondaRef.current = true;
+      try {
+        if (!(await podePerguntar()) || parado) return;
+        await new Promise<void>((fimPromessa) => {
+          // a sonda também acaba sozinha ao fim de 2,5 s (sem resposta conta como «desligada»)
+          let acabou = false;
+          const fim = () => { if (!acabou) { acabou = true; clearTimeout(limite); fimPromessa(); } };
+          const limite = setTimeout(() => { sondaFalhouRef.current = true; tentativasSondaRef.current = 0; fim(); }, 2500);
+          // Ligar a localização (a sonda já não dá «recusado»): mesma regra para a posição e para o «ainda sem posição»
+          const ativarSeLigou = () => {
+            const agora = statusRef.current;
+            if (parado || (agora !== 'denied' && agora !== 'unavailable' && agora !== 'requesting')) return;
+            // Nunca em ciclo: só se a localização estava mesmo desligada (a sonda anterior falhou), no máximo uma vez
+            // a cada 30 s e, se a app volta logo ao mesmo estado duas vezes, desiste até a pessoa tocar ou voltar à app
+            const t = Date.now();
+            if (!sondaFalhouRef.current && tentativasSondaRef.current >= 1) return;
+            if (t - ultimaAtivacaoSondaRef.current < 30_000) return;
+            if (tentativasSondaRef.current >= 2) return;
+            tentativasSondaRef.current++;
+            sondaFalhouRef.current = false;
+            ultimaAtivacaoSondaRef.current = t;
+            activateLocation(true);
+          };
+          try {
+            navigator.geolocation.getCurrentPosition(
+              () => { fim(); ativarSeLigou(); },
+              (err) => {
+                fim();
+                // Com a localização desligada o Chrome responde «recusado» (código 1). «Tempo esgotado» (código 3) depois
+                // disso quer dizer que já está ligada mas o GPS ainda não tem posição (com «precisão baixa» demora ~20 s):
+                // ativa já, e a última posição conhecida aparece enquanto o GPS afina.
+                if (err && err.code === 3 && statusRef.current === 'denied' && motivoRef.current === 'sistema') { ativarSeLigou(); return; }
+                sondaFalhouRef.current = true; tentativasSondaRef.current = 0;
+              },
+              { enableHighAccuracy: false, timeout: 2000, maximumAge: 60_000 },
+            );
+          } catch { fim(); }
+        });
+      } finally {
+        sondaRef.current = false;
+      }
+    }, 1500);
+    return () => { parado = true; clearInterval(id); };
+  }, [activateLocation]);
+
+  // Vigia: com o ecrã visível e o GPS a seguir, se não chega nenhuma leitura há 25 s o seguimento recomeça
+  // (acontece com o browser a poupar bateria). Se continua calado espera cada vez mais (25 s, 50 s, 100 s… até 5 min):
+  // dentro de um edifício sem sinal não vale a pena ligar o recetor de GPS sem parar.
+  useEffect(() => {
+    const id = setInterval(() => {
+      if (document.visibilityState !== 'visible') return;
+      if (statusRef.current !== 'active' || watchIdRef.current === null) return;
+      if (memoriaPosicao?.isManual) return;
+      const agora = Date.now();
+      if (agora - ultimaLeituraRef.current < 25_000) return;
+      const espera = Math.min(300_000, 25_000 * Math.pow(2, reiniciosSeguidosRef.current));
+      if (agora - ultimoReinicioRef.current < espera) return;
+      ultimoReinicioRef.current = agora;
+      reiniciosSeguidosRef.current++;
+      reiniciarGpsRef.current?.();
+    }, 5000);
+    return () => clearInterval(id);
+  }, []);
+
+  // Clean up watcher on unmount
+  useEffect(() => {
+    return () => {
+      if (watchIdRef.current !== null && typeof navigator !== 'undefined' && 'geolocation' in navigator) {
+        navigator.geolocation.clearWatch(watchIdRef.current);
+      }
+      pararMovimentoRef.current?.();
+      pararMovimentoRef.current = null;
+    };
+  }, []);
+
+  return {
+== Teste de fora
+https://2-31-13-85.sslip.io/health 200 0.718307s
+https://2-31-13-85.sslip.io/api/transit/loading-status 200 0.539485s
