@@ -1,0 +1,36 @@
+From c934e80be1a8182f1aa4b0aa0afbebc3a31fbd71 Mon Sep 17 00:00:00 2001
+From: Dinis Sousa <diniscash@gmail.com>
+Date: Thu, 26 Nov 2026 13:38:18 +0000
+Subject: [PATCH] =?UTF-8?q?Greves=20nas=20not=C3=ADcias:=20=C2=ABdesta=20q?=
+ =?UTF-8?q?uinta-feira=C2=BB=20=C3=A9=20o=20pr=C3=B3prio=20dia=20(evita=20?=
+ =?UTF-8?q?uma=20greve=20falsa=20da=20CP=20a=203/12)?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+---
+ src/server/grevesNoticias.ts | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/src/server/grevesNoticias.ts b/src/server/grevesNoticias.ts
+index b803851..06ec3fe 100644
+--- a/src/server/grevesNoticias.ts
++++ b/src/server/grevesNoticias.ts
+@@ -107,11 +107,12 @@ export function diasDaGreve(texto: string, publicada: DateTime): DateTime[] {
+   }
+   if (dias.size) return [...dias.values()].sort((a, b) => a.toMillis() - b.toMillis());
+   // dia da semana: só o primeiro citado (os outros costumam ser "impactos já na quinta-feira", tratados à parte)
+-  const ds = /\b(?:(esta|nesta|na|proxima|este|neste|no|proximo)\s+)?(segunda|terca|quarta|quinta|sexta)(?:-feira)?\b|\b(?:(este|neste|no|proximo)\s+)?(sabado|domingo)\b/.exec(t);
++  // «desta quinta-feira» / «deste sábado» também são o próprio dia (sem «desta», a RTP de 26/11 virava uma greve falsa a 3/12)
++  const ds = /\b(?:(esta|nesta|desta|na|proxima|este|neste|deste|no|proximo)\s+)?(segunda|terca|quarta|quinta|sexta)(?:-feira)?\b|\b(?:(este|neste|deste|no|proximo)\s+)?(sabado|domingo)\b/.exec(t);
+   if (ds) {
+     const nome = ds[2] || ds[4];
+     const pref = ds[1] || ds[3] || '';
+-    juntar(proximoDiaSemana(base, DIAS_SEMANA[nome], /^(esta|nesta|este|neste)$/.test(pref) || /\bhoje\b/.test(t)));
++    juntar(proximoDiaSemana(base, DIAS_SEMANA[nome], /^(esta|nesta|desta|este|neste|deste)$/.test(pref) || /\bhoje\b/.test(t)));
+     return [...dias.values()];
+   }
+   if (/\bamanha\b/.test(t)) return [base.plus({ days: 1 }).startOf('day')];
+-- 
+2.43.0
+
