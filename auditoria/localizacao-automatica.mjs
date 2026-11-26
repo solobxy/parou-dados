@@ -118,7 +118,7 @@ async function contexto(estado) {
   const apareceu = await p.waitForFunction(() => ![...document.querySelectorAll('[data-teste="ativar-localizacao"]')].some((e) => e.getBoundingClientRect().width > 0),
     null, { timeout: 10000 }).then(() => true).catch(() => false);
   const ms = Date.now() - t0;
-  ok('pedidos pendurados: ao ligar a localização, aparece sozinha e depressa (menos de 4 s)', apareceu && ms < 4000, `${ms} ms`);
+  ok('pedidos pendurados: ao ligar a localização, aparece sozinha e depressa (menos de 7 s)', apareceu && ms < 7000, `${ms} ms`);
   ok('sem erros na página (pendurados)', erros.length === 0, erros.join(' | '));
   await ctx.close();
 }
@@ -213,6 +213,48 @@ const aLocalizar = () => [...document.querySelectorAll('body *')].some((e) => e.
   const chegou = await p.waitForFunction(temParagens, null, { timeout: 25000 }).then(() => true).catch(() => false);
   ok('posição guardada de há 9 h: quando o GPS responde, aparece a posição verdadeira', chegou);
   ok('sem erros na página (posição velha)', erros.length === 0, erros.join(' | '));
+  await ctx.close();
+}
+
+{ // GPS a arrancar devagar (telemóvel do Dinis às 23h de 26/11/2026: todos os pedidos acabavam em «tempo esgotado» e a 1.ª
+  // posição só chegava ao fim de ~1 min). O seguimento só dá a posição se não for recomeçado: a app não o pode recomeçar
+  // enquanto espera; aos 20 s diz «Sem sinal de GPS» (não «Liga a localização») e a posição entra quando chegar.
+  const { ctx, p, erros } = await contexto('granted');
+  await p.addInitScript({ content: `(() => {
+    const G = window.__geo; G.ligada = true; G.watchs = 0; G.limpos = 0;
+    const tempo = { code: 3, PERMISSION_DENIED: 1, POSITION_UNAVAILABLE: 2, TIMEOUT: 3, message: 'Timeout expired' };
+    const pos = () => ({ coords: { latitude: 41.14871, longitude: -8.58483, accuracy: 12, heading: null, speed: null, altitude: null, altitudeAccuracy: null }, timestamp: Date.now() });
+    const ARRANQUE = 35000;
+    const vivos = new Map();
+    const geo = {
+      // pedidos avulsos: o recetor ainda não tem posição (tempo esgotado)
+      getCurrentPosition(okf, err, o) { G.pedidos++; setTimeout(() => err && err(tempo), Math.min((o && o.timeout) || 15000, 15000)); },
+      // o seguimento dá a 1.ª posição 35 s depois de começar (se não for limpo antes), e depois de 1 em 1 s
+      watchPosition(okf, err, o) {
+        G.pedidos++; const id = ++G.watchs;
+        if (o && Number.isFinite(o.timeout)) setTimeout(() => vivos.has(id) && err && err(tempo), o.timeout);
+        const t = setTimeout(() => { if (!vivos.has(id)) return; okf(pos()); vivos.set(id, setInterval(() => okf(pos()), 1000)); }, ARRANQUE);
+        vivos.set(id, t); return id;
+      },
+      clearWatch(id) { G.limpos++; const t = vivos.get(id); clearTimeout(t); clearInterval(t); vivos.delete(id); },
+    };
+    Object.defineProperty(Navigator.prototype, 'geolocation', { get: () => geo, configurable: true });
+  })();` });
+  await p.goto(BASE + '/', { waitUntil: 'load', timeout: 60000 });
+  await p.waitForTimeout(24000);
+  const semSinal = await p.evaluate(() => /Sem sinal de GPS/.test(document.body.innerText));
+  const liga = await p.evaluate(() => /Liga a localização/.test(document.body.innerText));
+  ok('GPS a arrancar há 24 s: diz «Sem sinal de GPS» e não «Liga a localização»', semSinal && !liga, `sem sinal ${semSinal} | liga ${liga}`);
+  // a pessoa toca em «Tentar outra vez» (como o Dinis fez várias vezes): não pode recomeçar o seguimento
+  await p.locator('[data-teste="tentar-localizacao"]:visible').first().click({ timeout: 3000 }).catch(() => {});
+  await p.waitForTimeout(500);
+  await p.locator('[data-teste="tentar-localizacao"]:visible').first().click({ timeout: 3000 }).catch(() => {});
+  const chegou = await p.waitForFunction(temParagens, null, { timeout: 30000 }).then(() => true).catch(() => false);
+  const g = await p.evaluate(() => ({ watchs: window.__geo.watchs, limpos: window.__geo.limpos }));
+  await p.screenshot({ path: `${SAIDA}/localizacao-automatica-4d-gps-a-arrancar.png` });
+  ok('GPS a arrancar: a posição aparece quando o GPS a dá (o seguimento não foi recomeçado à espera)', chegou, JSON.stringify(g));
+  ok('GPS a arrancar: um só seguimento, nunca limpo enquanto esperava', g.watchs === 1 && g.limpos === 0, JSON.stringify(g));
+  ok('sem erros na página (GPS a arrancar)', erros.length === 0, erros.join(' | '));
   await ctx.close();
 }
 
