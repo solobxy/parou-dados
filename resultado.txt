@@ -1,0 +1,128 @@
+== 2026-11-26T13:31:13Z acao=comando
+IP: 2.31.13.85
+== Saída no servidor
+src/server/grevesNoticias.ts
+src/server/grevesPlaneador.ts
+== src/server/grevesNoticias.ts
+2:// PAROU.PT — Greves anunciadas nas notícias
+4:// Nem todos os operadores publicam as greves num sítio que se possa ler (a Metro do Porto anunciou a greve de 27/11/2026
+6:// publicam esses comunicados em minutos. Aqui lêem-se os RSS de órgãos nacionais e, quando um título anuncia uma greve
+7:// de um operador de transportes com o dia indicado, cria-se um aviso de greve com a notícia como fonte (dito como tal).
+9://  - só títulos com "greve"/"paralisação" e o nome do operador; nunca greves desconvocadas;
+11://  - só notícias dos últimos 10 dias e greves que ainda não acabaram;
+12://  - se o operador já tem aviso oficial de greve para esse dia, a notícia não acrescenta nada (fica o oficial).
+14:import { DateTime } from 'luxon';
+20:export const FONTES_RSS_GREVES = [
+43:/** Operadores reconhecidos nos títulos: nome com que o aviso fica (o mesmo que grevesPlaneador conhece) e região */
+44:const OPERADORES: Array<{ re: RegExp; nome: string; regiao: string; municipios: string[]; soMaiusculas?: boolean }> = [
+66:const RE_GREVE = /\bgreves?\b|\bparalisac/;
+67:/** Greve desconvocada, suspensa, adiada ou acabada: não cria aviso (e retira o que houver para esse operador e dia) */
+68:const RE_ANULADA = /\bdesconvoc|\bsuspend\w* (?:a |da )?greve|\bgreve (?:foi |e )?(?:suspensa|cancelada|adiada|desconvocada)|\bcancela\w* (?:a )?greve|\bsem greve\b|\bfim da greve|\bacordo (?:poe fim|evita)/;
+69:/** Notícias que falam de greves noutros setores ou de balanços (não anunciam uma greve de transportes) */
+73:function proximoDiaSemana(base: DateTime, dia: number, incluiHoje: boolean): DateTime {
+83: * Dias da greve citados no texto. Ordem de confiança: datas com o mês ("27 de novembro", "de 23 a 27 de novembro",
+86:export function diasDaGreve(texto: string, publicada: DateTime): DateTime[] {
+89:  const dias = new Map<string, DateTime>();
+90:  const juntar = (d: DateTime) => { if (d.isValid) dias.set(d.toISODate()!, d.startOf('day')); };
+92:    let d = DateTime.fromObject({ year: base.year, month: mes, day: dia }, { zone: ZONA });
+99:  for (const m of t.matchAll(new RegExp(`\\b(?:de|entre)\\s+(\\d{1,2})\\s+(?:a|e|ate)\\s+(\\d{1,2})\\s+de\\s+(${meses})`, 'g'))) {
+126:export function inicioNaVespera(texto: string, primeiro: DateTime): DateTime | null {
+136:  // uma hora antes da última partida anunciada (as últimas viagens já não chegam ao fim da linha)
+143:/** O que continua a funcionar durante a greve, quando a notícia o diz ("operando apenas na linha Amarela e entre Senhora
+145:export interface ServicoNaGreve {
+156:export function servicoNaGreve(texto: string): ServicoNaGreve | undefined {
+164:    for (const m of frase.matchAll(/\bentre (?:a |o |as |os )?([a-z0-9 .'-]{3,40}?) e (?:a |o |as |os )?([a-z0-9 .'-]{3,40}?)(?=[,;.]|\s+(?:devido|com|na|no|nas|nos|e (?:na|no|entre)|durante|a partir|ate|das|entre as)\b|$)/g)) {
+176:function idDe(operador: string, dia: string) {
+177:  return `noticia-greve-${semAcentos(operador).replace(/[^a-z0-9]+/g, '-')}-${dia}`;
+180:/** Peso das fontes (a primeira com o mesmo operador e dia fica como fonte do aviso) */
+184: * Avisos de greve tirados das notícias. Puro (sem rede), para testar.
+185: * `oficiais` = avisos já lidos dos operadores (se cobrem o mesmo operador e dia, a notícia não entra).
+187:export function grevesDasNoticias(noticias: NoticiaBruta[], agora: Date = new Date(), oficiais: CentralAlert[] = []): CentralAlert[] {
+188:  const agoraL = DateTime.fromJSDate(agora).setZone(ZONA);
+189:  const candidatos = new Map<string, { n: NoticiaBruta; operador: typeof OPERADORES[0]; dias: DateTime[]; inicio: DateTime; fim: DateTime; fontes: Set<string> }>();
+196:    const publicada = DateTime.fromISO(n.data, { zone: 'utc' });
+199:    if (!RE_GREVE.test(titulo) || RE_NAO_E.test(titulo)) continue;
+200:    const operador = OPERADORES.find((o) => (o.soMaiusculas ? o.re.test(n.titulo) : o.re.test(titulo)));
+201:    if (!operador) continue;
+204:    let dias = diasDaGreve(n.titulo, publicada);
+205:    if (!dias.length) dias = diasDaGreve(texto, publicada);
+209:      const chave = `${operador.nome}|${d.toISODate()}`;
+214:    const fim = ultimo.endOf('day');
+215:    if (fim < agoraL) continue;
+216:    const chave = `${operador.nome}|${primeiro.toISODate()}`;
+220:    candidatos.set(chave, { n, operador, dias, inicio, fim, fontes: new Set([n.fonte]) });
+225:    // aviso oficial do mesmo operador que cobre o mesmo dia: fica o oficial
+226:    const coberto = oficiais.some((a) => a.tipo === 'greve' && semAcentos(a.operador) === semAcentos(c.operador.nome) && a.status !== 'Cancelado'
+227:      && Date.parse(a.start_datetime) <= c.fim.toMillis() && (a.end_datetime ? Date.parse(a.end_datetime) : Date.parse(a.start_datetime) + 86_400_000) >= c.dias[0].toMillis());
+229:    const dia = c.dias[0].toISODate()!;
+235:    const descricao = `Fonte: ${listaFontes} (o operador ainda não publicou aviso no site). ${resumo || c.n.titulo}`.slice(0, 1500);
+236:    // a greve começa no dia anunciado; a véspera (serviço a acabar mais cedo) fica à parte, como perturbação prevista
+238:    const end = c.fim.toUTC().toISO()!;
+240:    const servico = servicoNaGreve(`${c.n.titulo}. ${c.n.resumo || ''}`);
+242:      ...(servico ? { servico_na_greve: servico } : {}),
+244:      id: idDe(c.operador.nome, dia),
+245:      external_id: idDe(c.operador.nome, dia),
+246:      tipo: 'greve',
+249:      operador: c.operador.nome,
+== src/server/grevesPlaneador.ts
+2:// PAROU.PT — Greves nos trajetos
+4:// Uma greve confirmada pelo operador (avisos oficiais: CP, Metro de Lisboa, TML, Carris Metropolitana…, ou o comunicado do
+5:// operador publicado pela imprensa quando não há aviso no site dele, ver grevesNoticias.ts) aparece no troço
+6:// do trajeto que usa esse operador, se a viagem sai dentro do período da greve, ou num dia em que o operador avisa que
+7:// ainda há perturbações. Sem aviso do operador (no site dele ou comunicado nas notícias), não se mostra nada.
+9:import { DateTime } from 'luxon';
+11:import type { GreveTroco } from '../types/perto';
+13:/** Nomes com que cada operador aparece nos avisos oficiais (comparados sem acentos nem maiúsculas) */
+14:const OPERADORES: Record<string, string[]> = {
+35:/** O que o planeador precisa de cada aviso de greve */
+36:export interface AvisoGreve {
+37:  operador: string;
+41:  /** NaN = sem fim indicado */
+42:  fimMs: number;
+43:  /** Outros dias (AAAA-MM-DD, Lisboa) com perturbações previstas, segundo o operador */
+45:  /** Vem de uma notícia (ver grevesNoticias.ts) */
+47:  /** Véspera: a partir desta hora o serviço já acaba mais cedo (perturbação prevista, não greve) */
+53:/** Troço de um trajeto, para saber se fica na parte que funciona durante a greve */
+54:export interface TrocoParaGreve {
+65:function funcionaNaGreve(feed: string, g: AvisoGreve, troco?: TrocoParaGreve): boolean {
+77:/** Avisos oficiais de greve ainda a valer (ativos ou futuros) */
+78:export function grevesDosAvisos(alertas: any[], agoraMs = Date.now()): AvisoGreve[] {
+79:  const out: AvisoGreve[] = [];
+81:    if (!a || a.tipo !== 'greve' || (a.status !== 'Ativo' && a.status !== 'Futuro')) continue;
+82:    const inicioMs = Date.parse(String(a.start_datetime || ''));
+83:    const fimMs = a.end_datetime ? Date.parse(String(a.end_datetime)) : NaN;
+86:    const ultimoDia = dias.length ? DateTime.fromISO(dias.slice().sort().pop()!, { zone: 'Europe/Lisbon' }).endOf('day').toMillis() : NaN;
+87:    const acaba = Math.max(Number.isFinite(fimMs) ? fimMs : inicioMs + 30 * 3600_000, Number.isFinite(ultimoDia) ? ultimoDia : 0);
+89:    out.push({ operador: String(a.operador || ''), titulo: String(a.título || '').replace(/\s+/g, ' ').trim(), url: String(a.source_url || ''), inicioMs, fimMs, dias, ...(/^Not[ií]cia/.test(String(a.source || '')) ? { noticia: true } : {}), ...(a.servico_na_greve ? { servico: a.servico_na_greve } : {}), ...(a.vespera_desde && Number.isFinite(Date.parse(a.vespera_desde)) ? { vesperaMs: Date.parse(a.vespera_desde) } : {}) });
+94:/** Greve que afeta um troço (operador da app e hora de partida), ou undefined */
+95:export function greveDoTroco(feed: string, partidaMs: number, greves: AvisoGreve[], troco?: TrocoParaGreve): GreveTroco | undefined {
+96:  const nomes = OPERADORES[feed];
+98:  const dia = DateTime.fromMillis(partidaMs, { zone: 'Europe/Lisbon' }).toISODate();
+99:  let previsto: GreveTroco | undefined;
+100:  for (const g of greves) {
+101:    if (!nomes.includes(norm(g.operador))) continue;
+102:    // sem fim indicado: vale até ao fim do dia em que começa (como na página das greves)
+103:    const fim = Number.isFinite(g.fimMs) ? g.fimMs : DateTime.fromMillis(g.inicioMs, { zone: 'Europe/Lisbon' }).endOf('day').toMillis();
+104:    if (partidaMs >= g.inicioMs && partidaMs <= fim) {
+105:      const base: GreveTroco = { titulo: g.titulo, url: g.url, operador: g.operador, ...(g.noticia ? { noticia: true } : {}) };
+106:      return funcionaNaGreve(feed, g, troco) ? { ...base, reduzido: true, ...(g.servico?.frequencia ? { frequencia: g.servico.frequencia } : {}) } : base;
+108:    if (g.vesperaMs !== undefined && partidaMs >= g.vesperaMs && partidaMs < g.inicioMs) previsto = previsto || { titulo: g.titulo, url: g.url, operador: g.operador, previsto: true, ...(g.noticia ? { noticia: true } : {}) };
+109:    if (dia && g.dias.includes(dia)) previsto = previsto || { titulo: g.titulo, url: g.url, operador: g.operador, previsto: true };
+114:/** Avisos de greve para o planeador: os que já estão em memória (nunca espera pela rede) */
+115:export async function grevesParaPlaneador(): Promise<AvisoGreve[]> {
+117:    return grevesDosAvisos(avisosEmMemoria());
+== api alertas
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Error</title>
+</head>
+<body>
+<pre>Cannot GET /api/alerts</pre>
+</body>
+</html>
+
+== Teste de fora
+https://2-31-13-85.sslip.io/health 200 0.844245s
+https://2-31-13-85.sslip.io/api/transit/loading-status 200 0.493655s
