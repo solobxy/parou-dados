@@ -1,0 +1,9 @@
+== 2026-11-26T13:33:14Z acao=comando
+IP: 2.31.13.85
+== Saída no servidor
+linha 
+sed: -e expression #1, char 1: unknown command: `,'
+(o comando terminou com erro ou não houve ligação SSH)
+== Teste de fora
+https://2-31-13-85.sslip.io/health 200 0.474573s
+https://2-31-13-85.sslip.io/api/transit/loading-status 200 0.489802s
