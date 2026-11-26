@@ -78,4 +78,17 @@ fi
 FORCAR=1 /usr/local/bin/parou-atualizar || echo "A primeira instalação falhou; o temporizador volta a tentar."
 systemctl enable --now parou-atualizar.timer
 
+# Atualizações de segurança sozinhas, com reinício às 04:30 quando o sistema o pede (a app volta sozinha com o serviço),
+# registos limitados a 600 MB e o fuso de Portugal
+cat > /etc/apt/apt.conf.d/52parou-reinicio <<'X'
+Unattended-Upgrade::Automatic-Reboot "true";
+Unattended-Upgrade::Automatic-Reboot-WithUsers "true";
+Unattended-Upgrade::Automatic-Reboot-Time "04:30";
+X
+printf 'APT::Periodic::Update-Package-Lists "1";\nAPT::Periodic::Unattended-Upgrade "1";\nAPT::Periodic::AutocleanInterval "7";\n' > /etc/apt/apt.conf.d/20auto-upgrades
+mkdir -p /etc/systemd/journald.conf.d && printf '[Journal]\nSystemMaxUse=600M\n' > /etc/systemd/journald.conf.d/parou.conf
+systemctl restart systemd-journald || true
+systemctl enable caddy parou || true
+timedatectl set-timezone Europe/Lisbon || true
+
 echo "PAROU.PT instalado. Teste: https://${IP//./-}.sslip.io"
