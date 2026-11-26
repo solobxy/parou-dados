@@ -282,6 +282,14 @@ jobs:
           SAIDA=../res timeout 300 node localizacao-automatica.mjs 2>&1 | tee ../res/localizacao-automatica.txt | tail -20
           exit ${PIPESTATUS[0]}
 
+      - name: Testar a versão nova com a app aberta (recarrega ao voltar à app)
+        continue-on-error: true
+        working-directory: auditoria
+        run: |
+          mkdir -p ../res
+          APP=../app SAIDA=../res timeout 300 node versao-nova.mjs 2>&1 | tee ../res/versao-nova.txt | tail -20
+          exit ${PIPESTATUS[0]}
+
       - name: Testar o aviso de greve nos trajetos (320, 390 e 1280 px; temas)
         continue-on-error: true
         working-directory: auditoria
