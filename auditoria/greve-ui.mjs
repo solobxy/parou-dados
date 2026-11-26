@@ -23,6 +23,9 @@ const troco = (codigo, cor, de, para, sai, chega, modo = 'Metro', op = 'Metro do
   fromStopName: de, toStopName: para, stopsCount: 4, durationMinutes: 8, departureTime: sai, arrivalTime: chega,
 });
 const GREVE = { titulo: 'Greve - serviços mínimos', url: AVISO, operador: 'CP' };
+// Greve anunciada só nas notícias (Metro do Porto, 27/11/2026) e troço que continua a funcionar, com menos viagens
+const NOTICIA = 'https://www.rtp.pt/noticias/economia/greve-dos-maquinistas-reduz-servico-do-metro-do-porto-na-sexta-feira_n1781632';
+const GREVE_METRO = { titulo: 'Greve dos maquinistas reduz serviço do Metro do Porto na sexta-feira', url: NOTICIA, operador: 'Metro do Porto', noticia: true, reduzido: true, frequencia: '15 min (7h–20h)' };
 const opcao = (id, legs, extra = {}) => ({
   id, type: 'fastest', title: '', badgeLabel: '', totalDurationMinutes: 14, departureTime: '10:02', arrivalTime: '10:16',
   walkingDistanceMeters: 300, walkingMinutes: 4, transfersCount: legs.filter((l) => l.mode === 'TRANSIT').length - 1,
@@ -30,7 +33,7 @@ const opcao = (id, legs, extra = {}) => ({
 });
 const RESPOSTA = {
   routes: [
-    opcao('m1', [aPe(2, 150), troco('F', '#F57F17', 'Campanhã', 'Trindade', '10:04', '10:12'), aPe(2, 120)], { highlight: 'melhor', badgeLabel: 'Melhor opção' }),
+    opcao('m1', [aPe(2, 150), { ...troco('F', '#F57F17', 'Campanhã', 'Trindade', '10:04', '10:12'), greve: GREVE_METRO }, aPe(2, 120)], { highlight: 'melhor', badgeLabel: 'Melhor opção' }),
     // cadeia comprida (a quebrar linha em 320 px) e Z10 inexistente não: Z3 com transbordo
     opcao('m2', [aPe(4, 300), troco('205', '#1565C0', 'Campanhã (Estação)', 'Bolhão', '10:05', '10:11', 'Autocarro', 'STCP'), aPe(3, 200),
       troco('D', '#FBC02D', 'Bolhão', 'Trindade', '10:15', '10:17'), troco('A', '#1E88E5', 'Trindade', 'Senhora da Hora', '10:20', '10:31'), aPe(5, 380)],
@@ -73,7 +76,9 @@ async function ecra(browser, largura, tema) {
     const resumo = (await cartaoCp.locator('[data-teste="greve-rota"]').innerText().catch(() => '')).replace(/\s+/g, ' ');
     ok(`[${largura} ${tema}] o resumo da opção com CP avisa da greve`, /Greve na CP · pode não circular/.test(resumo), resumo);
     const outras = await p.locator('[data-teste="greve-rota"]:visible').count();
-    ok(`[${largura} ${tema}] só a opção com greve avisa`, outras === 1, String(outras));
+    ok(`[${largura} ${tema}] só as opções com greve avisam (CP e metro)`, outras === 2, String(outras));
+    const resumoMetro = (await cartoes.first().locator('[data-teste="greve-rota"]').innerText().catch(() => '')).replace(/\s+/g, ' ');
+    ok(`[${largura} ${tema}] troço do metro que funciona na greve: «menos viagens», não «pode não circular»`, /Greve na Metro do Porto · menos viagens/.test(resumoMetro), resumoMetro);
     await p.screenshot({ path: `${SAIDA}/${nome}_lista.png` });
     await cartaoCp.click();
     const troco = p.locator('[data-teste="greve-troco"]:visible').first();
@@ -96,6 +101,17 @@ async function ecra(browser, largura, tema) {
     await troco.scrollIntoViewIfNeeded().catch(() => {});
     await p.waitForTimeout(300);
     await p.screenshot({ path: `${SAIDA}/${nome}_aberta.png` });
+    // o troço do metro: funciona, de 15 em 15 min, e a ligação diz que é uma notícia
+    await cartoes.first().click();
+    const tm = p.locator('[data-teste="greve-troco"]:visible', { hasText: 'Metro do Porto' }).first();
+    await tm.waitFor({ state: 'visible', timeout: 8000 }).catch(() => {});
+    const txtM = (await tm.innerText().catch(() => '')).replace(/\s+/g, ' ');
+    ok(`[${largura} ${tema}] troço do metro: funciona, com uma viagem a cada 15 min`, /este troço funciona, com uma viagem a cada 15 min \(7h–20h\)/.test(txtM), txtM);
+    ok(`[${largura} ${tema}] fonte dita como notícia («Ver notícia»), com a ligação`, /Ver notícia/.test(txtM) && (await tm.locator('a').first().getAttribute('href').catch(() => '')) === NOTICIA, txtM);
+    const lateral2 = await p.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+    ok(`[${largura} ${tema}] sem scroll para o lado (metro aberto)`, lateral2 <= 0, `${lateral2}px`);
+    await tm.scrollIntoViewIfNeeded().catch(() => {});
+    await p.screenshot({ path: `${SAIDA}/${nome}_metro.png` });
     ok(`[${largura} ${tema}] sem erros na página`, erros.length === 0, erros.join(' | '));
   } catch (e) {
     ok(`[${largura} ${tema}] o ecrã abriu`, false, String(e).slice(0, 200));

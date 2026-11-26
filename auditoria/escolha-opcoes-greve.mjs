@@ -24,6 +24,9 @@ ok('greve à hora da viagem pesa 45 min', U.custoDaOpcao(comboio) - U.custoDaOpc
 const previsto = op('p', 279, 13, 2, [perna('Comboio', { ...GREVE, previsto: true })]);
 ok('perturbações previstas pesam 15 min', U.custoDaOpcao(previsto) - U.custoDaOpcao({ ...previsto, legs: [perna('Comboio')] }) === 15);
 ok('se todas têm greve, a mais rápida continua a ser escolhida', U.maisRapidaDe([comboio])?.id === 'cp');
+const reduzido = op('red', 270, 13, 2, [perna('Metro', { ...GREVE, reduzido: true })]);
+ok('serviço reduzido na greve (circula) pode ser a «mais rápida»', U.maisRapidaDe([reduzido, metro])?.id === 'red');
+ok('serviço reduzido pesa como perturbação prevista (15 min)', U.greveNaOpcao(reduzido) === 1);
 ok('greve oficial: 2 à hora, 1 prevista, 0 sem greve', U.greveNaOpcao(comboio) === 2 && U.greveNaOpcao(previsto) === 1 && U.greveNaOpcao(metro) === 0);
 // Um comboio com greve 60 min mais rápido do que tudo o resto continua à frente (pode ser a única forma de lá chegar)
 const muitoMaisRapido = op('cp2', 60, 5, 0, [perna('Comboio', GREVE)]);

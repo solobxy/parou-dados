@@ -142,7 +142,10 @@ jobs:
           # greves anunciadas só nas notícias (Metro do Porto, 27/11/2026): aviso, dias, o que funciona e o troço do trajeto
           APP=$PWD node --import tsx ../auditoria/greves-noticias.mjs 2>&1 | grep -v "Experimental\|trace-warnings" | tee ../res/greves-noticias.txt | tail -40
           k=${PIPESTATUS[0]}
-          exit $(( a || b || c || d || e || f || g || h || i || j || k ))
+          # de ponta a ponta: com o metro em greve, aparece a melhor opção sem greve (Trindade → Aeroporto, 601)
+          APP=$PWD node --import tsx ../auditoria/planeador-greve-alternativa.mjs 2>&1 | grep -v "Experimental\|trace-warnings" | tee ../res/planeador-greve-alternativa.txt | tail -20
+          l=${PIPESTATUS[0]}
+          exit $(( a || b || c || d || e || f || g || h || i || j || k || l ))
 
       - name: Testes da pesquisa de destinos, da cache com limite e do idioma do aparelho
         continue-on-error: true
