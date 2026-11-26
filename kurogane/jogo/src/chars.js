@@ -401,26 +401,33 @@ export class Body {
     this.phase += step * 2.7; this.t += dt;
     const k8 = Math.min(1, dt * 8); this.amp += (Math.min(1, mv) - this.amp) * k8; this.run += ((mv > 1.15 ? 1 : 0) - this.run) * Math.min(1, dt * 5);
     const A = this.amp, Rn = this.run, ph = this.phase, s = Math.sin(ph), cph = Math.cos(ph), idle = 1 - Math.min(1, A * 3), t = this.t;
+    const sc = this.stance || 0, cr = Math.min(1, sc) * (1 - Math.max(0, sc - 1)), pr = Math.max(0, Math.min(1, sc - 1)); // agachado (cr) e deitado (pr), suaves
     const [LL, LR] = this.legs, [AL, AR] = this.arms, armed = mode === 'rifle' || mode === 'pistol';
     // anca: sobe e desce duas vezes por passada, balança para os lados; respiração quando parado
     this.hips.position.set(Math.sin(ph) * 0.018 * A, HIP - 0.015 * A - 0.03 * Rn + Math.abs(cph) * (0.03 + 0.03 * Rn) * A, 0);
-    this.hips.rotation.set(0, -s * 0.08 * A, s * 0.03 * A);
+    this.hips.position.y -= (0.37 * (1 - A) + 0.22 * A) * cr; this.hips.position.z = -(0.08 * (1 - A) + 0.15 * A) * cr; if (pr > 0) { this.hips.position.y += (0.19 - this.hips.position.y) * pr; this.hips.position.z *= 1 - pr; }
+    this.hips.rotation.set(1.54 * pr, -s * 0.08 * A * (1 - pr), s * 0.03 * A * (1 - pr)); // deitado: o corpo roda para a frente e fica de barriga para baixo
     const lean = 0.02 + 0.07 * A + 0.13 * Rn * A + (armed ? 0.04 : 0);
-    this.torso.rotation.set(lean + Math.sin(t * 1.7) * 0.012 * idle, twist + s * 0.13 * A * (armed ? 0.3 : 1), -s * 0.025 * A);
+    this.torso.rotation.set((lean + Math.sin(t * 1.7) * 0.012 * idle) * (1 - pr) + 0.26 * cr - 0.08 * pr, twist + s * 0.13 * A * (armed ? 0.3 : 1) * (1 - pr), -s * 0.025 * A);
     this.torso.scale.set(1, 1 + Math.sin(t * 1.7) * 0.008 * idle, 1);
     // cabeça: compensa a inclinação e olha um pouco à volta quando estás parado
-    this.head.rotation.set(-lean * 0.7 - Math.sin(t * 1.7) * 0.01 * idle, -s * 0.1 * A * (armed ? 0.3 : 1) + Math.sin(t * 0.37) * 0.22 * idle * (armed ? 0.3 : 1), 0);
+    this.head.rotation.set(-lean * 0.7 * (1 - pr) - Math.sin(t * 1.7) * 0.01 * idle - 0.25 * cr - 1.2 * pr, -s * 0.1 * A * (armed ? 0.3 : 1) + Math.sin(t * 0.37) * 0.22 * idle * (armed ? 0.3 : 1), 0);
     // pernas: coxa para a frente/trás e o joelho dobra quando a perna vem para a frente (mais a correr)
     for (const [L, sg, off] of [[LL, -1, 0], [LR, 1, Math.PI]]) { const q = ph + off, sw = Math.sin(q);
       const hip = -sw * (0.42 + 0.22 * Rn) * A - 0.04 * Rn, knee = 0.06 + (0.15 + 0.25 * Rn) * A + (0.55 + 0.6 * Rn) * A * Math.max(0, Math.sin(q - 0.6)) + idle * 0.03;
-      this.limb(L, hip, sg * (0.03 + 0.02 * idle), knee); }
+      // agachado: parado, de joelho no chão (o direito) e o pé esquerdo à frente; a andar, baixo e com passos curtos
+      const kH = L === LR ? -0.15 : -1.35, kK = L === LR ? 1.85 : 1.4, wH = sw * 0.35 - 1.0, wK = 1.25 + 0.4 * Math.max(0, Math.sin(q - 0.6)), cH = kH * (1 - A) + wH * A, cK = kK * (1 - A) + wK * A;
+      const hc = hip + (cH - hip) * cr, kc = knee + (cK - knee) * cr;
+      const hp2 = hc + (-0.06 + sw * 0.16 * A - hc) * pr, kp2 = kc + (0.12 + 0.6 * A * Math.max(0, Math.sin(q)) - kc) * pr; // deitado: pernas esticadas, a rastejar
+      this.limb(L, hp2, sg * (0.03 + 0.02 * idle + 0.12 * pr), kp2); }
     if (climb >= 0) { const c = climb, k = Math.sin(c * Math.PI); this.limb(AR, -2.6 + c * 1.8, -0.2, -0.4 + c * 0.3); this.limb(AL, -2.6 + c * 1.8, 0.2, -0.4 + c * 0.3); this.limb(LL, -1.4 * k, -0.05, 1.7 * k); this.limb(LR, -0.5 * k, 0.05, 0.6 * k); this.torso.rotation.x = 0.45 * k; this.hips.position.y = HIP - 0.12 * k; return; }
     const re0 = rl >= 0 ? Math.min(1, rl * 6, (1 - rl) * 6) : 0, lo = (1 - raise) * (1 - re0), wk = this.wk && this.weps[this.wk]; // a recarregar, a arma sobe para o peito
     // recarga: a arma inclina (poço do carregador para cima e para o lado), o carregador sai com a mão esquerda e volta
     const re = rl >= 0 ? Math.min(1, rl * 8, (1 - rl) * 8) : 0, sm = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
     const magOff = rl < 0 ? 0 : rl < 0.12 ? 0 : rl < 0.3 ? sm(0.12, 0.3, rl) * 0.3 : rl < 0.5 ? 0.3 : rl < 0.66 ? 0.3 * (1 - sm(0.5, 0.66, rl)) : 0;
-    if (wk && LONG.includes(this.wk)) { const rx = lo * 0.62 + 0.18 * re, rz = -0.45 * re, ry = 0.15 * re; wk.rotation.set(rx, ry, rz); for (const a of this.wkAtt || []) if (a) this.weps[a].rotation.set(rx, ry, rz);
-      if (this.wkMag) { this.wkMag.position.set(0, -magOff, 0).applyEuler(wk.rotation); this.wkMag.visible = wk.visible && !(rl > 0.28 && rl < 0.46); } }
+    const wp = this._wp || (this._wp = new THREE.Vector3()); { const th = -1.47 * pr, P = SHY - HIP - 0.12; wp.set(0, P * (1 - Math.cos(th)), -P * Math.sin(th)); } // deitado: a arma roda à volta do ombro e fica à frente da cara
+    if (wk && LONG.includes(this.wk)) { const rx = lo * 0.62 * (1 - pr) + 0.18 * re - 1.47 * pr, rz = -0.45 * re, ry = 0.15 * re; wk.rotation.set(rx, ry, rz); wk.position.copy(wp); for (const a of this.wkAtt || []) if (a) { this.weps[a].rotation.set(rx, ry, rz); this.weps[a].position.copy(wp); }
+      if (this.wkMag) { this.wkMag.position.set(0, -magOff, 0).applyEuler(wk.rotation).add(wp); this.wkMag.visible = wk.visible && !(rl > 0.28 && rl < 0.46); } }
     else if (this.wkMag) { this.wkMag.position.set(0, 0.53, -magOff * 0.8); this.wkMag.visible = !(rl > 0.28 && rl < 0.46); }
     // braços a balançar (sem arma na mão): opostos às pernas, cotovelo dobra mais a correr
     const swingArms = (onlyL) => { for (const [Ar, sg, off] of [[AL, -1, Math.PI], [AR, 1, 0]]) { if (onlyL && Ar === AR) continue; const q = ph + off, sw = Math.sin(q);
@@ -430,9 +437,9 @@ export class Body {
     if (mode === 'rifle' && wk && GRIP[this.wk]) {
       // as duas mãos na arma: punho e guarda-mão, com a mesma rotação da arma (para baixo quando está em baixo)
       const g = GRIP[this.wk]; _pe.set(wk.rotation.x - recoil * 0.06, wk.rotation.y, wk.rotation.z); _rx.makeRotationFromEuler(_pe);
-      AR.position.set(SHX, SHY - HIP, 0); _t.set(WPUSH[0] + 0.03 + g[0][0], WPUSH[1] + g[0][1], WPUSH[2] + g[0][2]).applyMatrix4(_rx); _sh.copy(AR.position); _pl.set(1.2, -0.6, -0.5);
+      AR.position.set(SHX, SHY - HIP, 0); _t.set(WPUSH[0] + 0.03 + g[0][0], WPUSH[1] + g[0][1], WPUSH[2] + g[0][2]).applyMatrix4(_rx).add(wp); _sh.copy(AR.position); _pl.set(1.2, -0.6, -0.5);
       AR.userData.hand.quaternion.identity(); ik2(AR, AR.userData.fore, _sh, _t, _pl);
-      _t.set(WPUSH[0] - 0.05 + g[1][0], WPUSH[1] + g[1][1], WPUSH[2] + g[1][2]).applyMatrix4(_rx); _sh.set(-SHX + 0.04, SHY - HIP - 0.02, 0.07); AL.position.copy(_sh); _pl.set(-1, -0.8, -0.3);
+      _t.set(WPUSH[0] - 0.05 + g[1][0], WPUSH[1] + g[1][1], WPUSH[2] + g[1][2]).applyMatrix4(_rx).add(wp); _sh.set(-SHX + 0.04, SHY - HIP - 0.02, 0.07); AL.position.copy(_sh); _pl.set(-1, -0.8, -0.3);
       if (rl >= 0) { // mão ao carregador → à bolsa do cinto → de volta ao poço → ao guarda-mão
         const mp = this.wkPiv ? _t2.copy(this.wkPiv).add(_t3.set(0, -0.05 - magOff, 0)).applyMatrix4(_rx) : _t2.set(0.07, -0.02, 0.22).applyMatrix4(_rx), belt = _t3.set(-0.16, -0.05, 0.12);
         const k1 = sm(0.0, 0.12, rl), k2 = sm(0.3, 0.4, rl) * (1 - sm(0.46, 0.56, rl)), k3 = sm(0.68, 0.84, rl);
@@ -441,10 +448,10 @@ export class Body {
       this.torso.rotation.y = twist - 0.14 * raise;
     } else if (mode === 'pistol') {
       // pistola a duas mãos à frente do peito (em baixo, a apontar para o chão)
-      AR.position.set(SHX, SHY - HIP, 0); _t.set(0.02, SHY - HIP - 0.06 - lo * 0.34 + recoil * 0.03, 0.42 - lo * 0.14 - recoil * 0.05); _sh.copy(AR.position); _pl.set(1, -0.7, -0.3); ik2(AR, AR.userData.fore, _sh, _t, _pl);
+      AR.position.set(SHX, SHY - HIP, 0); _t.set(0.02, SHY - HIP - 0.06 - lo * 0.34 + recoil * 0.03, 0.42 - lo * 0.14 - recoil * 0.05); if (pr > 0) { const an = -1.47 * pr, c0 = Math.cos(an), s0 = Math.sin(an), yy = _t.y - (SHY - HIP), zz = _t.z; _t.y = SHY - HIP + yy * c0 - zz * s0; _t.z = yy * s0 + zz * c0; } /* deitado: a pistola vai para a frente da cara */ _sh.copy(AR.position); _pl.set(1, -0.7, -0.3); ik2(AR, AR.userData.fore, _sh, _t, _pl);
       _t.x -= 0.06; _t.y -= 0.03; _t.z -= 0.03; if (rl >= 0) { const k = sm(0.05, 0.2, rl) * (1 - sm(0.5, 0.68, rl)); _t.lerp(_t2.set(-0.16, -0.05, 0.12), k); _t.y -= 0.12 * re * (1 - k); } _sh.set(-SHX + 0.03, SHY - HIP, 0.05); AL.position.copy(_sh); _pl.set(-1, -0.7, -0.3); ik2(AL, AL.userData.fore, _sh, _t, _pl);
       // a mão da arma fica sempre virada para a frente (a pistola aponta para onde olhas), seja qual for a dobra do cotovelo
-      const H = AR.userData.hand; _hq.copy(AR.quaternion).multiply(AR.userData.fore.quaternion).invert(); _hq2.setFromEuler(_pe.set(-Math.PI / 2 + lo * 0.9 - recoil * 0.25, 0, 0)); H.quaternion.copy(_hq).multiply(_hq2);
+      const H = AR.userData.hand; _hq.copy(AR.quaternion).multiply(AR.userData.fore.quaternion).invert(); _hq2.setFromEuler(_pe.set(-Math.PI / 2 + lo * 0.9 - recoil * 0.25 - 1.47 * pr, 0, 0)); H.quaternion.copy(_hq).multiply(_hq2);
     } else {
       AL.position.set(-SHX, SHY - HIP, 0); AR.position.set(SHX, SHY - HIP, 0);
       if (mode === 'melee') {
@@ -459,6 +466,7 @@ export class Body {
     if (thr >= 0 && !(mode === 'rifle' || mode === 'pistol')) { const back = thr < 0.42 ? sm(0, 0.42, thr) : 1 - sm(0.42, 0.62, thr), fw = thr < 0.42 ? 0 : Math.sin(Math.min(1, (thr - 0.42) / 0.45) * Math.PI);
       AR.position.set(SHX, SHY - HIP, 0); AL.position.set(-SHX, SHY - HIP, 0); this.limb(AR, -2.3 * back - 1.2 * fw, -0.25 * back, -1.4 * back - 0.2 * fw); this.limb(AL, -1.2 * back - 0.3 * fw, 0.2, -0.3);
       this.torso.rotation.y = twist - 0.45 * back + 0.35 * fw; this.torso.rotation.x += 0.12 * fw; }
+    if (pr > 0.01 && !(mode === 'rifle' || mode === 'pistol') && thr < 0 && swing < 0) { AL.position.set(-SHX, SHY - HIP, 0); AR.position.set(SHX, SHY - HIP, 0); const q = Math.sin(ph) * 0.25 * A; this.limb(AR, (-2.55 + q) * pr, -0.3 * pr, -0.9 * pr); this.limb(AL, (-2.55 - q) * pr, 0.3 * pr, -0.9 * pr); } // deitado sem arma: braços à frente, a rastejar
     this.props.gran.visible = thr >= 0 && thr < 0.45;
     // a usar alguma coisa: a arma vai para o lado e as mãos fazem o gesto (levar à boca, beber, enrolar a ligadura)
     const uk = use ? use.kind : null; for (const k in this.props) if (k !== 'gran') this.props[k].visible = k === uk;

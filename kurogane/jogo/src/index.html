@@ -810,6 +810,15 @@ body.mir #touch .tb>*,body.mir #touch .ghost{transform:scaleX(-1)}
 @media (orientation:portrait){#arw .ah{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center}#arw .ah .close{grid-column:2;grid-row:1;margin-left:0}#arw .asteps{grid-column:1/-1}#arw .aht{min-width:0}#arw .aT{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}}
 @media (max-width:400px){#arw .af .btn{padding:0 10px;font-size:13px;letter-spacing:.03em}#arBack .abk{display:block}#arBack span{display:none}#arBack{flex:0 0 48px!important;padding:0!important}#arw .ah .close.txt{padding:0 10px 0 8px}}
 @media (max-width:380px){#arw .asc2 em{display:none}#arw .asc2 i{margin:0 1px}}
+#tCrouch,#tProne{display:none}body.touch #tCrouch,body.touch #tProne{display:flex}
+#tCrouch.on,#tProne.on{background:rgba(244,241,234,.9);color:#111}
+@media (orientation:landscape){#tCrouch{right:calc(18px + var(--sr));bottom:calc(206px + var(--sb))}#tProne{right:calc(84px + var(--sr));bottom:calc(206px + var(--sb))}}
+@media (orientation:landscape) and (max-height:360px){#tCrouch{bottom:calc(180px + var(--sb))}#tProne{bottom:calc(180px + var(--sb))}}
+@media (orientation:portrait){#tCrouch{right:calc(18px + var(--sr));bottom:calc(410px + var(--sb))}#tProne{right:calc(18px + var(--sr));bottom:calc(478px + var(--sb))}}
+@media (orientation:portrait) and (max-height:700px){#tCrouch{right:calc(18px + var(--sr));bottom:calc(262px + var(--sb))}#tProne{right:calc(84px + var(--sr));bottom:calc(262px + var(--sb))}}
+@media (orientation:landscape){body.touch #tUse{bottom:calc(270px + var(--sb))}}
+@media (orientation:landscape) and (max-height:360px){body.touch #tUse{left:50%;right:auto;transform:translateX(-50%);bottom:calc(62px + var(--sb))}}
+@media (orientation:portrait) and (max-height:700px){body.touch #tUse{bottom:calc(326px + var(--sb))}}
 </style>
 </head>
 <body>
@@ -839,7 +848,7 @@ body.mir #touch .tb>*,body.mir #touch .ghost{transform:scaleX(-1)}
     <button class="tb" id="tAds" data-h="ads" aria-label="Apontar pela mira" hidden>{{scan-eye}}<em>Mira</em></button>
     <button class="tb" id="tLower" data-h="lower" aria-label="Baixar a arma" hidden>{{arrow-down-to-line}}<em>Baixar</em></button>
     <button class="tb" id="tBreath" data-h="breath" aria-label="Suster a respiração" hidden>{{wind}}<em>Respirar</em></button>
-    <button class="tb" id="tJump" data-h="jump" aria-label="Saltar">{{chevrons-up}}<em>Saltar</em></button>
+    <button class="tb" id="tJump" data-h="jump" aria-label="Saltar">{{chevrons-up}}<em>Saltar</em></button><button class="tb" id="tCrouch" data-h="crouch" aria-label="Agachar"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="14" cy="4.5" r="2.2"/><path d="M13 8l-3 6 5 2-2 5M12 10l5 2"/></svg><em>Agachar</em></button><button class="tb" id="tProne" data-h="prone" aria-label="Deitar"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="19" cy="12" r="2.2"/><path d="M16 15H6l-4 1M14 15l4 2M2 20h20"/></svg><em>Deitar</em></button>
     <button class="tb" id="tSprint" data-h="sprint" aria-label="Correr sempre">{{footprints}}<em>Auto</em></button>
     <button class="tb dv" id="dUp" aria-label="Acelerar">{{chevron-up}}<em>Acelerar</em></button>
     <button class="tb dv" id="dDn" aria-label="Travar e marcha-atrás">{{chevron-down}}<em>Travar</em></button>
@@ -883,7 +892,7 @@ body.mir #touch .tb>*,body.mir #touch .ghost{transform:scaleX(-1)}
   <nav class="menu"><button class="mi pri" id="sCont" hidden><b>Continuar</b><em>Voltas onde ficaste</em></button><button class="mi pri" id="sPlay"><b>Survival</b><em>Continuas onde ficaste, ou começas perto de uma vila</em></button><button class="mi" id="sArena"><b>Arena</b><em>PvP em Tóquio · Vermelha contra Azul · 5 kits</em></button><button class="mi" id="sSet"><b>Definições</b><em>Controlos, imagem e som</em></button></nav>
   <div class="onl" id="sOnl" role="status"><i class="dot" aria-hidden="true"></i><span><b>Servidor</b><em id="sOnT">A ver quem está a jogar…</em></span></div>
   <div class="keys" id="sKeys"></div>
-  <div class="foot">Protótipo 0.51 · um servidor para todos · quem sai fica a dormir no mundo</div>
+  <div class="foot">Protótipo 0.52 · um servidor para todos · quem sai fica a dormir no mundo</div>
 </div><button id="sMus" aria-label="Música do menu"><span class="on">{{volume-2}}</span><span class="off">{{volume-x}}</span></button><a class="credit" href="https://dinissousa.pt" target="_blank" rel="noopener">feito por dinissousa.pt</a></div>
 <div id="arw" class="ov" hidden></div>
 <div id="pfm" class="ov" hidden><div class="pfbox"><div class="pfh"><b id="pfT"></b><button class="close" id="pfX" aria-label="Fechar">{{x}}</button></div><div id="pfB" class="pfb"></div></div></div>

@@ -25,6 +25,11 @@ export function makeArena({ send }) {
     for (let i = 0; i < 240 * 2 && dist < L + 0.6; i++) { const v = Math.hypot(vx, vy, vz), k2 = cd * v; vx -= vx * k2 * h; vy -= (vy * k2 + 9.81) * h; vz -= vz * k2 * h; const nx = x + vx * h, ny = y + vy * h, nz = z + vz * h, step = Math.hypot(nx - x, ny - y, nz - z);
       if (dist >= L) break;
       for (const T of tgt) { const by = T.y; if (Math.abs(nx - T.x) > 3 || Math.abs(nz - T.z) > 3) continue;
+        const sc = T.c && T.c.p ? T.c.p.sc | 0 : 0;
+        if (sc === 2) { const yw = T.c.p.yaw || 0, fx = Math.sin(yw), fz = Math.cos(yw); if (segPt(x, y, z, nx, ny, nz, T.x + fx * 0.72, by + 0.24, T.z + fz * 0.72) < 0.17) return { T, zone: 'head', dmg, pen, v: Math.hypot(vx, vy, vz) / v0, dist };
+          for (let s = 0; s <= 6; s++) { const f = -0.95 + s * 0.25; if (segPt(x, y, z, nx, ny, nz, T.x + fx * f, by + 0.18, T.z + fz * f) < 0.24) return { T, zone: f > -0.2 ? 'body' : 'legs', dmg, pen, v: Math.hypot(vx, vy, vz) / v0, dist }; } continue; }
+        if (sc === 1) { if (segPt(x, y, z, nx, ny, nz, T.x, by + 1.12, T.z) < 0.17) return { T, zone: 'head', dmg, pen, v: Math.hypot(vx, vy, vz) / v0, dist };
+          for (let s = 0; s <= 3; s++) { const sy = by + 0.14 + s * 0.27; if (segPt(x, y, z, nx, ny, nz, T.x, sy, T.z) < 0.32) return { T, zone: sy > 0.6 ? 'body' : 'legs', dmg, pen, v: Math.hypot(vx, vy, vz) / v0, dist }; } continue; }
         if (segPt(x, y, z, nx, ny, nz, T.x, by + 1.62, T.z) < 0.17) return { T, zone: 'head', dmg, pen, v: Math.hypot(vx, vy, vz) / v0, dist };
         for (let s = 0; s <= 4; s++) { const sy = by + 0.15 + s * 0.3; if (segPt(x, y, z, nx, ny, nz, T.x, sy, T.z) < 0.3) return { T, zone: sy > 0.85 ? 'body' : 'legs', dmg, pen, v: Math.hypot(vx, vy, vz) / v0, dist }; } }
       x = nx; y = ny; z = nz; dist += step; }
@@ -79,7 +84,7 @@ export function makeArena({ send }) {
       if (!m.al && p.alive) { p.alive = false; p.deadT = now; } // só se volta à vida com 'aspawn' (um 'st' atrasado não ressuscita quem o servidor já matou)
       p.x = num(m.x, AX - HW, AX + HW, AX); p.z = num(m.z, AZ - HD, AZ + HD, AZ); p.y = num(m.y, -5, 20); p.lv = num(m.lv, 0, 3) | 0;
       { const H = p.hist; H.push([now, p.x, p.y, p.z]); while (H.length > 2 && now - H[0][0] > 650) H.shift(); }
-      p.ts = num(m.ts, 0, 1e13, 0); p.yaw = num(m.yaw, -10, 10); p.mv = num(m.mv, 0, 3); p.an = num(m.an, 0, 127) | 0; p.w = typeof m.w === 'string' ? m.w.slice(0, 12) : '';
+      p.ts = num(m.ts, 0, 1e13, 0); p.yaw = num(m.yaw, -10, 10); p.mv = num(m.mv, 0, 3); p.an = num(m.an, 0, 127) | 0; p.w = typeof m.w === 'string' ? m.w.slice(0, 12) : ''; p.sc = num(m.sc, 0, 2, 0) | 0;
       if (p.alive) p.hp = Math.min(num(m.hp, 0, 100, p.hp), p.hp + 3);
       if (Array.isArray(m.ar)) { const a = [num(m.ar[0], 0, 4) | 0, num(m.ar[1], 0, 4) | 0]; if (a[0] !== p.ar[0]) p.hd = null; if (a[1] !== p.ar[1]) p.vd = null; p.ar = a; }
       p.gk = typeof m.gk === 'string' ? m.gk.slice(0, 80) : ''; return;
@@ -106,7 +111,7 @@ export function makeArena({ send }) {
   setInterval(() => {
     const L = [...players.values()].filter(c => c.p); tickN++;
     if (!L.length) { if (!emptyT) emptyT = Date.now(); else if (Date.now() - emptyT > 120e3) { score[0] = score[1] = 0; } return; } emptyT = 0;
-    for (const c of L) { const out = []; for (const o of L) { if (o === c) continue; const q = o.p; out.push([o.id, +q.x.toFixed(2), +q.z.toFixed(2), +q.y.toFixed(2), q.lv, +q.yaw.toFixed(2), +q.mv.toFixed(2), q.an, q.w, Math.round(q.hp), q.alive ? 1 : 0, 0, q.ar, Math.round(q.ts || 0), q.gk || '']); } send(c, { t: 's', ps: out }); }
+    for (const c of L) { const out = []; for (const o of L) { if (o === c) continue; const q = o.p; out.push([o.id, +q.x.toFixed(2), +q.z.toFixed(2), +q.y.toFixed(2), q.lv, +q.yaw.toFixed(2), +q.mv.toFixed(2), q.an, q.w, Math.round(q.hp), q.alive ? 1 : 0, 0, q.ar, Math.round(q.ts || 0), q.gk || '', q.sc | 0]); } send(c, { t: 's', ps: out }); }
   }, 33);
   return { add, msg, drop, count: () => [...players.values()].filter(c => c.p).length, score };
 }

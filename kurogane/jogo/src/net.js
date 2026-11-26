@@ -130,7 +130,7 @@ export function makeNet({ G, scene, mkRemote, audio, Conta, enc, dec, hurt, die,
   const v4 = v => [+v.x.toFixed(4), +v.y.toFixed(4), +v.z.toFixed(4)];
   N.shot = (O, D, k, n, L, sup, ds, Ls) => send({ t: 'shot', o: [+O.x.toFixed(2), +O.y.toFixed(2), +O.z.toFixed(2)], d: v4(D), k, n, L: Math.round(L), sup: !!sup, ds: ds ? ds.map(v4) : undefined, Ls: Ls ? Ls.map(v => Math.round(v * 10) / 10) : undefined });
   // quem está à vista para levar um tiro (para a mira e para o rasto pararem neles)
-  N.targets = () => { const out = []; for (const r of R.values()) if (r.b.root.visible) out.push({ x: r.x, y: r.y || 0, z: r.z }); for (const s of sleepers.values()) if (s.b.root.visible) out.push({ x: s.x, y: 0, z: s.z, lying: true }); return out; };
+  N.targets = () => { const out = []; for (const r of R.values()) if (r.b.root.visible) out.push({ x: r.x, y: r.y || 0, z: r.z, sc: r.sc || 0, yaw: r.b.root.rotation.y }); for (const s of sleepers.values()) if (s.b.root.visible) out.push({ x: s.x, y: 0, z: s.z, lying: true }); return out; };
   N.died = by => send(G.ARENA ? { t: 'died', by: by || null } : { t: 'died', it: G.inv.all().map(enc), force: 1 });
   // mundo partilhado
   N.cyc = () => (((Date.now() + off - cyc0) / 1000) % 1920 + 1920) % 1920;
@@ -176,8 +176,9 @@ export function makeNet({ G, scene, mkRemote, audio, Conta, enc, dec, hurt, die,
       const an = b[7] | 0; { r.wt = (r.wt || 0) - dt; if (r.wt <= 0 && G.wallAhead) { r.wt = 0.1; r.wk = Math.max(0, Math.min(1, (0.85 - G.wallAhead(x, z, S.yaw, b[4])) / 0.35)); } } // recarga, granada e ligadura dos outros: o progresso conta-se aqui desde que o sinal chega
       const nowS = now / 1000, edge = (bit, key) => { if (an & bit) { if (r[key] == null) r[key] = nowS; return nowS - r[key]; } r[key] = null; return -1; };
       const rs = edge(16, 'rS'), ts = edge(32, 'tS'), us = edge(64, 'uS'), gd = ITEMS[r.w] && ITEMS[r.w].gun, rd = gd ? gd.reload : 2;
+      r.sc = (r.sc || 0) + ((b[15] | 0) - (r.sc || 0)) * Math.min(1, dt * 7); r.b.stance = r.sc; /* postura dos outros: agachado ou deitado, suave */
       r.b.pose(dt, Math.min(b[6], r.spd / 3 + 0.03), MODES[an & 3], -1, 0, 0, -1, r.step, (an & 4 ? 1 : 0.25) * (1 - 0.85 * (r.wk || 0)), us >= 0 ? { kind: 'heal', t: (us % 3) / 3 } : null, { rel: rs >= 0 ? Math.min(0.99, rs / rd) : -1, thr: ts >= 0 ? Math.min(0.99, ts / 0.7) : -1 });
-      if (r.gh && me && !mate(r.clan) && Math.hypot(x - me.x, z - me.z) > 12) r.el.style.display = 'none'; else place(r.el, x, y + 2.05, z); // de ghillie não se vê o nome ao longe
+      if (r.gh && me && !mate(r.clan) && Math.hypot(x - me.x, z - me.z) > 12) r.el.style.display = 'none'; else place(r.el, x, y + 2.05 - 0.5 * Math.min(1, r.sc || 0) - 0.95 * Math.max(0, (r.sc || 0) - 1), z); // de ghillie não se vê o nome ao longe
     }
     for (const s of sleepers.values()) {
       const vis = me && (s.lv || 0) === lv && Math.hypot(s.x - me.x, s.z - me.z) < 45 && see({ x: s.x, z: s.z, lv: s.lv || 0 });

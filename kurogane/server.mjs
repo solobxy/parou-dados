@@ -400,7 +400,7 @@ const onMsg = (c, m) => {
     if (p.alive && al0 && (p.lv | 0) === 0 && p.y < 3 && Math.hypot(nx - p.x, nz - p.z) < 8 && wallCross(p.x, p.z, nx, nz)) { p.wallN = (p.wallN || 0) + 1; if (p.wallN % 20 === 1) console.log('parede', p.name, p.wallN); send(c, { t: 'pos', x: p.x, z: p.z, lv: p.lv }); p.lastSt = now; return; } // atravessar paredes da base
     p.lastSt = now; p.x = nx; p.z = nz; p.y = num(m.y, -5, 40); p.lv = num(m.lv, 0, 6) | 0;
     { const H = p.hist || (p.hist = []); H.push([now, p.x, p.y, p.z]); while (H.length > 2 && now - H[0][0] > 650) H.shift(); } // onde esteve nos últimos 0,65 s (para o tiro de quem o via um pouco atrás)
-    p.ts = num(m.ts, 0, 1e13, 0); p.yaw = num(m.yaw, -10, 10); p.mv = num(m.mv, 0, 3); p.an = num(m.an, 0, 127) | 0; p.w = typeof m.w === 'string' ? m.w.slice(0, 12) : '';
+    p.ts = num(m.ts, 0, 1e13, 0); p.yaw = num(m.yaw, -10, 10); p.mv = num(m.mv, 0, 3); p.an = num(m.an, 0, 127) | 0; p.w = typeof m.w === 'string' ? m.w.slice(0, 12) : ''; p.sc = num(m.sc, 0, 2, 0) | 0;
     const al = !!m.al, hp = num(m.hp, 0, 100, p.hp); if (al && !p.alive) { p.hp = hp; p.hd = p.vd = null; } else p.hp = Math.min(hp, p.hp + 3); p.alive = al; // a vida que o servidor tirou não volta de repente
     if (Array.isArray(m.ar)) { const a = [num(m.ar[0], 0, 4) | 0, num(m.ar[1], 0, 4) | 0]; if (a[0] !== p.ar[0]) p.hd = null; if (a[1] !== p.ar[1]) p.vd = null; p.ar = a; }
     if (typeof m.gk === 'string' && (m.gk !== p.gkRaw || now - (p.gkT || 0) > 2000)) { p.gkRaw = m.gk.slice(0, 80); p.gkT = now; const T = ledOf(p).T, q = p.gkRaw.split(','); p.gk = GKS.map((s, i) => { const k = q[i] || ''; return ITEMS[k] && ITEMS[k].eq === s && T[k] > 0 ? k : ''; }).join(); p.ghillie = p.gk.includes('ghillie'); } return; }
@@ -492,6 +492,12 @@ const hitTest = (O, D, k, L, tgt, cars = []) => {
     for (const T of tgt) { const by = T.y; if (Math.abs(nx - T.x) > 3 || Math.abs(nz - T.z) > 3) continue;
       const segPt = (ax, ay, az, bx, by2, bz, px, py, pz) => { const dx = bx - ax, dy = by2 - ay, dz = bz - az, l2 = dx * dx + dy * dy + dz * dz || 1e-9; let t = ((px - ax) * dx + (py - ay) * dy + (pz - az) * dz) / l2; t = Math.max(0, Math.min(1, t)); return Math.hypot(ax + dx * t - px, ay + dy * t - py, az + dz * t - pz); };
       if (T.lying) { if (segPt(x, y, z, nx, ny, nz, T.x, by + 0.25, T.z) < 0.9 && Math.abs(ny - by) < 0.6) return { T, zone: 'body', dmg, pen, v: Math.hypot(vx, vy, vz) / v0, dist, car: pass }; continue; }
+      // agachado: cabeça e corpo mais baixos; deitado: corpo ao comprido no chão, na direção para onde está virado (cabeça à frente)
+      const sc = T.c && T.c.p ? T.c.p.sc | 0 : 0;
+      if (sc === 2) { const yw = T.c.p.yaw || 0, fx = Math.sin(yw), fz = Math.cos(yw); if (segPt(x, y, z, nx, ny, nz, T.x + fx * 0.72, by + 0.24, T.z + fz * 0.72) < 0.17) return { T, zone: 'head', dmg, pen, v: Math.hypot(vx, vy, vz) / v0, dist, car: pass };
+        for (let s = 0; s <= 6; s++) { const f = -0.95 + s * 0.25; if (segPt(x, y, z, nx, ny, nz, T.x + fx * f, by + 0.18, T.z + fz * f) < 0.24) return { T, zone: f > -0.2 ? 'body' : 'legs', dmg, pen, v: Math.hypot(vx, vy, vz) / v0, dist, car: pass }; } continue; }
+      if (sc === 1) { if (segPt(x, y, z, nx, ny, nz, T.x, by + 1.12, T.z) < 0.17) return { T, zone: 'head', dmg, pen, v: Math.hypot(vx, vy, vz) / v0, dist, car: pass };
+        for (let s = 0; s <= 3; s++) { const sy = by + 0.14 + s * 0.27; if (segPt(x, y, z, nx, ny, nz, T.x, sy, T.z) < 0.32) return { T, zone: sy > 0.6 ? 'body' : 'legs', dmg, pen, v: Math.hypot(vx, vy, vz) / v0, dist, car: pass }; } continue; }
       const hd = segPt(x, y, z, nx, ny, nz, T.x, by + 1.62, T.z); if (hd < 0.17) return { T, zone: 'head', dmg, pen, v: Math.hypot(vx, vy, vz) / v0, dist, car: pass };
       // corpo: distância do segmento ao eixo vertical (amostras)
       for (let s = 0; s <= 4; s++) { const sy = by + 0.15 + s * 0.3; if (segPt(x, y, z, nx, ny, nz, T.x, sy, T.z) < 0.3) return { T, zone: sy > 0.85 ? 'body' : 'legs', dmg, pen, v: Math.hypot(vx, vy, vz) / v0, dist, car: pass }; } }
@@ -610,7 +616,7 @@ const ZR = 300; // zombies que cada um recebe (metros): até onde a luneta deixa
 setInterval(() => {
   const L = [...players.values()].filter(c => c.p), full = (++tickN % 3) === 0; // jogadores 30 vezes por segundo; zombies e carros 10
   for (const c of L) {
-    const out = [], staff = !!S.roles[c.p.uid]; for (const o of L) { if (o === c || (o.p.invis && !staff)) continue; const d = Math.hypot(o.p.x - c.p.x, o.p.z - c.p.z), mate = c.p.clan && o.p.clan === c.p.clan; if (d > 320 && !mate) continue; out.push([o.id, +o.p.x.toFixed(2), +o.p.z.toFixed(2), +o.p.y.toFixed(2), o.p.lv, +o.p.yaw.toFixed(2), +o.p.mv.toFixed(2), o.p.an, o.p.w, Math.round(o.p.hp), o.p.alive ? 1 : 0, d > 320 ? 1 : 0, o.p.ar, Math.round(o.p.ts || 0), o.p.gk || '']); }
+    const out = [], staff = !!S.roles[c.p.uid]; for (const o of L) { if (o === c || (o.p.invis && !staff)) continue; const d = Math.hypot(o.p.x - c.p.x, o.p.z - c.p.z), mate = c.p.clan && o.p.clan === c.p.clan; if (d > 320 && !mate) continue; out.push([o.id, +o.p.x.toFixed(2), +o.p.z.toFixed(2), +o.p.y.toFixed(2), o.p.lv, +o.p.yaw.toFixed(2), +o.p.mv.toFixed(2), o.p.an, o.p.w, Math.round(o.p.hp), o.p.alive ? 1 : 0, d > 320 ? 1 : 0, o.p.ar, Math.round(o.p.ts || 0), o.p.gk || '', o.p.sc | 0]); }
     const msg = { t: 's', ps: out };
     // zombies: só os que mudaram desde a última vez (e os que saíram de perto)
     if (full && c.zc) { const u = [], seen = new Set(); const zs = S.w.zs;

@@ -346,9 +346,9 @@ export function initUI(G) {
   // sensibilidade por defeito mais alta no telemóvel (o polegar anda pouco)
   const SENS0 = matchMedia('(pointer: coarse)').matches ? 1.7 : 1.2;
   const DEF = { v: 2, quick: true, mirror: false, sprintPush: true, assist: true, autoDoor: true, autoLean: true, sens: SENS0, sensV: 2, btn: 1, op: 1, shadows: true, lowres: false, fps: false, vol: 0.7, musMenu: 0.7, musGame: 0.5, soundViz: true, haptics: false,
-    hud: { mm: { on: 1 }, zone: { on: 1 }, tr: { on: 1 }, vit: { on: 1 }, cmp: { on: 1 }, belt: { on: 1 }, ammo: { on: 1 }, feed: { on: 1 }, reload: { on: 1 }, use: { on: 1 }, sprint: { on: 1 }, jump: { on: 1 }, fire: { on: 1 }, light: { on: 1 }, scope: { on: 1 }, ads: { on: 1 }, lower: { on: 1 }, breath: { on: 1 } } };
-  const NAMES = { mm: 'Minimapa', zone: 'Zona', tr: 'Mapa, inventário e definições', vit: 'Vida, comida e água', cmp: 'Bússola', belt: 'Cinto', ammo: 'Munições', feed: 'Avisos de recolha', reload: 'Recarregar', use: 'Revistar e portas', sprint: 'Correr sempre (Auto)', jump: 'Saltar', fire: 'Mirar e disparar', light: 'Lanterna', scope: 'Vista (1.ª ou 3.ª pessoa)', ads: 'Mira (na 1.ª pessoa)', lower: 'Baixar a arma', breath: 'Respirar' };
-  const BTN = ['reload', 'use', 'sprint', 'jump', 'fire', 'tr', 'light', 'scope', 'ads', 'lower', 'breath'];
+    hud: { mm: { on: 1 }, zone: { on: 1 }, tr: { on: 1 }, vit: { on: 1 }, cmp: { on: 1 }, belt: { on: 1 }, ammo: { on: 1 }, feed: { on: 1 }, reload: { on: 1 }, use: { on: 1 }, sprint: { on: 1 }, jump: { on: 1 }, crouch: { on: 1 }, prone: { on: 1 }, fire: { on: 1 }, light: { on: 1 }, scope: { on: 1 }, ads: { on: 1 }, lower: { on: 1 }, breath: { on: 1 } } };
+  const NAMES = { mm: 'Minimapa', zone: 'Zona', tr: 'Mapa, inventário e definições', vit: 'Vida, comida e água', cmp: 'Bússola', belt: 'Cinto', ammo: 'Munições', feed: 'Avisos de recolha', reload: 'Recarregar', use: 'Revistar e portas', sprint: 'Correr sempre (Auto)', jump: 'Saltar', crouch: 'Agachar', prone: 'Deitar', fire: 'Mirar e disparar', light: 'Lanterna', scope: 'Vista (1.ª ou 3.ª pessoa)', ads: 'Mira (na 1.ª pessoa)', lower: 'Baixar a arma', breath: 'Respirar' };
+  const BTN = ['reload', 'use', 'sprint', 'jump', 'crouch', 'prone', 'fire', 'tr', 'light', 'scope', 'ads', 'lower', 'breath'];
   let cfg; try { cfg = JSON.parse(localStorage.getItem('kurogane-cfg-v1') || 'null'); } catch (e) { cfg = null; }
   if (cfg && cfg.v === 1) { cfg.v = 2; for (const k in cfg.hud) { const h = cfg.hud[k]; if (h.dx || h.dy || h.s) h.L = { dx: h.dx || 0, dy: h.dy || 0, s: h.s || 1 }; delete h.dx; delete h.dy; delete h.s; } if (cfg.hud.fire) cfg.hud.fire.on = 1; delete cfg.fire; }
   if (!cfg || cfg.v !== 2) cfg = JSON.parse(JSON.stringify(DEF)); for (const k in DEF) if (cfg[k] === undefined) cfg[k] = JSON.parse(JSON.stringify(DEF[k])); for (const k in DEF.hud) if (!cfg.hud[k]) cfg.hud[k] = { ...DEF.hud[k] };
@@ -545,7 +545,7 @@ export function initUI(G) {
   hold($('tLower'), () => G.aimEnd());
   addEventListener('keydown', e => { if (e.code === 'Escape' && G.aimS && G.aimS.on) G.aimEnd(); });
   hold($('tBreath'), () => G.breath(true), () => G.breath(false));
-  hold($('tJump'), () => G.jump());
+  hold($('tJump'), () => G.jump()); hold($('tCrouch'), () => G.stanceToggle(1)); hold($('tProne'), () => G.stanceToggle(2));
   hold($('tSprint'), () => G.setAuto(!G.autoRun));
   hold($('tLight'), () => G.toggleLight());
   // painel
@@ -577,7 +577,7 @@ export function initUI(G) {
       ]);
     } else grp('Controlos', [row('Rato e teclado', 'WASD mover · Shift correr · Espaço saltar e trepar · botão direito levantar a arma · clique disparar · E revistar e portas · Tab inventário · R recarregar · M mapa · F lanterna', document.createElement('span')), quick, iron, sens, doors, lean]);
     const vis = document.createElement('div'); vis.className = 'vis';
-    for (const k in NAMES) { if (!G.TOUCH && ['reload', 'use', 'sprint', 'jump', 'fire', 'light', 'scope', 'lower', 'breath'].includes(k)) continue; const b = document.createElement('button'); b.className = cfg.hud[k].on ? 'on' : ''; b.innerHTML = (cfg.hud[k].on ? EYE : EYEOFF) + NAMES[k]; b.onclick = () => { cfg.hud[k].on = cfg.hud[k].on ? 0 : 1; audio.play('ui'); applyAll(); renderSet(); }; vis.appendChild(b); }
+    for (const k in NAMES) { if (!G.TOUCH && ['reload', 'use', 'sprint', 'jump', 'crouch', 'prone', 'fire', 'light', 'scope', 'lower', 'breath'].includes(k)) continue; const b = document.createElement('button'); b.className = cfg.hud[k].on ? 'on' : ''; b.innerHTML = (cfg.hud[k].on ? EYE : EYEOFF) + NAMES[k]; b.onclick = () => { cfg.hud[k].on = cfg.hud[k].on ? 0 : 1; audio.play('ui'); applyAll(); renderSet(); }; vis.appendChild(b); }
     // telemóvel: alarme de raid e instalar como app
     if (G.pwa) { const P = G.pwa, pb = document.createElement('button'); pb.className = 'btn sm' + (P.pushOn() ? '' : ' pri'); pb.textContent = P.pushOn() ? 'Desligar' : 'Ligar';
       pb.onclick = async () => { audio.play('ui'); if (P.pushOn()) { await P.disablePush(); toast('Alarme de raid desligado'); renderSet(); return; } pb.disabled = true; const r = await P.enablePush().catch(() => 'nao'); pb.disabled = false;
@@ -1021,7 +1021,8 @@ export function initUI(G) {
     else { scEl.hidden = true; $('szero').hidden = true; }
     sugT -= dt; if (sugT <= 0) { sugT = 0.5; const s = suggest(); sugIt = s ? s[0] : null; sugEl.hidden = !s; if (s) { const key = s[0].k + s[1] + s[2]; if (vals.sug !== key) { vals.sug = key; sugEl.querySelector('img').src = G.ICONS[s[0].k]; sugEl.querySelector('span').textContent = s[1] + ' · ' + ITEMS[s[0].k].s; sugEl.classList.toggle('urg', !!s[2]); } } }
     // no carro: sem botões de armas, saltar ou correr
-    { const inCar = !!G.car; if (vals.car !== inCar) { vals.car = inCar; for (const id of ['tFire', 'tView', 'tAds', 'tLower', 'tBreath', 'tJump', 'tSprint']) $(id).style.visibility = inCar ? 'hidden' : ''; }
+    { const inCar = !!G.car; if (vals.car !== inCar) { vals.car = inCar; for (const id of ['tFire', 'tView', 'tAds', 'tLower', 'tBreath', 'tJump', 'tSprint', 'tCrouch', 'tProne']) $(id).style.visibility = inCar ? 'hidden' : ''; }
+    { const st = G.p ? G.p.stance | 0 : 0; if (vals.stc !== st) { vals.stc = st; $('tCrouch').classList.toggle('on', st === 1); $('tProne').classList.toggle('on', st === 2); } }
       const drv = inCar && G.carSeat === 0 && p.alive; { const ha = drv && (VT[G.car.k] || {}).fly && (G.car.alt || 0) > 1; if (vals.ha !== ha) { vals.ha = ha; document.body.classList.toggle('heliAir', !!ha); if (!ha) G.hovSet(false); } } if (vals.drv !== drv) { vals.drv = drv; document.body.classList.toggle('driving', drv); if (!drv) for (const k in G.dIn) G.dIn[k] = 0; document.querySelectorAll('.dv.dn').forEach(e => e.classList.remove('dn')); }
       if (drv) { const fl = (VT[G.car.k] || {}).fly, lb = fl ? (G.car.v > 2.5 ? 'Travar' : (G.car.alt || 0) > 0.3 ? 'Descer' : 'Parado') : G.car.v > 0.5 ? 'Travar' : 'Trás', ub = fl ? ((G.car.alt || 0) < 0.3 && (G.car.rot || 0) < 0.92 ? 'Rotor…' : (G.car.alt || 0) < 0.3 ? 'Levantar' : 'Avançar') : 'Acelerar'; if (vals.dlb !== lb) { vals.dlb = lb; $('dDn').querySelector('em').textContent = lb; } if (vals.dub !== ub) { vals.dub = ub; $('dUp').querySelector('em').textContent = ub; } } }
     // botões das armas
