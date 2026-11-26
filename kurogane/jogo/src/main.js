@@ -658,7 +658,7 @@ async function boot() {
       for (const z of G.zs) { if (z.state === 'dead' || (b.skip && b.skip.has(z))) continue; const r = zoneHit(z, b.P, Q); if (r && r.s < s) { s = r.s; hz = { z, r }; } }
       // outro jogador: o servidor decide o dano; aqui a bala só para nele, para o rasto bater certo com o que vês
       const ph = G.net.on ? plHit(b.P, Q) : null; if (ph && ph.s < s) { s = ph.s; hz = null; }
-      const E = _c.copy(b.P).lerp(Q, s); tracer(b.P.x, b.P.y, b.P.z, E.x, E.y, E.z, b.sup); b.dist += b.P.distanceTo(E);
+      const E = _c.copy(b.P).lerp(Q, s); { const d0 = b.dist, d1 = d0 + b.P.distanceTo(E); if (b.off && d0 < 14) { const f0 = Math.max(0, 1 - d0 / 14), f1 = Math.max(0, 1 - d1 / 14), o = b.off; tracer(b.P.x + o.x * f0, b.P.y + o.y * f0, b.P.z + o.z * f0, E.x + o.x * f1, E.y + o.y * f1, E.z + o.z * f1, b.sup); } else tracer(b.P.x, b.P.y, b.P.z, E.x, E.y, E.z, b.sup); b.dist = d1; } // 1.ª pessoa: o rasto sai da ponta do cano e junta-se à linha da mira em 14 m
       if (ph && ph.s === s) { burst(E.x, E.y, E.z, 6, 0x7a1010, 2, 0.35); if (G.dbgShots) G.dbgShots.push({ k: 'p', zone: ph.zone }); bullets.splice(i, 1); continue; }
       if (hz) { if (G.dbgShots) G.dbgShots.push({ k: 'z', zone: hz.r.zone, n: b.skip ? b.skip.size : 0 }); const stop = hitZombie(hz.z, hz.r.zone, b, E.clone());
         // atravessa o corpo se a bala tiver força para isso (chumbo ao perto, bala única, espingardas): perde força e segue para o próximo
@@ -696,6 +696,8 @@ async function boot() {
   // som de cada arma (gravações reais) e o som da recarga
   const GSND = { pistola: 'pistola', revolver: 'revolver', smg: 'smg', m4: 'm4', ak: 'ak', cacadeira: 'cacadeira', caca: 'caca', cheytac: 'pesado', barrett: 'pesado', m249: 'm4', pkm: 'ak' };
   const reloadSnd = k => k === 'pistola' || k === 'revolver' ? 'recarregar-pistola' : k === 'cacadeira' ? 'recarregar-caca' : k === 'caca' || k === 'cheytac' ? 'ferrolho' : 'recarregar';
+  const _mz2 = new THREE.Vector2(), _mz3 = new THREE.Vector3();
+  G.vmMuzzle = v => vm.muzzleNDC(v); G.V2 = THREE.Vector2; G.Box3 = THREE.Box3;
   const fire = (it, g) => {
     const p = G.p; if (p.reload > 0 || p.cd > 0) return false;
     const AM = ammoOf(g); if (!it.ak || !AM.includes(it.ak)) it.ak = AM[0];
@@ -708,11 +710,12 @@ async function boot() {
     { const scI = scopeItem(), zd = fp ? (hipF ? clamp(AIM.dist || 30, 5, 400) : scI && scI.rd ? 50 : it.zero || (scI && scI.mag >= 8 ? 200 : 100)) : Math.min(400, AIM.Aw.distanceTo(O)), el = elevFor(it.ak, v0, zd); if (el) { const hz = Math.hypot(dir.x, dir.z) || 1, a = Math.atan2(dir.y, hz) + el; dir.set(dir.x / hz * Math.cos(a), Math.sin(a), dir.z / hz * Math.cos(a)); } }
     const mv = Math.hypot(p.vx, p.vz) > 0.6 ? 1.5 : 1, spread = (G.dbgSpread ?? 1) * (fp && !hipF ? (g.acc ?? g.spread * 0.2) * mv * (p.onGround ? 1 : 2) : g.spread * (1 - 0.6 * AIM.steady) * (1 - 0.2 * sk('mira')) * mv * (p.onGround ? 1 : 2)); // na luneta conta a precisão mecânica da arma; o resto é a tua mão (balanço e respiração)
     const D0 = spreadDir(dir, spread), ds = [];
-    for (let i = 0; i < n; i++) { const di = n > 1 ? spreadDir(D0, B.pat || 0, true) : D0; ds.push(di); bullets.push({ P: O.clone(), v: di.clone().multiplyScalar(v0), v0, cd: B.cd || 0.001, t: 0, dmg: B.dmg * (g.dk || 1), pen: B.pen, bp: B.bp ?? B.pen, pel: n > 1, fall: B.fall || 99, dist: 0, rng: g.rng, sup }); }
+    let MZ = null; if (fp && FPF.on && vm.muzzleNDC(_mz2)) { MZ = _mz3.set(_mz2.x, _mz2.y, 0.5).unproject(cam).sub(cam.position).normalize().multiplyScalar(0.75).add(cam.position); }
+    for (let i = 0; i < n; i++) { const di = n > 1 ? spreadDir(D0, B.pat || 0, true) : D0; ds.push(di); bullets.push({ P: O.clone(), off: MZ ? MZ.clone().sub(O) : null, v: di.clone().multiplyScalar(v0), v0, cd: B.cd || 0.001, t: 0, dmg: B.dmg * (g.dk || 1), pen: B.pen, bp: B.bp ?? B.pen, pel: n > 1, fall: B.fall || 99, dist: 0, rng: g.rng, sup }); }
     AIM.steady *= 0.55; AIM.kick += (g.kick ?? (B.dmg > 60 ? 0.05 : 0.018)) * (1 - 0.35 * sk('mira')); AIM.idle = 0; skUp('mira', 0.0012);
     // som: o silenciador abafa o disparo; com bala subsónica quase não se ouve; supersónica ainda estala
     const ss = v0 > 343, nr = sup ? g.noise * (ss ? 0.5 : 0.2) : g.noise;
-    const mx = p.x + Math.sin(p.yaw) * 0.85, my = p.y + 1.3, mz = p.z + Math.cos(p.yaw) * 0.85;
+    const mx = MZ ? MZ.x : p.x + Math.sin(p.yaw) * 0.85, my = MZ ? MZ.y : p.y + 1.3, mz = MZ ? MZ.z : p.z + Math.cos(p.yaw) * 0.85;
     vm.fire(); flash.position.set(mx, my, mz); flash.intensity = sup ? 0 : 6 + 14 * (1 - (G.day ?? 1)); G.flashT = 0.06; G.buzz(n > 1 ? 30 : 10);
     if (sup) audio.play('abafado', ss ? 0.85 : 0.5); else if (!audio.shot(GSND[it.k] || 'pistola', 1, 0, { vary: 0.04 })) audio.play(ITEMS[it.k].heavy ? 'grosso' : g.auto ? 'm4' : 'pistola', it.k === 'cacadeira' || it.k === 'caca' ? 1.3 : 1);
     noise(p.x, p.z, nr);
@@ -1589,11 +1592,11 @@ async function boot() {
       const L = load(), over = Math.max(0, L.kg - L.cap);
       // na água: nadas devagar, não corres nem usas a arma, e cansas-te; sem fôlego vais perdendo vida
       { const was = p.swim; p.swim = p.alive && !p.climb && !G.car && (p.lv || 0) === 0 && W.wet(p.x, p.z); if (p.swim && !was) { if (AIM.on) aimEnd(); G.ui.toast('A nadar · sem armas e devagar'); } if (p.swim && moving) { p.stam = Math.max(0, p.stam - dt * 3.2); if (p.stam <= 0 && !(G.admF && G.admF.god)) { p.hp -= dt * 2.5; p.hurtT = 0.3; if (p.hp <= 0) die('afogado'); } } }
-      const wantSprint = !p.swim && over <= 18 && (keys.has('ShiftLeft') || keys.has('ShiftRight') || (cfg.sprintPush && !AIM.on && sticks.L && sticks.L.m > 0.93) || G.autoRun) && il > 0.3 && !p.use && !back && fwdOk && !AIM.scope;
-      if (wantSprint && AIM.on) aimEnd();
+      const wantSprint = !p.swim && over <= 18 && (keys.has('ShiftLeft') || keys.has('ShiftRight') || (cfg.sprintPush && (!AIM.on || FPF.on) && sticks.L && sticks.L.m > 0.93) || G.autoRun) && il > 0.3 && !p.use && !back && fwdOk && !AIM.scope;
+      if (wantSprint && AIM.on && !FPF.on) aimEnd(); // na 1.ª pessoa a arma fica na mão a correr (baixa-se sozinha no ecrã)
       if (wantSprint && p.stam > 0 && !p.stamLock && p.onGround) { p.sprint = true; p.stam -= dt * 3.3 * (1 - 0.4 * sk('res')) * (1 + over / 20); if (moving) skUp('res', dt * 5.8e-4); if (p.stam <= 0) { p.stam = 0; p.stamLock = true; } } else { p.sprint = false; p.stam = Math.min(100, p.stam + dt * (AIM.breathOn ? 0 : 9 * (1 + 0.3 * sk('res')))); if (p.stam > 20) p.stamLock = false; }
       let spd = p.sprint ? 5.0 : 3.0;
-      if (AIM.on && !p.sprint) spd = AIM.scope ? 1.1 : 2.4; if (back) spd *= 0.62;
+      if (AIM.on && !p.sprint) spd = AIM.scope ? 1.1 : FPF.on ? 3.0 : 2.4; if (back) spd *= 0.62; // 1.ª pessoa: a anca é o normal, só a mira abranda
       if (moving) spd *= 0.5 + 0.5 * Math.max(0, Math.cos(Math.min(Math.PI / 2, Math.abs(angDiff(moveYaw, p.root)) * (aimingNow ? 0.6 : 1))));
       if (over > 0) spd *= Math.max(0.62, 1 - over / 45);
       if (heldDef().heavy) spd *= 0.88; // CheyTac e Barrett pesam
@@ -1635,7 +1638,8 @@ async function boot() {
       if (p.use) { p.use.t += dt; if (p.use.t >= p.use.dur) { const it = p.use.it, u = ITEMS[it.k].use; if (u.hp) p.hp = Math.min(100, p.hp + u.hp); if (u.bleed) p.bleed = 0; if (u.food) p.food = Math.min(100, p.food + u.food); if (u.sick && Math.random() < u.sick) { p.water = Math.max(0, p.water - 18); p.food = Math.max(0, p.food - 8); p.hp = Math.max(1, p.hp - 5); G.ui.toast('A carne crua fez-te mal: perdeste água. Coze-a antes de comer.'); G.shakeT = 0.3; } if (u.water) p.water = clamp(p.water + u.water, 0, 100); if (u.stam) p.stam = Math.min(100, p.stam + u.stam); consume(it); p.use = null; G.ui.refresh(); } }
       // corpo
       if (p.alive) {
-        if (G.ARENA) { p.food = p.water = 100; }
+        if (G.ARENA) { p.food = p.water = 100; G.arenaAmmoT = (G.arenaAmmoT || 0) - dt; if (G.arenaAmmoT <= 0) { G.arenaAmmoT = 0.5; // na arena as balas não acabam: os carregadores de reserva enchem-se sozinhos e as balas soltas repõem-se
+            const K = ARENA_KITS[G.arenaKitK]; if (K) for (const [c, n] of K.bag) { const d = ITEMS[c]; if (!d) continue; if (d.clip) { for (const m of clipsOf(c)) m.am = d.clip.cap; } else { const have = G.inv.count(c); if (have < n) G.inv.give(mkItem(c, n - have)); } } } }
         const met = 1 - 0.15 * sk('res'); p.food = Math.max(0, p.food - dt * 100 / 1300 * met); p.water = Math.max(0, p.water - dt * 100 / (p.sprint ? 1050 : 1500) * met); // sede: 25 min a andar até secar (17 a correr)
         if (p.bleed) p.hp -= dt * 0.6;
         // a vida volta sozinha, mas gasta comida e água: mais depressa de barriga cheia, parada logo a seguir a levar dano

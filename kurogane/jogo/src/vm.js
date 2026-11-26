@@ -29,6 +29,7 @@ const V = (x = 0, y = 0, z = 0) => VR[vri++ & 511].set(x, y, z), VP = (x, y, z) 
 
 const G_DBG = {};
 export function makeVM() {
+  const _mz = new THREE.Vector3(); let att0 = {};
   const scene = new THREE.Scene(), cam = new THREE.PerspectiveCamera(46, 1, 0.06, 6); // a coronha encostada à cara não entra no ecrã
   const hemi = new THREE.HemisphereLight(0xdfe6ff, 0x3a332c, 1), key = new THREE.DirectionalLight(0xfff0dc, 1); key.position.set(-0.4, 1, 0.5); scene.add(hemi, key);
   // cores da arma um pouco mais claras do que no mundo: vista tão de perto, o preto puro fica um borrão
@@ -53,7 +54,7 @@ export function makeVM() {
   const set = (k, att, look) => {
     const lk = look.top + ':' + look.skin + ':' + look.legs; if (!arms) { arms = fpArms(look); rig.add(arms.mesh); armsLook = lk; } else if (lk !== armsLook) { arms.setColors(look); armsLook = lk; }
     const key = k + ':' + (att.scope || '') + ':' + (att.sup || '') + ':' + (att.light || '');
-    if (key === cur) return; cur = key; clear();
+    att0 = att || {}; if (key === cur) return; cur = key; clear();
     if (!k) return; // nada (vista de cima, ou a luneta tapa o ecrã)
     wk = k;
     if (LONG.includes(k) && W[k]) { // espingarda: o vidro da mira (ou a mira de ferro) no eixo da vista quando aponta
@@ -97,6 +98,8 @@ export function makeVM() {
     get on() { return !!kind; },
     get kind() { return kind; },
     fire() { kick = 1; },
+    // ponta do cano no ecrã (coordenadas -1..1 da câmara das mãos): para o rasto da bala e o clarão saírem dali
+    muzzleNDC(out) { if (!gun || !A || !A.muzzle || (kind !== 'long' && kind !== 'pistol')) return null; rig.updateWorldMatrix(true, true); const L = kind === 'long', sz = att0.sup ? 0.13 : 0; _mz.set(L ? WPUSH[0] : 0, (L ? WPUSH[1] : 0) + A.muzzle[0], (L ? WPUSH[2] : 0) + A.muzzle[1] + sz); /* as espingardas têm o desvio da mão (WPUSH) na geometria; com silenciador a ponta vai mais à frente */ gun.localToWorld(_mz); cam.updateMatrixWorld(); _mz.project(cam); return out.set(_mz.x, _mz.y); },
     // a mesma projeção da câmara do mundo (o centro fica onde está a mira), luz do dia/noite, recuo, balanço, golpes e recarregar
     // o: { day, nv, mv (0..1 a andar), ads (0 à anca .. 1 a apontar), sw (golpe 0..1 ou −1), rel (a recarregar 0..1, suave), rp (progresso da recarga 0..1 ou −1),
     //      rm ('swap' troca de carregador, 'fill' balas à mão), spr (a correr), up (a entrar na 1.ª pessoa 0..1), raise (arma levantada 0..1), use ({ kind, t }), thr (lançar 0..1 ou −1) }

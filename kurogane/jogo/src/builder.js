@@ -162,7 +162,7 @@ export class Builder {
 
 // Atlas para letreiros: todos os letreiros numa só textura.
 export class Atlas {
-  constructor(W = 2048, H = 2048) { this.W = W; this.H = H; this.c = document.createElement('canvas'); this.c.width = W; this.c.height = H; this.x = this.c.getContext('2d'); this.cx = 0; this.cy = 0; this.row = 0; }
+  constructor(W = 2048, H = 2048) { this.W = W; this.H = H; this.c = document.createElement('canvas'); this.c.width = W; this.c.height = H; this.x = this.c.getContext('2d'); this.cx = 0; this.cy = 0; this.row = 0; this.x.fillStyle = '#3a3c40'; this.x.fillRect(0, 0, 6, 6); this.sh = [{ x: 8, y: 0, h: 6 }]; } // canto de cima: cinzento liso para placas que já não cabem
   // prateleiras por altura: cada letreiro vai para a prateleira mais baixa onde cabe (assim os altos não gastam linhas inteiras)
   alloc(w, h) {
     // zonas que se constroem outra vez (ao chegar perto): reutilizam o mesmo sítio da primeira vez (antes enchia o atlas e
@@ -172,7 +172,8 @@ export class Atlas {
   }
   alloc0(w, h) {
     this.sh = this.sh || []; let S = this.sh.find(q => q.h >= h && q.h <= h * 1.5 + 8 && q.x + w <= this.W);
-    if (!S) { const top = this.sh.reduce((m, q) => Math.max(m, q.y + q.h + 2), 0); if (top + h > this.H) { console.warn('atlas cheio'); S = this.sh.find(q => q.h >= h && q.x + w <= this.W) || { x: 0, y: 0, h }; } else { S = { x: 0, y: top, h }; this.sh.push(S); } }
+    if (!S) { const top = this.sh.reduce((m, q) => Math.max(m, q.y + q.h + 2), 0); if (top + h > this.H) { // atlas cheio: desenha fora da folha (não se vê) e a placa mostra um cinzento liso, em vez de pintar por cima das outras
+        if (!this.full) { this.full = 1; console.warn('atlas cheio'); } return { px: -99999, py: -99999, w, h, u0: 2 / this.W, u1: 3 / this.W, v1: 1 - 2 / this.H, v0: 1 - 3 / this.H }; } else { S = { x: 0, y: top, h }; this.sh.push(S); } }
     const s = { px: S.x, py: S.y, w, h, u0: S.x / this.W, u1: (S.x + w) / this.W, v1: 1 - S.y / this.H, v0: 1 - (S.y + h) / this.H };
     S.x += w + 2; this.cy = Math.max(this.cy || 0, S.y + S.h); return s;
   }

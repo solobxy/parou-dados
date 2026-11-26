@@ -86,7 +86,7 @@ export function buildWorld(scene, mats, A, opt = {}) {
   const lamp = (x, z, ry = 0) => { W.lamps.push([x + Math.sin(ry) * 1.05, 4.9, z + Math.cos(ry) * 1.05]); b.cyl(0.07, 0.09, 5.2, 8, x, 2.6, z, 0x5f6266, { mat: 'm' }); b.push(x, 5.2, z, ry); b.box(0.12, 0.12, 1.1, 0, 0, 0.5, 0x5f6266, { mat: 'm' }); b.box(0.36, 0.12, 0.5, 0, -0.08, 1.05, 0x3f4246, { mat: 'm' }); b.box(0.3, 0.03, 0.42, 0, -0.15, 1.05, new THREE.Color(1.8, 1.55, 1.1), { mat: 'lit' }); b.pop(); circ(x, z, 0.15); };
   const vend = (x, z, ry = 0, c = 0xc23a2e) => {
     b.push(x, 0.14, z, ry);
-    b.box(0.95, 1.85, 0.75, 0, 0.92, 0, c, { mat: 'm' }); b.box(0.82, 1.05, 0.02, 0, 1.2, 0.385, 0xffffff, { mat: 'sign', uv: VEND });
+    b.box(0.95, 1.85, 0.75, 0, 0.92, 0, c, { mat: 'm' }); b.box(0.86, 1.09, 0.02, 0, 1.2, 0.372, 0x1d1f22, { mat: 'm' }); // moldura (a caixa não leva coordenadas de textura: com o material das placas mostrava a folha inteira de letreiros)
     b.plane(0.82, 1.05, 0, 1.2, 0.39, 0xffffff, { mat: 'sign', uv: VEND }); b.box(0.6, 0.18, 0.06, 0, 0.35, 0.38, 0x1d1f22);
     b.box(0.82, 0.12, 0.05, 0, 1.78, 0.38, new THREE.Color(1.6, 1.6, 1.5), { mat: 'lit' });
     b.pop(); const cs = Math.abs(Math.sin(ry)) > 0.5; rect(x - (cs ? 0.4 : 0.48), z - (cs ? 0.48 : 0.4), x + (cs ? 0.4 : 0.48), z + (cs ? 0.48 : 0.4), 's');
@@ -552,10 +552,10 @@ export function buildWorld(scene, mats, A, opt = {}) {
   buildMonuments({ lazy, b, A, W, rect, circ, mp, container, shell, car, pole, wires, lamp, crate, cabinet, counter, table, chair, bed, shelf, fridge, woodFence, blood, bags, cone, barrier, hsign, vsign, bench, bike, vend, road, dirt, rr, ri, pick, rnd, shade, mat4, tower, lantern, sofa, books, stove, kfridge, toilet, sinkI, lampF, plantI, deskPC, boxes, tvI, wardrobe, rugI, clutter, level }, TW.house);
 
   // mundo de fora, 2.ª parte (com a sua própria semente: o resto do mapa fica igual)
+  // arena PvP de Tóquio: só no modo arena (o mundo de sobrevivência fica igual). Antes das regiões, para as placas dela terem lugar na folha de letreiros
+  if (opt.arena) { const sv = getSeed(); setSeed(777); buildArena({ b, A, W, rect, circ, mp, shell, lamp, lantern, vend, bench, hsign, vsign, shade, mat4, pole, wires, bike }); setSeed(sv); W.arena = true; }
   { const sv = getSeed(), t0 = performance.now(); setSeed(20261124); buildRegions({ lazy, b, A, W, rect, circ, mp, container, shell, car, pole, lamp, crate, cabinet, counter, table, chair, bed, shelf, fridge, woodFence, blood, bags, cone, barrier, bench, bike, vend, dirt, rr, ri, pick, rnd, shade, mat4, tower, lantern, sofa, books, boxes, clutter, toilet, sinkI, deskPC, plantI, wardrobe }, TW.house, TW.shop); setSeed(sv); W.regionMs = Math.round(performance.now() - t0); }
 
-  // arena PvP de Tóquio: só no modo arena (o mundo de sobrevivência fica igual)
-  if (opt.arena) { const sv = getSeed(); setSeed(777); buildArena({ b, A, W, rect, circ, mp, shell, lamp, lantern, vend, bench, hsign, vsign, shade, mat4, pole, wires, bike }); setSeed(sv); W.arena = true; }
   // grelha para saber depressa onde já há coisas
   W.pads = pads; const BG = 16, bgrid = new Map(), padG = new Map();
   for (const r of pads) for (let ix = Math.floor((r.x0 - 3) / BG); ix <= Math.floor((r.x1 + 3) / BG); ix++) for (let iz = Math.floor((r.z0 - 3) / BG); iz <= Math.floor((r.z1 + 3) / BG); iz++) { const k = ix * 1000 + iz; if (!padG.has(k)) padG.set(k, []); padG.get(k).push(r); }
