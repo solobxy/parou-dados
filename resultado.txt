@@ -1,0 +1,54 @@
+== 2026-11-26T13:33:49Z acao=comando
+IP: 2.31.13.85
+== Saída no servidor
+500:  const [contextualAlerts, setContextualAlerts] = useState<CentralAlert[]>(lastNearbyAlerts);
+1717:  const topAlert = contextualAlerts[0] || null;
+  const [contextualAlerts, setContextualAlerts] = useState<CentralAlert[]>(lastNearbyAlerts);
+  const [isLoadingNearby, setIsLoadingNearby] = useState<boolean>(lastNearbyStops.length === 0);
+  const [isDbLoading, setIsDbLoading] = useState<boolean>(false);
+  const [falhouCarregar, setFalhouCarregar] = useState<boolean>(false);
+  const [dbLoadingMessage, setDbLoadingMessage] = useState<string>('A carregar horários…');
+  const [selectedRadius, setSelectedRadius] = useState<number>(1000);
+  const [raioUsado, setRaioUsado] = useState<number>(ultimoRaioUsado);
+  const [activeFilterTab, setActiveFilterTab] = useState<'todos' | 'autocarro' | 'metro' | 'comboio' | 'barco' | 'favoritos'>(ultimoFiltro);
+  const [selectedStop, setSelectedStop] = useState<NearbyStopItem | null>(null);
+  // Partidas pedidas à parte quando a paragem escolhida não as trouxe na lista do "Perto"
+  const [partidasExtra, setPartidasExtra] = useState<{ id: string; deps: any[]; aCarregar: boolean } | null>(null);
+  // Ver as partidas de uma paragem é um momento de valor (o convite para instalar pode aparecer a seguir)
+  const paragemComPartidas = partidasExtra && !partidasExtra.aCarregar && partidasExtra.deps.length > 0 ? partidasExtra.id : null;
+  useEffect(() => { if (paragemComPartidas) momentoDeValor('paragem'); }, [paragemComPartidas]);
+  const [favoriteStopIds, setFavoriteStopIds] = useState<Set<string>>(new Set());
+  // UNIR: horário do dia pedido à AMP pelo telemóvel (por paragem da lista)
+  const [unirPorParagem, setUnirPorParagem] = useState<Record<string, { t: number; ok: boolean; aCarregar: boolean; passagens: PassagemUnir[] }>>({});
+  const unirPedidosRef = useRef<Set<string>>(new Set());
+  const [tiqueUnir, setTiqueUnir] = useState(0);
+
+  // Search & Navigation
+  const [destinationQuery, setDestinationQuery] = useState<string>('');
+  const [suggestions, setSuggestions] = useState<DestinationSuggestion[]>([]);
+  const [searchFocused, setSearchFocused] = useState<boolean>(false);
+  const [selectedDestination, setSelectedDestination] = useState<DestinationSuggestion | null>(null);
+  const [calculatedRoutes, setCalculatedRoutes] = useState<TransitRouteOption[]>([]);
+  const [selectedRoute, setSelectedRoute] = useState<TransitRouteOption | null>(null);
+  // Opção de viagem aberta (passo a passo e avisos): nenhuma até a pessoa tocar numa
+  const [rotaAbertaId, setRotaAbertaId] = useState<string | null>(null);
+  // Abrir uma opção de viagem é um momento de valor (o convite para instalar pode aparecer a seguir)
+  useEffect(() => { if (rotaAbertaId) momentoDeValor('rota'); }, [rotaAbertaId]);
+  // Um só estado para o pedido de percursos: antes eram dois interruptores e uma falha de rede acabava como «Sem ligações
+  // encontradas» (a dizer que não há transportes, quando o que falhou foi o pedido)
+  const [estadoRotas, setEstadoRotas] = useState<'parado' | 'a-calcular' | 'pronto' | 'erro'>('parado');
+  const isCalculatingRoutes = estadoRotas === 'a-calcular';
+  const rotasCalculadas = estadoRotas === 'pronto' || estadoRotas === 'erro';
+  const [longeRota, setLongeRota] = useState<LongeDeParagens | undefined>(undefined);
+  const pedidoRotasRef = useRef(0);
+  const partidaRotasRef = useRef(Date.now());
+  // Vários destinos (até 5): a lista vive aqui e o ecrã da viagem (RotaVariosDestinos) calcula os troços
+  const [destinosViagem, setDestinosViagem] = useState<DestinoViagem[]>([]);
+  const [viagemSemente, setViagemSemente] = useState<{ opcoes: TransitRouteOption[]; escolhida: number; partida: number } | null>(null);
+  const [mapaViagem, setMapaViagem] = useState<MapaViagem | null>(null);
+  const viagemLayerRef = useRef<L.LayerGroup | null>(null);
+  const emViagem = destinosViagem.length > 0;
+  // Ecrã "Adicionar paragens" (o "+" ao lado da pesquisa): escrever as paragens e pôr por ordem
+== Teste de fora
+https://2-31-13-85.sslip.io/health 200 0.503173s
+https://2-31-13-85.sslip.io/api/transit/loading-status 200 0.430339s
