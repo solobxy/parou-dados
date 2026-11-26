@@ -3,7 +3,9 @@ import { ITEMS, RECIPES, CAT, ammoOf } from './items.js';
 import { mkItem, IW, IH, capOf } from './bag.js';
 import { MAP, CORE, CITY, inCity } from './world.js';
 import { forestDens } from './sectors.js';
+import { marks, addMark, delMark, saveMarks, MCOL, MSYM, MSYM_N, drawSym, drawCompass, gridName, gridLet, CELL, bearing, cardOf, distTxt } from './marks.js';
 import { VT } from './vtypes.js';
+import { initArenaUI } from './arenaui.js';
 import { audio } from './audio.js';
 import { makeMusic } from './music.js';
 import * as THREE from 'three';
@@ -41,7 +43,7 @@ export function initUI(G) {
     fetch(health(), { cache: 'no-store', signal: ctl.signal }).then(r => r.ok ? r.json() : null).catch(() => null).then(j => { clearTimeout(tm); joining = false; b.classList.remove('busy'); em.textContent = old;
       if (j && j.ok) { go(false); return; }
       mnote(window.KG_ONLINE ? 'O servidor não está a responder. O Kurogane só se joga online: tenta outra vez daqui a pouco.' : 'Daqui não dá para ligar ao servidor. O Kurogane só se joga online, no site: ' + SITE.replace('https://', '')); }); };
-  $('sPlay').onclick = playOnline; $('sArena').onclick = () => { audio.play('ui'); mnote('A Arena PvP em Tóquio está a ser construída. Chega numa das próximas versões.'); }; $('sCont').onclick = () => go(true);
+  $('sPlay').onclick = playOnline; $('sArena').onclick = () => { audio.play('ui'); const a = Conta.ativo(); if (!a || !a.nome) { askName(false, () => $('sArena').onclick()); return; } try { sessionStorage.setItem('kgArena', '1'); } catch (e) { } G.updating = true; $('sArena').querySelector('em').textContent = 'A preparar a arena…'; location.reload(); }; $('sCont').onclick = () => go(true);
   G.dbgKit = () => go(false, true); // só para os testes automáticos (joga sempre sem servidor)
   // um só servidor para todos: no site joga-se sempre online (se o servidor não responder, joga-se sozinho até voltar)
   let canOnline = true; // sem modo offline: no site e fora dele tenta sempre o servidor
@@ -49,7 +51,7 @@ export function initUI(G) {
   if (!canOnline) { $('sOnl').hidden = true; const f = document.querySelector('#start .foot'); if (f) f.textContent = ((f.textContent.match(/Protótipo [\d.]+/) || ['Protótipo'])[0]) + ' · aqui jogas sozinho · o jogo online está no site do Kurogane'; }
   else { const b = $('sOnl'), t = $('sOnT');
     const count = () => { let u = window.KG_ONLINE ? '/srv/saude' : 'https://kurogane.2-31-13-85.sslip.io/srv/saude'; try { const o = localStorage.getItem('kg.srv'); if (o) u = o.replace(/^ws/, 'http').replace(/\/ws$/, '/saude'); } catch (e) { }
-      fetch(u, { cache: 'no-store' }).then(r => r.ok ? r.json() : null).then(j => { const up = !!(j && j.ok); b.classList.toggle('up', up); b.classList.toggle('down', !up); t.textContent = up ? (j.jogadores ? `${j.jogadores} a jogar agora · PvP e clãs` : 'Ninguém a jogar agora · PvP e clãs') : 'Servidor em baixo: volta a tentar daqui a pouco'; }).catch(() => { b.classList.add('down'); t.textContent = 'Servidor em baixo: volta a tentar daqui a pouco'; }); };
+      fetch(u, { cache: 'no-store' }).then(r => r.ok ? r.json() : null).then(j => { const up = !!(j && j.ok); b.classList.toggle('up', up); b.classList.toggle('down', !up); t.textContent = up ? (j.jogadores ? `${j.jogadores} a jogar agora · PvP e clãs` : 'Ninguém a jogar agora · PvP e clãs') : 'Servidor em baixo: volta a tentar daqui a pouco'; if (up && j.arena != null) $('sArena').querySelector('em').textContent = 'PvP em Tóquio · Vermelha contra Azul · ' + (j.arena ? j.arena + ' na arena' : '5 kits'); }).catch(() => { b.classList.add('down'); t.textContent = 'Servidor em baixo: volta a tentar daqui a pouco'; }); };
     count(); G.ui_count = count; }
   // os toques no jogo não contam como cliques nas estatísticas (só os botões dos menus)
   for (const id of ['touch', 'c']) $(id).addEventListener('click', e => e.stopPropagation());
@@ -81,11 +83,18 @@ export function initUI(G) {
   const pad = (id, key) => {
     const el = $(id), kn = el.querySelector('.knob'), ki = kn.querySelector('i'); let pid = null, ox = 0, oy = 0, lx = 0, ly = 0, t0 = 0, maxM = 0, trk = false, moved = 0; const R = 50;
     el.addEventListener('pointerdown', e => { if (pid !== null || !G.playing || G.invOpen) return; pid = e.pointerId; el.setPointerCapture(pid); ox = lx = e.clientX; oy = ly = e.clientY; t0 = performance.now(); maxM = 0; moved = 0; trk = key === 'R' && (gunHeld() || G.fpv.on); $(key === 'L' ? 'gL' : 'gR').style.opacity = 0; if (trk) { if (!G.aimS.on && !G.fpv.on) G.aimStart(); return; } kn.style.left = mx(ox) + 'px'; kn.style.top = oy + 'px'; kn.classList.add('on'); ki.style.transform = ''; G.sticks[key] = { x: 0, y: 0, m: 0 }; });
-    el.addEventListener('pointermove', e => { if (e.pointerId !== pid) return; if (trk) { const dx = e.clientX - lx, dy = e.clientY - ly; lx = e.clientX; ly = e.clientY; moved += Math.abs(dx) + Math.abs(dy); G.aimDrag(dx, dy); return; } let dx = e.clientX - ox, dy = e.clientY - oy; const l = Math.hypot(dx, dy); if (l > R) { dx *= R / l; dy *= R / l; if (key === 'L' && l > R * 1.6) { ox = e.clientX - dx * 1.0; oy = e.clientY - dy * 1.0; kn.style.left = mx(ox) + 'px'; kn.style.top = oy + 'px'; } } const m = Math.min(1, l / R); maxM = Math.max(maxM, m); G.sticks[key] = { x: dx / R, y: dy / R, m }; ki.style.transform = `translate(${cfg.mirror ? -dx : dx}px,${dy}px)`; });
+    el.addEventListener('pointermove', e => { if (e.pointerId !== pid) return; if (!trk && key === 'R' && (gunHeld() || G.fpv.on)) { trk = true; lx = e.clientX; ly = e.clientY; kn.classList.remove('on'); G.sticks.R = null; return; } /* a vista mudou para a 1.ª pessoa (ou pegaste numa arma) a meio do toque: passa a rodar a vista */ if (trk) { const dx = e.clientX - lx, dy = e.clientY - ly; lx = e.clientX; ly = e.clientY; moved += Math.abs(dx) + Math.abs(dy); G.aimDrag(dx, dy); return; } let dx = e.clientX - ox, dy = e.clientY - oy; const l = Math.hypot(dx, dy); if (l > R) { dx *= R / l; dy *= R / l; if (key === 'L' && l > R * 1.6) { ox = e.clientX - dx * 1.0; oy = e.clientY - dy * 1.0; kn.style.left = mx(ox) + 'px'; kn.style.top = oy + 'px'; } } const m = Math.min(1, l / R); maxM = Math.max(maxM, m); G.sticks[key] = { x: dx / R, y: dy / R, m }; ki.style.transform = `translate(${cfg.mirror ? -dx : dx}px,${dy}px)`; });
     const up = e => { if (e.pointerId !== pid) return; pid = null; kn.classList.remove('on'); G.sticks[key] = null; if (key !== 'R') return; const quick = performance.now() - t0 < 260; if (quick && maxM < 0.35 && G.base.placing()) { G.base.pin(G.groundAt(e.clientX, e.clientY)); return; } /* a colocar um objeto: o toque escolhe o sítio */ if (trk) { if (G.fpv.on) { if (quick && moved < 10 && !gunHeld()) G.tapAttack(); return; } /* na 1.ª pessoa: toque rápido bate (com arma branca ou à mão) */ if (quick && moved < 10) G.relock(); return; } if (quick && maxM < 0.35) G.tapAttack(); };
-    el.addEventListener('pointerup', up); el.addEventListener('pointercancel', up);
+    el.addEventListener('pointerup', up); el.addEventListener('pointercancel', up); el.addEventListener('lostpointercapture', up);
+    // um dedo levantado fora (painel aberto por cima, morte, entrar no carro) não pode deixar o comando preso para sempre
+    document.addEventListener('pointerup', e => { if (e.pointerId === pid) up(e); }, true); document.addEventListener('pointercancel', e => { if (e.pointerId === pid) up(e); }, true);
   };
   pad('padL', 'L'); pad('padR', 'R');
+  // na 1.ª pessoa, um polegar que começa num botão do lado direito (mira, saltar, recarregar…) e arrasta também roda a vista
+  { const D = new Map();
+    document.addEventListener('pointerdown', e => { if (e.pointerType === 'mouse') return; const b = e.target.closest && e.target.closest('#touch .tb'); if (!b || b.id === 'tFire') return; const right = cfg.mirror ? e.clientX < innerWidth * 0.5 : e.clientX > innerWidth * 0.5; if (right) D.set(e.pointerId, [e.clientX, e.clientY]); }, true);
+    document.addEventListener('pointermove', e => { const q = D.get(e.pointerId); if (!q) return; const dx = e.clientX - q[0], dy = e.clientY - q[1]; q[0] = e.clientX; q[1] = e.clientY; if (G.playing && !G.invOpen && G.fpv.on) G.aimDrag(dx, dy); }, true);
+    const fim = e => D.delete(e.pointerId); document.addEventListener('pointerup', fim, true); document.addEventListener('pointercancel', fim, true); }
 
   // ---------- inventário
   const inv = $('inv'), gBag = $('gBag'), gBox = $('gBox');
@@ -334,7 +343,7 @@ export function initUI(G) {
   const SENS0 = matchMedia('(pointer: coarse)').matches ? 1.7 : 1.2;
   const DEF = { v: 2, quick: true, mirror: false, sprintPush: true, assist: true, autoDoor: true, autoLean: true, sens: SENS0, sensV: 2, btn: 1, op: 1, shadows: true, lowres: false, fps: false, vol: 0.7, musMenu: 0.7, musGame: 0.5, soundViz: true, haptics: false,
     hud: { mm: { on: 1 }, zone: { on: 1 }, tr: { on: 1 }, vit: { on: 1 }, belt: { on: 1 }, ammo: { on: 1 }, feed: { on: 1 }, reload: { on: 1 }, use: { on: 1 }, sprint: { on: 1 }, jump: { on: 1 }, fire: { on: 1 }, light: { on: 1 }, scope: { on: 1 }, ads: { on: 1 }, lower: { on: 1 }, breath: { on: 1 } } };
-  const NAMES = { mm: 'Minimapa', zone: 'Zona', tr: 'Mapa, inventário e definições', vit: 'Vida, comida e água', belt: 'Cinto', ammo: 'Munições', feed: 'Avisos de recolha', reload: 'Recarregar', use: 'Revistar e portas', sprint: 'Correr sempre (Auto)', jump: 'Saltar', fire: 'Mirar e disparar', light: 'Lanterna', scope: 'Vista (1.ª ou 3.ª pessoa)', ads: 'Mira (na 1.ª pessoa)', lower: 'Baixar a arma', breath: 'Respirar' };
+  const NAMES = { mm: 'Minimapa', zone: 'Zona', tr: 'Mapa, inventário e definições', vit: 'Vida, comida e água', cmp: 'Bússola', belt: 'Cinto', ammo: 'Munições', feed: 'Avisos de recolha', reload: 'Recarregar', use: 'Revistar e portas', sprint: 'Correr sempre (Auto)', jump: 'Saltar', fire: 'Mirar e disparar', light: 'Lanterna', scope: 'Vista (1.ª ou 3.ª pessoa)', ads: 'Mira (na 1.ª pessoa)', lower: 'Baixar a arma', breath: 'Respirar' };
   const BTN = ['reload', 'use', 'sprint', 'jump', 'fire', 'tr', 'light', 'scope', 'ads', 'lower', 'breath'];
   let cfg; try { cfg = JSON.parse(localStorage.getItem('kurogane-cfg-v1') || 'null'); } catch (e) { cfg = null; }
   if (cfg && cfg.v === 1) { cfg.v = 2; for (const k in cfg.hud) { const h = cfg.hud[k]; if (h.dx || h.dy || h.s) h.L = { dx: h.dx || 0, dy: h.dy || 0, s: h.s || 1 }; delete h.dx; delete h.dy; delete h.s; } if (cfg.hud.fire) cfg.hud.fire.on = 1; delete cfg.fire; }
@@ -507,7 +516,7 @@ export function initUI(G) {
   { const el = $('tFire'); let pid = null, lx = 0, ly = 0;
     el.addEventListener('pointerdown', e => { e.stopPropagation(); e.preventDefault(); if (pid !== null) return; pid = e.pointerId; try { el.setPointerCapture(pid); } catch (er) { } lx = e.clientX; ly = e.clientY; G.fireDown(); });
     el.addEventListener('pointermove', e => { if (e.pointerId !== pid) return; const dx = e.clientX - lx, dy = e.clientY - ly; lx = e.clientX; ly = e.clientY; if (gunHeld() || G.fpv.on) G.aimDrag(dx, dy); });
-    const end = e => { if (e.pointerId !== pid) return; pid = null; G.fireUp(); }; el.addEventListener('pointerup', end); el.addEventListener('pointercancel', end); }
+    const end = e => { if (e.pointerId !== pid) return; pid = null; G.fireUp(); }; el.addEventListener('pointerup', end); el.addEventListener('pointercancel', end); el.addEventListener('lostpointercapture', end); document.addEventListener('pointerup', end, true); document.addEventListener('pointercancel', end, true); }
   hold($('tView'), () => G.viewToggle()); hold($('tAds'), () => G.scopeToggle());
   // versão nova no site: aviso que tapa o jogo e um botão para recarregar (só na página do servidor)
   if (window.KG_ONLINE && window.KG_BUILD) { let shown = false; const chk = () => { if (shown || document.hidden) return; fetch('versao.txt?t=' + Date.now(), { cache: 'no-store' }).then(r => r.ok ? r.text() : null).then(v => { v = v && v.trim(); if (!v || v === window.KG_BUILD || !/^[0-9a-f]{12}$/.test(v)) return; shown = true; $('upd').hidden = false; $('updB').focus(); }).catch(() => {}); };
@@ -720,11 +729,18 @@ export function initUI(G) {
     for (const c of G.W.cuts) if (c.enter && Math.abs(c.x0) < CORE && Math.abs(c.z0) < CORE) { x.strokeStyle = 'rgba(216,203,168,.9)'; x.lineWidth = K * 0.5; x.strokeRect(T(c.x0), T(c.z0), (c.x1 - c.x0) * K, (c.z1 - c.z0) * K); }
     // mundo todo: manchas de floresta, estradas, vilas e o centro em miniatura
     const w = offW.getContext('2d'), TW = v => (v + MAP) * KW, cs = 32;
-    w.fillStyle = '#4a6338'; w.fillRect(0, 0, 2048, 2048);
-    for (let gx = -MAP; gx < MAP; gx += cs) for (let gz = -MAP; gz < MAP; gz += cs) { const d = forestDens(gx + cs / 2, gz + cs / 2); if (d < 0.12) continue; w.fillStyle = `rgba(28,44,24,${Math.min(0.85, d * 0.95).toFixed(2)})`; w.fillRect(TW(gx), TW(gz), cs * KW + 0.6, cs * KW + 0.6); }
+    { // terreno: prado claro → floresta escura, em degradê suave (512 amostras de lado, ampliadas com suavização) e um grão por cima
+      const N = 512, cl = MAP * 2 / N, sm = document.createElement('canvas'); sm.width = sm.height = N; const sx = sm.getContext('2d'), im = sx.createImageData(N, N), D = im.data;
+      const ss = (a, b, t) => { t = Math.max(0, Math.min(1, (t - a) / (b - a))); return t * t * (3 - 2 * t); };
+      for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) { const x = -MAP + (i + 0.5) * cl, z = -MAP + (j + 0.5) * cl, f = ss(0.08, 0.62, forestDens(x, z)), dry = ss(0.2, 0.8, forestDens(x * 0.37 + 1713, z * 0.37 - 911)), o = (j * N + i) * 4;
+        const mr = 104 + dry * 22, mg = 124 + dry * 8, mb = 74 - dry * 8; // prado: verde-amarelado, mais seco aqui e ali
+        D[o] = mr + (34 - mr) * f; D[o + 1] = mg + (58 - mg) * f; D[o + 2] = mb + (38 - mb) * f; D[o + 3] = 255; }
+      sx.putImageData(im, 0, 0); w.imageSmoothingEnabled = true; w.imageSmoothingQuality = 'high'; w.drawImage(sm, 0, 0, 2048, 2048);
+      const gt = document.createElement('canvas'); gt.width = gt.height = 128; const gc = gt.getContext('2d'); for (let k = 0; k < 900; k++) { gc.fillStyle = Math.random() < 0.5 ? 'rgba(0,0,0,.09)' : 'rgba(255,255,240,.05)'; gc.fillRect(Math.random() * 128, Math.random() * 128, 1 + Math.random() * 1.5, 1 + Math.random() * 1.5); }
+      w.fillStyle = w.createPattern(gt, 'repeat'); w.fillRect(0, 0, 2048, 2048); }
     drawWater(w, TW, TW, KW, -MAP, -MAP, MAP, MAP);
     for (const s of G.W.map) { if (s.x1 - s.x0 > 1500 && s.z1 - s.z0 > 1500) continue; w.fillStyle = s.c; w.fillRect(TW(s.x0), TW(s.z0), Math.max(1, (s.x1 - s.x0) * KW), Math.max(1, (s.z1 - s.z0) * KW)); }
-    for (const r of G.W.roads) { const wx = (r.x1 - r.x0) * KW, wz = (r.z1 - r.z0) * KW, horiz = wx > wz; w.fillStyle = r.z1 - r.z0 < 6 || r.x1 - r.x0 < 6 ? '#a89a80' : '#b8b3aa'; w.fillRect(TW(r.x0) - (horiz ? 0 : 1), TW(r.z0) - (horiz ? 1 : 0), Math.max(wx, 2.5), Math.max(wz, 2.5)); }
+    for (const pass of [0, 1]) for (const r of G.W.roads) { const wx = (r.x1 - r.x0) * KW, wz = (r.z1 - r.z0) * KW, horiz = wx > wz, e = pass ? 0 : 0.8; w.fillStyle = pass ? (r.dirt ? '#b49a72' : '#d9d2c3') : 'rgba(20,18,14,.55)'; w.fillRect(TW(r.x0) - (horiz ? e : 1 + e), TW(r.z0) - (horiz ? 1 + e : e), Math.max(wx, 2) + e * 2, Math.max(wz, 2) + e * 2); }
     w.drawImage(off, TW(-CORE), TW(-CORE), CORE * 2 * KW, CORE * 2 * KW);
   };
   const mmc = $('mmc'), mctx = mmc.getContext('2d');
@@ -748,23 +764,26 @@ export function initUI(G) {
     c.rotate(Math.atan2(Math.cos(p.yaw), Math.sin(p.yaw)));
     c.fillStyle = '#F4F1EA'; c.strokeStyle = '#111'; c.lineWidth = K * 0.5; c.beginPath(); c.moveTo(3.4 * K, 0); c.lineTo(-2.2 * K, 2.4 * K); c.lineTo(-1.2 * K, 0); c.lineTo(-2.2 * K, -2.4 * K); c.closePath(); c.fill(); c.stroke();
     c.restore();
+    { const cs0 = Math.cos(G.YAW), sn0 = Math.sin(G.YAW), sk = s * K, rMax = sz / 2 - sz * 0.09; for (const m of marks) { const dx = (m.x - p.x) * sk, dz = (m.z - p.z) * sk; let X = dx * cs0 - dz * sn0, Y = dx * sn0 + dz * cs0; const l = Math.hypot(X, Y); if (l > rMax) { X *= rMax / l; Y *= rMax / l; } drawSym(c, m.s, sz / 2 + X, sz / 2 + Y, sz * 0.06, MCOL[m.c] || MCOL[0]); } }
     const r = sz / 2 - sz * 0.1; c.fillStyle = 'rgba(15,17,19,.8)'; const nx = sz / 2 + Math.sin(G.YAW) * r, ny = sz / 2 - Math.cos(G.YAW) * r; c.beginPath(); c.arc(nx, ny, sz * 0.075, 0, 7); c.fill(); c.fillStyle = '#EEE9E0'; c.font = `700 ${sz * 0.1}px "Roboto Condensed",sans-serif`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('N', nx, ny + sz * 0.005);
   };
   // mapa grande: o mundo todo ou perto de ti (2 km)
   const SPANS = [MAP * 2, 4000, 2000, 1000, 500]; let mapLv = 0; // mundo todo → 500 m
   const toggleMap = force => {
-    G.mapOpen = force ?? !G.mapOpen; $('map').hidden = !G.mapOpen; if (!G.mapOpen) return; drawBig();
+    G.mapOpen = force ?? !G.mapOpen; $('map').hidden = !G.mapOpen; if (!G.mapOpen) { mEdit = null; edRender(); return; } drawBig();
   };
   const drawBig = () => {
     const cv = $('mapc'), c = cv.getContext('2d'), p = G.p, span = SPANS[mapLv], mapNear = mapLv > 0, cx = mapNear ? clamp(p.x, -MAP + span / 2, MAP - span / 2) : 0, cz = mapNear ? clamp(p.z, -MAP + span / 2, MAP - span / 2) : 0, S = cv.width / span, u = cv.width / Math.max(240, cv.getBoundingClientRect().width || cv.width); // u: píxeis do desenho por píxel do ecrã
     c.setTransform(1, 0, 0, 1, 0, 0); c.imageSmoothingEnabled = true; c.fillStyle = '#4a6338'; c.fillRect(0, 0, cv.width, cv.height);
-    const sx = (cx - span / 2 + MAP) * KW, sz2 = span * KW; if (span <= 4000) c.filter = `blur(${Math.round(16000 / span)}px)`; c.drawImage(offW, sx, (cz - span / 2 + MAP) * KW, sz2, sz2, 0, 0, cv.width, cv.height); c.filter = 'none';
+    const sx = (cx - span / 2 + MAP) * KW, sz2 = span * KW; c.drawImage(offW, sx, (cz - span / 2 + MAP) * KW, sz2, sz2, 0, 0, cv.width, cv.height); c.filter = 'none';
     // perto do centro e ampliado: usa o mapa com detalhe
     if (mapNear) { const a = Math.max(-CORE, cx - span / 2), b = Math.min(CORE, cx + span / 2), a2 = Math.max(-CORE, cz - span / 2), b2 = Math.min(CORE, cz + span / 2); if (b > a && b2 > a2) c.drawImage(off, (a + CORE) * K, (a2 + CORE) * K, (b - a) * K, (b2 - a2) * K, (a - cx + span / 2) * S, (a2 - cz + span / 2) * S, (b - a) * S, (b2 - a2) * S); }
     const T = v => (v - cx + span / 2) * S, Tz = v => (v - cz + span / 2) * S;
-    if (span <= 2000) { const L = (x0, z0, x1, z1) => x1 > cx - span / 2 && x0 < cx + span / 2 && z1 > cz - span / 2 && z0 < cz + span / 2, inCore = (x, z) => Math.abs(x) < CORE && Math.abs(z) < CORE; // estradas nítidas fora do centro
+    if (span <= 4000) { const L = (x0, z0, x1, z1) => x1 > cx - span / 2 && x0 < cx + span / 2 && z1 > cz - span / 2 && z0 < cz + span / 2, inCore = (x, z) => Math.abs(x) < CORE && Math.abs(z) < CORE; // estradas nítidas, com berma, fora do centro
       drawWater(c, T, Tz, S, cx - span / 2, cz - span / 2, cx + span / 2, cz + span / 2);
-      for (const r of G.W.roads) if (L(r.x0, r.z0, r.x1, r.z1) && !inCore((r.x0 + r.x1) / 2, (r.z0 + r.z1) / 2)) { c.fillStyle = r.x1 - r.x0 > 8 && r.z1 - r.z0 > 8 ? '#8c7c63' : '#a89a80'; c.fillRect(T(r.x0), Tz(r.z0), Math.max(1.5, (r.x1 - r.x0) * S), Math.max(1.5, (r.z1 - r.z0) * S)); }
+      { const Wt = G.W.water; if (Wt) { c.strokeStyle = 'rgba(150,190,190,.45)'; c.lineWidth = 1.2 * u; for (const Lk of Wt.lakes) { if (!L(Lk.x - Lk.rx * 1.3, Lk.z - Lk.rz * 1.3, Lk.x + Lk.rx * 1.3, Lk.z + Lk.rz * 1.3)) continue; c.beginPath(); for (let k = 0; k <= 48; k++) { const a = k / 48 * 6.2832, r = Lk.rf(a), X = T(Lk.x + Math.cos(a) * r * Lk.rx), Z = Tz(Lk.z + Math.sin(a) * r * Lk.rz); if (k) c.lineTo(X, Z); else c.moveTo(X, Z); } c.stroke(); } } }
+      const mw = 1.6 * u; for (const pass of [0, 1]) for (const r of G.W.roads) if (L(r.x0, r.z0, r.x1, r.z1) && !inCore((r.x0 + r.x1) / 2, (r.z0 + r.z1) / 2)) { const e = pass ? 0 : 0.9 * u, wx = Math.max(mw, (r.x1 - r.x0) * S), wz = Math.max(mw, (r.z1 - r.z0) * S), X = T((r.x0 + r.x1) / 2) - wx / 2, Z = Tz((r.z0 + r.z1) / 2) - wz / 2; c.fillStyle = pass ? (r.dirt ? '#b8a07a' : '#ddd6c8') : 'rgba(18,16,12,.6)'; c.fillRect(X - e, Z - e, wx + e * 2, wz + e * 2); }
+      if (span <= 1000) { c.fillStyle = 'rgba(40,36,32,.85)'; for (const q of G.W.rects) if (q.k === 's' && q.h >= 2.2 && !(q.lv > 0) && !q.car && L(q.x0, q.z0, q.x1, q.z1) && !inCore(q.x0, q.z0)) c.fillRect(T(q.x0), Tz(q.z0), Math.max(u, (q.x1 - q.x0) * S), Math.max(u, (q.z1 - q.z0) * S)); } // paredes: o desenho das casas
       for (const q of G.W.cuts) if (q.enter && L(q.x0, q.z0, q.x1, q.z1) && !inCore(q.x0, q.z0)) { c.fillStyle = '#8a7f72'; c.fillRect(T(q.x0), Tz(q.z0), (q.x1 - q.x0) * S, (q.z1 - q.z0) * S); c.strokeStyle = 'rgba(216,203,168,.9)'; c.lineWidth = 1.5; c.strokeRect(T(q.x0), Tz(q.z0), (q.x1 - q.x0) * S, (q.z1 - q.z0) * S); }
       if (span <= 1000) { c.fillStyle = 'rgba(30,48,26,.95)'; for (const t of G.sectors.trees()) { if (!t.alive || !L(t.x, t.z, t.x, t.z) || inCore(t.x, t.z)) continue; c.beginPath(); c.arc(T(t.x), Tz(t.z), Math.max(1.5, 2.1 * t.s * S), 0, 7); c.fill(); } }
     }
@@ -783,11 +802,33 @@ export function initUI(G) {
         const dx = X - W2 / 2, dz = Z - W2 / 2, k = (W2 / 2 - m0) / Math.max(Math.abs(dx), Math.abs(dz)), ex = W2 / 2 + dx * k, ez = W2 / 2 + dz * k, a = Math.atan2(dz, dx), d = Math.hypot(m.x - p.x, m.z - p.z);
         c.save(); c.translate(ex, ez); c.rotate(a); c.fillStyle = '#6FA8FF'; c.strokeStyle = '#0d1520'; c.lineWidth = 1.6 * u; c.beginPath(); c.moveTo(9 * u, 0); c.lineTo(-5 * u, 6.5 * u); c.lineTo(-5 * u, -6.5 * u); c.closePath(); c.fill(); c.stroke(); c.restore();
         const lbl = m.name + ' · ' + (d >= 1000 ? (d / 1000).toFixed(1).replace('.', ',') + ' km' : Math.round(d) + ' m'), tx = clamp(ex - Math.cos(a) * 20 * u, 40 * u, W2 - 40 * u), tz = clamp(ez - Math.sin(a) * 20 * u, 12 * u, W2 - 8 * u); c.lineWidth = 3 * u; c.strokeStyle = 'rgba(12,14,16,.85)'; c.strokeText(lbl, tx, tz); c.fillStyle = '#CFE0FF'; c.fillText(lbl, tx, tz); } }
+    { // grelha de 500 m com letra e número (para dizer «estou em F7» aos colegas)
+      c.strokeStyle = 'rgba(244,241,234,.16)'; c.lineWidth = u; c.font = `700 ${Math.round(11 * u)}px "Roboto Condensed",sans-serif`; c.textAlign = 'left'; c.textBaseline = 'top';
+      for (let g = -MAP; g <= MAP; g += CELL) { const X = T(g), Z = Tz(g); if (X >= -1 && X <= cv.width + 1) { c.beginPath(); c.moveTo(X, 0); c.lineTo(X, cv.height); c.stroke(); } if (Z >= -1 && Z <= cv.height + 1) { c.beginPath(); c.moveTo(0, Z); c.lineTo(cv.width, Z); c.stroke(); } }
+      const lab = (lb, tx, tz) => { c.fillStyle = 'rgba(12,11,10,.6)'; c.fillRect(tx - 2 * u, tz - 1 * u, c.measureText(lb).width + 4 * u, 13 * u); c.fillStyle = 'rgba(244,241,234,.85)'; c.fillText(lb, tx, tz); };
+      if (S * CELL >= 90 * u) { for (let i = 0; i < 16; i++) for (let j = 0; j < 16; j++) { const X = T(-MAP + i * CELL), Z = Tz(-MAP + j * CELL); if (X < -2 || Z < -2 || X > cv.width - 20 * u || Z > cv.height - 14 * u) continue; lab(gridLet(i) + (j + 1), X + 4 * u, Z + 3 * u); } } // cada quadrado com o nome
+      else { for (let i = 0; i < 16; i++) { const X = T(-MAP + (i + 0.5) * CELL); if (X > 6 * u && X < cv.width - 6 * u) lab(gridLet(i), X - 3 * u, 3 * u); } for (let j = 0; j < 16; j++) { const Z = Tz(-MAP + (j + 0.5) * CELL); if (Z > 18 * u && Z < cv.height - 8 * u) lab(String(j + 1), 3 * u, Z - 6 * u); } } // longe: letras em cima e números à esquerda
+      c.textAlign = 'center'; c.textBaseline = 'middle'; }
+    for (const m of marks) { const X = T(m.x), Z = Tz(m.z), d = Math.hypot(m.x - p.x, m.z - p.z); if (X < -20 || Z < -20 || X > cv.width + 20 || Z > cv.height + 20) continue; if (m === mEdit) { c.strokeStyle = '#F4F1EA'; c.lineWidth = 2 * u; c.beginPath(); c.arc(X, Z, 15 * u, 0, 7); c.stroke(); } drawSym(c, m.s, X, Z, 10 * u, MCOL[m.c] || MCOL[0]); c.font = `700 ${Math.round(12 * u)}px "Roboto Condensed",sans-serif`; c.lineWidth = 3 * u; c.strokeStyle = 'rgba(12,14,16,.85)'; const lb = distTxt(d); c.strokeText(lb, X, Z + 18 * u); c.fillStyle = '#F4F1EA'; c.fillText(lb, X, Z + 18 * u); }
     { const X = T(p.x), Z = Tz(p.z); c.fillStyle = 'rgba(244,241,234,.16)'; c.strokeStyle = 'rgba(244,241,234,.9)'; c.lineWidth = 1.3 * u; c.beginPath(); c.arc(X, Z, 15 * u, 0, 7); c.fill(); c.stroke(); } // tu: um anel à volta para se ver logo
     c.save(); c.translate(T(p.x), Tz(p.z)); c.rotate(Math.atan2(Math.cos(p.yaw), Math.sin(p.yaw))); c.fillStyle = '#F4F1EA'; c.strokeStyle = '#111'; c.lineWidth = 1.6 * u; c.beginPath(); c.moveTo(10 * u, 0); c.lineTo(-6 * u, 7 * u); c.lineTo(-3 * u, 0); c.lineTo(-6 * u, -7 * u); c.closePath(); c.fill(); c.stroke(); c.restore();
-    $('mScale').textContent = (mapNear ? '' : 'Mundo · ') + (span >= 1000 ? span / 1000 + ' km' : span + ' m'); $('mIn').disabled = mapLv >= SPANS.length - 1; $('mOut').disabled = mapLv <= 0;
+    $('mScale').textContent = (mapNear ? '' : 'Mundo · ') + (span >= 1000 ? span / 1000 + ' km' : span + ' m') + ' · ' + gridName(p.x, p.z); $('mIn').disabled = mapLv >= SPANS.length - 1; $('mOut').disabled = mapLv <= 0;
   };
   // administração: tocar no mapa para ir a esse ponto
+  const mapPt = e => { const cv = $('mapc'), r = cv.getBoundingClientRect(), p = G.p, span = SPANS[mapLv], near = mapLv > 0, cx = near ? clamp(p.x, -MAP + span / 2, MAP - span / 2) : 0, cz = near ? clamp(p.z, -MAP + span / 2, MAP - span / 2) : 0; return { x: cx - span / 2 + (e.clientX - r.left) / r.width * span, z: cz - span / 2 + (e.clientY - r.top) / r.height * span, mpp: span / r.width }; };
+  let mEdit = null, mLastC = 0, mLastS = 'ponto';
+  const mEd = $('mEd'), mLeg = document.querySelector('#map .ml');
+  const edRender = () => { const on = !!mEdit; mEd.hidden = !on; mLeg.hidden = on; $('map').classList.toggle('editing', on); if (!on) return;
+    $('mEdT').textContent = gridName(mEdit.x, mEdit.z) + ' · ' + distTxt(Math.hypot(mEdit.x - G.p.x, mEdit.z - G.p.z)) + ' · ' + Math.round(bearing(mEdit.x - G.p.x, mEdit.z - G.p.z)) + '°';
+    $('mEdC').innerHTML = MCOL.map((col, i) => `<button class="sw${i === mEdit.c ? ' on' : ''}" data-c="${i}" style="background:${col}" aria-label="Cor ${i + 1}"></button>`).join('');
+    $('mEdS').innerHTML = MSYM.map(k => `<button class="sy${k === mEdit.s ? ' on' : ''}" data-s="${k}" aria-label="${MSYM_N[k]}"><canvas width="44" height="44"></canvas></button>`).join('');
+    $('mEdS').querySelectorAll('.sy').forEach(b => { const cc = b.querySelector('canvas').getContext('2d'); drawSym(cc, b.dataset.s, 22, 22, 16, MCOL[mEdit.c] || MCOL[0]); }); };
+  $('mEd').addEventListener('click', e => { e.stopPropagation(); const b = e.target.closest('button'); if (!b || !mEdit) return; audio.play('ui');
+    if (b.dataset.c) { mEdit.c = mLastC = +b.dataset.c; } else if (b.dataset.s) { mEdit.s = mLastS = b.dataset.s; } else if (b.id === 'mEdDel') { delMark(mEdit); mEdit = null; } else if (b.id === 'mEdOk') mEdit = null;
+    saveMarks(); edRender(); drawBig(); });
+  $('mapc').addEventListener('click', e => { if (G.admTp && G.net.role) return; const q = mapPt(e); let best = null, bd = 1e9; for (const m of marks) { const d = Math.hypot(m.x - q.x, m.z - q.z) / q.mpp; if (d < bd) { bd = d; best = m; } }
+    if (best && bd < 22) mEdit = mEdit === best ? null : best; else if (mEdit) mEdit = null; else { mEdit = addMark(q.x, q.z, mLastC, mLastS); toast('Marcador posto · escolhe a cor e o símbolo'); }
+    audio.play('ui'); edRender(); drawBig(); });
   $('mapc').addEventListener('click', e => { if (!G.admTp || !G.net.role) return; const cv = $('mapc'), r = cv.getBoundingClientRect(), p = G.p, span = SPANS[mapLv], near = mapLv > 0, cx = near ? clamp(p.x, -MAP + span / 2, MAP - span / 2) : 0, cz = near ? clamp(p.z, -MAP + span / 2, MAP - span / 2) : 0;
     const x = cx - span / 2 + (e.clientX - r.left) / r.width * span, z = cz - span / 2 + (e.clientY - r.top) / r.height * span; G.net.adm('gopt', { x: Math.round(x), z: Math.round(z) }); audio.play('ui'); toggleMap(false); });
   const mapStep = d => { const n = clamp(mapLv + d, 0, SPANS.length - 1); if (n === mapLv) return; mapLv = n; audio.play('ui'); drawBig(); };
@@ -798,6 +839,8 @@ export function initUI(G) {
   // ---------- avisos
   const toastEl = $('toast'); let toastT = 0;
   const toast = m => { toastEl.textContent = m; toastEl.hidden = false; toastEl.style.opacity = 1; toastT = 2.8; };
+  const AUI = initArenaUI(G, { $, audio, toast });
+  $('bAr').onclick = () => { audio.play('ui'); AUI.menu(); };
   const feedEl = $('feed'), feeds = [];
   const feed = (k, n) => { if (!n) return; const f = feeds.find(f => f.k === k && f.t > 0.6); if (f) { f.n += n; f.t = 3; f.el.querySelector('b').textContent = '+' + f.n; return; } const el = document.createElement('div'); el.className = 'fd'; el.innerHTML = `<img src="${G.ICONS[k]}" alt=""><b>+${n}</b><span>${ITEMS[k].s}</span>`; feedEl.appendChild(el); feeds.push({ k, n, t: 3, el }); while (feeds.length > 3) { const o = feeds.shift(); o.el.remove(); } };
   const xh = $('xh'), hm = $('hm'), scEl = $('scope'); let hitT = 0;
@@ -898,6 +941,7 @@ export function initUI(G) {
     // o aviso sobe para cima da barra (na horizontal fica em baixo e tapava-a)
     if (getComputedStyle(ts).top === 'auto' || ts.style.bottom) { const br = el.getBoundingClientRect(); ts.style.bottom = Math.round(innerHeight - br.top + 8) + 'px'; }
   };
+  const cmpC = $('cmpc'), cmpT = $('cmpt'); let cmpLast = -1;
   const frame = dt => {
     if (!G.playing || G.editing) return;
     buildBar();
@@ -975,6 +1019,7 @@ export function initUI(G) {
     $('tLight').classList.toggle('on', G.car && G.carSeat === 0 && G.cars ? G.cars.isLit(G.car) : !!G.lightOn);
     for (let i = feeds.length - 1; i >= 0; i--) { const f = feeds[i]; f.t -= dt; if (f.t < 0.4) f.el.classList.add('out'); if (f.t <= 0) { f.el.remove(); feeds.splice(i, 1); } }
     mmT -= dt; if (mmT <= 0) { mmT = 0.12; drawMini(); }
+    if (cmpC && G.p && G.playing) { const a = G.fpv && G.fpv.on && G.aimS && G.aimS.fy != null ? G.aimS.fy : G.p.yaw, hd = bearing(Math.sin(a), Math.cos(a)); const h = drawCompass(cmpC, hd, G.p, G.net && G.net.on ? G.net.mates() : null); if (h !== undefined && h !== cmpLast) { cmpLast = h; cmpT.textContent = String(h).padStart(3, '0') + '° ' + cardOf(h) + ' · ' + gridName(G.p.x, G.p.z); } }
     if (G.invOpen) { G.invT = (G.invT || 0) - dt; if (G.invT <= 0) { G.invT = 0.5; if (tab === 'craft') renderCraft(); } }
   };
   let lastOr = OR();
@@ -982,12 +1027,13 @@ export function initUI(G) {
 
   return {
     refresh, openInv, closeInv, toast, saveCfg, feed, hit, damage, death, toggleMap, frame, resize, safe, scopeR, scopeC,
+    arenaDeath: o => AUI.death(o), arenaFeed: m => AUI.feed(m), arenaScore: m => AUI.score(m), arenaHide: () => AUI.hide(), arenaMenu: () => AUI.menu(),
     closeDeath: () => { $('dead').hidden = true; clearInterval(dTick); }, sound, bedMenu, codeAsk, codeErr, codeDone, lockMenu, admRole, admList, admOpen, lbShow, lbOpen, trOpen, trRender, trOpenNow: () => !!trT, trWho: () => trT, trClose: () => { trEl.hidden = true; trT = null; },
     showHUD: msg => { $('hud').hidden = false; refresh(); toast(msg); },
     // sair para o menu (com 5 s parado se estiveres em combate)
-    toMenu: () => { setTimeout(() => { pfRender(); if (G.ui_count) G.ui_count(); }, 50); if (!pfm.hidden && $('pfT').textContent === 'Clã') pfClose(); $('quit').hidden = true; $('hud').hidden = true; setEl.hidden = true; G.paused = false; closeInv(); $('map').hidden = true; $('start').hidden = false; },
+    toMenu: () => { setTimeout(() => { pfRender(); if (G.ui_count) G.ui_count(); }, 50); if (!pfm.hidden && $('pfT').textContent === 'Clã') pfClose(); $('quit').hidden = true; $('hud').hidden = true; setEl.hidden = true; G.paused = false; closeInv(); $('map').hidden = true; if (G.ARENA) { $('dead').hidden = true; AUI.lobby(); } else $('start').hidden = false; },
     quitTick: t => { const q = $('quit'); if (t < 0) { q.hidden = true; return; } q.hidden = false; $('qN').textContent = Math.max(1, Math.ceil(t)); q.style.setProperty('--qp', (1 - t / 5).toFixed(3)); },
-    ready: () => { drawOff(); { const t = $('ldP'), b = document.querySelector('#load .bar b'); if (t) t.textContent = '100%'; if (b) b.style.width = '100%'; } $('load').hidden = true; $('start').hidden = false; pfRender(); Conta.conta() && Conta.sincronizar().then(r => { if (r === 'nuvem') { pfRender(); mnote('Trouxemos o teu jogo mais recente da nuvem.'); } }).catch(() => { }); 
+    ready: () => { drawOff(); { const t = $('ldP'), b = document.querySelector('#load .bar b'); if (t) t.textContent = '100%'; if (b) b.style.width = '100%'; } $('load').hidden = true; if (G.ARENA) { const a = Conta.ativo(); if (a && a.nome) AUI.lobby(); else askName(false, () => AUI.lobby()); $('bAr').hidden = false; $('mClan').style.display = $('mLb').style.display = 'none'; } else $('start').hidden = false; pfRender(); Conta.conta() && Conta.sincronizar().then(r => { if (r === 'nuvem') { pfRender(); mnote('Trouxemos o teu jogo mais recente da nuvem.'); } }).catch(() => { }); 
       // intro curta (uma vez por sessão; toca para saltar; sem animação se o sistema pedir menos movimento)
       let seen = false; try { seen = sessionStorage.getItem('kgIntro') === '1'; sessionStorage.setItem('kgIntro', '1'); } catch (e) { } if (!seen && !matchMedia('(prefers-reduced-motion: reduce)').matches) { const it = $('intro'); it.hidden = false; const end = () => { it.hidden = true; }; it.onclick = end; setTimeout(end, 2700); } },
   };

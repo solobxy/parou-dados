@@ -16,6 +16,7 @@ import { initUI } from './ui.js';
 import { makeBase } from './base.js';
 import { makeNav } from './nav.js';
 import { makeNet } from './net.js';
+import { arenaSpawns, ARENA_KITS, inArena } from './arena.js';
 import { makeCars } from './cars.js';
 import { makeVM } from './vm.js';
 import { track, push, sample } from './interp.js';
@@ -154,8 +155,9 @@ async function boot() {
       roughnessFactor = clamp( roughnessFactor + ( texture2D( uDet, ( abs( vDetN.y ) > 0.6 ? vDetP.xz : vDetP.xy + vDetP.zy ) * 0.9 ).g - 0.5 ) * 0.18, 0.04, 1.0 );`); };
     m.customProgramCacheKey = () => 'det-' + key; return m; };
   const wmats = { ...mats, v: detail(S(), 1, 'v'), vf: detail(S({ flatShading: true }), 1, 'vf'), m: detail(S({ roughness: 0.38, metalness: 0.55 }), 0.55, 'm') }; // só o que está construído no mapa (personagens e armas ficam sem isto)
+  const ARENA_ON = (() => { try { return sessionStorage.getItem('kgArena') === '1' || /[?&]arena\b/.test(location.search); } catch (e) { return false; } })(); // modo arena: só PvP no mapa de Tóquio
   await LP(12, 'a construir a cidade');
-  const tW0 = performance.now(); const W = buildWorld(scene, wmats, A); W.buildMs = Math.round(performance.now() - tW0);
+  const tW0 = performance.now(); const W = buildWorld(scene, wmats, A, { arena: ARENA_ON }); W.buildMs = Math.round(performance.now() - tW0);
   await LP(50, 'a preparar o mapa');
   atlasTex.needsUpdate = true;
   // sombras dos prédios mesmo com o telhado e as paredes de cima escondidos (quando estás lá dentro): o sol e a lanterna nunca atravessam telhados nem paredes,
@@ -459,7 +461,7 @@ async function boot() {
   const glowBags = () => { const p = G.p; if (!p) return; glowMat.opacity = 0.5 + 0.3 * Math.sin(G.t * 4.2); haloMat.opacity = 0.45 + 0.2 * Math.sin(G.t * 4.2); for (const b of G.bags) { const m = b.mesh; if (!m) continue; const near = p.alive && (b.lv || 0) === (p.lv || 0) && Math.hypot(b.x - p.x, b.z - p.z) < 6; const g = m.userData.gl || (near ? addGlow(m) : null); if (g) g.visible = near; } };
 
   // ---------- estado
-  const G = window.G = { audio,
+  const G = window.G = { ARENA: ARENA_ON, audio,
     renderer,
     TOUCH, W, ITEMS, RECIPES, CAP, t: 0, playing: false, invOpen: false, mapOpen: false, paused: false,
     p: null, inv: new Inv(), sel: 0, zs: [], bags: [], box: null, prompt: null,
@@ -935,13 +937,15 @@ async function boot() {
       if (zn && zn.kind === 'mil' && Math.random() < 0.55) { zb.kind = 'mil'; zb.helm = 2; zb.vest = Math.random() < 0.6 ? 2 : 3; zb.hp = 70; } else if (zn && zn.kind === 'city' && Math.random() < 0.12) { zb.kind = 'pol'; zb.vest = 2; zb.helm = Math.random() < 0.4 ? 2 : 0; zb.hp = 75; } armDur(zb);
       G.zs.push(zb); return true; } return false; };
   // online: um zombie que outro jogador simula — anda para onde ele diz (com 120 ms de atraso, para ficar suave)
+  // passada: devagar, passos curtos e frequentes (arrastar os pés); a correr, passadas compridas
+  const zStride = v => 2.6 + 4 / (0.5 + Math.min(4, v));
   const ZST = ['wander', 'alert', 'chase', 'dead', 'chase'];
   const wallFix = z => { const fx = Math.sin(z.yaw), fz = Math.cos(z.yaw), f = ray(z.x, z.z, fx, fz, 1.0, null, 's', z.lv || 0, 1.2); if (f < 0.4) { z.x -= fx * (0.4 - f); z.z -= fz * (0.4 - f); } z.wallK = clamp((0.95 - f) / 0.5, 0, 1); };
   const remoteZ = (z, dt, now) => {
     if (z.hitT > 0) z.hitT -= dt;
     if (z.state === 'dead') { z.deadT += dt; if (z.deadT > 25) z.sink = Math.min(0.6, z.sink + dt * 0.25); return; }
     if (!z.T) return; const S = sample(z.T, now, z.o || (z.o = {})); if (!S) return; const nx = S.x, nz = S.z, moved = Math.hypot(nx - z.x, nz - z.z);
-    if (moved > 8) { z.x = nx; z.z = nz; } else { z.x = nx; z.z = nz; z.phase += moved * 2.6; }
+    if (moved > 8) { z.x = nx; z.z = nz; } else { z.x = nx; z.z = nz; z.phase += moved * zStride(moved / Math.max(dt, 1e-3)); }
     const b = S.s; z.yaw = S.yaw; z.mv = b.mv; z.lv = b.lv;
     if (!z.hide) { const f = ray(z.x, z.z, Math.sin(z.yaw), Math.cos(z.yaw), 1.0, null, 's', z.lv || 0, 1.2); z.wallK = clamp((0.95 - f) / 0.5, 0, 1); }
     if (b.st === 4 && z.lastSt !== 4) z.atkT = 0.6; z.lastSt = b.st; z.state = ZST[b.st] || 'wander'; if (z.atkT > 0) z.atkT -= dt;
@@ -977,11 +981,11 @@ async function boot() {
     for (let i = G.zs.length - 1; i >= 0; i--) {
       const z = G.zs[i];
       if (z.remote) { remoteZ(z, dt0, now); continue; }
-      if (z.an && z.state !== 'dead') { if (z.frz !== undefined) { z.phase = (z.phase || 0) + dt0 * z.frz * 2.6; z.mv = z.frz / 3; z.y = groundY(z.x, z.z, 0); continue; }
+      if (z.an && z.state !== 'dead') { if (z.frz !== undefined) { z.phase = (z.phase || 0) + dt0 * z.frz * zStride(z.frz); z.mv = z.frz / 3; z.y = groundY(z.x, z.z, 0); continue; }
         if (!z.pet && me && Math.hypot(me.x - z.x, me.z - z.z) > 160) { z.acc = (z.acc || 0) + dt0; if (z.acc < 0.6) continue; animalAI(z, z.acc, AC); z.acc = 0; } else animalAI(z, dt0, AC);
         z.y = groundY(z.x, z.z, 0); continue; }
       // testes: zombie parado no sítio (frz = velocidade a fingir, para a animação de andar)
-      if (z.frz !== undefined) { z.phase = (z.phase || 0) + dt0 * z.frz * 2.6; z.mv = z.frz / 3; wallFix(z); continue; }
+      if (z.frz !== undefined) { z.phase = (z.phase || 0) + dt0 * z.frz * zStride(z.frz); z.mv = z.frz / 3; wallFix(z); continue; }
       // morto: o corpo fica, afunda devagar e o zombie volta a nascer na zona dele passados uns minutos, longe da tua vista (online, quem decide é o servidor)
       if (z.state === 'dead') { z.deadT += dt0; if (z.deadT > 25) z.sink = Math.min(0.6, z.sink + dt0 * 0.25); if (!onl && z.deadT > (z.reT || 480) && Math.hypot((z.hx ?? z.x) - me.x, (z.hz ?? z.z) - me.z) > 70) reviveZ(z); continue; }
       let p = me; if (tgts.length > 1) { let bq = 1e9; for (const t of tgts) { if (!t.alive) continue; const q = Math.hypot(t.x - z.x, t.z - z.z) + ((t.lv || 0) !== (z.lv || 0) ? 25 : 0); if (q < bq) { bq = q; p = t; } } }
@@ -1039,7 +1043,7 @@ async function boot() {
       for (const t of tgts) if (sameLevel(z, t) && t.alive && t.h < 1) { const qx = z.x - t.x, qz = z.z - t.z, qd = Math.hypot(qx, qz); if (qd < 0.62 && qd > 1e-4) { z.x = t.x + qx / qd * 0.62; z.z = t.z + qz / qd * 0.62; } }
       const moved = Math.hypot(z.x - ox, z.z - oz);
       if (sp > 0.3 && moved < sp * dt * 0.3) { z.stuck += dt; if (z.stuck > 0.6) { z.stuck = 0; if (z.state === 'wander') z.wT = 0; else if (z.path) { z.path = null; z.navT = 0; z.det = 0.5; z.detDir = Math.random() < 0.5 ? -1 : 1; } else { z.det = 1.0; z.detDir = Math.random() < 0.5 ? -1 : 1; z.navT = 0; } } } else z.stuck = Math.max(0, z.stuck - dt);
-      z.mv = moved / dt / 3.0; z.phase += moved * 2.6;
+      { const v = moved / Math.max(dt, 1e-3); z.mv += (v / 3.0 - (z.mv || 0)) * Math.min(1, dt * 10); z.phase += moved * zStride(v); }
       stairUpdate(z); z.y = (z.base || 0) + groundY(z.x, z.z, z.lv || 0);
       if (z.state === 'chase' && dMe < 22) { z.groan -= dt; if (z.groan <= 0) { z.groan = 3 + Math.random() * 5; audio.play('grunhido', 0.6 * vol(z.x, z.z)); G.ui.sound(z.x, z.z, 'z', dMe); } }
       if (G.playing && z.state === 'chase' && dMe < 16 && dMe > 2.5 && z.v > 1) { z.stepT = (z.stepT || 0) - dt; if (z.stepT <= 0) { z.stepT = 0.8; G.ui.sound(z.x, z.z, 'p', dMe); } }
@@ -1054,6 +1058,7 @@ async function boot() {
   };
   const die = cause => {
     const p = G.p; if (!p.alive) return; if (G.car) G.cars.exit(); p.alive = false; p.hp = 0; p.cause = cause; G.deadAt = { x: p.x, z: p.z }; audio.play('morte'); if (G.aimEnd) G.aimEnd(); try { window.estat && window.estat('morte', cause); } catch (e) { }
+    if (G.ARENA) { if (G.net && G.net.on) G.net.died(G.killer); G.inv = new Inv(); G.ui.refresh(true); body.root.visible = false; G.ui.closeInv(); G.box = null; setTimeout(() => G.ui.arenaDeath({ cause, by: G.killer }), 1200); return; }
     if (G.net && G.net.on) { if (cause !== 'dormir') G.net.died(); }
     else { const g = new Grid(6, 10); for (const it of G.inv.all()) g.insert(it); if (!g.empty) dropBag(p.x, p.z, g, { body: true, lv: p.lv, y: p.base + groundY(p.x, p.z, p.lv) }); }
     G.inv = new Inv(); G.ui.refresh(true);
@@ -1181,7 +1186,7 @@ async function boot() {
     cont: W.containers.map((c, i) => c.grid && !c.own ? [i, Math.max(0, Math.round((c.next || 0) - G.t)), encG(c.grid)] : null).filter(Boolean) }); };
   const saveChar = () => { const p = G.p; if (!p || !p.alive) return; Conta.gravarPersonagem({ v: 1, when: Date.now(), x: +p.x.toFixed(2), z: +p.z.toFixed(2), y: +p.y.toFixed(2), lv: p.lv || 0, base: p.base || 0, bld: p.bld ? p.bld.id : null, yaw: +p.yaw.toFixed(3), sel: G.sel, hp: p.hp, food: p.food, water: p.water, bleed: p.bleed, kills: p.kills, sk: p.sk, combat: !!(G.inCombat && G.inCombat()),
     bag: encG(G.inv.bag), belt: G.inv.belt.map(enc), eq: Object.fromEntries(Object.entries(G.inv.eq).map(([k, v]) => [k, enc(v)])) }); };
-  const save = () => { if (!G.playing) return; try { saveChar(); saveWorld(); Conta.enviar(); } catch (e) { } };
+  const save = () => { if (!G.playing || G.ARENA) return; try { saveChar(); saveWorld(); Conta.enviar(); } catch (e) { } };
   G.save = save;
   const restoreZs = L => { G.zs.length = 0; for (const a of L) { const [x, zz, hx, hz, hp, kind, helm, vest, limp, dead, lv, ch] = a; const z = zAt(x, zz); Object.assign(z, { hx, hz, hp: Math.max(1, hp), kind: kind || undefined, helm, vest, limp, lv: lv || 0, hpMax: kind === 'mil' ? 70 : kind === 'pol' ? 75 : 80, reT: 360 + Math.random() * 300 }); armDur(z); if (dead >= 0) { z.state = 'dead'; z.deadT = Math.max(dead, 30); z.sink = 0.6; z.hp = 0; } else if (ch && G.wasCombat) { z.state = 'chase'; z.mem = 8; z.det = 1; } G.zs.push(z); } };
   const clearWorld = () => { G.base.clear(); for (const b of G.bags) scene.remove(b.mesh); G.bags.length = 0; for (const c of W.containers) { c.grid = null; c.next = 0; } };
@@ -1232,6 +1237,29 @@ async function boot() {
     refresh(); save(); G.ui.showHUD(cont ? 'Acordaste onde adormeceste.' : kit ? 'Kit de teste: começas à beira do mapa do centro.' : whereMsg(G.p.x, G.p.z));
     G.killer = null; G.cars.clear(); G.cars.spawnLocal(); if (G.online && !kit) G.net.start(); else G.net.stop();
   };
+
+  // ---------- arena PvP: kits (o que trazes ao nascer), nascer na tua zona, mudar de equipa
+  const arenaKit = k => { const inv = new Inv(); const gun = (g, att = {}) => { const it = mkItem(g); it.ammo = capOf(it); const G2 = ITEMS[g].gun; it.att = {}; for (const s in att) if (G2[s]) it.att[s] = att[s]; return it; }; const clip = c => { const m = mkItem(c); m.am = ITEMS[c].clip.cap; return m; };
+    const K = ARENA_KITS[k] || ARENA_KITS.atirador; if (K.head) inv.eq.head = mkItem(K.head); if (K.vest) inv.eq.vest = mkItem(K.vest); inv.eq.back = mkItem('mochila');
+    inv.belt = [0, 1, 2, 3, 4, 5].map(i => { const e = K.belt[i]; if (!e) return null; return ITEMS[e[0]].gun ? gun(e[0], e[1] || {}) : mkItem(e[0], e[1] || 1); });
+    const rows = inv.rows(); for (const [c, n] of K.bag) { if (ITEMS[c].clip) for (let i = 0; i < n; i++) inv.bag.insert(clip(c), rows); else inv.bag.insert(mkItem(c, n), rows); }
+    return inv; };
+  G.arenaKit = arenaKit;
+  const arenaSpawn = () => { const L = arenaSpawns(G.arenaTeam | 0), me = [...(G.net && G.net.R ? G.net.R.values() : [])]; let best = L[0], bd = -1; for (const q of L) { let d = 99; for (const r of me) if (r.b.root.visible) d = Math.min(d, Math.hypot(r.x - q[0], r.z - q[1])); d += Math.random() * 2; if (d > bd) { bd = d; best = q; } } return best; };
+  G.arenaRespawn = () => {
+    const [x, z] = arenaSpawn(); G.p = newPlayer(x, z); G.p.yaw = G.p.root = G.p.aim = (G.arenaTeam ? -1 : 1) * Math.PI / 2; G.inv = arenaKit(G.arenaKitK); G.sel = 0; G.p.born = G.t;
+    if (G.aimS) { G.aimS.fy = G.p.yaw; G.aimS.fpit = -0.04; }
+    body.root.rotation.set(0, 0, 0); body.root.position.set(x, 0, z); body.root.visible = true; camT.set(x, 0, z); G.killer = null; refresh(); G.ui.refresh(true); G.ui.closeDeath && G.ui.closeDeath(); G.ui.arenaHide && G.ui.arenaHide(); if (G.net && G.net.on) G.net.raw({ t: 'aspawn', x, z }); };
+  G.arenaStart = (team, kit) => {
+    G.arenaTeam = team; G.arenaKitK = kit; audio.start();
+    { const L = (Conta.ativo() || {}).look; if (JSON.stringify(L || {}) !== JSON.stringify(G.lookNow || {})) { G.lookNow = L; G.setLook(L); } }
+    clearWorld(); G.zs.length = 0; G.arenaRespawn(); G.playing = true; G.wasCombat = false; G.combatT = -99; G.quit = null;
+    for (let i = 0; i < 12 && lazyTick(G.p.x, G.p.z); i++);
+    refresh(); G.ui.showHUD((team ? 'Equipa Azul' : 'Equipa Vermelha') + ' · kit ' + ARENA_KITS[kit].n);
+    G.cars.clear(); G.net.start();
+  };
+  G.arenaTeamSet = t => { if (t === G.arenaTeam) return; G.arenaTeam = t; G.net.raw && G.net.raw({ t: 'ateam', team: t }); if (G.p && G.p.alive) G.arenaRespawn(); };
+  G.arenaKitSet = k => { if (!ARENA_KITS[k]) return; G.arenaKitK = k; G.net.raw && G.net.raw({ t: 'akit', kit: k }); };
 
   // ---------- controlos
   const keys = new Set(), mouse = { x: innerWidth / 2, y: innerHeight / 2, down: false, has: false };
@@ -1605,6 +1633,7 @@ async function boot() {
       if (p.use) { p.use.t += dt; if (p.use.t >= p.use.dur) { const it = p.use.it, u = ITEMS[it.k].use; if (u.hp) p.hp = Math.min(100, p.hp + u.hp); if (u.bleed) p.bleed = 0; if (u.food) p.food = Math.min(100, p.food + u.food); if (u.sick && Math.random() < u.sick) { p.water = Math.max(0, p.water - 18); p.food = Math.max(0, p.food - 8); p.hp = Math.max(1, p.hp - 5); G.ui.toast('A carne crua fez-te mal: perdeste água. Coze-a antes de comer.'); G.shakeT = 0.3; } if (u.water) p.water = clamp(p.water + u.water, 0, 100); if (u.stam) p.stam = Math.min(100, p.stam + u.stam); consume(it); p.use = null; G.ui.refresh(); } }
       // corpo
       if (p.alive) {
+        if (G.ARENA) { p.food = p.water = 100; }
         const met = 1 - 0.15 * sk('res'); p.food = Math.max(0, p.food - dt * 100 / 1300 * met); p.water = Math.max(0, p.water - dt * 100 / (p.sprint ? 1050 : 1500) * met); // sede: 25 min a andar até secar (17 a correr)
         if (p.bleed) p.hp -= dt * 0.6;
         // a vida volta sozinha, mas gasta comida e água: mais depressa de barriga cheia, parada logo a seguir a levar dano

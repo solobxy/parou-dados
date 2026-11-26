@@ -1,4 +1,5 @@
 // O mapa: bairro japonês Shin-Kurogane no centro, floresta à volta.
+import { buildArena } from './arena.js';
 import * as THREE from 'three';
 import { buildMonuments } from './monuments.js';
 import { Builder, rnd, rr, ri, pick, shade, mat4, getSeed, setSeed } from './builder.js';
@@ -10,7 +11,7 @@ export const MAP = 4000, CORE = 450;
 export const CITY = { x0: -48, x1: 48, z0: -46, z1: 46 };
 export const inCity = (x, z) => x > CITY.x0 && x < CITY.x1 && z > CITY.z0 && z < CITY.z1;
 
-export function buildWorld(scene, mats, A) {
+export function buildWorld(scene, mats, A, opt = {}) {
   const b = new Builder(40);
   // todo o chão pavimentado (betão, asfalto, ladrilho, terra batida) fica registado: aí não nascem árvores nem arbustos
   const pads = [], floor0 = b.floor.bind(b); b.floor = (x0, z0, x1, z1, y, hex, mat) => { if (y < 0.1 && y >= 0 && mat !== 'grass' && !b.wet) pads.push({ x0: Math.min(x0, x1), z0: Math.min(z0, z1), x1: Math.max(x0, x1), z1: Math.max(z0, z1) }); return floor0(x0, z0, x1, z1, y, hex, mat); };
@@ -54,7 +55,7 @@ export function buildWorld(scene, mats, A) {
   road(-3.6, CITY.z0, 3.6, CITY.z1);
   road(CITY.x0, -26, CITY.x1, -22); road(CITY.x0, 22, CITY.x1, 26);
   // caminhos de terra para norte e sul
-  const dirt = (x0, z0, x1, z1) => { W.roads.push({ x0, z0, x1, z1 }); b.floor(x0, z0, x1, z1, 0.012, 0xffffff, 'dirt'); mp(x0, z0, x1, z1, '#6b5b44'); };
+  const dirt = (x0, z0, x1, z1) => { W.roads.push({ x0, z0, x1, z1, dirt: 1 }); b.floor(x0, z0, x1, z1, 0.012, 0xffffff, 'dirt'); mp(x0, z0, x1, z1, '#6b5b44'); };
   dirt(-2.6, -MAP - 4, 2.6, CITY.z0); dirt(-2.6, CITY.z1, 2.6, MAP + 4);
   // passeios com lancil
   const walk = (x0, z0, x1, z1) => { W.steps.push({ x0, z0, x1, z1, y: 0.14 }); b.box(x1 - x0, 0.14, z1 - z0, (x0 + x1) / 2, 0.07, (z0 + z1) / 2, TILE, { mat: 'tile' }); mp(x0, z0, x1, z1, '#b3ab9b'); };
@@ -553,6 +554,8 @@ export function buildWorld(scene, mats, A) {
   // mundo de fora, 2.ª parte (com a sua própria semente: o resto do mapa fica igual)
   { const sv = getSeed(), t0 = performance.now(); setSeed(20261124); buildRegions({ lazy, b, A, W, rect, circ, mp, container, shell, car, pole, lamp, crate, cabinet, counter, table, chair, bed, shelf, fridge, woodFence, blood, bags, cone, barrier, bench, bike, vend, dirt, rr, ri, pick, rnd, shade, mat4, tower, lantern, sofa, books, boxes, clutter, toilet, sinkI, deskPC, plantI, wardrobe }, TW.house, TW.shop); setSeed(sv); W.regionMs = Math.round(performance.now() - t0); }
 
+  // arena PvP de Tóquio: só no modo arena (o mundo de sobrevivência fica igual)
+  if (opt.arena) { const sv = getSeed(); setSeed(777); buildArena({ b, A, W, rect, circ, mp, shell, lamp, lantern, vend, bench, hsign, vsign, shade, mat4, pole, wires, bike }); setSeed(sv); W.arena = true; }
   // grelha para saber depressa onde já há coisas
   W.pads = pads; const BG = 16, bgrid = new Map(), padG = new Map();
   for (const r of pads) for (let ix = Math.floor((r.x0 - 3) / BG); ix <= Math.floor((r.x1 + 3) / BG); ix++) for (let iz = Math.floor((r.z0 - 3) / BG); iz <= Math.floor((r.z1 + 3) / BG); iz++) { const k = ix * 1000 + iz; if (!padG.has(k)) padG.set(k, []); padG.get(k).push(r); }

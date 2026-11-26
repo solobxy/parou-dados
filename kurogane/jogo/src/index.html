@@ -438,8 +438,44 @@ h1 small{display:block;font:900 clamp(16px,3vw,22px)/1.2 "KJP",sans-serif;letter
 #map .mh{display:flex;align-items:center;gap:14px;flex-wrap:wrap;justify-content:center;font:600 13px "Roboto Condensed",sans-serif;letter-spacing:.06em;text-transform:uppercase;color:var(--tx2)}
 #map .mz{display:flex;gap:2px}#map .mz .btn{width:48px;height:44px;padding:0;font:600 24px/1 "Roboto Condensed",sans-serif}#map .mz .btn:disabled{opacity:.35}
 #map .mh #mScale{min-width:64px;text-align:right;color:var(--tx);font-variant-numeric:tabular-nums}
-@media (orientation:landscape){#map:not([hidden]){display:grid;grid-template-columns:auto 172px;grid-template-rows:auto 1fr;grid-template-areas:"cv mh" "cv ml";column-gap:18px;row-gap:14px;align-content:center;justify-content:center}#map canvas{grid-area:cv;max-width:calc(100vw - 260px);max-height:calc(100dvh - 20px - var(--st) - var(--sb))}#map .mh{grid-area:mh;flex-direction:column;align-items:stretch;gap:8px}#map .mh #mScale{text-align:left;font-size:15px}#map .mh .mz .btn{flex:1}#map .mh #mClose{position:fixed;right:calc(12px + var(--sr));top:calc(10px + var(--st))}#map .ml{grid-area:ml;flex-direction:column;align-items:flex-start;justify-content:flex-start;gap:8px}}
+@media (orientation:landscape){#map:not([hidden]){display:grid;grid-template-columns:auto 190px;grid-template-rows:auto 1fr;grid-template-areas:"cv mh" "cv ml";column-gap:18px;row-gap:14px;align-content:center;justify-content:center}#map canvas{grid-area:cv;max-width:calc(100vw - 260px);max-height:calc(100dvh - 20px - var(--st) - var(--sb))}#map .mh{grid-area:mh;flex-direction:column;align-items:stretch;gap:8px}#map .mh #mScale{text-align:left;font-size:15px}#map .mh .mz .btn{flex:1}#map .mh #mClose{position:fixed;right:calc(12px + var(--sr));top:calc(10px + var(--st))}#map .ml{grid-area:ml;flex-direction:column;align-items:flex-start;justify-content:flex-start;gap:8px}}
 #map .ml{display:flex;gap:6px 14px;flex-wrap:wrap;justify-content:center;font:600 12px "Roboto Condensed",sans-serif;letter-spacing:.06em;text-transform:uppercase;color:var(--tx2)}
+#cmp{position:absolute;left:50%;top:calc(6px + var(--st));transform:translateX(-50%);width:min(36vw,320px);height:44px;pointer-events:none;text-align:center}
+#cmp canvas{width:100%;height:36px;display:block}
+#cmp b{display:block;margin-top:-4px;font:700 13px/1 "Roboto Condensed",sans-serif;color:#F4F1EA;letter-spacing:.04em;font-variant-numeric:tabular-nums;text-shadow:0 1px 2px rgba(0,0,0,.8)}
+#map .med{display:flex;flex-direction:column;gap:10px;font:600 13px "Roboto Condensed",sans-serif;color:var(--tx)}
+#map .med[hidden]{display:none}#map .ml[hidden]{display:none}
+#map .med .sws,#map .med .sys{display:flex;flex-wrap:wrap;gap:6px}
+#map .med .sw{width:27px;height:27px;border-radius:50%;border:2px solid rgba(0,0,0,.6);box-shadow:0 0 0 1px rgba(255,255,255,.15)}
+#map .med .sw.on{box-shadow:0 0 0 3px #F4F1EA}
+#map .med .sy{width:40px;height:40px;padding:0;border-radius:8px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1)}
+#map .med .sy.on{background:rgba(255,255,255,.2);border-color:#F4F1EA}#map .med .sy canvas{width:38px;height:38px;display:block}
+#map.editing #mClan,#map.editing #mLb{display:none}
+#map .med .mbt{display:flex;gap:6px}#map .med .mbt .btn{flex:1}
+#map .ml .mhint{color:var(--tx);text-transform:none;letter-spacing:0;font-size:13px}
+@media (orientation:landscape){#map .med{grid-area:ml}}
+#asc{position:absolute;left:50%;top:calc(52px + var(--st));transform:translateX(-50%);display:flex;align-items:center;gap:8px;padding:3px 10px;background:rgba(12,11,10,.55);border-radius:4px;font:700 15px/1 "Roboto Condensed",sans-serif;color:#EEE9E0;pointer-events:none;font-variant-numeric:tabular-nums}
+#asc span{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--tx2)}#asc i,.asc2 i{font-style:normal;min-width:22px;text-align:center;padding:2px 5px;border-radius:3px}#asc .r,.asc2 .r{background:#b8342a}#asc .b,.asc2 .b{background:#2a5ac8}
+#akf{position:absolute;right:calc(10px + var(--sr));top:calc(64px + var(--st));display:flex;flex-direction:column;align-items:flex-end;gap:4px;pointer-events:none}
+.akl{display:flex;gap:6px;align-items:center;padding:3px 8px;background:rgba(12,11,10,.62);border-radius:3px;font:600 13px/1.2 "Roboto Condensed",sans-serif;color:#EEE9E0;transition:opacity .4s}.akl.out{opacity:0}.akl span{color:var(--tx2)}.akl .t0{color:#ff8a7a}.akl .t1{color:#8ab4ff}
+#arw{background:rgba(10,9,8,.9);z-index:40;padding:calc(8px + var(--st)) calc(10px + var(--sr)) calc(8px + var(--sb)) calc(10px + var(--sl))}
+#arw .abox{width:min(100%,860px);max-height:100%;overflow:auto;display:flex;flex-direction:column;gap:10px}
+#arw .ah{display:flex;align-items:center;gap:14px}#arw .aT{font-size:22px;letter-spacing:.06em;text-transform:uppercase}
+.asc2{display:flex;align-items:center;gap:6px;font:700 16px/1 "Roboto Condensed",sans-serif;font-variant-numeric:tabular-nums}.asc2 em{font-style:normal;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--tx2)}
+#arw .ah .close{margin-left:auto}
+#arw .ateams{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+#arw .atm{display:flex;align-items:baseline;justify-content:space-between;padding:10px 14px;border-radius:6px;background:rgba(255,255,255,.05);border:2px solid transparent;color:var(--tx);min-height:44px}
+#arw .atm b{font:700 19px/1 "Roboto Condensed",sans-serif;letter-spacing:.06em;text-transform:uppercase}#arw .atm em{font-style:normal;font-size:13px;color:var(--tx2)}
+#arw .atm.t0 b{color:#ff8a7a}#arw .atm.t1 b{color:#8ab4ff}#arw .atm.t0.on{border-color:#d8483a;background:rgba(184,52,42,.22)}#arw .atm.t1.on{border-color:#3a6ad8;background:rgba(42,90,200,.22)}
+#arw .akits{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}
+#arw .akit{display:flex;flex-direction:column;align-items:flex-start;gap:5px;padding:9px 9px 10px;border-radius:6px;background:rgba(255,255,255,.05);border:2px solid transparent;text-align:left;color:var(--tx);min-height:44px}
+#arw .akit.on{border-color:var(--amb);background:rgba(255,166,40,.12)}
+#arw .aks{width:30px;height:30px;color:var(--amb);display:block}#arw .aks svg{width:100%;height:100%;display:block}
+#arw .akit b{font:700 15px/1 "Roboto Condensed",sans-serif;letter-spacing:.06em;text-transform:uppercase}
+#arw .akit ul{margin:0;padding:0;list-style:none;font-size:11.5px;line-height:1.3;color:var(--tx2)}#arw .akit li+li{margin-top:2px}
+#arw .akd{margin:0;font-size:13px;color:var(--tx2)}
+#arw .aft{display:flex;gap:8px;justify-content:flex-end}#arw .aft .btn.pri{min-width:180px}
+@media (max-width:640px){#arw .akits{grid-template-columns:repeat(2,minmax(0,1fr))}}
 #map .ml i{display:inline-block;width:9px;height:9px;margin-right:5px;vertical-align:-1px;border-radius:1px}
 #netLost{background:rgba(14,13,12,.86);flex-direction:column;gap:8px;z-index:79;text-align:center;padding:24px}#netLost b{font-size:22px;letter-spacing:.06em;text-transform:uppercase}#netLost span{color:var(--tx2);font-size:14px}
 .mi.busy{opacity:.7;pointer-events:none}
@@ -702,8 +738,8 @@ body.mir #touch .tb>*,body.mir #touch .ghost{transform:scaleX(-1)}
 <canvas id="c"></canvas><div id="vig" aria-hidden="true"></div>
 <div id="dmg" aria-hidden="true"></div><div id="lowhp" aria-hidden="true"></div>
 <div id="hud" hidden>
-  <div id="tl"><div id="mm" data-h="mm" title="Abrir mapa"><canvas id="mmc"></canvas></div><div id="zone" data-h="zone"><b>—</b><span></span></div></div>
-  <div id="tr" data-h="tr"><button class="hb" id="bAdm" aria-label="Administração" hidden>{{shield}}</button><button class="hb" id="bSet" aria-label="Definições">{{settings}}</button><button class="hb" id="bMap" aria-label="Mapa">{{map}}<span class="lab">Mapa</span><kbd>M</kbd></button><button class="hb" id="bInv" aria-label="Inventário">{{backpack}}<span class="lab">Inventário</span><kbd>Tab</kbd></button></div>
+  <div id="asc" hidden></div><div id="akf" aria-live="polite"></div><div id="cmp" data-h="cmp" aria-hidden="true"><canvas id="cmpc"></canvas><b id="cmpt"></b></div><div id="tl"><div id="mm" data-h="mm" title="Abrir mapa"><canvas id="mmc"></canvas></div><div id="zone" data-h="zone"><b>—</b><span></span></div></div>
+  <div id="tr" data-h="tr"><button class="hb" id="bAr" aria-label="Arena: equipa e kit" hidden>{{swords}}<span class="lab">Arena</span></button><button class="hb" id="bAdm" aria-label="Administração" hidden>{{shield}}</button><button class="hb" id="bSet" aria-label="Definições">{{settings}}</button><button class="hb" id="bMap" aria-label="Mapa">{{map}}<span class="lab">Mapa</span><kbd>M</kbd></button><button class="hb" id="bInv" aria-label="Inventário">{{backpack}}<span class="lab">Inventário</span><kbd>Tab</kbd></button></div>
   <div id="sind"></div><div id="feed" data-h="feed"></div><div id="fps" hidden></div>
   <div id="toast" hidden></div>
   <div id="use" hidden><span></span><i><b></b></i></div>
@@ -758,7 +794,7 @@ body.mir #touch .tb>*,body.mir #touch .ghost{transform:scaleX(-1)}
     <section class="ipan" id="cBag"><div class="ph"><span>Mochila</span><em id="bagCap"></em></div><div class="grid" id="gBag"></div></section>
   </div>
 </div>
-<div id="map" class="ov" hidden><div class="mh"><span id="mScale"></span><span class="mz"><button class="btn sm" id="mOut" aria-label="Afastar">−</button><button class="btn sm" id="mIn" aria-label="Aproximar">+</button></span><button class="btn sm" id="mClan">Clã</button><button class="btn sm" id="mLb" aria-label="Classificações">{{trophy}}<span>Classificações</span></button><button class="close" id="mClose" aria-label="Fechar">{{x}}</button></div><canvas id="mapc" width="1024" height="1024"></canvas><div class="ml"><span><i style="background:#F4F1EA"></i>Tu</span><span><i style="background:#6FA8FF"></i>Clã</span><span><i style="background:#8e8a82"></i>Bairro · PvP</span><span><i style="background:#c8402e"></i>Loot militar</span><span><i style="background:#7fd38a"></i>Cama</span></div></div>
+<div id="map" class="ov" hidden><div class="mh"><span id="mScale"></span><span class="mz"><button class="btn sm" id="mOut" aria-label="Afastar">−</button><button class="btn sm" id="mIn" aria-label="Aproximar">+</button></span><button class="btn sm" id="mClan">Clã</button><button class="btn sm" id="mLb" aria-label="Classificações">{{trophy}}<span>Classificações</span></button><button class="close" id="mClose" aria-label="Fechar">{{x}}</button></div><canvas id="mapc" width="1024" height="1024"></canvas><div class="med" id="mEd" hidden><b id="mEdT"></b><div class="sws" id="mEdC"></div><div class="sys" id="mEdS"></div><div class="mbt"><button class="btn sm" id="mEdDel">Apagar</button><button class="btn sm pri" id="mEdOk">Feito</button></div></div><div class="ml"><span class="mhint">Toca no mapa para marcar</span><span><i style="background:#F4F1EA"></i>Tu</span><span><i style="background:#6FA8FF"></i>Clã</span><span><i style="background:#8e8a82"></i>Bairro · PvP</span><span><i style="background:#c8402e"></i>Loot militar</span><span><i style="background:#7fd38a"></i>Cama</span></div></div>
 <div id="quit" hidden><div class="qr"><b id="qN">5</b></div><div class="qt"><span>A sair do jogo</span><em>Estás em combate. Fica parado: mexer-te ou levar dano cancela.</em></div><button class="btn sm" id="qX">Cancelar</button></div>
 <div id="dead" class="ov" hidden><div class="dp" id="dp"><h2>Morreste</h2><p id="dCause"></p><div class="stat" id="dStat"></div><div class="dbeds" id="dBeds" hidden><canvas id="dMap" width="400" height="400" aria-label="Mapa: onde morreste e as tuas camas"></canvas><div class="dlist" id="dList" role="list"></div></div><button class="btn pri big" id="dGo">Acordar noutro sítio</button><div class="note" id="dNote">As tuas coisas ficaram num saco onde caíste.</div></div></div>
 <div id="start" class="ov" hidden><div class="sp">
@@ -766,11 +802,12 @@ body.mir #touch .tb>*,body.mir #touch .ghost{transform:scaleX(-1)}
   <div class="prof" id="prof"></div>
   <div class="mnote" id="mnote" hidden></div>
   <p class="lead">Um bairro de Tóquio tomado por zombies, rodeado de floresta, vilas e um templo nas montanhas. Revista, treina o corpo, foge ou luta. O melhor loot está no centro.</p>
-  <nav class="menu"><button class="mi pri" id="sCont" hidden><b>Continuar</b><em>Voltas onde ficaste</em></button><button class="mi pri" id="sPlay"><b>Jogar</b><em>Acordas perto de uma vila ou monumento</em></button><button class="mi" id="sArena"><b>Arena</b><em>PvP em Tóquio, vermelhos contra azuis · em breve</em></button><button class="mi" id="sSet"><b>Definições</b><em>Controlos, imagem e som</em></button></nav>
+  <nav class="menu"><button class="mi pri" id="sCont" hidden><b>Continuar</b><em>Voltas onde ficaste</em></button><button class="mi pri" id="sPlay"><b>Jogar</b><em>Acordas perto de uma vila ou monumento</em></button><button class="mi" id="sArena"><b>Arena</b><em>PvP em Tóquio · Vermelha contra Azul · 5 kits</em></button><button class="mi" id="sSet"><b>Definições</b><em>Controlos, imagem e som</em></button></nav>
   <div class="onl" id="sOnl" role="status"><i class="dot" aria-hidden="true"></i><span><b>Servidor</b><em id="sOnT">A ver quem está a jogar…</em></span></div>
   <div class="keys" id="sKeys"></div>
-  <div class="foot">Protótipo 0.41 · um servidor para todos · quem sai fica a dormir no mundo</div>
+  <div class="foot">Protótipo 0.42 · um servidor para todos · quem sai fica a dormir no mundo</div>
 </div><button id="sMus" aria-label="Música do menu"><span class="on">{{volume-2}}</span><span class="off">{{volume-x}}</span></button><a class="credit" href="https://dinissousa.pt" target="_blank" rel="noopener">feito por dinissousa.pt</a></div>
+<div id="arw" class="ov" hidden></div>
 <div id="pfm" class="ov" hidden><div class="pfbox"><div class="pfh"><b id="pfT"></b><button class="close" id="pfX" aria-label="Fechar">{{x}}</button></div><div id="pfB" class="pfb"></div></div></div>
 <div id="adm" class="ov" hidden><div class="sp2"><div class="ihead"><b class="cond adh">Administração</b><span class="admr" id="admR"></span><div class="tabs" id="admTabs"><button data-t="p" class="on">Jogadores</button><button data-t="e">Eu</button><button data-t="b">Banidos</button><button data-t="c">Clãs</button></div><button class="close" id="admX" aria-label="Fechar">{{x}}</button></div><div class="sbody" id="admB"></div></div></div>
 <div id="trw" class="ov" hidden><div class="sp2"><div class="ihead"><b class="cond adh" id="trT">Comerciante</b><div class="tabs" id="trTabs"><button data-t="b" class="on">Comprar</button><button data-t="s">Vender</button></div><span class="trm" id="trM"></span><button class="close" id="trX" aria-label="Fechar">{{x}}</button></div><div class="sbody" id="trB"></div></div></div>

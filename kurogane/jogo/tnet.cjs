@@ -81,11 +81,11 @@ server.listen(0, async () => {
     const bl = await A.ev(n0 => G.bags.length > n0 ? G.bags[G.bags.length - 1].label : '', nb0);
     ok(/Bruno/.test(bl), `matou quem dormia em ${k} tiros e ficou a mochila (${bl})`);
     // o Bruno volta: sabe que o mataram a dormir
-    const B2 = await mk('Bruno', 'pb', tokB); await B2.ev(() => G.dbgKit()); await W(2500); await B2.ev(() => G.net.start()); await W(4500);
+    const B2 = await mk('Bruno', 'pb', tokB); await B2.ev(() => G.dbgKit()); await W(2500); await B2.ev(() => G.net.start()); for (let i = 0; i < 30 && !(await B2.ev(() => /dormias/.test(document.getElementById('dCause').textContent))); i++) await W(500);
     const dt2 = await B2.ev(() => [G.p.alive, document.getElementById('dCause').textContent]);
     console.log('o Bruno ao voltar:', JSON.stringify(dt2)); ok(dt2[0] === false && /dormias/.test(dt2[1]), 'ao voltar, morto: mataram-te enquanto dormias');
-    const C = await mk('Ana', 'pc'); await C.ev(() => G.dbgKit()); await W(2500); await C.ev(() => G.net.start()); await W(2000);
-    const cn = await C.ev(() => [G.net.on, document.getElementById('toast').textContent]); console.log('outro "Ana":', JSON.stringify(cn)); ok(cn[0] === false && /outro jogador/.test(cn[1]), 'ninguém entra com o nome de outro');
+    const C = await mk('Ana', 'pc'); await C.ev(() => G.dbgKit()); await W(2500); await C.ev(() => { G.net.start(); window.__toasts = []; const t = document.getElementById('toast'); new MutationObserver(() => window.__toasts.push(t.textContent)).observe(t, { childList: true, characterData: true, subtree: true }); }); for (let i = 0; i < 30 && !(await C.ev(() => window.__toasts.some(x => /outro jogador/.test(x)))); i++) await W(500);
+    const cn = await C.ev(() => [G.net.on, window.__toasts.find(x => /outro jogador/.test(x)) || document.getElementById('toast').textContent]); console.log('outro "Ana":', JSON.stringify(cn)); ok(cn[0] === false && /outro jogador/.test(cn[1]), 'ninguém entra com o nome de outro');
     console.log('erros A:', A.errs.length, 'B:', B.errs.length, 'B2:', B2.errs.length, 'C:', C.errs.length);
   } catch (e) { console.log('ERRO', e.stack || e); fails++; }
   console.log(fails ? fails + ' falhas' : 'tudo bem');

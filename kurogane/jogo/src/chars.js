@@ -22,7 +22,7 @@ export const newPose = () => { const o = {}; for (const k of ['r', 'torso', 'hea
 export function zombiePose(z, M) {
   const dead = z.state === 'dead', fall = dead ? Math.min(1, z.deadT / 0.45) : 0;
   _pe.set(-fall * Math.PI / 2, z.yaw, 0, 'YXZ'); _pq.setFromEuler(_pe); _pv.set(z.x, (z.y || 0) + fall * 0.16 - (z.sink || 0), z.z); _ps.setScalar(z.sc || 1); M.r.compose(_pv, _pq, _ps);
-  const ph = z.phase || 0, amp = dead ? 0 : Math.min(1, z.mv || 0), s = Math.sin(ph), c = Math.cos(ph), wk = dead ? 0 : (z.wallK || 0), chase = z.state === 'chase' ? 1 : 0;
+  const ph = z.phase || 0, mv0 = z.mv || 0, amp = dead ? 0 : Math.min(1, mv0 * 5) * (0.55 + 0.45 * Math.min(1, mv0)), s = Math.sin(ph), c = Math.cos(ph), wk = dead ? 0 : (z.wallK || 0), chase = z.state === 'chase' ? 1 : 0;
   const limp = ((z.id ?? z.i ?? 0) % 3) === 0 ? 1 : 0, lean = dead ? 0 : (0.3 + 0.12 * chase) * (1 - 0.65 * wk), bob = Math.abs(c) * 0.045 * amp + (limp ? Math.max(0, s) * 0.03 * amp : 0);
   M.torso.copy(M.r).multiply(mat4(0, HIP - 0.05 * (1 - fall) + bob, 0, Math.sin(ph * 0.5) * 0.12, lean, Math.sin(ph * 0.5 + 1) * 0.08 + (limp ? 0.06 : 0)));
   M.head.copy(M.torso).multiply(mat4(0, NECK, 0.02, Math.sin(ph * 0.37 + 2) * 0.25 * (1 - chase * 0.6), dead ? 0 : -0.25 + Math.sin(ph) * 0.06, 0.28 * Math.sin((z.id ?? 0) * 1.7) + (limp ? 0.15 : 0)));

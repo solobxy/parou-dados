@@ -10,6 +10,7 @@ import { ITEMS, LOOT, RECIPES, ammoOf } from './jogo/src/items.js';
 import { Grid, mkItem, rollLoot } from './jogo/src/bag.js';
 import { VT, vt } from './jogo/src/vtypes.js';
 import { TRADERS, PRICE, SELL, TRADE_R } from './jogo/src/traders.js';
+import { makeArena } from './arena.mjs';
 
 const PORT = +process.env.PORT || 3190, DIR = process.env.STATE_DIRECTORY || path.join(process.cwd(), 'dados');
 const FILE = path.join(DIR, 'estado.json'), SLEEP_MS = 72 * 3600e3, BAG_MS = 45 * 60e3, MAXP = 60;
@@ -37,19 +38,21 @@ const rid = n => crypto.randomBytes(n).toString('base64url');
 // ---------- WebSocket mínimo
 const players = new Map(); let nextId = 1;
 const send = (c, o) => { if (c.dead) return; const b = Buffer.from(JSON.stringify(o)); let h; if (b.length < 126) h = Buffer.from([0x81, b.length]); else if (b.length < 65536) { h = Buffer.alloc(4); h[0] = 0x81; h[1] = 126; h.writeUInt16BE(b.length, 2); } else { h = Buffer.alloc(10); h[0] = 0x81; h[1] = 127; h.writeBigUInt64BE(BigInt(b.length), 2); } try { c.sock.write(Buffer.concat([h, b])); } catch (e) { } };
+const ARENA = makeArena({ send });
 const bcast = (o, pred = () => true) => { for (const c of players.values()) if (c.p && pred(c)) send(c, o); };
 const srv = http.createServer((req, res) => {
-  if (req.url === '/saude') { res.writeHead(200, { 'content-type': 'application/json', 'access-control-allow-origin': '*', 'cache-control': 'no-store' }); res.end(JSON.stringify({ ok: true, jogadores: [...players.values()].filter(c => c.p).length, a_dormir: Object.keys(S.sleepers).length, mochilas: Object.keys(S.bags).length, clas: Object.keys(S.clans).length, zombies: S.w.zs.filter(z => z.st !== 3).length, caixas: Object.keys(S.w.ct).length, carros: Object.keys(S.w.cars).length, mapa: mapOk(), equipa: Object.keys(S.roles).length, admin_cod: !!ADMH })); return; }
+  if (req.url === '/saude') { res.writeHead(200, { 'content-type': 'application/json', 'access-control-allow-origin': '*', 'cache-control': 'no-store' }); res.end(JSON.stringify({ ok: true, arena: ARENA.count(), jogadores: [...players.values()].filter(c => c.p).length, a_dormir: Object.keys(S.sleepers).length, mochilas: Object.keys(S.bags).length, clas: Object.keys(S.clans).length, zombies: S.w.zs.filter(z => z.st !== 3).length, caixas: Object.keys(S.w.ct).length, carros: Object.keys(S.w.cars).length, mapa: mapOk(), equipa: Object.keys(S.roles).length, admin_cod: !!ADMH })); return; }
   res.writeHead(404); res.end();
 });
 srv.on('upgrade', (req, sock) => {
   const key = req.headers['sec-websocket-key'];
-  if (!req.url.startsWith('/ws') || !key || players.size >= MAXP * 2) { sock.destroy(); return; }
+  const isA = req.url.startsWith('/arena'); // arena PvP de Tóquio: sala à parte
+  if ((!req.url.startsWith('/ws') && !isA) || !key || (isA ? ARENA.count() >= 40 : players.size >= MAXP * 2)) { sock.destroy(); return; }
   const acc = crypto.createHash('sha1').update(key + '258EAFA5-E914-47DA-95CA-C5AB0DC85B11').digest('base64');
   sock.write(`HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Accept: ${acc}\r\n\r\n`);
   sock.setNoDelay(true);
   const c = { id: nextId++, sock, buf: Buffer.alloc(0), p: null, rate: 0, rt: Date.now(), dead: false, ip: String(req.headers['x-forwarded-for'] || req.socket.remoteAddress || '').split(',')[0].trim().slice(0, 64) };
-  players.set(c.id, c);
+  if (isA) { c.arena = true; ARENA.add(c); } else players.set(c.id, c);
   sock.on('data', d => { c.buf = Buffer.concat([c.buf, d]); if (c.buf.length > 1 << 17) return drop(c); for (;;) { const m = frame(c); if (m === null) break; if (m === false) return drop(c); } });
   sock.on('close', () => drop(c)); sock.on('error', () => drop(c));
 });
@@ -60,10 +63,10 @@ const frame = c => {
   const mk = b.subarray(o, o + 4), data = Buffer.from(b.subarray(o + 4, o + 4 + len)); for (let i = 0; i < len; i++) data[i] ^= mk[i & 3]; c.buf = b.subarray(o + 4 + len);
   if (op === 8) return false; if (op === 9) { try { c.sock.write(Buffer.concat([Buffer.from([0x8a, data.length]), data])); } catch (e) { } return true; } if (op !== 1) return true;
   const now = Date.now(); if (now - c.rt > 1000) { c.rt = now; c.rate = 0; } if (++c.rate > 200) return true; // demasiadas mensagens: ignora (30 posições + 30 do carro + tiros + zombies por segundo cabem à vontade)
-  let m; try { m = JSON.parse(data.toString('utf8')); } catch (e) { return true; } try { onMsg(c, m); } catch (e) { console.error('msg', e.message); } return true;
+  let m; try { m = JSON.parse(data.toString('utf8')); } catch (e) { return true; } try { if (c.arena) ARENA.msg(c, m); else onMsg(c, m); } catch (e) { console.error('msg', e.message); } return true;
 };
 const drop = c => {
-  if (c.dead) return; c.dead = true; players.delete(c.id); try { c.sock.destroy(); } catch (e) { }
+  if (c.dead) return; c.dead = true; try { c.sock.destroy(); } catch (e) { } if (c.arena) { ARENA.drop(c); return; } players.delete(c.id);
   for (const [k, L] of LK) if (L.c === c.id) LK.delete(k);
   for (const z of S.w.zs) if (z.o === c.id) z.o = 0;
   for (const car of Object.values(S.w.cars)) { const i = car.s.indexOf(c.id); if (i >= 0) { car.s[i] = 0; if (i === 0) { car.v = 0; car.alt = vt(car.k).fly ? (car.pad || 0) : 0; } } } /* helicóptero num telhado fica lá */

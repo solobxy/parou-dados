@@ -1,3 +1,4 @@
-module.exports = async (page) => { await page.evaluate(() => G.dbgKit()); await page.waitForTimeout(1500);
-  await page.evaluate(() => { G.ui.refresh(true); G.ui.openInv(null); }); await page.waitForTimeout(800);
-  console.log(JSON.stringify(await page.evaluate(() => ['#cEq', '.doll', '.pfw', '#cBelt', '.eqc', '.ibody'].map(s => { const e = document.querySelector(s), r = e.getBoundingClientRect(), cs = getComputedStyle(e); return [s, Math.round(r.top), Math.round(r.height), cs.gridTemplateRows || '', cs.display]; })))); };
+module.exports = async (page) => {
+  const ev = (f, a) => page.evaluate(f, a);
+  console.log(JSON.stringify(await ev(() => { const out = []; for (const [x, z] of [[-3650, -3650], [3650, 3650], [-3650, 3650], [3650, -3650], [-3500, -2800], [2800, 3500]]) { const zn = Math.min(...G.W.zones.map(q => Math.hypot(q.x - x, q.z - z) - (q.r || 0))); const rd = Math.min(...G.W.roads.map(r => Math.max(r.x0 - x, x - r.x1, r.z0 - z, z - r.z1, 0))); const rc = G.W.rects.filter(r => Math.abs(r.x0 - x) < 120 && Math.abs(r.z0 - z) < 120).length; const lz = G.W.lazy.filter(L => L.x1 > x - 120 && L.x0 < x + 120 && L.z1 > z - 120 && L.z0 < z + 120).length; const wt = G.W.water ? G.W.water.lakes.filter(L => Math.hypot(L.x - x, L.z - z) < 200).length : 0; out.push({ x, z, zn: Math.round(zn), rd: Math.round(rd), rc, lz, wt }); } return out; })));
+};
