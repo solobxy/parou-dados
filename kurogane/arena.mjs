@@ -40,7 +40,7 @@ export function makeArena({ send }) {
     bcast({ t: 'akf', k: killer && killer !== victim ? killer.name : null, kt: killer ? killer.team : -1, v: victim.name, vt: victim.team, w: how || '' }); bcast(board());
   };
   const shot = (c, m) => {
-    const p = c.p, now = Date.now(); if (!p.alive) return; if (now - (p.spawnT || 0) < PROT) p.spawnT = now - PROT; // quem dispara perde a proteção de nascer { p.shB = Math.min(3, (p.shB ?? 3) + (now - (p.lastShot || 0)) / 60); p.lastShot = now; if (p.shB < 1) return; p.shB -= 1; }
+    const p = c.p, now = Date.now(); if (!p.alive) return; if (now - (p.spawnT || 0) < PROT) p.spawnT = now - PROT; /* quem dispara perde a proteção de nascer */ { p.shB = Math.min(3, (p.shB ?? 3) + (now - (p.lastShot || 0)) / 60); p.lastShot = now; if (p.shB < 1) return; p.shB -= 1; }
     const O = Array.isArray(m.o) ? m.o.map(v => num(v, -4100, 4100)) : null, D = Array.isArray(m.d) ? m.d.map(v => num(v, -1, 1)) : null; if (!O || !D || O.length !== 3 || D.length !== 3) return;
     if (Math.hypot(O[0] - p.x, O[2] - p.z) > 3) return; const dl = Math.hypot(D[0], D[1], D[2]) || 1; D[0] /= dl; D[1] /= dl; D[2] /= dl;
     const k = String(m.k || ''), n = Math.min(8, num(m.n, 1, 8, 1) | 0), L = num(m.L, 0, 400, 200), sup = !!m.sup;
@@ -70,7 +70,7 @@ export function makeArena({ send }) {
       if (c.p) return; const name = String(m.name || ''); if (!NAME.test(name)) return send(c, { t: 'erro', e: 'nome' });
       if ((m.pv | 0) < 4) return send(c, { t: 'erro', e: 'versao' });
       if ([...players.values()].some(o => o.p && o.p.name.toLowerCase() === name.toLowerCase())) return send(c, { t: 'erro', e: 'nome_em_uso' });
-      const n = counts(); let team = m.team === 0 || m.team === 1 ? m.team : (n[0] <= n[1] ? 0 : 1);
+      const n = counts(); let team = m.team === 0 || m.team === 1 ? m.team : (n[0] <= n[1] ? 0 : 1); if (n[team] > n[1 - team]) team = 1 - team; // equipas equilibradas: não se entra na que já tem mais
       const look = m.look && typeof m.look === 'object' ? Object.fromEntries(Object.entries(m.look).filter(([k, v]) => ['skin', 'hair', 'top', 'legs', 'hairS', 'beardS'].includes(k) && typeof v === 'number')) : {};
       const now = Date.now();
       c.p = { name, look, team, kit: KITS.includes(m.kit) ? m.kit : 'atirador', clan: TEAMS[team].id, x: AX, z: AZ, y: 0, lv: 0, yaw: 0, mv: 0, an: 0, w: '', hp: 100, alive: false, ar: [0, 0], k: 0, d: 0, spawnT: now, hist: [], lastSt: 0 };
@@ -95,7 +95,7 @@ export function makeArena({ send }) {
       // morte que não foi por tiro (granada): só conta para o outro se ele lançou uma granada há pouco, perto daqui
       if (by && !(by.p.thrs || []).some(q => q.B && now - q.t < 12000 && Math.hypot(q.B[0] - p.x, q.B[1] - p.z) < 12)) by = null; // só se uma granada dele rebentou perto de ti
       kill(by ? by.p : null, p, by ? 'granada' : (m.how || 'queda')); return; }
-    if (m.t === 'ateam') { const t = m.team === 1 ? 1 : 0; if (t === p.team) return; const old = p.team; p.team = t; p.clan = TEAMS[t].id; if (p.alive) { p.alive = false; } send(c, { t: 'clan', info: info(t) }); bcast({ t: 'pclan', id: c.id, clan: p.clan }); for (const tt of [old, t]) bcast({ t: 'clan', info: info(tt) }, o => o !== c && o.p.team === tt); bcast(board()); return; }
+    if (m.t === 'ateam') { const t = m.team === 1 ? 1 : 0; if (t === p.team) return; { const n = counts(); n[p.team]--; if (n[t] > n[p.team]) { send(c, { t: 'clan', info: info(p.team) }); send(c, board()); return; } } /* mudar só para a equipa com menos (ou igual) */ const old = p.team; p.team = t; p.clan = TEAMS[t].id; if (p.alive) { p.alive = false; } send(c, { t: 'clan', info: info(t) }); bcast({ t: 'pclan', id: c.id, clan: p.clan }); for (const tt of [old, t]) bcast({ t: 'clan', info: info(tt) }, o => o !== c && o.p.team === tt); bcast(board()); return; }
     if (m.t === 'akit') { if (KITS.includes(m.kit)) p.kit = m.kit; return; }
     if (m.t === 'thr') { if (m.k !== 'gran') return; const P = Array.isArray(m.P) ? m.P.slice(0, 3).map(v => num(v, -4100, 4100)) : null; if (!P || P.length !== 3 || Math.hypot(P[0] - p.x, P[2] - p.z) > 6) return;
       p.thrs = (p.thrs || []).filter(q => now - q.t < 8000); p.thrs.push({ t: now, P });
@@ -103,6 +103,7 @@ export function makeArena({ send }) {
     if (m.t === 'boom') { if (m.k !== 'gran') return; const x = num(m.x, -4100, 4100), z = num(m.z, -4100, 4100), y = num(m.y, -5, 40), lv = num(m.lv, 0, 6) | 0; // granada que rebentou: só se a lançou há pouco e perto
       const q0 = (p.thrs || []).find(q => !q.used && now - q.t < 9000 && Math.hypot(q.P[0] - x, q.P[2] - z) < 60); if (!q0) return; q0.used = true; q0.B = [x, z]; // cada granada rebenta uma vez; fica registada para dar a baixa a quem a lançou
       for (const o of players.values()) if (o !== c && o.p) send(o, { t: 'boom', k: 'gran', x, y, z, lv, by: p.name, nd: o.p.team === p.team ? 1 : 0 }); return; }
+    if (m.t === 'vis') { p.vis = new Set((Array.isArray(m.L) ? m.L : []).slice(0, 40).map(v => v | 0)); p.visT = now; return; } /* quem este jogador está a ver (para o radar dos colegas) */
     if (m.t === 'ping') { send(c, { t: 'pong', k: m.k }); return; }
     if (m.t === 'lb' || m.t === 'asc') { send(c, board()); return; }
   };
@@ -111,7 +112,10 @@ export function makeArena({ send }) {
   setInterval(() => {
     const L = [...players.values()].filter(c => c.p); tickN++;
     if (!L.length) { if (!emptyT) emptyT = Date.now(); else if (Date.now() - emptyT > 120e3) { score[0] = score[1] = 0; } return; } emptyT = 0;
-    for (const c of L) { const out = []; for (const o of L) { if (o === c) continue; const q = o.p; out.push([o.id, +q.x.toFixed(2), +q.z.toFixed(2), +q.y.toFixed(2), q.lv, +q.yaw.toFixed(2), +q.mv.toFixed(2), q.an, q.w, Math.round(q.hp), q.alive ? 1 : 0, 0, q.ar, Math.round(q.ts || 0), q.gk || '', q.sc | 0]); } send(c, { t: 's', ps: out }); }
+    const now = Date.now();
+    // radar: um inimigo aparece a quem é da outra equipa se disparou há pouco ou se algum colega o está a ver
+    const spot = (c, o) => { if (o.p.team === c.p.team) return 1; if (!o.p.alive) return 0; if (now - (o.p.lastShot || 0) < 2500) return 1; for (const t of L) if (t.p.team === c.p.team && t.p.alive && t.p.vis && now - (t.p.visT || 0) < 1500 && t.p.vis.has(o.id)) return 1; return 0; };
+    for (const c of L) { const out = []; for (const o of L) { if (o === c) continue; const q = o.p; out.push([o.id, +q.x.toFixed(2), +q.z.toFixed(2), +q.y.toFixed(2), q.lv, +q.yaw.toFixed(2), +q.mv.toFixed(2), q.an, q.w, Math.round(q.hp), q.alive ? 1 : 0, 0, q.ar, Math.round(q.ts || 0), q.gk || '', q.sc | 0, spot(c, o)]); } send(c, { t: 's', ps: out }); }
   }, 33);
-  return { add, msg, drop, count: () => [...players.values()].filter(c => c.p).length, score };
+  return { add, msg, drop, count: () => [...players.values()].filter(c => c.p).length, counts, score };
 }

@@ -36,7 +36,7 @@ export function makeNet({ G, scene, mkRemote, audio, Conta, enc, dec, hurt, die,
     switch (m.t) {
       case 'ok': {
         N.id = m.id; if (!G.ARENA && typeof m.tok === 'string' && m.tok.length === 32) { tok = m.tok; try { localStorage.setItem(tokKey(), tok); } catch (e) { } } /* a arena não tem código: nunca apaga o do mundo */ N.on = true; retry = 0; found();
-        clearAll(); for (const [id, name, look, clan] of m.players) addRemote(id, name, look, clan); setSleepers(m.sleep); N.clan = m.clan ? m.clan.id : null; N.clanInfo = m.clan;
+        clearAll(); for (const [id, name, look, clan] of m.players) addRemote(id, name, look, clan); setSleepers(m.sleep); N.clan = m.clan ? m.clan.id : null; N.clanInfo = m.clan; if (G.ARENA && m.clan && /^arena-/.test(m.clan.id)) { const t = m.clan.id === 'arena-b' ? 1 : 0; if (t !== G.arenaTeam) { G.arenaTeam = t; if (G.arenaRespawn && G.p && G.p.alive) G.arenaRespawn(); G.ui.toast('Equipas equilibradas: ficaste na ' + (t ? 'Azul' : 'Vermelha')); } }
         if (G.airdrop) G.airdrop({ ph: 9, ...(m.drop || {}) });
         N.role = m.role || null; G.admF = { r: N.role, inv: 0, god: 0, spec: 0 }; G.frozen = false; G.ui.admRole && G.ui.admRole(N.role);
         off = m.w.now - Date.now(); cyc0 = m.w.cyc0; N.uid = m.uid; N.vapid = m.vapid || null; N.world = true; if (G.pushResub) G.pushResub(); cur = null; world.reset(m.w); if (m.inv && !m.killed && G.loadInv) G.loadInv(m.inv); invSig = '';
@@ -101,7 +101,7 @@ export function makeNet({ G, scene, mkRemote, audio, Conta, enc, dec, hurt, die,
       case 'lk': world.lock(m.i, m.hp, m.broke); return;
       case 'bg': world.bags(m.add, m.del); return;
       case 'opn': { if (!cur || cur.key !== m.c) return; const gen = world.opened(cur.c, m); if (G.box !== cur.c) { cur = null; return; } cur.sig = gen ? '' : sigOf(cur.c); cur.open = true; return; }
-      case 'clan': if (m.erro) { if (N.onClan && N.onClan(m.erro)) return; G.ui.toast(m.erro); return; } else { N.clan = m.info ? m.info.id : null; N.clanInfo = m.info; for (const r of R.values()) r.el.classList.toggle('mate', mate(r.clan)); } if (N.onClan) N.onClan(); return;
+      case 'clan': if (m.erro) { if (N.onClan && N.onClan(m.erro)) return; G.ui.toast(m.erro); return; } else { N.clan = m.info ? m.info.id : null; N.clanInfo = m.info; for (const r of R.values()) r.el.classList.toggle('mate', mate(r.clan)); if (G.ARENA && m.info && /^arena-/.test(m.info.id)) { const t = m.info.id === 'arena-b' ? 1 : 0; if (t !== G.arenaTeam) { G.arenaTeam = t; if (G.arenaRespawn && G.p && G.p.alive) G.arenaRespawn(); G.ui.toast('Essa equipa tinha mais jogadores: ficaste na ' + (t ? 'Azul' : 'Vermelha')); } } } if (N.onClan) N.onClan(); return;
       case 'pclan': { const r = R.get(m.id); if (r) { r.clan = m.clan; r.el.classList.toggle('mate', mate(m.clan)); } return; }
     }
   };
@@ -164,28 +164,36 @@ export function makeNet({ G, scene, mkRemote, audio, Conta, enc, dec, hurt, die,
     if (cur) { if (cur.open && G.box !== cur.c) closeBox(); else if (cur.open) { psT -= dt; if (psT <= 0) { psT = 0.4; const sg = sigOf(cur.c); if (sg !== cur.sig) { cur.sig = sg; send({ t: 'ps', c: cur.key, it: world.encG(cur.c.grid) }); } } } else if (performance.now() - cur.t > 4000) cur = null; }
     invT -= dt; if (invT <= 0) { invT = 3; N.sendInv(); }
     const lv = me ? me.lv : 0;
+    if (G.ARENA && !G.dbgNoVis) { visT -= dt; if (visT <= 0) { visT = 0.35; const L = []; for (const r of R.values()) if (r.seen && !mate(r.clan)) L.push(r.id); send({ t: 'vis', L }); } }
     for (const r of R.values()) {
       if (!r.s1) continue; const S = sample(r.T, now, r.o); if (!S) continue; const b = S.s.a, x = S.x, z = S.z, y = S.y;
       const dd = Math.hypot(x - r.x, z - r.z); r.spd += (Math.min(9, dd / Math.max(dt, 1e-3)) - r.spd) * Math.min(1, dt * 8);
       r.step += dd * 2.6; r.x = x; r.z = z; r.y = y;
       // passos dos outros: ouve-se quem anda perto (a correr de mais longe), mesmo sem o ver
       if (me && r.spd > 0.9 && r.spd < 7.5 && !b[11] && b[10]) { const run = r.spd > 3.5; r.sd = (r.sd || 0) + dd; if (r.sd >= (run ? 1.7 : 1.15)) { r.sd = 0; const d = Math.hypot(x - me.x, z - me.z), q = 1 - d / (run ? 34 : 18); if (q > 0 && audio.sample) audio.sample('passo-' + (G.W.paved && G.W.paved(x, z) ? 'betao' : 'relva'), q * q * (run ? 0.8 : 0.45), { vary: 0.12, lp: d > 9 ? 2200 : 0, pan: Math.max(-0.8, Math.min(0.8, (x - me.x) / 14)) }); } }
-      const vis = !b[11] && b[10] && !((b[7] | 0) & 8) && (b[4] || 0) === lv && see({ x, z, lv: b[4] || 0 });
+      // arena: radar (colegas sempre; inimigos quando disparam ou um colega os vê, a aparecer e a desaparecer devagar) e o corpo de quem morre cai
+      const al = !!b[10]; if (G.ARENA) { if (!al && r.al !== false) r.deadT = now; if (al && r.al === false) { r.deadT = 0; r.w = undefined; } r.al = al; const sp = !!(b[16] || (r.s1 && r.s1[16])) && al; r.spA = (r.spA || 0) + ((sp ? 1 : 0) - (r.spA || 0)) * Math.min(1, dt * (sp ? 6 : 1.6)); }
+      const dying = G.ARENA && !al && r.deadT && now - r.deadT < 20000;
+      const vis = !b[11] && (b[10] || dying) && !((b[7] | 0) & 8) && (b[4] || 0) === lv && see({ x, z, lv: b[4] || 0 });
+      r.seen = !!(vis && al);
       r.b.root.visible = vis; if (!vis) { r.el.style.display = 'none'; continue; }
       r.b.root.position.set(x, y, z); r.b.root.rotation.set(0, S.yaw, 0);
+      if (dying) { const k = Math.min(1, (now - r.deadT) / 600), e = k * k; r.b.root.rotation.set(-Math.PI / 2 * e, S.yaw, 0, 'YXZ'); r.b.root.position.y = y + 0.16 * e; if (r.w !== '') { r.w = ''; r.b.setWeapon(null, {}); } r.el.style.display = 'none'; r.b.stance = 0; r.b.pose(dt, 0, 'none'); continue; } // cai de costas e fica no chão até renascer
       const an = b[7] | 0; { r.wt = (r.wt || 0) - dt; if (r.wt <= 0 && G.wallAhead) { r.wt = 0.1; r.wk = Math.max(0, Math.min(1, (0.85 - G.wallAhead(x, z, S.yaw, b[4])) / 0.35)); } } // recarga, granada e ligadura dos outros: o progresso conta-se aqui desde que o sinal chega
       const nowS = now / 1000, edge = (bit, key) => { if (an & bit) { if (r[key] == null) r[key] = nowS; return nowS - r[key]; } r[key] = null; return -1; };
       const rs = edge(16, 'rS'), ts = edge(32, 'tS'), us = edge(64, 'uS'), gd = ITEMS[r.w] && ITEMS[r.w].gun, rd = gd ? gd.reload : 2;
       r.sc = (r.sc || 0) + ((b[15] | 0) - (r.sc || 0)) * Math.min(1, dt * 7); r.b.stance = r.sc; /* postura dos outros: agachado ou deitado, suave */
       r.b.pose(dt, Math.min(b[6], r.spd / 3 + 0.03), MODES[an & 3], -1, 0, 0, -1, r.step, (an & 4 ? 1 : 0.25) * (1 - 0.85 * (r.wk || 0)), us >= 0 ? { kind: 'heal', t: (us % 3) / 3 } : null, { rel: rs >= 0 ? Math.min(0.99, rs / rd) : -1, thr: ts >= 0 ? Math.min(0.99, ts / 0.7) : -1 });
-      if (r.gh && me && !mate(r.clan) && Math.hypot(x - me.x, z - me.z) > 12) r.el.style.display = 'none'; else place(r.el, x, y + 2.05 - 0.5 * Math.min(1, r.sc || 0) - 0.95 * Math.max(0, (r.sc || 0) - 1), z); // de ghillie não se vê o nome ao longe
+      if ((G.ARENA && !mate(r.clan)) || (r.gh && me && !mate(r.clan) && Math.hypot(x - me.x, z - me.z) > 12)) r.el.style.display = 'none'; else place(r.el, x, y + 2.05 - 0.5 * Math.min(1, r.sc || 0) - 0.95 * Math.max(0, (r.sc || 0) - 1), z); // de ghillie não se vê o nome ao longe
     }
     for (const s of sleepers.values()) {
       const vis = me && (s.lv || 0) === lv && Math.hypot(s.x - me.x, s.z - me.z) < 45 && see({ x: s.x, z: s.z, lv: s.lv || 0 });
       s.b.root.visible = !!vis; if (vis) place(s.el, s.x, 0.7, s.z); else s.el.style.display = 'none';
     }
   };
-  N.mates = () => { const out = []; for (const r of R.values()) if (mate(r.clan) && r.s1) out.push({ x: r.s1[1], z: r.s1[2], name: r.name }); return out; };
+  let visT = 0;
+  N.foes = () => { const out = []; if (!G.ARENA) return out; for (const r of R.values()) if (!mate(r.clan) && r.s1 && (r.spA || 0) > 0.02) out.push({ x: r.x, z: r.z, a: r.spA }); return out; }; // inimigos no radar da arena
+  N.mates = () => { const out = []; for (const r of R.values()) if (mate(r.clan) && r.s1 && !(G.ARENA && r.al === false)) out.push({ x: r.s1[1], z: r.s1[2], name: r.name }); return out; };
   addEventListener('pagehide', () => { if (N.on) { closeBox(); N.sendInv(); } });
   return N;
 }

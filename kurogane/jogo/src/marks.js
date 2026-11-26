@@ -59,7 +59,7 @@ export function drawCompass(cv, head, me, mates) {
   c.globalAlpha = 1;
   // marcadores e colegas: na borda da tira quando estão fora
   const pin = (b, draw) => { let x = X(b); const off = x < H * 0.4 || x > W - H * 0.4; x = Math.max(H * 0.4, Math.min(W - H * 0.4, x)); c.globalAlpha = off ? 0.55 : 1; draw(x); c.globalAlpha = 1; };
-  for (const m of marks) { const dx = m.x - me.x, dz = m.z - me.z, d = Math.hypot(dx, dz); if (d < 3) continue; pin(bearing(dx, dz), x => { drawSym(c, m.s, x, H * 0.66, H * 0.15, MCOL[m.c] || MCOL[0]); c.font = `600 ${Math.round(H * 0.17)}px "Roboto Condensed",sans-serif`; c.fillStyle = '#EEE9E0'; c.fillText(distTxt(d), x, H * 0.9); }); }
+  for (const m of (window.G && window.G.ARENA ? [] : marks)) { const dx = m.x - me.x, dz = m.z - me.z, d = Math.hypot(dx, dz); if (d < 3) continue; pin(bearing(dx, dz), x => { drawSym(c, m.s, x, H * 0.66, H * 0.15, MCOL[m.c] || MCOL[0]); c.font = `600 ${Math.round(H * 0.17)}px "Roboto Condensed",sans-serif`; c.fillStyle = '#EEE9E0'; c.fillText(distTxt(d), x, H * 0.9); }); }
   for (const m of mates || []) { const dx = m.x - me.x, dz = m.z - me.z; pin(bearing(dx, dz), x => { c.fillStyle = '#6FA8FF'; c.strokeStyle = '#0d1520'; c.lineWidth = dpr; c.beginPath(); c.arc(x, H * 0.66, H * 0.08, 0, 7); c.fill(); c.stroke(); }); }
   // rumo atual: marca ao centro e o número
   c.fillStyle = '#F4F1EA'; c.beginPath(); c.moveTo(W / 2 - H * 0.08, H * 0.56); c.lineTo(W / 2 + H * 0.08, H * 0.56); c.lineTo(W / 2, H * 0.47); c.closePath(); c.fill();

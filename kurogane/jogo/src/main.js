@@ -806,6 +806,7 @@ async function boot() {
   for (const k of ['asph', 'conc', 'tile', 'grass', 'dirt']) if (mats[k]) wetBase[k] = { c: mats[k].color.clone(), r: mats[k].roughness };
   const updWeather = dt => {
     if (G.playing && !G.net.world) { WX.t -= dt; if (WX.t <= 0) { if (G.rainT > 0) { G.rainT = 0; WX.t = 600 + Math.random() * 900; } else { G.rainT = 0.5 + Math.random() * 0.5; WX.t = 180 + Math.random() * 240; } } }
+    if (G.ARENA) G.rainT = 0; // na arena não chove
     const r0 = G.rain || 0, tg = G.rainT || 0; G.rain = tg > r0 ? Math.min(tg, r0 + dt / 25) : Math.max(tg, r0 - dt / 35); const rn = G.rain;
     if (G.boltT > 0) G.boltT -= dt;
     if (rn > 0.7 && G.playing) { WX.bolt -= dt; if (WX.bolt <= 0) { WX.bolt = 25 + Math.random() * 50; G.boltT = 0.22; audio.thunder(0.6 + Math.random() * 0.4); } }
@@ -1761,7 +1762,7 @@ async function boot() {
     }
     // dia e noite: 25 min de dia (06:00 a 18:00) e 7 min de noite (18:00 a 06:00), ciclo de 32 min
     if (G.net.world) G.cyc = G.net.cyc(); else if (G.playing) G.cyc = ((G.cyc ?? 900) + dt) % 1920; const cy = G.cyc ?? 900;
-    G.tod = cy < 1500 ? 0.25 + 0.5 * cy / 1500 : (0.75 + 0.5 * (cy - 1500) / 420) % 1;
+    G.tod = G.ARENA ? 0.44 : cy < 1500 ? 0.25 + 0.5 * cy / 1500 : (0.75 + 0.5 * (cy - 1500) / 420) % 1; // a arena é sempre de dia (manhã, sombras compridas)
     { const ang = (G.tod - 0.25) * Math.PI * 2, el = Math.sin(ang), D = sm(-0.1, 0.2, el); G.day = D;
       SUNDIR.set(-Math.cos(ang) * 0.9, Math.max(0.18, Math.abs(el)), 0.42).normalize();
       const rn = G.rain || 0; sun.intensity = (0.32 + 2.7 * D) * (1 - 0.6 * rn); sun.color.copy(MOONC).lerp(SUNC, D);
@@ -1807,7 +1808,7 @@ async function boot() {
     { const pa = trGeo.attributes.position, ca = trGeo.attributes.color; for (let i = 0; i < TRN; i++) { const o = trl[i]; if (o) { o.t -= dt; const f = Math.max(0, o.t / 0.07) * o.k; pa.setXYZ(i * 2, ...o.a); pa.setXYZ(i * 2 + 1, ...o.b); ca.setXYZ(i * 2, 0.6 * f, 0.45 * f, 0.2 * f); ca.setXYZ(i * 2 + 1, 1.6 * f, 1.3 * f, 0.7 * f); } else { pa.setXYZ(i * 2, 0, -9, 0); pa.setXYZ(i * 2 + 1, 0, -9, 0); } } pa.needsUpdate = true; ca.needsUpdate = true; while (trl.length && trl[0].t <= 0) trl.shift(); }
     for (const s of smoke) { s.userData.t = (s.userData.t + dt * 0.12) % 1; const t = s.userData.t; s.position.set(W.smoke[0] + t * 5, W.smoke[1] + t * 11, W.smoke[2] - t * 2.5); const sc = 1.4 + t * 5; s.scale.set(sc, sc, 1); s.material.opacity = 0.55 * (1 - t) * Math.min(1, t * 6); }
     { cam.updateMatrixWorld(); _vfM.multiplyMatrices(cam.projectionMatrix, cam.matrixWorldInverse); _vf.setFromProjectionMatrix(_vfM); } // o que a câmara vê: zombies e animais fora disto não se desenham
-    { const p = G.p, nr = G.fp ? 22 : 8; horde.update(G.zs, _vf, z => { if (!p) return 2; const dx = Math.abs(z.x - p.x), dz = Math.abs(z.z - p.z); return dx < nr && dz < nr ? 0 : dx < 26 && dz < 26 ? 1 : 2; }); } // perto do jogador: o corpo com mais detalhe fauna.update(G.zs, camT, _vf);
+    { const p = G.p, nr = G.fp ? 22 : 8; horde.update(G.zs, _vf, z => { if (!p) return 2; const dx = Math.abs(z.x - p.x), dz = Math.abs(z.z - p.z); return dx < nr && dz < nr ? 0 : dx < 26 && dz < 26 ? 1 : 2; }); } /* perto do jogador: o corpo com mais detalhe */ if (!G.ARENA) fauna.update(G.zs, camT, _vf); // os animais estavam parados desde a 0.36 (a chamada tinha ficado dentro de um comentário)
     // árvores ao longe (só na 1.ª pessoa, que vê até à neblina): a versão simples a partir de ~65 m
     G.lodT = (G.lodT || 0) - dt; if (G.lodT <= 0) { G.lodT = 0.25; for (let i = TLOD.length - 1; i >= 0; i--) if (!TLOD[i].hi.parent) TLOD.splice(i, 1); /* setores largados */ const c = cam.position, fpL = !!G.fp; for (const T of TLOD) { const far = fpL && Math.hypot(T.x - c.x, T.z - c.z) > 65; if (T.hi.visible === far) { T.hi.visible = !far; T.lo.visible = far; } } }
     // comerciantes: respiram parados e viram-se para quem chega perto

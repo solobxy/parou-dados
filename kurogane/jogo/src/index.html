@@ -809,7 +809,7 @@ body.mir #touch .tb>*,body.mir #touch .ghost{transform:scaleX(-1)}
 #arBack{display:inline-flex;align-items:center;justify-content:center;gap:4px}#arBack .abk{display:none}
 @media (orientation:portrait){#arw .ah{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center}#arw .ah .close{grid-column:2;grid-row:1;margin-left:0}#arw .asteps{grid-column:1/-1}#arw .aht{min-width:0}#arw .aT{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}}
 @media (max-width:400px){#arw .af .btn{padding:0 10px;font-size:13px;letter-spacing:.03em}#arBack .abk{display:block}#arBack span{display:none}#arBack{flex:0 0 48px!important;padding:0!important}#arw .ah .close.txt{padding:0 10px 0 8px}}
-@media (max-width:380px){#arw .asc2 em{display:none}#arw .asc2 i{margin:0 1px}}
+#arw .asc2 em{font-style:normal;opacity:.6;margin:0 4px}
 #tCrouch,#tProne{display:none}body.touch #tCrouch,body.touch #tProne{display:flex}
 #tCrouch.on,#tProne.on{background:rgba(244,241,234,.9);color:#111}
 @media (orientation:landscape){#tCrouch{right:calc(18px + var(--sr));bottom:calc(206px + var(--sb))}#tProne{right:calc(84px + var(--sr));bottom:calc(206px + var(--sb))}}
@@ -819,6 +819,10 @@ body.mir #touch .tb>*,body.mir #touch .ghost{transform:scaleX(-1)}
 @media (orientation:landscape){body.touch #tUse{bottom:calc(270px + var(--sb))}}
 @media (orientation:landscape) and (max-height:360px){body.touch #tUse{left:50%;right:auto;transform:translateX(-50%);bottom:calc(62px + var(--sb))}}
 @media (orientation:portrait) and (max-height:700px){body.touch #tUse{bottom:calc(326px + var(--sb))}}
+#asc{flex-direction:column;gap:3px;padding:4px 8px 5px}#asc .ascs{display:flex;align-items:center;gap:6px}#asc .ascs b{color:var(--tx2);font-weight:600}
+#asc .ascn{display:flex;gap:10px;font:600 11px/1 "Roboto Condensed",sans-serif}#asc .ascn span{display:inline-flex;align-items:center;gap:3px;background:none!important;padding:0}#asc .ascn .r{color:#ff8a7e}#asc .ascn .b{color:#8fb0ff}
+#arw .atm.full{opacity:.42;filter:saturate(.4)}#arw .atm.full span{color:#fff}
+#arGo.cdb{position:relative;overflow:hidden;opacity:1!important;background:#2a2825;color:var(--tx)}#arGo.cdb::before{content:"";position:absolute;inset:0;transform-origin:0 50%;transform:scaleX(var(--p,0));background:linear-gradient(90deg,#4f7a2e,#6c9a3d);z-index:0;transition:transform .1s linear}#arGo.cdb{isolation:isolate}#arGo.cdb::before{z-index:-1}
 </style>
 </head>
 <body>
@@ -892,7 +896,7 @@ body.mir #touch .tb>*,body.mir #touch .ghost{transform:scaleX(-1)}
   <nav class="menu"><button class="mi pri" id="sCont" hidden><b>Continuar</b><em>Voltas onde ficaste</em></button><button class="mi pri" id="sPlay"><b>Survival</b><em>Continuas onde ficaste, ou começas perto de uma vila</em></button><button class="mi" id="sArena"><b>Arena</b><em>PvP em Tóquio · Vermelha contra Azul · 5 kits</em></button><button class="mi" id="sSet"><b>Definições</b><em>Controlos, imagem e som</em></button></nav>
   <div class="onl" id="sOnl" role="status"><i class="dot" aria-hidden="true"></i><span><b>Servidor</b><em id="sOnT">A ver quem está a jogar…</em></span></div>
   <div class="keys" id="sKeys"></div>
-  <div class="foot">Protótipo 0.52 · um servidor para todos · quem sai fica a dormir no mundo</div>
+  <div class="foot">Protótipo 0.53 · um servidor para todos · quem sai fica a dormir no mundo</div>
 </div><button id="sMus" aria-label="Música do menu"><span class="on">{{volume-2}}</span><span class="off">{{volume-x}}</span></button><a class="credit" href="https://dinissousa.pt" target="_blank" rel="noopener">feito por dinissousa.pt</a></div>
 <div id="arw" class="ov" hidden></div>
 <div id="pfm" class="ov" hidden><div class="pfbox"><div class="pfh"><b id="pfT"></b><button class="close" id="pfX" aria-label="Fechar">{{x}}</button></div><div id="pfB" class="pfb"></div></div></div>

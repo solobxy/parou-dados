@@ -23,7 +23,11 @@ export function initArenaUI(G, { $, audio, toast }) {
     const mags = K.bag.filter(([c]) => ITEMS[c] && ITEMS[c].clip).reduce((s, [, n]) => s + n, 0), loose = K.bag.filter(([c]) => ITEMS[c] && !ITEMS[c].clip).map(([c, n]) => n + ' × ' + nm(c));
     if (mags) L.push(mags + (mags === 1 ? ' carregador' : ' carregadores')); if (loose.length) L.push(loose.join(' · '));
     return L; };
-  const n = () => (G.net && G.net.arena && G.net.arena.n) || [0, 0];
+  let lobbyN = null, lobbyT = null; // jogadores por equipa antes de entrar (pela saúde do servidor)
+  const n = () => (G.net && G.net.on && G.net.arena && G.net.arena.n) || lobbyN || [0, 0];
+  const pollN = () => { const u = (window.KG_ONLINE ? '' : 'https://kurogane.2-31-13-85.sslip.io') + '/srv/saude'; fetch(u, { cache: 'no-store' }).then(r => r.ok ? r.json() : null).then(j => { if (j && Array.isArray(j.arenaN)) { const old = JSON.stringify(lobbyN); lobbyN = j.arenaN; if (old !== JSON.stringify(lobbyN) && !el.hidden && step === 1) render(); } }).catch(() => { }); };
+  // equipas equilibradas: só se entra (ou muda) para a equipa que não fica com mais gente
+  const canJoin = t => { const N = n().slice(); if (mode !== 'lobby' && team != null) { if (t === team) return true; N[team] = Math.max(0, N[team] - 1); } return N[t] <= N[1 - t]; };
   const sc = () => (G.net && G.net.arena && G.net.arena.s) || [0, 0];
   // arma principal do kit (a que aparece em 3D) com os acessórios escolhidos
   const prevGun = () => { const g0 = guns(kit)[0]; if (!g0) return ['', {}]; const c = curAtt(kit, g0[0], g0[1]); return [g0[0], { scope: c.scope && c.scope !== 'iron' && c.scope !== 'nada' ? c.scope : null, sup: c.sup ? ITEMS[g0[0]].gun.sup : null, light: c.light ? 'lantArma' : null }]; };
@@ -45,14 +49,14 @@ export function initArenaUI(G, { $, audio, toast }) {
   const XI = $('mClose') ? $('mClose').innerHTML : '×';
   const cv = $('arPrev'), info = el.querySelector('.ainfo'), p1 = el.querySelector('.ap1'), stage = el.querySelector('.astage');
 
-  const goLabel = () => mode === 'dead' ? (cd > 0 ? 'Renascer (' + cd + ')' : 'Renascer') : mode === 'menu' ? 'Voltar ao jogo' : step === 1 ? 'Escolher o kit' : 'Entrar na arena';
+  const goLabel = () => mode === 'dead' ? (cd > 0 ? 'Renasces em ' + Math.ceil(cd) + ' s' : 'A renascer…') : mode === 'menu' ? 'Voltar ao jogo' : step === 1 ? 'Escolher o kit' : 'Entrar na arena';
   const render = anim => {
     const s = sc(), N = n(), dead = mode === 'dead';
     el.querySelector('.aT').textContent = dead ? (G.arenaBy ? 'Morto por ' + G.arenaBy : 'Morreste') : 'Arena de Tóquio';
-    el.querySelector('.asc2').innerHTML = `<i class="r">${s[0]}</i><em>baixas</em><i class="b">${s[1]}</i>`;
+    el.querySelector('.asc2').innerHTML = `<i class="r">${s[0]}</i><em>–</em><i class="b">${s[1]}</i>`;
     el.querySelectorAll('.asteps li').forEach(li => { const k = +li.dataset.s; li.className = k === step ? 'on' : k < step ? 'done' : ''; li.style.display = k === 3 && !hasAtt(kit) ? 'none' : ''; });
     { const x = $('arX'), q = mode === 'menu'; x.hidden = false; x.setAttribute('aria-label', q ? 'Fechar' : 'Sair da arena'); x.title = q ? 'Fechar' : 'Sair da arena'; x.classList.toggle('txt', !q); x.innerHTML = q ? XI : XI + '<span>Sair</span>'; } el.dataset.step = step;
-    if (step === 1) p1.innerHTML = `<div class="ateams">${[0, 1].map(t => `<button class="atm t${t}${team === t ? ' on' : ''}" data-t="${t}" aria-pressed="${team === t}"><b>${TN[t]}</b><span>${t ? 'Nasces a este' : 'Nasces a oeste'}</span><em>${G.net && G.net.on ? N[t] + ' ' + (N[t] === 1 ? 'jogador' : 'jogadores') : ''}</em></button>`).join('')}</div><p class="ahelp">Os colegas de equipa aparecem a azul e não lhes acertas.</p>`;
+    if (step === 1) { if (team != null && !canJoin(team)) team = canJoin(0) ? 0 : 1; p1.innerHTML = `<div class="ateams">${[0, 1].map(t => { const ok = canJoin(t); return `<button class="atm t${t}${team === t ? ' on' : ''}${ok ? '' : ' full'}" data-t="${t}" aria-pressed="${team === t}" aria-disabled="${!ok}"><b>${TN[t]}</b><span>${ok ? (t ? 'Nasces a este' : 'Nasces a oeste') : 'Tem mais jogadores: entra na outra'}</span><em>${N[t]} ${N[t] === 1 ? 'jogador' : 'jogadores'}</em></button>`; }).join('')}</div><p class="ahelp">As equipas ficam equilibradas: só podes entrar na que tem menos (ou igual). Os colegas aparecem a azul e não lhes acertas.</p>`; }
     const K = ARENA_KITS[kit];
     if (step === 2) info.innerHTML = `<div class="akh"><span class="aks">${ARENA_KIT_SVG[kit]}</span><div><b>${esc(K.n)}</b><em>${ARENA_KIT_ORDER.indexOf(kit) + 1} de ${ARENA_KIT_ORDER.length}${mode === 'menu' ? ' · conta ao renasceres' : ''}</em></div></div><p class="akd">${esc(K.d)}</p><ul class="akl2">${lines(kit).map(l => '<li>' + esc(l) + '</li>').join('')}</ul>`;
     else if (step === 3) info.innerHTML = `<div class="akh"><span class="aks">${ARENA_KIT_SVG[kit]}</span><div><b>Acessórios</b><em>kit ${esc(K.n)}</em></div></div>` + guns(kit).map(([g, a0]) => { const o = optsOf(g), c = curAtt(kit, g, a0), chip = (f, v, lb, on) => `<button class="ach${on ? ' on' : ''}" data-g="${g}" data-f="${f}" data-v="${v}" aria-pressed="${!!on}">${lb}</button>`;
@@ -61,14 +65,14 @@ export function initArenaUI(G, { $, audio, toast }) {
     // barra de baixo: «voltar» do passo e o botão principal (no kit há também «Acessórios»)
     const bk = $('arBack'), bl = step === 1 ? 'Sair da arena' : step === 2 ? 'Equipa' : 'Kit'; bk.innerHTML = '<svg class="abk" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg><span>' + bl + '</span>'; bk.setAttribute('aria-label', bl);
     let ab = el.querySelector('#arAtt'); if (step === 2 && hasAtt(kit)) { if (!ab) { ab = document.createElement('button'); ab.className = 'btn'; ab.id = 'arAtt'; ab.textContent = 'Acessórios'; $('arGo').before(ab); } } else if (ab) ab.remove();
-    const go = $('arGo'); go.textContent = goLabel(); go.disabled = (step === 1 && team == null) || (dead && cd > 0);
+    const go = $('arGo'); go.textContent = goLabel(); go.disabled = (step === 1 && team == null) || dead; go.classList.toggle('cdb', dead);
     if (step >= 2) { G.arenaPrev.mount(cv); G.arenaPrev.start(); const [g, a] = prevGun();
       if (anim) { stage.classList.remove('in', 'fwd', 'bwd'); stage.classList.add('out', dir > 0 ? 'fwd' : 'bwd'); setTimeout(() => { G.arenaPrev.set(g, a); stage.classList.remove('out'); void stage.offsetWidth; stage.classList.add('in'); }, 170); info.classList.remove('swap'); void info.offsetWidth; info.classList.add('swap'); }
       else G.arenaPrev.set(g, a); }
     else G.arenaPrev.stop();
   };
-  const show = m => { mode = m; step = m === 'lobby' && team == null ? 1 : 2; el.hidden = false; render(); };
-  const hide = () => { el.hidden = true; clearInterval(cdT); cdT = null; G.arenaPrev.stop(); };
+  const show = m => { mode = m; step = m === 'lobby' && team == null ? 1 : 2; el.hidden = false; if (m === 'lobby') { step = 1; pollN(); clearInterval(lobbyT); lobbyT = setInterval(pollN, 3000); } render(); }; // no lobby começa sempre na equipa: as contagens mudam
+  const hide = () => { el.hidden = true; clearInterval(cdT); cdT = null; clearInterval(lobbyT); lobbyT = null; G.arenaPrev.stop(); };
   const setKit = (k, d) => { if (k === kit) return; dir = d; kit = k; keep(); if (G.playing) G.arenaKitSet(kit); audio.play('ui'); if (step === 3 && !hasAtt(kit)) step = 2; render(true); };
   const stepKit = d => { const i = ARENA_KIT_ORDER.indexOf(kit), L = ARENA_KIT_ORDER.length; setKit(ARENA_KIT_ORDER[(i + d + L) % L], d); };
   // deslizar o dedo depressa no palco muda de kit; devagar roda a personagem
@@ -76,18 +80,22 @@ export function initArenaUI(G, { $, audio, toast }) {
   el.addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return;
     if (b.id === 'arPrevK') { stepKit(-1); return; } if (b.id === 'arNextK') { stepKit(1); return; }
     audio.play('ui');
-    if (b.dataset.t != null) { const t = +b.dataset.t; if (mode !== 'lobby' && t !== team) { team = t; G.arenaTeamSet(t); toast('Mudaste para a equipa ' + TN[t]); } else team = t; keep(); step = 2; dir = 1; render(true); return; }
+    if (b.dataset.t != null) { const t = +b.dataset.t; if (!canJoin(t)) { toast('Essa equipa tem mais jogadores: entra na ' + TN[1 - t]); return; } if (mode !== 'lobby' && t !== team) { team = t; G.arenaTeamSet(t); toast('Mudaste para a equipa ' + TN[t]); } else team = t; keep(); step = 2; dir = 1; render(true); return; }
     if (b.dataset.f) { const g = b.dataset.g, f = b.dataset.f, a0 = (guns(kit).find(([x]) => x === g) || [])[1]; katt[kit] = katt[kit] || {}; const c = { ...curAtt(kit, g, a0) }; c[f] = f === 'scope' ? b.dataset.v : b.dataset.v === '1'; katt[kit][g] = c; keep(); if (G.playing) G.arenaKitSet(kit); render(); return; }
     if (b.id === 'arAtt') { step = 3; render(); return; }
     if (b.id === 'arX') { if (mode === 'menu') { hide(); return; } try { sessionStorage.removeItem('kgArena'); } catch (e) { } G.updating = true; location.reload(); return; }
     if (b.id === 'arBack') { if (step > 1) { step--; render(); return; } try { sessionStorage.removeItem('kgArena'); } catch (e) { } G.updating = true; location.reload(); return; }
     if (b.id === 'arGo') { if (b.disabled) return; if (step === 1) { if (team == null) return; step = 2; dir = 1; render(true); return; }
-      if (mode === 'lobby') { hide(); G.arenaStart(team, kit); } else if (mode === 'dead') { if (cd > 0) return; hide(); G.arenaKitK = kit; G.arenaRespawn(); } else hide(); } });
+      if (mode === 'lobby') { hide(); G.arenaStart(team, kit); } else if (mode === 'dead') { return; } else hide(); } });
   addEventListener('keydown', e => { if (el.hidden) return; if (e.key === 'ArrowLeft' && step === 2) stepKit(-1); else if (e.key === 'ArrowRight' && step === 2) stepKit(1); else if (e.key === 'Enter') $('arGo').click(); });
   // placar no ecrã e mortes ao vivo
   const sEl = $('asc'), fEl = $('akf');
-  const score = m => { if (!m) return; const s = m.s || [0, 0]; sEl.hidden = false; sEl.innerHTML = `<i class="r">${s[0]}</i><span>Vermelha · Azul</span><i class="b">${s[1]}</i>`; if (!el.hidden) { el.querySelector('.asc2').innerHTML = `<i class="r">${s[0]}</i><em>baixas</em><i class="b">${s[1]}</i>`; if (step === 1) render(); } };
+  const score = m => { if (!m) return; const s = m.s || [0, 0]; sEl.hidden = false; const nn = m.n || [0, 0], PI = '<svg viewBox="0 0 24 24" width="11" height="11" aria-hidden="true"><circle cx="12" cy="7" r="4" fill="currentColor"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7" fill="currentColor"/></svg>'; sEl.innerHTML = `<div class="ascs"><i class="r">${s[0]}</i><b>–</b><i class="b">${s[1]}</i></div><div class="ascn"><span class="r">${PI}${nn[0]}</span><span class="b">${PI}${nn[1]}</span></div>`; sEl.setAttribute('aria-label', 'Baixas ' + s[0] + ' a ' + s[1] + ', jogadores ' + nn[0] + ' contra ' + nn[1]); if (!el.hidden) { el.querySelector('.asc2').innerHTML = `<i class="r">${s[0]}</i><em>–</em><i class="b">${s[1]}</i>`; if (step === 1) render(); } };
   const feed = m => { const d = document.createElement('div'); d.className = 'akl'; d.innerHTML = (m.k ? `<b class="t${m.kt}">${esc(m.k)}</b><span>${m.w === 'granada' ? 'granada em' : 'abateu'}</span>` : '') + `<b class="t${m.vt}">${esc(m.v)}</b>` + (m.k ? '' : '<span>morreu</span>'); fEl.prepend(d); while (fEl.children.length > 5) fEl.lastChild.remove(); setTimeout(() => { d.classList.add('out'); setTimeout(() => d.remove(), 400); }, 5000); };
-  const death = o => { G.arenaBy = o && o.by; cd = 4; show('dead'); clearInterval(cdT); cdT = setInterval(() => { cd--; if (cd <= 0) { clearInterval(cdT); cdT = null; } if (mode === 'dead' && !el.hidden) { const b = $('arGo'); b.textContent = goLabel(); b.disabled = cd > 0; } }, 1000); };
+  // morreste: o corpo cai e passados 5 s renasces sozinho com o kit escolhido (a barra mostra quanto falta; dá para mudar o kit entretanto)
+  const RESP = 3.8; // + 1,2 s até este ecrã aparecer = 5 s
+  const death = o => { G.arenaBy = o && o.by; const t0 = performance.now(); cd = RESP; show('dead'); clearInterval(cdT);
+    cdT = setInterval(() => { cd = Math.max(0, RESP - (performance.now() - t0) / 1000); const b = $('arGo'); if (b && mode === 'dead') { b.textContent = goLabel(); b.style.setProperty('--p', (1 - cd / RESP).toFixed(3)); b.classList.add('cdb'); }
+      if (cd <= 0) { clearInterval(cdT); cdT = null; if (mode === 'dead') { if (b) b.classList.remove('cdb'); hide(); G.arenaKitK = kit; G.arenaRespawn(); } } }, 100); };
   return { attOf, show, hide, score, feed, death, lobby: () => show('lobby'), menu: () => show('menu'), team: () => team, kit: () => kit };
 }

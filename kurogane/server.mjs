@@ -41,7 +41,7 @@ const send = (c, o) => { if (c.dead) return; const b = Buffer.from(JSON.stringif
 const ARENA = makeArena({ send });
 const bcast = (o, pred = () => true) => { for (const c of players.values()) if (c.p && pred(c)) send(c, o); };
 const srv = http.createServer((req, res) => {
-  if (req.url === '/saude') { res.writeHead(200, { 'content-type': 'application/json', 'access-control-allow-origin': '*', 'cache-control': 'no-store' }); res.end(JSON.stringify({ ok: true, arena: ARENA.count(), jogadores: [...players.values()].filter(c => c.p).length, a_dormir: Object.keys(S.sleepers).length, mochilas: Object.keys(S.bags).length, clas: Object.keys(S.clans).length, zombies: S.w.zs.filter(z => z.st !== 3).length, caixas: Object.keys(S.w.ct).length, carros: Object.keys(S.w.cars).length, mapa: mapOk(), equipa: Object.keys(S.roles).length, admin_cod: !!ADMH })); return; }
+  if (req.url === '/saude') { res.writeHead(200, { 'content-type': 'application/json', 'access-control-allow-origin': '*', 'cache-control': 'no-store' }); res.end(JSON.stringify({ ok: true, arena: ARENA.count(), arenaN: ARENA.counts(), jogadores: [...players.values()].filter(c => c.p).length, a_dormir: Object.keys(S.sleepers).length, mochilas: Object.keys(S.bags).length, clas: Object.keys(S.clans).length, zombies: S.w.zs.filter(z => z.st !== 3).length, caixas: Object.keys(S.w.ct).length, carros: Object.keys(S.w.cars).length, mapa: mapOk(), equipa: Object.keys(S.roles).length, admin_cod: !!ADMH })); return; }
   res.writeHead(404); res.end();
 });
 srv.on('upgrade', (req, sock) => {
@@ -135,7 +135,7 @@ const boxDelta = (c, p, k, oldIt, newIt) => { const O = tally(oldIt), N = tally(
 const genLoot = (k, prev) => { const t = S.w.ctab && S.w.ctab[+k.slice(1)]; if (!t || !LOOT[t[0]]) return prev || []; const g = new Grid(t[1], t[2]); for (const o of prev || []) { const it = mkItem(o.k, o.n); Object.assign(it, o); g.insert(it); } rollLoot(t[0], g); return g.list.map(e => encSrv(e.it, e.x, e.y)); };
 const encSrv = (it, x, y) => { const o = { k: it.k, n: it.n }; for (const f of ['ammo', 'am', 'ak', 'mg']) if (it[f] !== undefined && it[f] !== null) o[f] = it[f]; if (it.att && Object.keys(it.att).length) o.att = it.att; if (it.r) o.r = 1; if (x !== undefined) { o.x = x; o.y = y; } return o; };
 // tiros: só com uma arma que dispare essa munição
-const canShoot = (p, k) => { const T = ledOf(p).T; for (const g of Object.keys(T)) { const G2 = ITEMS[g] && ITEMS[g].gun; if (G2 && ammoOf(G2).includes(k)) return true; } return false; };
+const canShoot = (p, k) => { if (p.test) return true; const T = ledOf(p).T; for (const g of Object.keys(T)) { const G2 = ITEMS[g] && ITEMS[g].gun; if (G2 && ammoOf(G2).includes(k)) return true; } return false; };
 // custos das peças da base (os mesmos do jogo)
 const PCOST = { fund: { madeira: 60 }, parede: { madeira: 60 }, porta: { madeira: 90 }, janela: { madeira: 60 }, teto: { madeira: 60 } };
 const PUP = { fund: [{ pedraR: 150 }, { metalR: 90 }], parede: [{ pedraR: 150 }, { metalR: 90 }], porta: [{ pedraR: 150 }, { metalR: 120 }], janela: [{ pedraR: 120 }, { metalR: 80 }], teto: [{ pedraR: 150 }, { metalR: 90 }] };
@@ -510,7 +510,7 @@ const carShot = (c, car, dmg) => { if (car.hp <= 0) return; car.hp = Math.max(0,
   for (const id of car.s) { const o = id && players.get(id); if (!o || !o.p || !o.p.alive) continue; const v = o.p, d = vt(car.k).armor ? 0 : 45; if (v.god || !d) continue; v.hp = Math.max(0, v.hp - d); const kill = v.hp <= 0; if (kill) { v.alive = false; stat(c.p, 'k'); stat(v, 'd'); } send(o, { t: 'hit', by: c.p.name, dmg: d, zone: 'body', hp: v.hp }); if (kill) send(c, { t: 'hitc', on: o.id, zone: 'body', kill, name: v.name }); }
   car.s = car.s.map(() => 0); };
 const shot = (c, m) => {
-  const p = c.p, now = Date.now(); if (!p.alive) return; { p.shB = Math.min(3, (p.shB ?? 3) + (now - (p.lastShot || 0)) / 60); p.lastShot = now; if (p.shB < 1) return; p.shB -= 1; } // até 3 tiros seguidos podem chegar juntos (a rede junta pacotes); em média não mais de 1 a cada 60 ms if (!canShoot(p, String(m.k || ''))) { strike(c, p, 'tiro sem arma ' + m.k); return; }
+  const p = c.p, now = Date.now(); if (!p.alive) return; { p.shB = Math.min(3, (p.shB ?? 3) + (now - (p.lastShot || 0)) / 60); p.lastShot = now; if (p.shB < 1) return; p.shB -= 1; } /* até 3 tiros seguidos podem chegar juntos (a rede junta pacotes); em média não mais de 1 a cada 60 ms */ if (!canShoot(p, String(m.k || ''))) { strike(c, p, 'tiro sem arma ' + m.k); return; }
   const O = Array.isArray(m.o) ? m.o.map(v => num(v, -4100, 4100)) : null, D = Array.isArray(m.d) ? m.d.map(v => num(v, -1, 1)) : null; if (!O || !D || O.length !== 3 || D.length !== 3) return;
   if (Math.hypot(O[0] - p.x, O[2] - p.z) > 3) return; // a bala tem de sair de perto de ti
   const dl = Math.hypot(D[0], D[1], D[2]) || 1; D[0] /= dl; D[1] /= dl; D[2] /= dl;
