@@ -175,7 +175,9 @@ ok('[plano] base sem as tabelas do Andante (antiga): o planeador continua a resp
 // ---------------------------------------------------------------- servidor a correr, dados reais
 if (BASE) {
   // Campanhã (metro) → Trindade (metro), ambas na zona PRT1
-  const u = `${BASE}/api/transit/plan-route?originLat=41.15054&originLon=-8.586245&destLat=41.15228&destLon=-8.609299&destName=Trindade`;
+  // às 10h do dia seguinte (de madrugada o metro não circula e o teste não teria o que verificar)
+  const amanha = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Lisbon' }).format(Date.now() + 86400_000);
+  const u = `${BASE}/api/transit/plan-route?originLat=41.15054&originLon=-8.586245&destLat=41.15228&destLon=-8.609299&destName=Trindade&quando=${amanha}T10:00`;
   try {
     const rr = await fetch(u);
     const j = await rr.json();
