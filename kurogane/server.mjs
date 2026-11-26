@@ -363,16 +363,22 @@ const onMsg = (c, m) => {
     // o nome fica guardado 3 dias depois da última vez (ou enquanto a personagem dorme): ninguém se faz passar por outro
     const lo = name.toLowerCase(), now = Date.now();
     const dono = Object.keys(S.tokens).find(k => (S.tokens[k].name || '').toLowerCase() === lo && (S.sleepers[k] || now - S.tokens[k].t < 3 * 24 * 3600e3));
+    // recuperar a personagem: a 0.47 apagava o código guardado no aparelho ao entrar na arena (fica vazio). O dono do servidor
+    // põe o nome em reclamar.txt (pasta do estado) e, nas 6 h seguintes, o primeiro que entrar com esse nome e o código vazio recebe-a
+    if (dono && dono !== tok && !tok && m.tok === '') { try { const RF = path.join(DIR, 'reclamar.txt'), st = fs.statSync(RF);
+      if (now - st.mtimeMs < 6 * 3600e3) { const L = fs.readFileSync(RF, 'utf8').split(/\s+/).map(x => x.toLowerCase()).filter(Boolean); if (L.includes(lo)) { tok = dono; fs.writeFileSync(RF, L.filter(x => x !== lo).join('\n')); console.log('kurogane: personagem devolvida a', name); } } } catch (e) { } }
     if (dono && dono !== tok) return send(c, { t: 'erro', e: 'nome_em_uso' });
     { const u0 = tok ? uidOf(tok) : null, B = (u0 && S.bans[u0]) || (c.ip && Object.values(S.bans).find(b => b.ip && b.ip === c.ip)); if (B && (!B.until || B.until > now)) return send(c, { t: 'erro', e: 'banido', until: B.until || 0, why: B.why || '' }); }
     if (!tok) { tok = rid(24); S.tokens[tok] = { name, t: now }; } S.tokens[tok].name = name; S.tokens[tok].t = now; dirty = true;
     const sl = S.sleepers[tok]; let killed = false, resume = null;
-    if (sl) { delete S.sleepers[tok]; dirty = true; resume = { x: sl.x, z: sl.z, lv: sl.lv, hp: sl.hp }; bcast({ t: 'sleep', list: sleepList() }); }
+    if (sl) { delete S.sleepers[tok]; dirty = true; resume = { x: sl.x, z: sl.z, y: sl.y || 0, lv: sl.lv, hp: sl.hp, yaw: sl.yaw || 0 }; bcast({ t: 'sleep', list: sleepList() }); }
     if (S.tokens[tok].killed) { killed = true; delete S.tokens[tok].killed; dirty = true; }
     if (!S.w.ctab && Array.isArray(m.ctab) && m.ctab.length < 5000) { S.w.ctab = m.ctab.map(a => Array.isArray(a) && typeof a[0] === 'string' && LOOT[a[0]] ? [a[0], num(a[1], 1, 8, 4) | 0, num(a[2], 1, 8, 4) | 0] : null); dirty = true; }
     const tst = process.env.KG_TEST === '1' && !!m.test; // só nos testes automáticos (que teletransportam e dão coisas)
+    // quem ficou a dormir no mundo (vivo) continua: mesma posição e o que tinha; só começa de novo quem morreu ou não tem personagem
+    const contin = !!sl && !killed;
     if (tst) S.led[tok] = { T: {}, inv: null, g: true };
-    else if (m.fresh || killed) { S.led[tok] = { T: { ...KIT }, inv: null, g: false }; if (S.tokens[tok]) delete S.tokens[tok].g; dirty = true; }
+    else if ((m.fresh && !contin) || killed) { S.led[tok] = { T: { ...KIT }, inv: null, g: false }; if (S.tokens[tok]) delete S.tokens[tok].g; dirty = true; }
     const look = m.look && typeof m.look === 'object' ? Object.fromEntries(Object.entries(m.look).filter(([k, v]) => ['skin', 'hair', 'top', 'legs', 'hairS', 'beardS'].includes(k) && typeof v === 'number')) : {};
     const tc = S.tokens[tok].clan, clan = tc && S.clans[tc] ? tc : null;
     c.p = { name, tok, look, x: sl ? sl.x : num(m.x, -4100, 4100), z: sl ? sl.z : num(m.z, -4100, 4100), lastSt: sl ? now : 0, y: 0, lv: 0, yaw: 0, mv: 0, an: 0, w: '', hp: resume ? resume.hp ?? 100 : 100, alive: true, ar: [0, 0], inv: [], clan, lastShot: 0, hd: null, vd: null };
@@ -381,7 +387,7 @@ const onMsg = (c, m) => {
     if (Array.isArray(m.cars) && S.w.carv !== CARV && !Object.values(S.w.cars).some(o => o.s.some(Boolean))) { for (const id of Object.keys(S.w.cars)) if (!S.w.cars[id].adm) delete S.w.cars[id]; for (const o of players.values()) if (o.cc) o.cc.clear(); m.cars.slice(0, 160).forEach((a, i) => { const x = num(a[0], -4100, 4100), z = num(a[1], -4100, 4100), yaw = num(a[2], -10, 10), k = VT[a[3]] ? a[3] : 'sedan', T = VT[k]; S.w.cars['c' + i] = { k, x, z, yaw, v: 0, fuel: T.tank ? +(T.tank * (0.2 + Math.random() * 0.45)).toFixed(1) : 0, hp: T.hp, sx: x, sz: z, syaw: yaw, s: T.seats.map(() => 0), dead: 0 }; }); S.w.carv = CARV; dirty = true; }
     const zseed = !S.w.zs.length && ![...players.values()].some(o => o !== c && o.zseed && now - (o.zseedT || 0) < 15000); if (zseed) { c.zseed = true; c.zseedT = now; }
     send(c, { t: 'ok', id: c.id, tok, killed, resume, drop: dropInfo(), role: S.roles[c.p.uid] || null, players: [...players.values()].filter(o => o.p && o !== c).map(o => [o.id, o.p.name, o.p.look, o.p.clan]), sleep: sleepList(), clan: clanInfo(clan),
-      uid: c.p.uid, vapid: b64u(VPUB), inv: !m.fresh && !killed && S.led[tok] && !S.led[tok].g ? S.led[tok].inv : null, w: { cyc0: S.w.cyc0, now, wx: S.w.wx.r, base: baseRows(), locks: Object.entries(S.w.locks).map(([i, L]) => [+i, L.hp, L.broke || 0]), doors: Object.entries(S.w.doors).map(([i, o]) => [+i, o]), nodes: Object.entries(S.w.nodes).map(([k, u]) => [k, u - now]).filter(a => a[1] > 0), bags: bagRows(), zseed } });
+      uid: c.p.uid, vapid: b64u(VPUB), inv: (contin || !m.fresh) && !killed && S.led[tok] && !S.led[tok].g ? (S.led[tok].inv || (sl && sl.inv) || null) : null, cont: contin, w: { cyc0: S.w.cyc0, now, wx: S.w.wx.r, base: baseRows(), locks: Object.entries(S.w.locks).map(([i, L]) => [+i, L.hp, L.broke || 0]), doors: Object.entries(S.w.doors).map(([i, o]) => [+i, o]), nodes: Object.entries(S.w.nodes).map(([k, u]) => [k, u - now]).filter(a => a[1] > 0), bags: bagRows(), zseed } });
     bcast({ t: 'join', id: c.id, name, look, clan }, o => o !== c);
     return;
   }

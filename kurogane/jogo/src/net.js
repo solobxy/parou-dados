@@ -35,14 +35,14 @@ export function makeNet({ G, scene, mkRemote, audio, Conta, enc, dec, hurt, die,
   const onMsg = m => {
     switch (m.t) {
       case 'ok': {
-        N.id = m.id; tok = m.tok; try { localStorage.setItem(tokKey(), tok); } catch (e) { } N.on = true; retry = 0; found();
+        N.id = m.id; if (!G.ARENA && typeof m.tok === 'string' && m.tok.length === 32) { tok = m.tok; try { localStorage.setItem(tokKey(), tok); } catch (e) { } } /* a arena não tem código: nunca apaga o do mundo */ N.on = true; retry = 0; found();
         clearAll(); for (const [id, name, look, clan] of m.players) addRemote(id, name, look, clan); setSleepers(m.sleep); N.clan = m.clan ? m.clan.id : null; N.clanInfo = m.clan;
         if (G.airdrop) G.airdrop({ ph: 9, ...(m.drop || {}) });
         N.role = m.role || null; G.admF = { r: N.role, inv: 0, god: 0, spec: 0 }; G.frozen = false; G.ui.admRole && G.ui.admRole(N.role);
         off = m.w.now - Date.now(); cyc0 = m.w.cyc0; N.uid = m.uid; N.vapid = m.vapid || null; N.world = true; if (G.pushResub) G.pushResub(); cur = null; world.reset(m.w); if (m.inv && !m.killed && G.loadInv) G.loadInv(m.inv); invSig = '';
         const n = m.players.length; G.ui.toast(n ? `Online · ${n} ${n === 1 ? 'jogador ligado' : 'jogadores ligados'}` : 'Online · estás sozinho no servidor por agora');
         if (m.killed) { G.ui.toast('Mataram-te enquanto dormias'); die('dormir'); }
-        else if (m.resume && G.p && m.resume.hp != null && m.resume.hp < G.p.hp) G.p.hp = Math.max(1, m.resume.hp);
+        else if (m.resume && G.p) { if (m.cont && !G.ARENA) { const r = m.resume; G.p.x = r.x; G.p.z = r.z; G.p.y = r.y || 0; G.p.lv = r.lv || 0; if (r.yaw != null) G.p.yaw = r.yaw; G.p.vx = G.p.vz = 0; if (G.aimS) G.aimS.fy = G.p.yaw; G.ui.toast('Acordaste onde adormeceste, com o que tinhas.'); } if (m.resume.hp != null && m.resume.hp < G.p.hp) G.p.hp = Math.max(1, m.resume.hp); }
         if (m.arena) { N.arena = { s: m.arena.score, n: m.arena.n, L: [] }; G.ui.arenaScore && G.ui.arenaScore(N.arena); }
         if (G.ARENA && G.p && G.p.alive) send({ t: 'aspawn', x: G.p.x, z: G.p.z });
         if (!G.ARENA) N.sendInv(); if (N.onClan) N.onClan(); return;
