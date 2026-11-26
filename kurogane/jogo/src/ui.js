@@ -335,7 +335,7 @@ export function initUI(G) {
   inv.addEventListener('pointerup', endDrag); inv.addEventListener('pointercancel', e => { if (drag && drag.pid !== undefined && e.pointerId !== drag.pid) return; if (drag && drag.el) drag.el.classList.remove('drag'); if (drag && drag.it && !drag.none) drag.it.r = drag.r0; drag = null; ghost.hidden = true; prev.remove(); render(); });
   const quick = (it, loc) => { if (!loc) return; const d = ITEMS[it.k]; if (d.use && loc.t !== 'box') G.use(it); /* dois toques num consumível: come, bebe ou trata */ else if (loc.t === 'box') takeToMe(it, loc); else if (loc.t === 'eq' || loc.t === 'belt') toBag(it, loc); else if (G.box) toBox(it, loc); else if (d.eq) move(it, loc, { t: 'eq', s: d.eq }); else if (d.use) G.use(it); else { const i = G.inv.belt.indexOf(null); if (i >= 0) move(it, loc, { t: 'belt', i }); } sel = null; G.refresh(); };
 
-  const openInv = (box, t) => { G.invOpen = true; G.sticks.L = G.sticks.R = null; G.box = box || null; if (G.box) tab = 'inv'; if (t) tab = t; inv.querySelectorAll('.tabs button').forEach(x => x.classList.toggle('on', x.dataset.tab === tab)); inv.dataset.tab = tab; inv.hidden = false; inv.classList.toggle('has-box', !!G.box); layout(); sel = null; render(); audio.play('ui'); };
+  const openInv = (box, t) => { G.invOpen = true; G.sticks.L = G.sticks.R = null; G.box = box || null; if (G.box) tab = 'inv'; if (t) tab = t; if (G.ARENA) tab = 'inv'; /* na arena não há fabrico nem treino */ inv.classList.toggle('arena', !!G.ARENA); { const b0 = inv.querySelector('.tabs [data-tab="inv"]'); if (b0) b0.textContent = G.ARENA ? 'Inventário' : 'Perto de ti'; } inv.querySelectorAll('.tabs button').forEach(x => x.classList.toggle('on', x.dataset.tab === tab)); inv.dataset.tab = tab; inv.hidden = false; inv.classList.toggle('has-box', !!G.box); layout(); sel = null; render(); audio.play('ui'); };
   const closeInv = () => { G.invOpen = false; inv.hidden = true; G.box = null; sel = null; drag = null; ghost.hidden = true; };
 
 
@@ -986,7 +986,7 @@ export function initUI(G) {
     if (vals.pr !== lbl) { vals.pr = lbl; $('prompt').hidden = !pr; $('tUse').hidden = !pr; if (pr) { $('prompt').lastChild.textContent = lbl; $('tUse').lastChild.textContent = lbl; $('tUse').classList.toggle('door', !!pr.door); } }
     // zona
     const mins = Math.floor((G.tod ?? 0.33) * 1440), hhmm = String(Math.floor(mins / 60)).padStart(2, '0') + ':' + String(Math.floor(mins / 10) * 10 % 60).padStart(2, '0');
-    const zn = G.zoneAt(p.x, p.z), wet = (G.rain || 0) > 0.25, zk = (G.inside ? 'i' + G.inside.name : '') + (zn ? zn.name : 'f') + hhmm + wet;
+    const zn = G.ARENA ? { name: 'Arena de Tóquio', sub: 'PvP · Vermelha contra Azul', kind: 'city' } : G.zoneAt(p.x, p.z), wet = (G.rain || 0) > 0.25, zk = (G.inside ? 'i' + G.inside.name : '') + (zn ? zn.name : 'f') + hhmm + wet;
     if (vals.z !== zk) { vals.z = zk; const z = $('zone'); z.className = zn && (zn.kind === 'city' || zn.kind === 'mil') ? 'pvp' : ''; z.innerHTML = `<b>${zn ? zn.name : 'Floresta'} <em style="font-style:normal;color:var(--tx2);font-weight:600;letter-spacing:.02em">${hhmm}${wet ? ' · chuva' : ''}</em></b><span>${G.inside ? 'Dentro: ' + G.inside.name : zn ? zn.sub : 'Recursos · poucos zombies'}</span>`; }
     // mira: na vista de cima, um anel no ponto onde vais acertar (cor da zona); na 4x/8x, a luneta
     const A = G.aimS, gun = d && d.gun, fp = G.fp, fpT = A.fpT || 0;

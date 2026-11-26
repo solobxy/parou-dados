@@ -10,9 +10,18 @@ import { GUNA } from './guns.js';
 // onde pegam as mãos (no espaço da arma, antes do empurrão para o ombro): punho e guarda-mão (armas antigas, sem pontos de encaixe)
 const HANDS = { m4: [[-0.035, -0.1, -0.02], [0.068, -0.03, 0.44]], ak: [[-0.035, -0.09, -0.06], [0.062, -0.025, 0.42]], smg: [[-0.03, -0.07, 0.04], [0.055, -0.02, 0.28]], caca: [[-0.035, -0.06, -0.12], [0.058, -0.02, 0.3]], m249: [[-0.04, -0.1, -0.04], [0.068, -0.035, 0.4]], pkm: [[-0.04, -0.1, -0.04], [0.066, -0.035, 0.42]] };
 const EYE = 0.3; // distância do olho ao vidro da mira (m)
-const EYE_RD = 0.5; // mira de ponto vermelho: mais à frente, como numa arma a sério (vê-se o mundo à volta dela)
+const EYE_RD = 0.36; // mira holográfica: o olho a uns 30 cm do capuz, janela larga no meio do ecrã
 // a mira com vidro transparente (no boneco o vidro é opaco, mas aqui olha-se através dele)
-const rdGeo = (y, z) => { const b = new Builder(0), BLK = 0x1c1e21; b.push(...WPUSH); b.box(0.045, 0.012, 0.07, 0, y - 0.02, z, 0x2a2c2e, { mat: 'm' }); for (const s of [-1, 1]) b.box(0.006, 0.05, 0.06, s * 0.022, y + 0.01, z, BLK, { mat: 'm' }); b.box(0.05, 0.008, 0.06, 0, y + 0.038, z, BLK, { mat: 'm' }); b.box(0.038, 0.04, 0.004, 0, y + 0.012, z + 0.028, 0xffffff, { mat: 'gl' }); b.pop(); const o = {}; for (const [k] of b.buckets) o[k] = b.merged(k); return o; };
+// mira holográfica (tipo EOTech): janela retangular larga com capuz, retículo (anel e ponto) no meio da janela; o olho fica à altura do
+// centro da janela, um pouco acima da mira de ferro (o poste da frente aparece só no terço de baixo)
+const HOLO_C = 0.0275; // altura do centro da janela acima do topo do encaixe
+const rdGeo = (y, z) => { const b = new Builder(0), BLK = 0x1c1e21, cy = y + HOLO_C - 0.0015; b.push(...WPUSH);
+  b.box(0.05, 0.016, 0.088, 0, y - 0.004, z, 0x2a2c2e, { mat: 'm' }); // base no carril
+  for (const s2 of [-1, 1]) b.box(0.006, 0.05, 0.072, s2 * 0.0285, cy, z, BLK, { mat: 'm' }); // paredes do capuz
+  b.box(0.063, 0.006, 0.072, 0, cy + 0.0255, z, BLK, { mat: 'm' }); b.box(0.063, 0.007, 0.072, 0, cy - 0.022, z, BLK, { mat: 'm' }); // teto e parapeito
+  b.box(0.051, 0.043, 0.003, 0, cy + 0.0015, z + 0.033, 0xd8e4ee, { mat: 'gl' }); // vidro da frente
+  b.box(0.014, 0.022, 0.034, 0.036, y + 0.006, z - 0.012, 0x2a2c2e, { mat: 'm' }); // botões ao lado
+  b.pop(); const o = {}; for (const [k] of b.buckets) o[k] = b.merged(k); return o; };
 const geoMap = fn => { const b = new Builder(0); fn(b); const o = {}; for (const [k] of b.buckets) o[k] = b.merged(k); return o; };
 // o que se tem na mão ao usar ou lançar (centrado na palma)
 const PROPS = {
@@ -64,7 +73,7 @@ export function makeVM() {
       const [ry, rz] = RDP[k] || [0.085, 0.1]; if (att.scope === 'reddot' && RDP[k]) gun.add(meshOf(rdGeo(ry, rz)));
       for (const t of ['mag', 'bolt', 'pump']) { const P = addPart(t + '_' + k); if (P) parts[t] = P; }
       // arma virada para a frente (−z da câmara) e o vidro da mira no eixo da vista; mira de ferro: o olho um pouco acima, a ver por cima da arma
-      A = GUNA(k); const S = A && att.scope !== 'reddot' && !(att.scope && att.scope !== 'iron') ? VP(WPUSH[0], WPUSH[1] + A.iron, WPUSH[2] + A.eyez + EYE) : VP(WPUSH[0], WPUSH[1] + ry + (att.scope === 'reddot' ? 0.012 : 0.035), WPUSH[2] + rz);
+      A = GUNA(k); const S = A && att.scope !== 'reddot' && !(att.scope && att.scope !== 'iron') ? VP(WPUSH[0], WPUSH[1] + A.iron, WPUSH[2] + A.eyez + EYE) : VP(WPUSH[0], WPUSH[1] + ry + (att.scope === 'reddot' ? HOLO_C : 0.035), WPUSH[2] + rz);
       HH = (A ? [[-0.006, A.grip[1] - 0.004, A.grip[2] + 0.006], [0.004, A.fore[1] - 0.026, A.fore[2] - 0.02]] : (HANDS[k] || HANDS.m4)).map(h => VP(WPUSH[0] + h[0], WPUSH[1] + h[1], WPUSH[2] + h[2]));
       gun.rotation.y = Math.PI; gun.position.set(S.x, -S.y, -(att.scope === 'reddot' ? EYE_RD : EYE) + S.z); gun.updateMatrix(); // o ponto vermelho fica mais longe do olho: caixa pequena, janela larga, quase nada tapado
       // a arma roda à volta do punho (recargas): grupo de rotação no punho
@@ -95,7 +104,7 @@ export function makeVM() {
   const safeF = f => { f.normalize(); if (f.y < 0.3) f.y = 0.3; if (f.z > -0.45) f.z = -0.45; return f.normalize(); };
   const showProp = (k, at, R, off) => { const p = props[k]; p.visible = true; p.position.copy(at); if (R) p.quaternion.setFromRotationMatrix(R); if (off) p.position.add(off); return p; };
   return {
-    scene, cam, set, dbg: () => ({ arms, rig, piv, gun, props, D: G_DBG }),
+    scene, cam, set, dbg: () => ({ arms, rig, piv, gun, props, D: G_DBG, scene, cam }),
     get on() { return !!kind; },
     get kind() { return kind; },
     fire() { kick = 1; },

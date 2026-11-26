@@ -16,7 +16,7 @@ export function initArenaUI(G, { $, audio, toast }) {
   const curAtt = (k, g, a0) => { const c = katt[k] && katt[k][g]; if (c) return c; const d = a0 || {}; return { scope: d.scope || (RDP[g] ? 'iron' : 'nada'), sup: !!d.sup, light: !!d.light }; };
   const attOf = k => { const o = {}; for (const [g, a0] of guns(k)) o[g] = curAtt(k, g, a0); return o; };
   const hasAtt = k => guns(k).some(([g]) => { const o = optsOf(g); return o.scope || o.sup || o.light; });
-  const SCN = { iron: 'Ferro', nada: 'Sem mira', reddot: 'Ponto vermelho', mira4: '4×', mira8: '8×' };
+  const SCN = { iron: 'Ferro', nada: 'Sem mira', reddot: 'Holográfica', mira4: '4×', mira8: '8×' };
   const lines = k => { const K = ARENA_KITS[k], L = [];
     for (const [g, a] of K.belt) { const d = ITEMS[g]; if (!d) continue; if (d.gun) { const c = curAtt(k, g, a), at = [c.scope && c.scope !== 'iron' && c.scope !== 'nada' ? nm(c.scope) : '', c.sup ? 'silenc.' : '', c.light ? 'lanterna' : ''].filter(Boolean).join(', '); L.push(nm(g) + (at ? ' · ' + at : '')); } else L.push((a > 1 ? a + ' × ' : '') + nm(g)); }
     const prot = [K.head && 'capacete', K.vest && 'colete'].filter(Boolean); if (prot.length) L.push(prot.join(' e ').replace(/^./, c => c.toUpperCase()));
@@ -51,7 +51,7 @@ export function initArenaUI(G, { $, audio, toast }) {
     el.querySelector('.aT').textContent = dead ? (G.arenaBy ? 'Morto por ' + G.arenaBy : 'Morreste') : 'Arena de Tóquio';
     el.querySelector('.asc2').innerHTML = `<i class="r">${s[0]}</i><em>baixas</em><i class="b">${s[1]}</i>`;
     el.querySelectorAll('.asteps li').forEach(li => { const k = +li.dataset.s; li.className = k === step ? 'on' : k < step ? 'done' : ''; li.style.display = k === 3 && !hasAtt(kit) ? 'none' : ''; });
-    $('arX').hidden = mode !== 'menu'; el.dataset.step = step;
+    $('arX').hidden = false; $('arX').setAttribute('aria-label', mode === 'menu' ? 'Fechar' : 'Sair da arena'); $('arX').title = mode === 'menu' ? 'Fechar' : 'Sair da arena'; el.dataset.step = step;
     if (step === 1) p1.innerHTML = `<div class="ateams">${[0, 1].map(t => `<button class="atm t${t}${team === t ? ' on' : ''}" data-t="${t}" aria-pressed="${team === t}"><b>${TN[t]}</b><span>${t ? 'Nasces a este' : 'Nasces a oeste'}</span><em>${G.net && G.net.on ? N[t] + ' ' + (N[t] === 1 ? 'jogador' : 'jogadores') : ''}</em></button>`).join('')}</div><p class="ahelp">Os colegas de equipa aparecem a azul e não lhes acertas.</p>`;
     const K = ARENA_KITS[kit];
     if (step === 2) info.innerHTML = `<div class="akh"><span class="aks">${ARENA_KIT_SVG[kit]}</span><div><b>${esc(K.n)}</b><em>${ARENA_KIT_ORDER.indexOf(kit) + 1} de ${ARENA_KIT_ORDER.length}${mode === 'menu' ? ' · conta ao renasceres' : ''}</em></div></div><p class="akd">${esc(K.d)}</p><ul class="akl2">${lines(kit).map(l => '<li>' + esc(l) + '</li>').join('')}</ul>`;
@@ -79,7 +79,7 @@ export function initArenaUI(G, { $, audio, toast }) {
     if (b.dataset.t != null) { const t = +b.dataset.t; if (mode !== 'lobby' && t !== team) { team = t; G.arenaTeamSet(t); toast('Mudaste para a equipa ' + TN[t]); } else team = t; keep(); step = 2; dir = 1; render(true); return; }
     if (b.dataset.f) { const g = b.dataset.g, f = b.dataset.f, a0 = (guns(kit).find(([x]) => x === g) || [])[1]; katt[kit] = katt[kit] || {}; const c = { ...curAtt(kit, g, a0) }; c[f] = f === 'scope' ? b.dataset.v : b.dataset.v === '1'; katt[kit][g] = c; keep(); if (G.playing) G.arenaKitSet(kit); render(); return; }
     if (b.id === 'arAtt') { step = 3; render(); return; }
-    if (b.id === 'arX') { hide(); return; }
+    if (b.id === 'arX') { if (mode === 'menu') { hide(); return; } try { sessionStorage.removeItem('kgArena'); } catch (e) { } G.updating = true; location.reload(); return; }
     if (b.id === 'arBack') { if (step > 1) { step--; render(); return; } try { sessionStorage.removeItem('kgArena'); } catch (e) { } G.updating = true; location.reload(); return; }
     if (b.id === 'arGo') { if (b.disabled) return; if (step === 1) { if (team == null) return; step = 2; dir = 1; render(true); return; }
       if (mode === 'lobby') { hide(); G.arenaStart(team, kit); } else if (mode === 'dead') { if (cd > 0) return; hide(); G.arenaKitK = kit; G.arenaRespawn(); } else hide(); } });

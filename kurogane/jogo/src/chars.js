@@ -286,7 +286,7 @@ export function fpArms(c) {
   const PI_ = new Uint16Array(zbuf(FPARMS.pi)), POSES = {}, NA = g.attributes.normal.array;
   for (const nm in FPARMS.poses || {}) { const Q = new Int16Array(zbuf(FPARMS.poses[nm].p)), Nq = new Int8Array(zbuf(FPARMS.poses[nm].nm)); const pp = new Float32Array(Q.length); for (let i = 0; i < Q.length; i++) pp[i] = Q[i] / 32767 * 2; POSES[nm] = { p: pp, n: Nq }; }
   const curPose = [null, null];
-  const setPose = (side, nm) => { if (curPose[side] === nm || !POSES[nm]) return; curPose[side] = nm; const Q = POSES[nm]; for (let k = 0; k < PI_.length; k++) { const v = PI_[k]; if ((P[v * 3] > 0) !== !!side) continue; P[v * 3] = Q.p[k * 3]; P[v * 3 + 1] = Q.p[k * 3 + 1]; P[v * 3 + 2] = Q.p[k * 3 + 2]; NA[v * 3] = Q.n[k * 3]; NA[v * 3 + 1] = Q.n[k * 3 + 1]; NA[v * 3 + 2] = Q.n[k * 3 + 2]; } g.attributes.position.needsUpdate = true; g.attributes.normal.needsUpdate = true; };
+  const setPose = (side, nm) => { if (curPose[side] === nm || !POSES[nm]) return; curPose[side] = nm; const Q = POSES[nm]; for (let k = 0; k < PI_.length; k++) { const v = PI_[k]; if ((P[v * 3] > 0) === !!side) continue; P[v * 3] = Q.p[k * 3]; P[v * 3 + 1] = Q.p[k * 3 + 1]; P[v * 3 + 2] = Q.p[k * 3 + 2]; NA[v * 3] = Q.n[k * 3]; NA[v * 3 + 1] = Q.n[k * 3 + 1]; NA[v * 3 + 2] = Q.n[k * 3 + 2]; } g.attributes.position.needsUpdate = true; g.attributes.normal.needsUpdate = true; };
   // ponto onde a mão agarra (centro da mão fechada) de cada lado
   const B = PBODY.bind, grip = [4, 5].map(sg => { const o = new THREE.Vector3(); let n = 0; for (let v = 0; v < P.length / 3; v++) if (dom(v) === sg && P[v * 3 + 1] < 0.86) { o.x += P[v * 3]; o.y += P[v * 3 + 1]; o.z += P[v * 3 + 2]; n++; } return o.divideScalar(n || 1); });
   const data = new Float32Array(30 * 4), tex = new THREE.DataTexture(data, 30, 1, THREE.RGBAFormat, THREE.FloatType);
@@ -304,26 +304,27 @@ export function fpArms(c) {
   const self = { mesh, uni, grip, setPose,
     setColors(c) { Body.prototype.setColors.call(self, c); },
     dispose() { PTEX.mats.delete(m); m.dispose(); tex.dispose(); g.dispose(); },
-    // lado 0 = esquerdo, 1 = direito; palma: direção para onde vira a palma da mão (no espaço de quem chama)
+    // lado 0 = esquerdo, 1 = direito (no ecrã). A malha tem a mão direita a x < 0 (o boneco olha para +z): o lado direito do ecrã usa essa,
+    // senão ficava uma mão esquerda à direita, a agarrar com as costas da mão e o polegar do lado errado. palma: direção para onde vira a palma da mão (no espaço de quem chama)
     place(side, S, H, pole, palm, fwd) {
-      const F = _fa, bA = B[side ? 'armR' : 'armL'], bF = B[side ? 'foreR' : 'foreL'], L1 = Math.hypot(bF[0] - bA[0], bF[1] - bA[1], bF[2] - bA[2]);
-      const Gl = F.w.set(grip[side].x - bF[0], grip[side].y - bF[1], grip[side].z - bF[2]), L2 = Gl.length();
+      const F = _fa, bA = B[side ? 'armL' : 'armR'], bF = B[side ? 'foreL' : 'foreR'], L1 = Math.hypot(bF[0] - bA[0], bF[1] - bA[1], bF[2] - bA[2]);
+      const gS = grip[side ? 0 : 1], Gl = F.w.set(gS.x - bF[0], gS.y - bF[1], gS.z - bF[2]), L2 = Gl.length();
       // longe demais: o ombro vai atrás da mão (como quem estica o corpo), para a mão chegar sempre ao sítio
       F.d.subVectors(H, S); let D = F.d.length(); const Dm = L1 + L2 - 0.03; S = F.w2 = (F.w2 || new THREE.Vector3()).copy(S); if (D > Dm) { S.addScaledVector(F.d, (D - Dm) / D); D = Dm; } D = Math.max(D, Math.abs(L1 - L2) + 0.01); F.d.normalize();
       F.n.copy(pole).addScaledVector(F.d, -pole.dot(F.d)).normalize();
       if (fwd) { F.E.copy(H).addScaledVector(fwd, -L2); F.b2.subVectors(S, F.E).normalize(); S.copy(F.E).addScaledVector(F.b2, L1); } // antebraço na direção pedida (a mão fica bem virada); o ombro acompanha
       else { const a = (L1 * L1 - L2 * L2 + D * D) / (2 * D), h = Math.sqrt(Math.max(0, L1 * L1 - a * a)); F.E.copy(S).addScaledVector(F.d, a).addScaledVector(F.n, h); }
-      const hx = side ? -1 : 1; // palma de cada mão no corpo em pé: virada para dentro
+      const hx = side ? 1 : -1; // palma de cada mão no corpo em pé: virada para dentro
       // antebraço: o ponto de agarrar vai ao alvo e a palma vira para onde se pede
       F.b1.subVectors(H, F.E).normalize(); F.a1.copy(Gl).normalize(); const Rf = mapBasis(F.a1, F.b3.set(0, 0, 1), F.b1, palm, F.Rf || (F.Rf = new THREE.Matrix4())); // 'palm' = para onde aponta o polegar (o eixo do que a mão agarra)
       // braço: do ombro ao cotovelo, rodado o mesmo que o antebraço (sem torcer o cotovelo)
       const pw = (F.pw || (F.pw = new THREE.Vector3())).set(hx, 0, 0).applyMatrix4(Rf); F.b1.subVectors(F.E, S).normalize(); F.a1.set(bF[0] - bA[0], bF[1] - bA[1], bF[2] - bA[2]).normalize(); const Ru = mapBasis(F.a1, F.b3.set(hx, 0, 0), F.b1, pw, F.Ru || (F.Ru = new THREE.Matrix4()));
       const put = (k, R, at, b) => { F.M.makeTranslation(at.x, at.y, at.z).multiply(R).multiply(F.T.makeTranslation(-b[0], -b[1], -b[2])); const e = F.M.elements, o = k * 12;
         data[o] = e[0]; data[o + 1] = e[4]; data[o + 2] = e[8]; data[o + 3] = e[12]; data[o + 4] = e[1]; data[o + 5] = e[5]; data[o + 6] = e[9]; data[o + 7] = e[13]; data[o + 8] = e[2]; data[o + 9] = e[6]; data[o + 10] = e[10]; data[o + 11] = e[14]; };
-      put(side ? 3 : 2, Ru, S, bA); put(side ? 5 : 4, Rf, F.E, bF); tex.needsUpdate = true; if (self.dbg) (self.last || (self.last = []))[side] = [S, F.E, H].map(v => v.toArray().map(x => +x.toFixed(3))); return F.E;
+      put(side ? 2 : 3, Ru, S, bA); put(side ? 4 : 5, Rf, F.E, bF); tex.needsUpdate = true; if (self.dbg) (self.last || (self.last = []))[side] = [S, F.E, H].map(v => v.toArray().map(x => +x.toFixed(3))); return F.E;
     },
-    restAt(side, x, y, z, rx = 0, ry = 0) { const R = new THREE.Matrix4().makeRotationFromEuler(new THREE.Euler(rx, ry, 0)); for (const k of side ? [3, 5] : [2, 4]) { const gp = grip[side], M = new THREE.Matrix4().makeTranslation(x, y, z).multiply(R).multiply(new THREE.Matrix4().makeTranslation(-gp.x, -gp.y, -gp.z)); const e = M.elements, o = k * 12; data[o] = e[0]; data[o + 1] = e[4]; data[o + 2] = e[8]; data[o + 3] = e[12]; data[o + 4] = e[1]; data[o + 5] = e[5]; data[o + 6] = e[9]; data[o + 7] = e[13]; data[o + 8] = e[2]; data[o + 9] = e[6]; data[o + 10] = e[10]; data[o + 11] = e[14]; } tex.needsUpdate = true; },
-    hide(side) { const o = (side ? 3 : 2) * 12, o2 = (side ? 5 : 4) * 12; for (const q of [o, o2]) { data.fill(0, q, q + 12); } tex.needsUpdate = true; } };
+    restAt(side, x, y, z, rx = 0, ry = 0) { const R = new THREE.Matrix4().makeRotationFromEuler(new THREE.Euler(rx, ry, 0)); for (const k of side ? [2, 4] : [3, 5]) { const gp = grip[side ? 0 : 1], M = new THREE.Matrix4().makeTranslation(x, y, z).multiply(R).multiply(new THREE.Matrix4().makeTranslation(-gp.x, -gp.y, -gp.z)); const e = M.elements, o = k * 12; data[o] = e[0]; data[o + 1] = e[4]; data[o + 2] = e[8]; data[o + 3] = e[12]; data[o + 4] = e[1]; data[o + 5] = e[5]; data[o + 6] = e[9]; data[o + 7] = e[13]; data[o + 8] = e[2]; data[o + 9] = e[6]; data[o + 10] = e[10]; data[o + 11] = e[14]; } tex.needsUpdate = true; },
+    hide(side) { const o = (side ? 2 : 3) * 12, o2 = (side ? 4 : 5) * 12; for (const q of [o, o2]) { data.fill(0, q, q + 12); } tex.needsUpdate = true; } };
   self.setColors(c); return self;
 }
 const _rm = new THREE.Matrix4(), _rk = new THREE.Matrix4();

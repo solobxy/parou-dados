@@ -802,6 +802,8 @@ body.mir #touch .tb>*,body.mir #touch .ghost{transform:scaleX(-1)}
 @media (orientation:landscape) and (max-height:360px){body.touch #tSprint,body.touch #tLight{transform:scale(.86);transform-origin:0 0;bottom:auto}body.touch #tSprint{left:calc(12px + var(--sl));top:calc(var(--st) + 122px)}body.touch #tLight{left:calc(68px + var(--sl));top:calc(var(--st) + 122px)}}
 @media (orientation:landscape) and (max-width:700px){body.touch #zone{display:none}}
 @media (orientation:landscape) and (min-height:361px){body.touch #tSprint{bottom:min(calc(214px + var(--sb)),calc(100% - var(--st) - 12px - var(--mmw) - 70px))}body.touch #tLight{bottom:min(calc(148px + var(--sb)),calc(100% - var(--st) - 12px - var(--mmw) - 136px))}}
+#inv.arena .tabs [data-tab=craft],#inv.arena .tabs [data-tab=skills]{display:none}#inv.arena.nobox #cBox,#inv.arena #iHint:empty{display:none}
+#scope .rdr{display:none}#scope.rd:not(.ir) .rdr{display:block;fill:none;stroke:#ff4a35;stroke-width:1;stroke-linecap:round;filter:drop-shadow(0 0 1.5px rgba(255,70,50,.9))}#scope.rd:not(.ir) .rdot{filter:drop-shadow(0 0 2px rgba(255,70,50,.95))}
 </style>
 </head>
 <body>
@@ -815,7 +817,7 @@ body.mir #touch .tb>*,body.mir #touch .ghost{transform:scaleX(-1)}
   <div id="use" hidden><span></span><i><b></b></i></div>
   <div id="prompt" hidden><kbd>E</kbd><span></span></div>
   <div class="szero" id="szero" hidden><button id="zDn" aria-label="Zero mais perto">{{minus}}</button><div><b id="scZero">100 m</b><span>zero</span></div><button id="zUp" aria-label="Zero mais longe">{{plus}}</button></div>
-  <div id="scope" hidden><div class="hole"></div><div class="rdf"></div><svg class="ret" viewBox="-100 -100 200 200" aria-hidden="true"><path d="M-100 0H-14M14 0H100M0 -100V-14M0 14V100" /><path class="thin" d="M-14 0H-3M3 0H14M0 -14V-3M0 3V14" /><g class="dots"><circle cx="-40" cy="0" r="1.6"/><circle cx="-70" cy="0" r="1.6"/><circle cx="40" cy="0" r="1.6"/><circle cx="70" cy="0" r="1.6"/><circle cx="0" cy="40" r="1.6"/><circle cx="0" cy="70" r="1.6"/></g><g class="hold" id="scHold"></g><circle class="rdot" cx="0" cy="0" r="1.5"/><circle class="rdg" cx="0" cy="0" r="4"/><circle class="c" cx="0" cy="0" r="1.1"/></svg><div class="sinfo"><b id="scMag">4×</b><span id="scDist"></span></div><div class="breath"><i id="scBr"></i></div></div>
+  <div id="scope" hidden><div class="hole"></div><div class="rdf"></div><svg class="ret" viewBox="-100 -100 200 200" aria-hidden="true"><path d="M-100 0H-14M14 0H100M0 -100V-14M0 14V100" /><path class="thin" d="M-14 0H-3M3 0H14M0 -14V-3M0 3V14" /><g class="dots"><circle cx="-40" cy="0" r="1.6"/><circle cx="-70" cy="0" r="1.6"/><circle cx="40" cy="0" r="1.6"/><circle cx="70" cy="0" r="1.6"/><circle cx="0" cy="40" r="1.6"/><circle cx="0" cy="70" r="1.6"/></g><g class="hold" id="scHold"></g><circle class="rdot" cx="0" cy="0" r="1.3"/><g class="rdr"><circle cx="0" cy="0" r="8.5"/><path d="M0 -8.5V-5.8M0 8.5V5.8M-8.5 0H-5.8M8.5 0H5.8"/></g><circle class="rdg" cx="0" cy="0" r="4"/><circle class="c" cx="0" cy="0" r="1.1"/></svg><div class="sinfo"><b id="scMag">4×</b><span id="scDist"></span></div><div class="breath"><i id="scBr"></i></div></div>
   <div id="xh" hidden><div class="ring"></div><i></i><i></i><i></i><i></i><b class="dot"></b><span class="zl"></span></div>
   <div id="hm" hidden><i></i><i></i><i></i><i></i></div>
   <div id="touch">
@@ -872,10 +874,10 @@ body.mir #touch .tb>*,body.mir #touch .ghost{transform:scaleX(-1)}
   <div class="prof" id="prof"></div>
   <div class="mnote" id="mnote" hidden></div>
   <p class="lead">Um bairro de Tóquio tomado por zombies, rodeado de floresta, vilas e um templo nas montanhas. Revista, treina o corpo, foge ou luta. O melhor loot está no centro.</p>
-  <nav class="menu"><button class="mi pri" id="sCont" hidden><b>Continuar</b><em>Voltas onde ficaste</em></button><button class="mi pri" id="sPlay"><b>Jogar</b><em>Continuas onde ficaste, ou começas perto de uma vila</em></button><button class="mi" id="sArena"><b>Arena</b><em>PvP em Tóquio · Vermelha contra Azul · 5 kits</em></button><button class="mi" id="sSet"><b>Definições</b><em>Controlos, imagem e som</em></button></nav>
+  <nav class="menu"><button class="mi pri" id="sCont" hidden><b>Continuar</b><em>Voltas onde ficaste</em></button><button class="mi pri" id="sPlay"><b>Survival</b><em>Continuas onde ficaste, ou começas perto de uma vila</em></button><button class="mi" id="sArena"><b>Arena</b><em>PvP em Tóquio · Vermelha contra Azul · 5 kits</em></button><button class="mi" id="sSet"><b>Definições</b><em>Controlos, imagem e som</em></button></nav>
   <div class="onl" id="sOnl" role="status"><i class="dot" aria-hidden="true"></i><span><b>Servidor</b><em id="sOnT">A ver quem está a jogar…</em></span></div>
   <div class="keys" id="sKeys"></div>
-  <div class="foot">Protótipo 0.49 · um servidor para todos · quem sai fica a dormir no mundo</div>
+  <div class="foot">Protótipo 0.50 · um servidor para todos · quem sai fica a dormir no mundo</div>
 </div><button id="sMus" aria-label="Música do menu"><span class="on">{{volume-2}}</span><span class="off">{{volume-x}}</span></button><a class="credit" href="https://dinissousa.pt" target="_blank" rel="noopener">feito por dinissousa.pt</a></div>
 <div id="arw" class="ov" hidden></div>
 <div id="pfm" class="ov" hidden><div class="pfbox"><div class="pfh"><b id="pfT"></b><button class="close" id="pfX" aria-label="Fechar">{{x}}</button></div><div id="pfB" class="pfb"></div></div></div>

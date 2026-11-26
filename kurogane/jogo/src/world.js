@@ -231,8 +231,8 @@ export function buildWorld(scene, mats, A, opt = {}) {
           if (!op) { if (cut) { piece(s0, s1, 0, cutY, wall); piece(s0, s1, cutY, h, wall, 'v', true); } else piece(s0, s1, 0, h, wall); col(s0, s1, 's'); if (L === 0) bx(s0, s1, 0, 0.3, t + 0.06, pl); }
           else if (op.k === 'd') {
             piece(s0, s1, 2.3, h, wall, 'v', cut);
-            bx(s0 - 0.1, s0, 0, 2.35, jt, trim); bx(s1, s1 + 0.1, 0, 2.35, jt, trim);
-            b.cut = cut ? gt : gk; bx(s0 - 0.1, s1 + 0.1, 2.3, 2.42, jt, trim); b.cut = gk;
+            bx(s0 - 0.1, s0 + 0.008, 0, 2.35, jt, trim); bx(s1 - 0.008, s1 + 0.1, 0, 2.35, jt, trim); // o aro entra 1 cm na abertura: sem faces no mesmo plano que a parede (piscava)
+            b.cut = cut ? gt : gk; bx(s0 - 0.1, s1 + 0.1, 2.288, 2.42, jt, trim); b.cut = gk;
             const inward = (sd === 's' || sd === 'e') ? -1 : 1;
             if (op.w <= 2.4) door(horiz, fixed, inward, s0, s1, t, L, C, cut, doorC);
             else { b.cut = cut ? gt : gk; bx(s0, s1, 1.95, 2.3, 0.45, 0x8a8e92, 'm', inward * 0.12); b.cut = gk; }
