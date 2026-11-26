@@ -79,6 +79,58 @@ async function contexto(estado) {
   await ctx.close();
 }
 
+{ // sem sinal de GPS (dentro de casa): o telemóvel só dá a posição guardada (sempre a mesma) e o GPS nunca responde.
+  // A app não pode ficar presa em «A localizar…» a recomeçar sem parar (aconteceu a 26/11/2026, logo depois de publicar).
+  const { ctx, p, erros } = await contexto('granted');
+  await p.addInitScript({ content: `(() => {
+    const G = window.__geo; G.ligada = true; G.watchs = 0;
+    const T0 = Date.now() - 30000;
+    const pos = () => ({ coords: { latitude: 41.15054, longitude: -8.586245, accuracy: 900, heading: null, speed: null, altitude: null, altitudeAccuracy: null }, timestamp: T0 });
+    const tempo = { code: 3, PERMISSION_DENIED: 1, POSITION_UNAVAILABLE: 2, TIMEOUT: 3, message: 'Timeout expired' };
+    const geo = {
+      getCurrentPosition(okf, err, o) { G.pedidos++; setTimeout(() => { if (o && o.enableHighAccuracy) err && err(tempo); else okf(pos()); }, 40); },
+      watchPosition(okf, err) { G.pedidos++; G.watchs++; setTimeout(() => err && err(tempo), 40); return G.watchs; },
+      clearWatch() {},
+    };
+    Object.defineProperty(Navigator.prototype, 'geolocation', { get: () => geo, configurable: true });
+  })();` });
+  await p.goto(BASE + '/', { waitUntil: 'load', timeout: 60000 });
+  await p.waitForTimeout(4000);
+  const a = await p.evaluate(() => window.__geo.watchs);
+  await p.waitForTimeout(8000);
+  const b = await p.evaluate(() => window.__geo.watchs);
+  const preso = await p.evaluate(() => [...document.querySelectorAll('body *')].some((e) => e.childElementCount === 0 && /A localizar…/.test(e.textContent || '') && e.getBoundingClientRect().width > 0));
+  await p.screenshot({ path: `${SAIDA}/localizacao-automatica-3-sem-sinal.png` });
+  ok('sem sinal de GPS: não recomeça a localização sem parar', b - a <= 1, `${b - a} recomeços em 8 s`);
+  ok('sem sinal de GPS: não fica preso em «A localizar…»', !preso);
+  ok('sem erros na página (sem sinal)', erros.length === 0, erros.join(' | '));
+  await ctx.close();
+}
+
+{ // posição aproximada dá, mas a precisa é recusada (permissão só «aproximada» ou GPS bloqueado): a verificação silenciosa
+  // não pode pôr a app a recomeçar a localização sem parar («A localizar…» infinito)
+  const { ctx, p, erros } = await contexto('granted');
+  await p.addInitScript({ content: `(() => {
+    const G = window.__geo; G.watchs = 0;
+    const pos = () => ({ coords: { latitude: 41.15054, longitude: -8.586245, accuracy: 1200, heading: null, speed: null, altitude: null, altitudeAccuracy: null }, timestamp: Date.now() });
+    const negado = { code: 1, PERMISSION_DENIED: 1, POSITION_UNAVAILABLE: 2, TIMEOUT: 3, message: 'User denied Geolocation' };
+    const geo = {
+      getCurrentPosition(okf, err, o) { G.pedidos++; setTimeout(() => { if (o && o.enableHighAccuracy) err && err(negado); else okf(pos()); }, 40); },
+      watchPosition(okf, err) { G.pedidos++; G.watchs++; setTimeout(() => err && err(negado), 60); return G.watchs; },
+      clearWatch() {},
+    };
+    Object.defineProperty(Navigator.prototype, 'geolocation', { get: () => geo, configurable: true });
+  })();` });
+  await p.goto(BASE + '/', { waitUntil: 'load', timeout: 60000 });
+  await p.waitForTimeout(3000);
+  const a = await p.evaluate(() => window.__geo.watchs);
+  await p.waitForTimeout(10000);
+  const b = await p.evaluate(() => window.__geo.watchs);
+  ok('só a posição aproximada dá: não entra num ciclo de recomeços', b - a <= 2, `${b - a} recomeços em 10 s`);
+  ok('sem erros na página (aproximada)', erros.length === 0, erros.join(' | '));
+  await ctx.close();
+}
+
 { // nunca autorizou o site: a app não pergunta sozinha (a pergunta do browser só com um toque)
   const { ctx, p, erros } = await contexto('prompt');
   await p.goto(BASE + '/', { waitUntil: 'load', timeout: 60000 });
