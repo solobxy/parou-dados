@@ -79,6 +79,33 @@ async function contexto(estado) {
   await ctx.close();
 }
 
+{ // localização do telemóvel desligada e o Chrome nem responde (os pedidos ficam pendurados): a app mostra «Liga a
+  // localização»; quando a pessoa a liga, tem de aparecer sozinha, sem tocar em «Tentar outra vez» (pedido de 26/11/2026)
+  const { ctx, p, erros } = await contexto('granted');
+  await p.addInitScript({ content: `(() => {
+    const G = window.__geo; G.ligada = false;
+    const pos = () => ({ coords: { latitude: 41.15054, longitude: -8.586245, accuracy: 15, heading: null, speed: null, altitude: null, altitudeAccuracy: null }, timestamp: Date.now() });
+    const geo = {
+      // desligada: nunca responde (nem erro); ligada: responde aos pedidos novos
+      getCurrentPosition(okf) { G.pedidos++; if (G.ligada) setTimeout(() => { G.entregues++; okf(pos()); }, 40); },
+      watchPosition(okf) { G.pedidos++; const ligadaAoPedir = G.ligada; if (ligadaAoPedir) setTimeout(() => { G.entregues++; okf(pos()); }, 40); return 1; },
+      clearWatch() {},
+    };
+    Object.defineProperty(Navigator.prototype, 'geolocation', { get: () => geo, configurable: true });
+  })();` });
+  await p.goto(BASE + '/', { waitUntil: 'load', timeout: 60000 });
+  await p.waitForSelector('[data-teste="ativar-localizacao"]:visible', { timeout: 45000 }).catch(() => {});
+  ok('pedidos pendurados: ao fim de pouco tempo a app pede para ligar a localização', await p.locator('[data-teste="ativar-localizacao"]:visible').count() > 0);
+  const t0 = Date.now();
+  await p.evaluate(() => { window.__geo.ligada = true; });
+  const apareceu = await p.waitForFunction(() => ![...document.querySelectorAll('[data-teste="ativar-localizacao"]')].some((e) => e.getBoundingClientRect().width > 0),
+    null, { timeout: 10000 }).then(() => true).catch(() => false);
+  const ms = Date.now() - t0;
+  ok('pedidos pendurados: ao ligar a localização, aparece sozinha e depressa (menos de 4 s)', apareceu && ms < 4000, `${ms} ms`);
+  ok('sem erros na página (pendurados)', erros.length === 0, erros.join(' | '));
+  await ctx.close();
+}
+
 { // sem sinal de GPS (dentro de casa): o telemóvel só dá a posição guardada (sempre a mesma) e o GPS nunca responde.
   // A app não pode ficar presa em «A localizar…» a recomeçar sem parar (aconteceu a 26/11/2026, logo depois de publicar).
   const { ctx, p, erros } = await contexto('granted');
