@@ -17,6 +17,18 @@ on:
         description: "Número da versão (sobe 1 em cada envio para a Play Store)"
         required: false
         default: "1"
+      enviar:
+        description: "Enviar para a Google Play (teste fechado) no fim? (sim/não)"
+        required: false
+        default: "sim"
+      faixa:
+        description: "Faixa da Play (vazio = descobre o teste fechado)"
+        required: false
+        default: ""
+      notas:
+        description: "Notas da versão (o que mudou, em português)"
+        required: false
+        default: ""
 
 permissions:
   contents: write
@@ -126,6 +138,20 @@ jobs:
           gh release view android >/dev/null 2>&1 || gh release create android --title "App Android" --notes "App Android da PAROU (Trusted Web Activity)."
           gh release upload android "PAROU-${{ inputs.versao }}.aab" "PAROU-${{ inputs.versao }}.apk" assetlinks.json sha256.txt --clobber
           gh release edit android --notes "Versão ${{ inputs.versao }} (código ${{ inputs.codigo }}). SHA-256 da chave de envio: $(cat sha256.txt)"
+
+      - name: Enviar para a Google Play
+        if: inputs.enviar == 'sim'
+        working-directory: android
+        env:
+          PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+          NOTAS: ${{ inputs.notas }}
+          FAIXA: ${{ inputs.faixa }}
+        run: |
+          exec > >(tee -a $GITHUB_WORKSPACE/registo-android.txt) 2>&1
+          set -e
+          if [ -z "$PLAY_SERVICE_ACCOUNT_JSON" ]; then echo "Sem o segredo PLAY_SERVICE_ACCOUNT_JSON: o .aab fica só na release (envio à mão)."; exit 0; fi
+          pip install -q google-auth google-api-python-client
+          python enviar_play.py app-release-bundle.aab "${{ inputs.codigo }}" "$FAIXA" "$NOTAS"
 
       - name: Guardar o registo
         if: always()

@@ -97,3 +97,7 @@ GitHub › solobxy/parou-dados › Actions › **App Android (Google Play)** ›
 ## Localização (versão 1.0.1)
 
 Na 1.0.0 a localização era «delegada» à app Android: o Android pedia uma autorização própria da PAROU e, em vários telemóveis, esse pedido não aparecia (a localização ficava recusada sem a pessoa ter recusado nada, e o mapa mostrava a última posição guardada, parada). Desde a 1.0.1 a localização é tratada pelo Chrome, como no site: aparece o pedido normal «parou.pt quer saber a sua localização».
+
+## Envio automático para a Play (desde 26/11/2026)
+
+O workflow **App Android (Google Play)** compila e, com `enviar=sim`, manda o .aab para a faixa de teste fechado pela API da Google Play (`android/enviar_play.py`). Precisa do segredo `PLAY_SERVICE_ACCOUNT_JSON` (chave JSON de uma conta de serviço convidada em Play Console › Utilizadores e autorizações, com autorização para lançar em faixas de teste). Sem o segredo, o .aab fica só na release `android` para envio à mão. Cada versão continua a passar pela revisão da Google. Enviar versões novas para a mesma faixa não apaga os testadores nem recomeça os 14 dias.
