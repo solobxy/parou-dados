@@ -1,0 +1,47 @@
+== 2026-11-26T12:50:26Z acao=comando
+IP: 2.31.13.85
+== Saída no servidor
+fef21d00207024fabd8356b69a09b285fbcb5b6a
+
+src/hooks/useUserLocation.ts:165:      navigator.geolocation.clearWatch(watchIdRef.current);
+src/hooks/useUserLocation.ts:220:      navigator.geolocation.clearWatch(watchIdRef.current);
+src/hooks/useUserLocation.ts:278:    navigator.geolocation.getCurrentPosition(
+src/hooks/useUserLocation.ts:283:      { enableHighAccuracy: false, timeout: 6000, maximumAge: 10 * 60_000 }
+src/hooks/useUserLocation.ts:288:      enableHighAccuracy: forceHighAccuracy,
+src/hooks/useUserLocation.ts:290:      maximumAge: forceHighAccuracy ? 0 : 5000,
+src/hooks/useUserLocation.ts:293:    navigator.geolocation.getCurrentPosition(
+src/hooks/useUserLocation.ts:302:          navigator.geolocation.getCurrentPosition(
+src/hooks/useUserLocation.ts:305:            { enableHighAccuracy: false, timeout: 12000, maximumAge: 30000 }
+src/hooks/useUserLocation.ts:317:        try { navigator.geolocation.clearWatch(watchIdRef.current); } catch {}
+src/hooks/useUserLocation.ts:321:        const id = navigator.geolocation.watchPosition(
+src/hooks/useUserLocation.ts:324:            console.warn('[PAROU GPS watchPosition error]:', err.code, err.message);
+src/hooks/useUserLocation.ts:325:            // If already got a position from getCurrentPosition, keep active
+src/hooks/useUserLocation.ts:330:          { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+src/hooks/useUserLocation.ts:334:        console.error('[PAROU GPS] Exceção watchPosition:', err);
+src/hooks/useUserLocation.ts:341:        navigator.geolocation.getCurrentPosition(
+src/hooks/useUserLocation.ts:344:          { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+src/hooks/useUserLocation.ts:401:      navigator.geolocation.getCurrentPosition(
+src/hooks/useUserLocation.ts:443:        { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
+src/hooks/useUserLocation.ts:649:            navigator.geolocation.getCurrentPosition(
+src/hooks/useUserLocation.ts:659:              { enableHighAccuracy: false, timeout: 2000, maximumAge: 60_000 },
+src/hooks/useUserLocation.ts:693:        navigator.geolocation.clearWatch(watchIdRef.current);
+src/utils/diagGps.ts:21:    const gcp = g.getCurrentPosition.bind(g);
+src/utils/diagGps.ts:22:    const wp = g.watchPosition.bind(g);
+src/utils/diagGps.ts:23:    const cw = g.clearWatch.bind(g);
+src/utils/diagGps.ts:24:    const tipo = (o?: PositionOptions) => `${o?.enableHighAccuracy ? 'H' : 'L'}${o?.timeout ? `/${Math.round(o.timeout / 1000)}s` : ''}`;
+src/utils/diagGps.ts:26:    g.getCurrentPosition = (ok: PositionCallback, err?: PositionErrorCallback | null, o?: PositionOptions) => {
+src/utils/diagGps.ts:32:    g.watchPosition = (ok: PositionCallback, err?: PositionErrorCallback | null, o?: PositionOptions) => {
+src/utils/diagGps.ts:41:    g.clearWatch = (id: number) => { marca(`x#${id}`); cw(id); };
+src/utils/posicao.ts:5:    navigator.geolocation.getCurrentPosition(
+src/utils/posicao.ts:8:      { enableHighAccuracy: false, timeout: 10_000, maximumAge: 5 * 60_000 },
+src/components/PortugalMap.tsx:310:    navigator.geolocation.getCurrentPosition(
+src/components/PortugalMap.tsx:333:      { enableHighAccuracy: true, timeout: 12000, maximumAge: 60_000 },
+src/components/AlertasView.tsx:457:        navigator.geolocation.getCurrentPosition(
+src/components/AlertasView.tsx:460:          { enableHighAccuracy: false, timeout: 8000, maximumAge: 10 * 60_000 },
+src/components/HorariosView.tsx:232:    navigator.geolocation.getCurrentPosition(
+src/components/HorariosView.tsx:246:      { timeout: 8000, enableHighAccuracy: true, maximumAge: 30000 }
+src/components/HorariosView.tsx:476:    navigator.geolocation.getCurrentPosition(
+src/components/HorariosView.tsx:488:      { enableHighAccuracy: true, timeout: 15000, maximumAge: 60_000 },
+== Teste de fora
+https://2-31-13-85.sslip.io/health 200 0.423543s
+https://2-31-13-85.sslip.io/api/transit/loading-status 200 0.422756s
