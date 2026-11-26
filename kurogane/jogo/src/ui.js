@@ -6,6 +6,7 @@ import { forestDens } from './sectors.js';
 import { marks, addMark, delMark, saveMarks, MCOL, MSYM, MSYM_N, drawSym, drawCompass, gridName, gridLet, CELL, bearing, cardOf, distTxt } from './marks.js';
 import { VT } from './vtypes.js';
 import { initArenaUI } from './arenaui.js';
+import { pager, fitDrop } from './pager.js';
 import { audio } from './audio.js';
 import { makeMusic } from './music.js';
 import * as THREE from 'three';
@@ -99,7 +100,7 @@ export function initUI(G) {
   // ---------- inventário
   const inv = $('inv'), gBag = $('gBag'), gBox = $('gBox');
   let sel = null, tab = 'inv', lastPortrait = '', lastTap = { id: 0, t: 0 };
-  inv.querySelectorAll('.tabs button').forEach(b => b.onclick = () => { tab = b.dataset.tab; sel = null; inv.querySelectorAll('.tabs button').forEach(x => x.classList.toggle('on', x === b)); audio.play('ui'); render(); });
+  inv.querySelectorAll('.tabs button').forEach(b => b.onclick = () => { tab = b.dataset.tab; inv.dataset.tab = tab; sel = null; { const L = tab === 'craft' ? $('recipes') : tab === 'skills' ? $('skl') : null; if (L && L._pg) L._pg.first(); } inv.querySelectorAll('.tabs button').forEach(x => x.classList.toggle('on', x === b)); audio.play('ui'); render(); });
   const layout = () => {
     const sl = G.TOUCH ? 46 : innerHeight > 640 ? 60 : 52; inv.style.setProperty('--slot', sl + 'px');
     const body = inv.querySelector('.ibody'), Hb = body.clientHeight, Wd = body.clientWidth, g6 = 5 * GAP;
@@ -120,7 +121,7 @@ export function initUI(G) {
   const fits = (g, it) => { const gd = ITEMS[g.k].gun, d = ITEMS[it.k]; if (!gd || !d.att || (g.att && g.att[d.att] === it.k)) return false; return d.att === 'sup' ? gd.sup === it.k : d.att === 'light' ? !!gd.light : d.rd ? !!(gd.scope || gd.rd) : !!gd.scope && (it.k !== 'mira8' || gd.scope >= 2); };
   // encaixes da arma (mira, cano, calha): cheio mostra a peça, vazio fica tracejado; o que vai receber o acessório escolhido acende
   const slotsHTML = (it, want) => { const gd = ITEMS[it.k].gun; if (!gd) return ''; let h = ''; for (const [s, ok] of [['scope', gd.scope || gd.rd], ['sup', gd.sup], ['light', gd.light]]) { if (!ok) continue; const a = it.att && it.att[s]; h += `<i class="${a ? 'on' : ''}${want === s ? ' tgt' : ''}" title="${{ scope: 'Mira', sup: 'Cano', light: 'Calha' }[s]}">${a ? `<img src="${G.ICONS[a]}" alt="">` : ''}</i>`; } return h ? `<span class="atts">${h}</span>` : ''; };
-  const itemHTML = (it, small, want) => { const d = ITEMS[it.k]; const ct = d.gun ? `<span class="ct am">${d.gun.clip && !it.mg ? '—' : it.ammo}</span>` : d.clip ? `<span class="ct am">${it.am || 0}</span>` : it.n > 1 ? `<span class="ct">${it.n}</span>` : ''; return `<img src="${(small && G.ICONS_SQ && G.ICONS_SQ[it.k]) || G.ICONS[it.k]}" alt="">${small ? '' : `<span class="nm">${d.s}</span>`}${ct}${small ? '' : slotsHTML(it, want)}`; }; // nas casas quadradas (cinto, equipamento) as armas compridas vão na diagonal e ficam grandes
+  const itemHTML = (it, small, want) => { const d = ITEMS[it.k]; const ct = d.gun ? `<span class="ct am">${d.gun.clip && !it.mg ? '—' : it.ammo || 0}</span>` : d.clip ? `<span class="ct am">${it.am || 0}</span>` : it.n > 1 ? `<span class="ct">${it.n}</span>` : ''; return `<img src="${(small && G.ICONS_SQ && G.ICONS_SQ[it.k]) || G.ICONS[it.k]}" alt="">${small ? '' : `<span class="nm">${d.s}</span>`}${ct}${small ? '' : slotsHTML(it, want)}`; }; // nas casas quadradas (cinto, equipamento) as armas compridas vão na diagonal e ficam grandes
   const renderGrid = (el, grid, rows, kind) => {
     el.innerHTML = ''; el.dataset.kind = kind; if (!grid) { el.style.width = el.style.height = '0px'; return; }
     const R = grid.rows; el.style.width = P(grid.cols) + 'px'; el.style.height = P(R) + 'px';
@@ -334,7 +335,7 @@ export function initUI(G) {
   inv.addEventListener('pointerup', endDrag); inv.addEventListener('pointercancel', e => { if (drag && drag.pid !== undefined && e.pointerId !== drag.pid) return; if (drag && drag.el) drag.el.classList.remove('drag'); if (drag && drag.it && !drag.none) drag.it.r = drag.r0; drag = null; ghost.hidden = true; prev.remove(); render(); });
   const quick = (it, loc) => { if (!loc) return; const d = ITEMS[it.k]; if (d.use && loc.t !== 'box') G.use(it); /* dois toques num consumível: come, bebe ou trata */ else if (loc.t === 'box') takeToMe(it, loc); else if (loc.t === 'eq' || loc.t === 'belt') toBag(it, loc); else if (G.box) toBox(it, loc); else if (d.eq) move(it, loc, { t: 'eq', s: d.eq }); else if (d.use) G.use(it); else { const i = G.inv.belt.indexOf(null); if (i >= 0) move(it, loc, { t: 'belt', i }); } sel = null; G.refresh(); };
 
-  const openInv = (box, t) => { G.invOpen = true; G.sticks.L = G.sticks.R = null; G.box = box || null; if (G.box) tab = 'inv'; if (t) tab = t; inv.querySelectorAll('.tabs button').forEach(x => x.classList.toggle('on', x.dataset.tab === tab)); inv.hidden = false; inv.classList.toggle('has-box', !!G.box); layout(); sel = null; render(); audio.play('ui'); };
+  const openInv = (box, t) => { G.invOpen = true; G.sticks.L = G.sticks.R = null; G.box = box || null; if (G.box) tab = 'inv'; if (t) tab = t; inv.querySelectorAll('.tabs button').forEach(x => x.classList.toggle('on', x.dataset.tab === tab)); inv.dataset.tab = tab; inv.hidden = false; inv.classList.toggle('has-box', !!G.box); layout(); sel = null; render(); audio.play('ui'); };
   const closeInv = () => { G.invOpen = false; inv.hidden = true; G.box = null; sel = null; drag = null; ghost.hidden = true; };
 
 
@@ -342,7 +343,7 @@ export function initUI(G) {
   // sensibilidade por defeito mais alta no telemóvel (o polegar anda pouco)
   const SENS0 = matchMedia('(pointer: coarse)').matches ? 1.7 : 1.2;
   const DEF = { v: 2, quick: true, mirror: false, sprintPush: true, assist: true, autoDoor: true, autoLean: true, sens: SENS0, sensV: 2, btn: 1, op: 1, shadows: true, lowres: false, fps: false, vol: 0.7, musMenu: 0.7, musGame: 0.5, soundViz: true, haptics: false,
-    hud: { mm: { on: 1 }, zone: { on: 1 }, tr: { on: 1 }, vit: { on: 1 }, belt: { on: 1 }, ammo: { on: 1 }, feed: { on: 1 }, reload: { on: 1 }, use: { on: 1 }, sprint: { on: 1 }, jump: { on: 1 }, fire: { on: 1 }, light: { on: 1 }, scope: { on: 1 }, ads: { on: 1 }, lower: { on: 1 }, breath: { on: 1 } } };
+    hud: { mm: { on: 1 }, zone: { on: 1 }, tr: { on: 1 }, vit: { on: 1 }, cmp: { on: 1 }, belt: { on: 1 }, ammo: { on: 1 }, feed: { on: 1 }, reload: { on: 1 }, use: { on: 1 }, sprint: { on: 1 }, jump: { on: 1 }, fire: { on: 1 }, light: { on: 1 }, scope: { on: 1 }, ads: { on: 1 }, lower: { on: 1 }, breath: { on: 1 } } };
   const NAMES = { mm: 'Minimapa', zone: 'Zona', tr: 'Mapa, inventário e definições', vit: 'Vida, comida e água', cmp: 'Bússola', belt: 'Cinto', ammo: 'Munições', feed: 'Avisos de recolha', reload: 'Recarregar', use: 'Revistar e portas', sprint: 'Correr sempre (Auto)', jump: 'Saltar', fire: 'Mirar e disparar', light: 'Lanterna', scope: 'Vista (1.ª ou 3.ª pessoa)', ads: 'Mira (na 1.ª pessoa)', lower: 'Baixar a arma', breath: 'Respirar' };
   const BTN = ['reload', 'use', 'sprint', 'jump', 'fire', 'tr', 'light', 'scope', 'ads', 'lower', 'breath'];
   let cfg; try { cfg = JSON.parse(localStorage.getItem('kurogane-cfg-v1') || 'null'); } catch (e) { cfg = null; }
@@ -395,7 +396,7 @@ export function initUI(G) {
     document.addEventListener('focusout', () => setTimeout(kbSet, 100)); }
   const pfm = $('pfm'), pfB = $('pfB');
   const pfClose = () => { pfm.hidden = true; pfB.onclick = null; pfm.classList.remove('wide', 'kpw'); };
-  let mnT = 0; const mnote = t => { const m = $('mnote'); m.textContent = t; m.hidden = false; clearTimeout(mnT); mnT = setTimeout(() => { m.hidden = true; }, 6000); };
+  let mnT = 0; const mnote = t => { const m = $('mnote'); m.textContent = t; m.hidden = false; clearTimeout(mnT); mnT = setTimeout(() => { m.hidden = true; }, 9000); };
   $('pfX').onclick = () => { audio.play('ui'); pfClose(); };
   // teclado de código (fechaduras): 4 números, apagar e confirmar; também com as teclas do computador
   let KP = null;
@@ -439,7 +440,7 @@ export function initUI(G) {
     const sw = k => `<div class="lrow"><span>${LLBL[k]}</span><div class="sws">${O[k].map((c, i) => `<button class="sw" data-k="${k}" data-v="${c}" style="--c:${hex(c)}" aria-label="${LLBL[k]} ${i + 1}"></button>`).join('')}</div></div>`;
     const ch = k => `<div class="lrow"><span>${LLBL[k]}</span><div class="lchs">${O[k].map((t, i) => `<button class="lch" data-k="${k}" data-i="${i}">${t}</button>`).join('')}</div></div>`;
     $('pfT').textContent = 'Aparência'; pfm.classList.add('wide');
-    pfB.innerHTML = `<div class="look"><div class="lcol"><div class="lpv"><img id="lkImg" alt="A tua personagem"></div><div class="lact"><button class="btn pri" id="lkOk">Guardar</button><button class="btn" id="lkRnd">Aleatório</button></div></div><div class="lopts">${sw('skin')}${sw('hair')}${ch('hairS')}${ch('beardS')}${sw('top')}${sw('legs')}</div></div>`;
+    pfB.innerHTML = `<div class="look"><div class="lcol"><div class="lpv"><img id="lkImg" alt="A tua personagem"></div><div class="lact"><button class="btn pri" id="lkOk">Guardar</button><button class="btn" id="lkRnd">Aleatório</button></div></div><div class="lowrap"><div class="lopts">${sw('skin')}${sw('hair')}${ch('hairS')}${ch('beardS')}${sw('top')}${sw('legs')}</div></div></div>`; pager(pfB.querySelector('.lopts'), '.lrow');
     const draw = () => { $('lkImg').src = G.portraitLook(L); pfB.querySelectorAll('[data-k]').forEach(b => { const k = b.dataset.k, on = b.dataset.v !== undefined ? +b.dataset.v === L[k] : +b.dataset.i === L[k]; b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); }); };
     pfB.onclick = e => { const b = e.target.closest('[data-k]'); if (!b) return; audio.play('ui'); L[b.dataset.k] = b.dataset.v !== undefined ? +b.dataset.v : +b.dataset.i; draw(); };
     $('lkRnd').onclick = e => { e.stopPropagation(); audio.play('ui'); const r = arr => arr[Math.floor(Math.random() * arr.length)]; L = { skin: r(O.skin), hair: r(O.hair), top: r(O.top), legs: r(O.legs), hairS: Math.floor(Math.random() * O.hairS.length), beardS: Math.floor(Math.random() * O.beardS.length) }; draw(); };
@@ -450,7 +451,7 @@ export function initUI(G) {
   const showClan = () => {
     const N = G.net; $('pfT').textContent = 'Clã'; pfm.classList.remove('wide', 'kpw');
     const draw = () => {
-      if (!N.on) { pfB.innerHTML = '<p>Os clãs só funcionam ligado ao servidor. Abre o jogo no site do Kurogane, com internet, e volta aqui: o botão «Clã» fica no mapa.</p>'; return; }
+      if (!N.on) { pfB.innerHTML = '<p>Sem ligação ao servidor. Os clãs voltam assim que o jogo voltar a ligar.</p>'; return; }
       const C = N.clanInfo;
       if (C) {
         const on = new Set([...N.R.values()].map(r => r.name)), me = (Conta.ativo() || {}).nome;
@@ -550,8 +551,9 @@ export function initUI(G) {
   const tog = (get, set) => { const b = document.createElement('button'); b.className = 'tog' + (get() ? ' on' : ''); b.setAttribute('role', 'switch'); b.onclick = () => { set(!get()); b.classList.toggle('on', get()); audio.play('ui'); applyAll(); }; return b; };
   const range = (min, max, step, get, set) => { const i = document.createElement('input'); i.type = 'range'; i.min = min; i.max = max; i.step = step; i.value = get(); i.oninput = () => { set(+i.value); applyAll(); }; return i; };
   const renderSet = () => {
-    body.innerHTML = '';
-    const grp = (t, rows, cls = '') => { const g = document.createElement('div'); g.className = 'sgrp ' + cls; g.innerHTML = `<h3>${t}</h3>`; rows.forEach(r => g.appendChild(r)); body.appendChild(g); };
+    body.innerHTML = ''; setTabsR();
+    const TABOF = { 'Controlos': 'ctl', 'Ecrã': 'ecra', 'Ecrã inteiro': 'ecra', 'Gráficos': 'img', 'Som': 'img' };
+    const grp = (t, rows, cls = '') => { if ((TABOF[t] || 'mais') !== setTab) return; const g = document.createElement('div'); g.className = 'sgrp ' + cls; g.innerHTML = `<h3>${t}</h3>`; rows.forEach(r => g.appendChild(r)); body.appendChild(g); };
     const doors = row('Portas automáticas', 'Abrem quando vais contra elas e fecham-se atrás de ti. Desligado, abres e fechas com o botão.', tog(() => cfg.autoDoor, v => cfg.autoDoor = v));
     const iron = row('Mira de ferro', 'Na 1.ª pessoa, nas espingardas sem mira (M4, AK, SMG, caça, metralhadoras), o botão «Mira» aponta pela mira de ferro da arma.', tog(() => cfg.fpIron !== false, v => cfg.fpIron = v));
     const lean = row('Espreitar nas esquinas', 'Ao apontar encostado a uma parede, esquina ou poste, o boneco inclina-se para o lado livre para conseguires disparar.', tog(() => cfg.autoLean, v => cfg.autoLean = v));
@@ -677,7 +679,10 @@ export function initUI(G) {
   $('mLb').onclick = e => { e.stopPropagation(); audio.play('ui'); lbOpen(); };
   const EYE = `{{eye}}`, EYEOFF = `{{eye-off}}`;
   for (const ev of ['fullscreenchange', 'webkitfullscreenchange']) document.addEventListener(ev, () => { if (!setEl.hidden) renderSet(); });
-  const openSet = () => { G.paused = G.playing; renderSet(); setEl.hidden = false; audio.play('ui'); };
+  let setTab = 'ctl';
+  const setTabsEl = $('setTabs'), setTabsR = () => { for (const b of setTabsEl.children) b.classList.toggle('on', b.dataset.t === setTab); };
+  setTabsEl.onclick = e => { const b = e.target.closest('button'); if (!b || b.dataset.t === setTab) return; setTab = b.dataset.t; audio.play('ui'); renderSet(); body._pg && body._pg.first(); };
+  const openSet = () => { G.paused = G.playing; renderSet(); setEl.hidden = false; audio.play('ui'); body._pg && body._pg.first(); };
   const closeSet = () => { setEl.hidden = true; G.paused = false; saveCfg(); };
   $('zUp').onclick = () => G.zeroAdj(1); $('zDn').onclick = () => G.zeroAdj(-1);
   $('qX').onclick = () => { G.quit = null; $('quit').hidden = true; audio.play('ui'); };
@@ -1036,9 +1041,15 @@ export function initUI(G) {
   let lastOr = OR();
   const resize = () => { if (OR() !== lastOr) { lastOr = OR(); applyHud(); } if (G.invOpen) { layout(); render(); } };
 
+  // sem scroll em lado nenhum: listas compridas passam a páginas
+  pager(body, '.sgrp > *:not(.vis), .sgrp .vis > *');
+  pager($('dList'), ':scope > *'); pager($('admB'), ':scope > *');
+  fitDrop($('start'), ['#sKeys', '#start .lead', '#start .foot', '#start .logo .sub', '#start .menu .mi em', '#sOnl em']);
+  fitDrop(pfm, ['.pfb > p', '.pfb .note', '.pfb label small'], () => pfm.querySelector('.pfbox'));
+  pager($('recipes'), ':scope > *'); pager($('skl'), ':scope > *'); pager(trB, ':scope > *'); pager(lbB, ':scope > p, .lbt > div:not(.h)');
   return {
-    refresh, openInv, closeInv, toast, saveCfg, feed, hit, damage, death, toggleMap, frame, resize, safe, scopeR, scopeC,
-    arenaAtt: k => AUI.attOf(k), arenaDeath: o => AUI.death(o), arenaFeed: m => AUI.feed(m), arenaScore: m => AUI.score(m), arenaHide: () => AUI.hide(), arenaMenu: () => AUI.menu(),
+    refresh, openInv, closeInv, toast, note: t => mnote(t), saveCfg, feed, hit, damage, death, toggleMap, frame, resize, safe, scopeR, scopeC,
+    arenaAtt: k => AUI.attOf(k), arenaDeath: o => AUI.death(o), arenaFeed: m => AUI.feed(m), arenaScore: m => AUI.score(m), arenaHide: () => AUI.hide(), arenaMenu: () => AUI.menu(), arenaShow: m => AUI.show(m),
     closeDeath: () => { $('dead').hidden = true; clearInterval(dTick); }, sound, bedMenu, codeAsk, codeErr, codeDone, lockMenu, admRole, admList, admOpen, lbShow, lbOpen, trOpen, trRender, trOpenNow: () => !!trT, trWho: () => trT, trClose: () => { trEl.hidden = true; trT = null; },
     showHUD: msg => { $('hud').hidden = false; refresh(); toast(msg); },
     // sair para o menu (com 5 s parado se estiveres em combate)

@@ -47,7 +47,7 @@ export function makeNet({ G, scene, mkRemote, audio, Conta, enc, dec, hurt, die,
         if (G.ARENA && G.p && G.p.alive) send({ t: 'aspawn', x: G.p.x, z: G.p.z });
         if (!G.ARENA) N.sendInv(); if (N.onClan) N.onClan(); return;
       }
-      case 'erro': want = false; G.ui.toast(m.e === 'expulso' ? 'Foste expulso do servidor' + (m.why ? ': ' + m.why : '') : m.e === 'banido' ? 'Estás banido do servidor' + (m.until ? ' até ' + new Date(m.until).toLocaleString('pt-PT', { day: 'numeric', month: 'numeric', hour: '2-digit', minute: '2-digit' }) : '') + (m.why ? ' · ' + m.why : '') : m.e === 'nome_em_uso' ? 'Esse nome já é de outro jogador. Muda o nome do perfil para jogar online.' : m.e === 'versao' ? 'Há uma versão nova do jogo. Recarrega a página para jogar online.' : 'O nome do perfil não serve para o servidor (3 a 16 letras ou números).'); try { ws.close(); } catch (e) { } return;
+      case 'erro': { const w = ws; ws = null; if (m.e === 'versao') { G.updating = true; lost(true, 'Há uma versão nova do jogo. A atualizar…'); setTimeout(() => location.reload(), 1200); } else lost(true, m.e === 'expulso' ? 'Foste expulso do servidor' + (m.why ? ': ' + m.why : '') : m.e === 'banido' ? 'Estás banido do servidor' + (m.until ? ' até ' + new Date(m.until).toLocaleString('pt-PT', { day: 'numeric', month: 'numeric', hour: '2-digit', minute: '2-digit' }) : '') + (m.why ? ' · ' + m.why : '') : m.e === 'nome_em_uso' ? 'Esse nome já é de outro jogador. Muda o nome do perfil e entra outra vez.' : m.e === 'versao' ? 'Há uma versão nova do jogo. Recarrega a página para jogar online.' : 'O nome do perfil não serve para o servidor (3 a 16 letras ou números).'); try { w && w.close(); } catch (e) { } return; }
       case 'join': addRemote(m.id, m.name, m.look, m.clan); if (!m.quiet) G.ui.toast(m.name + ' entrou'); return;
       case 'left': { const r = R.get(m.id); if (r && !m.quiet) G.ui.toast(r.name + (m.arena ? ' saiu da arena' : ' saiu e ficou a dormir')); delRemote(m.id); return; }
       case 'akf': G.ui.arenaFeed && G.ui.arenaFeed(m); return;
@@ -105,12 +105,14 @@ export function makeNet({ G, scene, mkRemote, audio, Conta, enc, dec, hurt, die,
       case 'pclan': { const r = R.get(m.id); if (r) { r.clan = m.clan; r.el.classList.toggle('mate', mate(m.clan)); } return; }
     }
   };
-  // sem modo offline: se a ligação cair, o jogo para e tenta voltar; se não voltar, regressa ao menu
-  const lost = final => { const el = document.getElementById('netLost'); if (final) { want = false; if (el) el.hidden = true; G.paused = false; if (G.playing) G.toMenu(); G.ui.toast('Sem ligação ao servidor. O Kurogane só se joga online.'); return; }
-    if (!G.playing) return; G.paused = true; if (el) { el.hidden = false; const t = document.getElementById('netLostT'); if (t) t.textContent = 'A tentar outra vez… (' + retry + ' de 6)'; } };
-  const found = () => { const el = document.getElementById('netLost'); if (el && !el.hidden) { el.hidden = true; G.paused = false; } };
+  // sem modo offline: só se joga depois de o servidor dizer «ok»; se a ligação cair, o jogo para e tenta voltar; se não voltar, regressa ao menu
+  let joinT = 0;
+  const ov = (title, txt) => { const el = document.getElementById('netLost'); if (!el) return; const b = el.querySelector('b'), t = document.getElementById('netLostT'); if (b) b.textContent = title; if (t) t.textContent = txt; el.hidden = false; };
+  const lost = (final, why) => { const el = document.getElementById('netLost'); if (final) { want = false; clearTimeout(joinT); if (el) el.hidden = true; G.paused = false; if (G.playing || G.ARENA) G.toMenu(); const msg = why || 'Sem ligação ao servidor. O Kurogane só se joga online: tenta outra vez daqui a pouco.'; setTimeout(() => { if (G.ui.note) G.ui.note(msg); else G.ui.toast(msg); }, 120); return; }
+    if (!G.playing) return; G.paused = true; ov('Sem ligação ao servidor', 'A tentar outra vez… (' + retry + ' de 6)'); };
+  const found = () => { clearTimeout(joinT); const el = document.getElementById('netLost'); if (el && !el.hidden) { el.hidden = true; G.paused = false; } };
   const connect = () => {
-    if (ws || !want) return; const a = Conta.ativo(); if (!a || !a.nome) return;
+    if (ws || !want) return; const a = Conta.ativo(); if (!a || !a.nome) { lost(true, 'Falta o nome do perfil para entrar no servidor.'); return; }
     try { tok = localStorage.getItem(tokKey()); } catch (e) { }
     let opened = false; try { ws = new WebSocket(url()); } catch (e) { ws = null; lost(true); return; }
     ws.onopen = () => { opened = true; if (G.ARENA) { send({ t: 'hi', pv: 4, name: a.nome, look: a.look || {}, team: G.arenaTeam | 0, kit: G.arenaKitK }); return; } send({ t: 'hi', pv: 4, name: a.nome, look: a.look || {}, tok, wv: WV, x: G.p ? G.p.x : 0, z: G.p ? G.p.z : 0, cars: G.cars.spawnPoints(), ctab: G.W.containers.filter(c => c.wid != null).sort((a, b) => a.wid - b.wid).map(c => [c.table, c.slots[0], c.slots[1]]), fresh: !!G.freshStart, test: (() => { try { return localStorage.getItem('kg.test') === '1'; } catch (e) { return false; } })() }); G.freshStart = false; };
@@ -122,8 +124,8 @@ export function makeNet({ G, scene, mkRemote, audio, Conta, enc, dec, hurt, die,
       else lost(true);
     };
   };
-  N.start = () => { want = true; retry = 0; connect(); };
-  N.stop = () => { want = false; if (ws) { try { if (N.on) { closeBox(); N.sendInv(); } ws.close(); } catch (e) { } } ws = null; N.on = false; clearAll(); offline(); };
+  N.start = () => { want = true; retry = 0; if (!N.on) { if (G.playing) G.paused = true; ov('A entrar no servidor', 'Só um momento…'); clearTimeout(joinT); joinT = setTimeout(() => { if (want && !N.on) { const w = ws; ws = null; lost(true, 'O servidor não respondeu a tempo. O Kurogane só se joga online: tenta outra vez.'); try { w && w.close(); } catch (e) { } } }, 15000); } connect(); };
+  N.stop = () => { want = false; clearTimeout(joinT); { const el = document.getElementById('netLost'); if (el) el.hidden = true; } if (ws) { try { if (N.on) { closeBox(); N.sendInv(); } ws.close(); } catch (e) { } } ws = null; N.on = false; clearAll(); offline(); };
   // o tiro vai com a direção de cada bala (o desvio que viste no rasto) e até onde cada uma chega antes de parar numa parede ou num zombie
   const v4 = v => [+v.x.toFixed(4), +v.y.toFixed(4), +v.z.toFixed(4)];
   N.shot = (O, D, k, n, L, sup, ds, Ls) => send({ t: 'shot', o: [+O.x.toFixed(2), +O.y.toFixed(2), +O.z.toFixed(2)], d: v4(D), k, n, L: Math.round(L), sup: !!sup, ds: ds ? ds.map(v4) : undefined, Ls: Ls ? Ls.map(v => Math.round(v * 10) / 10) : undefined });

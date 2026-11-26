@@ -22,12 +22,13 @@ server.listen(0, async () => {
   try {
     const fs2 = require('fs'), snap = async (P, nm, pos, at, fov = 70) => { const u = await P.ev(([p, a, f]) => G.dbgCam(p, a, f, 960, 540), [pos, at, fov]); fs2.writeFileSync(path.join(outDir, 'arena-' + nm + '.jpg'), Buffer.from(u.split(',')[1], 'base64')); };
     const A = await mk('Ana', 'pa'), B = await mk('Bruno', 'pb');
-    const lob = await A.ev(() => ({ open: !document.getElementById('arw').hidden, kits: document.querySelectorAll('#arw .akit').length, start: !document.getElementById('start').hidden, zone: G.W.zones.some(z => z.arena) }));
+    const lob = await A.ev(() => ({ open: !document.getElementById('arw').hidden, kits: document.querySelectorAll('#arw .adots i').length, start: !document.getElementById('start').hidden, zone: G.W.zones.some(z => z.arena) }));
     console.log('lobby:', JSON.stringify(lob)); ok(lob.open && lob.kits === 5 && !lob.start && lob.zone, 'abre a escolha de equipa e de kit (5 kits) em vez do menu');
-    await A.page.click('#arw .atm.t0'); await A.page.click('#arw .akit[data-k="atirador"]'); await W(300);
+    const pick = (P, team, nome) => P.ev(async ([team, nome]) => { document.querySelector('#arw .atm.t' + team).click(); await new Promise(r => setTimeout(r, 400)); for (let i = 0; i < 6 && document.querySelector('#arw .akh b').textContent !== nome; i++) { document.getElementById('arNextK').click(); await new Promise(r => setTimeout(r, 250)); } return document.querySelector('#arw .akh b').textContent; }, [team, nome]);
+    console.log('kit A:', await pick(A, 0, 'Atirador')); await W(300);
     await A.page.screenshot({ path: path.join(outDir, 'arena-lobby.png') });
     await A.page.click('#arGo'); await W(500);
-    await B.ev(() => { document.querySelector('#arw .atm.t1').click(); document.querySelector('#arw .akit[data-k="sniper"]').click(); document.getElementById('arGo').click(); });
+    console.log('kit B:', await pick(B, 1, 'Sniper')); await B.ev(() => document.getElementById('arGo').click());
     for (let i = 0; i < 40 && !(await A.ev(() => G.net.on && G.net.R.size > 0)); i++) await W(500);
     const st = await A.ev(() => ({ on: G.net.on, R: G.net.R.size, team: G.net.clanInfo && G.net.clanInfo.nome, x: G.p.x, z: G.p.z, belt: G.inv.belt.map(i => i && i.k), zs: G.zs.length }));
     console.log('Ana:', JSON.stringify(st)); ok(st.on && st.R === 1 && /Vermelha/.test(st.team) && st.x < 3650 && st.belt[0] === 'm4' && st.zs === 0, 'a Ana entra na vermelha, com o kit de atirador, a oeste, sem zombies');
@@ -46,7 +47,7 @@ server.listen(0, async () => {
     const dv = await B.ev(() => ({ open: !document.getElementById('arw').hidden, txt: document.querySelector('#arw .aT') && document.querySelector('#arw .aT').textContent, bags: G.bags.length })); console.log('Bruno morto:', JSON.stringify(dv)); ok(dv.open && /Ana/.test(dv.txt) && dv.bags === 0, 'o Bruno vê quem o matou e não fica mochila no chão');
     await B.page.screenshot({ path: path.join(outDir, 'arena-morte.png') });
     // muda de kit e renasce
-    await B.ev(() => document.querySelector('#arw .akit[data-k="pesado"]').click()); await W(4200); await B.ev(() => document.getElementById('arGo').click()); await W(1500);
+    await B.ev(async nome => { for (let i = 0; i < 6 && document.querySelector('#arw .akh b').textContent !== nome; i++) { document.getElementById('arNextK').click(); await new Promise(r => setTimeout(r, 250)); } }, 'Pesado'); await W(3000); await B.ev(() => document.getElementById('arGo').click()); await W(1500);
     const rb = await B.ev(() => ({ al: G.p.alive, x: G.p.x, belt: G.inv.belt.map(i => i && i.k), hp: G.p.hp })); console.log('Bruno renasceu:', JSON.stringify(rb)); ok(rb.al && rb.x > 3680 && rb.belt[0] === 'm249' && rb.hp === 100, 'renasce na zona azul com o kit novo (pesado)');
     // proteção de nascer: tiros logo a seguir não magoam
     // mudar de equipa pelo botão da arena

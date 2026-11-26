@@ -1244,6 +1244,30 @@ async function boot() {
     G.killer = null; G.cars.clear(); G.cars.spawnLocal(); if (G.online && !kit) G.net.start(); else G.net.stop();
   };
 
+  // pré-visualização 3D da arena: a personagem com a arma do kit, a rodar devagar (num canvas próprio, só enquanto o menu está aberto)
+  G.arenaPrev = (() => {
+    let R = null, sc = null, pc = null, b = null, raf = 0, last = 0, ang = -0.5, spin = 0, cv = null, mode = 'rifle', drag = null;
+    const loop = t => { raf = requestAnimationFrame(loop); if (!cv || !cv.isConnected || cv.offsetParent === null) return; const dt = Math.min(0.05, (t - last) / 1000 || 0); last = t;
+      const w = cv.clientWidth, h = cv.clientHeight; if (!w || !h) return; const pr = Math.min(2, devicePixelRatio || 1); if (cv.width !== Math.round(w * pr) || cv.height !== Math.round(h * pr)) { R.setPixelRatio(pr); R.setSize(w, h, false); }
+      pc.aspect = w / h; const port = pc.aspect < 0.9; pc.fov = port ? 34 : 26; pc.position.set(0, 1.25, port ? 4.6 : 4.1); pc.lookAt(0, 1.0, 0); pc.updateProjectionMatrix();
+      if (!drag) { spin *= Math.exp(-dt * 3); ang += dt * 0.35 + spin * dt; } b.root.rotation.y = ang; b.pose(dt, 0, mode, -1, 0, 0, -1, 0, mode === 'rifle' ? 0.3 : 0.5, null, null); R.render(sc, pc); }; // arma em baixo, pronta (não a apontar)
+    const api = {
+      mount(canvas) { if (cv === canvas && R) return; cv = canvas;
+        R = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true, powerPreference: 'low-power' }); R.outputColorSpace = renderer.outputColorSpace; R.toneMapping = renderer.toneMapping; R.toneMappingExposure = renderer.toneMappingExposure;
+        sc = new THREE.Scene(); pc = new THREE.PerspectiveCamera(28, 1, 0.1, 50);
+        sc.add(new THREE.HemisphereLight(0xfff4e6, 0x3a3630, 1.6)); const key = new THREE.DirectionalLight(0xffffff, 2.4); key.position.set(2, 4, 3); sc.add(key); const rim = new THREE.DirectionalLight(0x8ab4ff, 1.2); rim.position.set(-3, 2, -2); sc.add(rim);
+        const disc = new THREE.Mesh(new THREE.CircleGeometry(0.9, 40), new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.35 })); disc.rotation.x = -Math.PI / 2; disc.position.y = 0.005; sc.add(disc);
+        b = new Body(mats, lookCol((Conta.ativo() || {}).look)); b.forceNear = true; sc.add(b.root);
+        // arrastar o dedo roda a personagem
+        canvas.addEventListener('pointerdown', e => { drag = { x: e.clientX, a: ang, t: performance.now() }; canvas.setPointerCapture && canvas.setPointerCapture(e.pointerId); });
+        canvas.addEventListener('pointermove', e => { if (!drag) return; ang = drag.a + (e.clientX - drag.x) * 0.012; });
+        const up = e => { if (!drag) return; const dx = e.clientX - drag.x, dtm = Math.max(16, performance.now() - drag.t); spin = Math.max(-6, Math.min(6, dx / dtm * 6)); drag = null; }; canvas.addEventListener('pointerup', up); canvas.addEventListener('pointercancel', up);
+        if (!raf) raf = requestAnimationFrame(loop); },
+      set(gun, att) { if (!b) return; const d = ITEMS[gun]; mode = d && d.gun ? (d.long ? 'rifle' : 'pistol') : 'none'; b.setWeapon(gun || '', att || {}); spin = 3; },
+      look(L) { if (!sc) return; sc.remove(b.root); b = new Body(mats, lookCol(L)); b.forceNear = true; sc.add(b.root); },
+      stop() { if (raf) cancelAnimationFrame(raf); raf = 0; }, start() { if (R && !raf) raf = requestAnimationFrame(loop); },
+    };
+    return api; })();
   // ---------- arena PvP: kits (o que trazes ao nascer), nascer na tua zona, mudar de equipa
   const arenaKit = k => { const inv = new Inv(), A0 = (G.ui.arenaAtt && G.ui.arenaAtt(k)) || {}; const gun = (g, att = {}) => { const it = mkItem(g); it.ammo = capOf(it); it.att = {}; const ch = A0[g]; // acessórios: os escolhidos no ecrã da arena, ou os do kit
       const want = ch ? { scope: ch.scope && ch.scope !== 'iron' ? ch.scope : null, sup: ch.sup ? ITEMS[g].gun.sup : null, light: ch.light ? 'lantArma' : null } : att; for (const s in want) if (want[s] && attFits(g, want[s])) it.att[s] = want[s]; return it; }; const clip = c => { const m = mkItem(c); m.am = ITEMS[c].clip.cap; return m; };
