@@ -101,3 +101,7 @@ Na 1.0.0 a localização era «delegada» à app Android: o Android pedia uma au
 ## Envio automático para a Play (desde 26/11/2026)
 
 O workflow **App Android (Google Play)** compila e, com `enviar=sim`, manda o .aab para a faixa de teste fechado pela API da Google Play (`android/enviar_play.py`). Precisa do segredo `PLAY_SERVICE_ACCOUNT_JSON` (chave JSON de uma conta de serviço convidada em Play Console › Utilizadores e autorizações, com autorização para lançar em faixas de teste). Sem o segredo, o .aab fica só na release `android` para envio à mão. Cada versão continua a passar pela revisão da Google. Enviar versões novas para a mesma faixa não apaga os testadores nem recomeça os 14 dias.
+
+## Impressões digitais no servidor (26/11/2026)
+
+`/etc/parou.env` tem `ANDROID_SHA256_EXTRA=40:0C:8F:67:81:17:6C:E8:09:F6:E2:F8:E9:BE:32:94:84:C4:DF:3E:8A:CE:5E:68:FE:B9:5B:09:1F:27:FC:0D,EB:C8:C6:BE:1E:70:DB:10:F1:1F:09:D3:59:B9:C8:90:2C:64:CB:F1:DF:D8:0D:33:61:3C:83:7A:75:AB:95:AA` (chave de assinatura da Google Play, `deployment_cert.der`, e a clássica híbrida). Não é segredo. Se o servidor for recriado, voltar a pôr esta linha e reiniciar a app, senão a app Android volta a mostrar a barra do browser.
