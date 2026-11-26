@@ -242,7 +242,7 @@ const comPosicao = () => window.__geo.entregues > 0 && ![...document.querySelect
   const c1 = await p.evaluate(() => window.__geo.consultas);
   const pedidos = await p.evaluate(() => window.__geo.pedidos);
   ok('Chrome real, desligada: nenhum pedido de localização (não pode abrir a pergunta do browser sozinha)', pedidos === 0, `${pedidos} pedidos`);
-  ok('Chrome real, desligada: vai lendo a autorização, sem exagerar (2 a 8 vezes em 3 s)', c1 - c0 >= 2 && c1 - c0 <= 8, `${c1 - c0} leituras`);
+  ok('Chrome real, desligada: vai lendo a autorização, sem exagerar (4 a 16 vezes em 3 s)', c1 - c0 >= 4 && c1 - c0 <= 16, `${c1 - c0} leituras`);
   const t0 = Date.now();
   await p.evaluate(() => { window.__geo.ligada = true; });
   const apareceu = await p.waitForFunction(comPosicao, null, { timeout: 8000 }).then(() => true).catch(() => false);
@@ -275,6 +275,36 @@ const comPosicao = () => window.__geo.entregues > 0 && ![...document.querySelect
   await p.waitForTimeout(1200);
   ok('Chrome real («recusada»): fica com a posição (não volta ao pedido nem fica em «A localizar…»)', await p.evaluate(semAtivar) && !(await p.evaluate(aLocalizar)));
   ok('sem erros na página (Chrome real, recusada)', erros.length === 0, erros.join(' | '));
+  await ctx.close();
+}
+
+{ // Chrome real, GPS lento (20 s) e uma posição conhecida de ontem: ao ligar a localização, essa posição e as paragens
+  // aparecem logo, sem o ecrã passar por «A localizar…» (26/11/2026: já ligava sozinha, mas a Moovit era muito mais rápida)
+  const { ctx, p, erros } = await contexto('chrome-aviso');
+  await p.addInitScript({ content: GPS_LENTO(false) });
+  await p.goto(BASE + '/', { waitUntil: 'load', timeout: 60000 });
+  await p.waitForSelector('[data-teste="ativar-localizacao"]:visible', { timeout: 45000 }).catch(() => {});
+  ok('Chrome real, GPS lento: desligada, a app mostra o convite', await p.evaluate(convite));
+  await p.waitForTimeout(2000);
+  // a cada fotograma depois de ligar: «A localizar…» esteve no ecrã? quando apareceram as paragens?
+  await p.evaluate(() => {
+    const G = window.__geo; G.viuALocalizar = false; G.tParagens = 0;
+    const visto = (re) => [...document.querySelectorAll('body *')].some((e) => e.childElementCount === 0 && re.test(e.textContent || '') && e.getBoundingClientRect().width > 0);
+    const passo = () => {
+      if (visto(/A localizar…/)) G.viuALocalizar = true;
+      if ([...document.querySelectorAll('[data-teste="paragem-perto"]')].some((e) => e.getBoundingClientRect().width > 0)) { G.tParagens = Date.now() - G.ligadaEm; return; }
+      requestAnimationFrame(passo);
+    };
+    G.ligadaEm = Date.now(); G.ligada = true;
+    requestAnimationFrame(passo);
+  });
+  await p.waitForFunction(() => window.__geo.tParagens > 0, null, { timeout: 10000 }).catch(() => {});
+  const r = await p.evaluate(() => ({ t: window.__geo.tParagens, viu: window.__geo.viuALocalizar, entregues: window.__geo.entregues }));
+  await p.screenshot({ path: `${SAIDA}/localizacao-automatica-7-chrome-real-gps-lento.png` });
+  ok('Chrome real, GPS lento: ao ligar, as paragens da última posição conhecida aparecem em menos de 1 s (sem esperar pelo GPS)', r.t > 0 && r.t < 1000 && r.entregues === 0, `${r.t} ms`);
+  ok('Chrome real, GPS lento: o ecrã não passa por «A localizar…»', r.t > 0 && !r.viu);
+  ok('Chrome real, GPS lento: diz que está a afinar a posição', await p.evaluate(() => /a afinar a posição/.test(document.body.innerText)));
+  ok('sem erros na página (Chrome real, GPS lento)', erros.length === 0, erros.join(' | '));
   await ctx.close();
 }
 
