@@ -48,12 +48,9 @@ try {
     publicarVersaoNova();
     let recarregou = false;
     p.once('load', () => { recarregou = true; });
-    await p.evaluate(visibilidade('visible'));
-    if (tocar) {
-      await p.waitForTimeout(150);
-      // um toque no ecrã (sem carregar em nada que abra outra página)
-      await p.evaluate(() => document.body.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, pointerType: 'touch' }))).catch(() => {});
-    }
+    // volta à app; no caso «tocou», toca no ecrã logo a seguir, no mesmo instante (no CI a versão nova instala-se em menos
+    // de 150 ms; um toque depois disso chegava tarde). O toque não carrega em nada que abra outra página.
+    await p.evaluate(`${visibilidade('visible')}; ${tocar ? "document.body.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, pointerType: 'touch' }))" : ''}`);
     const t0 = Date.now();
     await p.waitForFunction(() => window.__marca !== 'pagina-antiga', null, { timeout: tocar ? 9000 : 15000 }).catch(() => {});
     await p.waitForLoadState('load').catch(() => {});
