@@ -21,14 +21,23 @@ const UA = 'Mozilla/5.0 (Linux; Android 14; Pixel 7) AppleWebKit/537.36 (KHTML, 
 // desligada, o Chrome responde que a autorização de um site JÁ autorizado está «por pedir» ('chrome-aviso', quando ainda
 // pode mostrar o aviso «Ligar a localização?») ou «recusada» ('chrome-pausa', na pausa depois de alguém fechar esse
 // aviso), e só volta a «autorizado» quando a pessoa liga a localização. 'prompt-ja-deu': a pessoa já deu a localização
-// à PAROU mas a autorização do site foi retirada entretanto.
+// à PAROU mas a autorização do site foi retirada entretanto (um pedido sem toque abre a pergunta do Chrome, que fica à espera).
+// 'chrome-sempre-por-pedir': como o telemóvel do Dinis na app da Play (registo de 26/11/2026, 16:43): o Chrome diz «por
+// pedir» com a localização desligada e continua a dizê-lo depois de ligada, mas dá a posição sem perguntar nada.
 const TELEMOVEL = (estado) => `(() => {
-  const G = { ligada: false, pedidos: 0, entregues: 0, consultas: 0, watches: new Map(), id: 1 };
+  const G = { ligada: false, pedidos: 0, entregues: 0, consultas: 0, watches: new Map(), id: 1, toqueEm: 0 };
+  addEventListener('pointerdown', () => { G.toqueEm = Date.now(); }, true);
   window.__geo = G;
   const erro = { code: 1, PERMISSION_DENIED: 1, POSITION_UNAVAILABLE: 2, TIMEOUT: 3, message: 'User denied Geolocation' };
   const pos = () => ({ coords: { latitude: 41.15054, longitude: -8.586245, accuracy: 12, heading: null, speed: null, altitude: null, altitudeAccuracy: null }, timestamp: Date.now() });
   // como no Chrome (Blink): um seguimento que recebe «recusado» deixa de receber posições, mesmo que a localização volte
-  const responder = (n, id) => setTimeout(() => { try { if (G.ligada) { G.entregues++; n.okf(pos()); } else { if (id) G.watches.delete(id); n.err && n.err(erro); } } catch (e) {} }, 30);
+  const responder = (n, id) => setTimeout(() => { try {
+    // autorização retirada: com a localização ligada e sem toque, o Chrome abre a pergunta e não responde (fica à espera
+    // da pessoa); com a localização desligada recusa logo (Chromium: IsLocationAccessPossible sem toque)
+    // (toque = toque real no ecrã há menos de 5 s; o userActivation não serve aqui, o Playwright marca-o em cada evaluate)
+    if ('${estado}' === 'prompt-ja-deu' && G.ligada && !(G.toqueEm && Date.now() - G.toqueEm < 5000)) { G.perguntas = (G.perguntas || 0) + 1; return; }
+    if (G.ligada) { G.entregues++; n.okf(pos()); } else { if (id) G.watches.delete(id); n.err && n.err(erro); }
+  } catch (e) {} }, 30);
   const geo = {
     getCurrentPosition(okf, err) { G.pedidos++; responder({ okf, err }); },
     watchPosition(okf, err) { G.pedidos++; const n = { okf, err }; const id = G.id++; G.watches.set(id, n); responder(n, id); return id; },
@@ -39,7 +48,7 @@ const TELEMOVEL = (estado) => `(() => {
   Object.defineProperty(Navigator.prototype, 'geolocation', { get: () => geo, configurable: true });
   const q = navigator.permissions.query.bind(navigator.permissions);
   const MODO = '${estado}';
-  const autorizacao = () => MODO === 'chrome-aviso' ? (G.ligada ? 'granted' : 'prompt') : MODO === 'chrome-pausa' ? (G.ligada ? 'granted' : 'denied') : MODO === 'prompt-ja-deu' ? 'prompt' : MODO;
+  const autorizacao = () => MODO === 'chrome-aviso' ? (G.ligada ? 'granted' : 'prompt') : MODO === 'chrome-pausa' ? (G.ligada ? 'granted' : 'denied') : MODO === 'prompt-ja-deu' || MODO === 'chrome-sempre-por-pedir' ? 'prompt' : MODO;
   navigator.permissions.query = (d) => (d && d.name === 'geolocation') ? (G.consultas++, Promise.resolve({ state: autorizacao(), onchange: null })) : q(d);
   try {
     localStorage.setItem('parou_aviso_instalar', '1'); localStorage.setItem('parou_bemvindo', 'visto');
@@ -244,7 +253,9 @@ const comPosicao = () => window.__geo.entregues > 0 && ![...document.querySelect
   await p.waitForTimeout(3000);
   const c1 = await p.evaluate(() => window.__geo.consultas);
   const pedidos = await p.evaluate(() => window.__geo.pedidos);
-  ok('Chrome real, desligada: nenhum pedido de localização (não pode abrir a pergunta do browser sozinha)', pedidos === 0, `${pedidos} pedidos`);
+  // pode perguntar ao GPS em silêncio (com a localização desligada e sem toque o Chrome recusa logo, sem pergunta nenhuma),
+  // mas sem exagerar
+  ok('Chrome real, desligada: no máximo um pedido silencioso a cada 1,5 s', pedidos <= 5, `${pedidos} pedidos em ~4,5 s`);
   ok('Chrome real, desligada: vai lendo a autorização, sem exagerar (4 a 16 vezes em 3 s)', c1 - c0 >= 4 && c1 - c0 <= 16, `${c1 - c0} leituras`);
   const t0 = Date.now();
   await p.evaluate(() => { window.__geo.ligada = true; });
@@ -328,10 +339,11 @@ const comPosicao = () => window.__geo.entregues > 0 && ![...document.querySelect
   });
   await p.waitForTimeout(800);
   const c0 = await p.evaluate(() => window.__geo.consultas);
+  const p0 = await p.evaluate(() => window.__geo.pedidos);
   await p.evaluate(() => { window.__geo.ligada = true; });
   await p.waitForTimeout(3000);
   const escondida = await p.evaluate(() => ({ consultas: window.__geo.consultas, pedidos: window.__geo.pedidos }));
-  ok('página escondida: não lê a autorização nem faz pedidos', escondida.consultas - c0 <= 1 && escondida.pedidos === 0, `${escondida.consultas - c0} leituras, ${escondida.pedidos} pedidos`);
+  ok('página escondida: não lê a autorização nem faz pedidos', escondida.consultas - c0 <= 1 && escondida.pedidos - p0 === 0, `${escondida.consultas - c0} leituras, ${escondida.pedidos - p0} pedidos`);
   const t0 = Date.now();
   await p.evaluate(() => {
     Object.defineProperty(document, 'visibilityState', { get: () => 'visible', configurable: true });
@@ -361,15 +373,38 @@ const comPosicao = () => window.__geo.entregues > 0 && ![...document.querySelect
   await ctx.close();
 }
 
-{ // já deu a localização à PAROU, mas a autorização do site foi retirada: ligar a localização do telemóvel não pode levar
-  // a app a pedir a posição sozinha (isso abria a pergunta do browser sem um toque)
+{ // telemóvel do Dinis (app da Play): o Chrome diz sempre «por pedir», mesmo com a localização ligada, mas dá a posição sem
+  // perguntar. Ao ligar a localização, a app tem de mostrar onde ele está sozinha (26/11/2026, 16:43: ficava no convite)
+  const { ctx, p, erros } = await contexto('chrome-sempre-por-pedir');
+  const registos = [];
+  p.on('request', (r) => { if (/\/api\/erros/.test(r.url())) { try { registos.push(r.postData() || String(r.postDataBuffer() || '')); } catch (e) { registos.push(''); } } });
+  await p.goto(BASE + '/', { waitUntil: 'load', timeout: 60000 });
+  await p.waitForSelector('[data-teste="ativar-localizacao"]:visible', { timeout: 45000 }).catch(() => {});
+  ok('sempre «por pedir», desligada: a app mostra o convite', await p.evaluate(convite));
+  await p.waitForTimeout(3000);
+  const t0 = Date.now();
+  await p.evaluate(() => { window.__geo.ligada = true; });
+  const apareceu = await p.waitForFunction(comPosicao, null, { timeout: 8000 }).then(() => true).catch(() => false);
+  const ms = Date.now() - t0;
+  ok('sempre «por pedir»: ao ligar a localização, mostra onde ele está sem tocar em nada (menos de 2,5 s)', apareceu && ms < 2500, `${ms} ms`);
+  await p.waitForTimeout(1500);
+  ok('sempre «por pedir»: fica com a posição (não volta ao convite)', await p.evaluate(semAtivar) && !(await p.evaluate(aLocalizar)));
+  await p.waitForTimeout(5000);
+  const ligou = registos.find((x) => /ligou depois de/.test(x)) || '';
+  ok('sempre «por pedir»: o registo de diagnóstico mostra a sonda a passar de «recusado» a «posição»', /sonda:erro1-por-pedir/.test(ligou) && /sonda:ok-por-pedir/.test(ligou), ligou.slice(0, 160));
+  ok('sem erros na página (sempre por pedir)', erros.length === 0, erros.join(' | '));
+  await ctx.close();
+}
+
+{ // já deu a localização à PAROU, mas a autorização do site foi retirada: ligar a localização do telemóvel pode levar a, no
+  // máximo, UMA pergunta do browser sem toque (para quem já a deu), nunca a perguntas repetidas
   const { ctx, p, erros } = await contexto('prompt-ja-deu');
   await p.goto(BASE + '/', { waitUntil: 'load', timeout: 60000 });
   await p.waitForSelector('[data-teste="ativar-localizacao"]:visible', { timeout: 45000 }).catch(() => {});
   await p.evaluate(() => { window.__geo.ligada = true; });
-  await p.waitForTimeout(4000);
-  const pedidos = await p.evaluate(() => window.__geo.pedidos);
-  ok('autorização do site retirada: nenhum pedido de localização sem um toque', pedidos === 0, `${pedidos} pedidos`);
+  await p.waitForTimeout(9000);
+  const perguntas = await p.evaluate(() => window.__geo.perguntas || 0);
+  ok('autorização do site retirada: no máximo uma pergunta do browser sem toque (nunca em ciclo)', perguntas <= 1, `${perguntas} perguntas em 9 s`);
   ok('autorização do site retirada: continua o convite', await p.evaluate(convite));
   ok('sem erros na página (autorização retirada)', erros.length === 0, erros.join(' | '));
   await ctx.close();
