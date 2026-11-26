@@ -282,6 +282,14 @@ jobs:
           SAIDA=../res timeout 300 node localizacao-automatica.mjs 2>&1 | tee ../res/localizacao-automatica.txt | tail -20
           exit ${PIPESTATUS[0]}
 
+      - name: Testar escolher o dia e a hora das partidas de uma paragem (API e ecrã)
+        continue-on-error: true
+        working-directory: auditoria
+        run: |
+          mkdir -p ../res
+          SAIDA=../res timeout 400 node escolher-hora.mjs 2>&1 | tee ../res/escolher-hora.txt | tail -40
+          exit ${PIPESTATUS[0]}
+
       - name: Testar a versão nova com a app aberta (recarrega ao voltar à app)
         continue-on-error: true
         working-directory: auditoria
