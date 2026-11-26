@@ -78,7 +78,8 @@ async function contexto(estado) {
   const a = await p.evaluate(() => window.__geo.pedidos);
   await p.waitForTimeout(6000);
   const b = await p.evaluate(() => window.__geo.pedidos);
-  ok('enquanto está desligada, pergunta em silêncio sem exagerar (≤ 6 pedidos em 6 s)', b - a >= 2 && b - a <= 6, `${b - a} pedidos`);
+  // (a cada 0,3 s: num Android real a recusa chega em ~3 ms e não liga o GPS)
+  ok('enquanto está desligada, pergunta em silêncio sem exagerar (≤ 1 pedido a cada 0,3 s)', b - a >= 8 && b - a <= 22, `${b - a} pedidos em 6 s`);
   // a pessoa liga a localização nas definições rápidas (a página continua visível)
   const t0 = Date.now();
   await p.evaluate(() => { window.__geo.ligada = true; });
@@ -86,7 +87,7 @@ async function contexto(estado) {
     null, { timeout: 8000 }).then(() => true).catch(() => false);
   const ms = Date.now() - t0;
   ok('ao ligar a localização, a app mostra onde a pessoa está sem tocar em nada', apareceu, `${ms} ms`);
-  ok('e fá-lo depressa (menos de 3 s)', apareceu && ms < 3000, `${ms} ms`);
+  ok('e fá-lo depressa (menos de 1 s)', apareceu && ms < 1000, `${ms} ms`);
   const entregues = await p.evaluate(() => window.__geo.entregues);
   ok('a app pediu e recebeu a posição do telemóvel', entregues > 0, `${entregues} posições`);
   await p.waitForTimeout(1500);
@@ -255,7 +256,7 @@ const comPosicao = () => window.__geo.entregues > 0 && ![...document.querySelect
   const pedidos = await p.evaluate(() => window.__geo.pedidos);
   // pode perguntar ao GPS em silêncio (com a localização desligada e sem toque o Chrome recusa logo, sem pergunta nenhuma),
   // mas sem exagerar
-  ok('Chrome real, desligada: no máximo um pedido silencioso a cada 1,5 s', pedidos <= 5, `${pedidos} pedidos em ~4,5 s`);
+  ok('Chrome real, desligada: no máximo um pedido silencioso a cada 0,3 s', pedidos <= 17, `${pedidos} pedidos em ~4,5 s`);
   ok('Chrome real, desligada: vai lendo a autorização, sem exagerar (4 a 16 vezes em 3 s)', c1 - c0 >= 4 && c1 - c0 <= 16, `${c1 - c0} leituras`);
   const t0 = Date.now();
   await p.evaluate(() => { window.__geo.ligada = true; });
@@ -386,7 +387,7 @@ const comPosicao = () => window.__geo.entregues > 0 && ![...document.querySelect
   await p.evaluate(() => { window.__geo.ligada = true; });
   const apareceu = await p.waitForFunction(comPosicao, null, { timeout: 8000 }).then(() => true).catch(() => false);
   const ms = Date.now() - t0;
-  ok('sempre «por pedir»: ao ligar a localização, mostra onde ele está sem tocar em nada (menos de 2,5 s)', apareceu && ms < 2500, `${ms} ms`);
+  ok('sempre «por pedir»: ao ligar a localização, mostra onde ele está sem tocar em nada (menos de 0,8 s)', apareceu && ms < 800, `${ms} ms`);
   await p.waitForTimeout(1500);
   ok('sempre «por pedir»: fica com a posição (não volta ao convite)', await p.evaluate(semAtivar) && !(await p.evaluate(aLocalizar)));
   await p.waitForTimeout(5000);
