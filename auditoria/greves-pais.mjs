@@ -64,6 +64,21 @@ ok('SMTUC: Metro Mondego (outro operador de Coimbra) não leva a greve da SMTUC'
 const semDataRelativa = AO.avisoDoSite(SMTUC, 'u', artigoSmtuc.replace('25 de Novembro, 2026 em', 'Em').replace(', dia 2 de dezembro', ''), new Date('2026-11-26T22:00:00Z'));
 ok('aviso sem data na página e só com «quarta-feira»: não cria greve (podia ser qualquer quarta)', semDataRelativa === null, JSON.stringify(semDataRelativa && semDataRelativa.start_datetime));
 
+// página real da SMTUC (26/11/2026): o 1.º <h1> é «Blog», a data aparece como «25 de Novembro, 2026» no topo e no fim
+const real = fs.readFileSync(path.join(AQUI, 'fixtures/smtuc-greve-fesinap.html'), 'utf8');
+const ar = AO.artigoGenerico(real);
+ok('SMTUC (página real): o título é o do aviso, não «Blog»', ar && ar.titulo === 'FESINAP convoca greve para a próxima 4ª feira', ar?.titulo);
+const sr = AO.avisoDoSite(SMTUC, 'https://www.smtuc.pt/novidades/fesinap-convoca-greve-para-a-proxima-4a-feira/', real, new Date('2026-11-26T23:50:00Z'));
+ok('SMTUC (página real): greve só a 2 de dezembro (a data da página não é dia de greve)', sr && sr.start_datetime.startsWith('2026-12-02') && sr.end_datetime.startsWith('2026-12-02') && sr.título === 'FESINAP convoca greve para a próxima 4ª feira', JSON.stringify(sr && [sr.título, sr.start_datetime, sr.end_datetime]));
+// STAL (SMTUC, 16/11/2026): «próxima sexta-feira e sábado, dias 20 e 21», com a data de alteração «26 de Novembro, 2026» no fim
+const stal = `<html><head><title>STAL convoca greve para esta 6ª feira e sábado &#8211; SMTUC</title></head><body><header><h1>Blog </h1></header><article><h2>STAL convoca greve para esta 6ª feira e sábado</h2>
+  <p>16 de Novembro, 2026 em Avisos , Dicas , Eventos</p><p>Os Serviços Municipalizados de Transportes Urbanos de Coimbra (SMTUC) informam que o Sindicato Nacional dos Trabalhadores da Administração Local e Regional (STAL) convocou uma jornada de greve para a próxima sexta-feira e sábado, dias 20 e 21 respetivamente.</p>
+  <p>Os SMTUC lamentam eventuais transtornos.</p><p>26 de Novembro, 2026 PARTILHAR</p></article></body></html>`;
+ok('carimbo de alteração no fim («26 de Novembro, 2026»): não cria uma greve a 26/11', AO.avisoDoSite(SMTUC, 'u-stal', stal, new Date('2026-11-26T23:50:00Z')) === null);
+const st2 = AO.avisoDoSite(SMTUC, 'u-stal', stal, new Date('2026-11-17T10:00:00Z'));
+ok('STAL: «6ª feira e sábado» publicado a 16/11 → greve de 20 a 21/11', st2 && st2.start_datetime.startsWith('2026-11-20') && st2.end_datetime.startsWith('2026-11-21'), JSON.stringify(st2 && [st2.start_datetime, st2.end_datetime]));
+ok('«4ª feira» lê-se quarta-feira', G.diasDaGreve('greve na próxima 4ª feira', DateTime.fromISO('2026-11-26T10:00:00Z'))[0]?.toISODate() === '2026-12-02');
+
 // ------------------------------------------------------------ todos os operadores da app (manifesto dos dados)
 const manif = (() => { try { return JSON.parse(fs.readFileSync(path.join(AQUI, '../manifest.json'), 'utf8')); } catch { return []; } })();
 const feeds = (Array.isArray(manif) ? manif : manif.feeds || []).map((f) => f.id).filter(Boolean);
