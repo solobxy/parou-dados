@@ -62,6 +62,15 @@ ok('Metro de Lisboa reconhecido, dias 2 e 4 de dezembro', m && m.operador === 'M
 ok('dia da semana: "na sexta-feira" numa notícia de quarta → 27/11', G.diasDaGreve('greve na sexta-feira', DateTime.fromISO('2026-11-25T18:00:00Z'))[0]?.toISODate() === '2026-11-27');
 ok('"amanhã" numa notícia de quarta → 26/11', G.diasDaGreve('greve amanhã', DateTime.fromISO('2026-11-25T18:00:00Z'))[0]?.toISODate() === '2026-11-26');
 ok('"esta sexta-feira" numa notícia de sexta → o próprio dia', G.diasDaGreve('greve esta sexta-feira', DateTime.fromISO('2026-11-27T07:00:00Z'))[0]?.toISODate() === '2026-11-27');
+// 26/11/2026: a RTP escreveu ao meio-dia que a greve da CP «suprimiu 160 dos 544 comboios (...) desta quinta-feira».
+// «desta» não era reconhecido e a quinta-feira passava para a semana seguinte: aparecia uma greve falsa da CP a 3/12.
+ok('"desta quinta-feira" numa notícia de quinta → o próprio dia', G.diasDaGreve('comboios programados desta quinta-feira', DateTime.fromISO('2026-11-26T13:07:31Z'))[0]?.toISODate() === '2026-11-26');
+ok('"deste sábado" numa notícia de sábado → o próprio dia', G.diasDaGreve('greve deste sábado', DateTime.fromISO('2026-11-28T09:00:00Z'))[0]?.toISODate() === '2026-11-28');
+ok('"na quinta-feira" numa notícia de quinta continua a ser a da semana seguinte', G.diasDaGreve('greve na quinta-feira', DateTime.fromISO('2026-11-26T09:00:00Z'))[0]?.toISODate() === '2026-12-03');
+const cpRtp = { titulo: 'Greve dos maquinistas da CP suprime quase 30% dos comboios até às 12h00', resumo: 'A greve dos maquinistas da CP suprimiu 160 dos 544 comboios programados entre as 0h00 e as 12h00 desta quinta-feira, o equivalente a 29,4% das ligações previstas, segundo dados da transportadora.', fonte: 'RTP Notícias', url: 'https://www.rtp.pt/noticias/economia/greve-dos-maquinistas-da-cp-suprime-quase-30-dos-comboios-ate-as-12h00_n1781784', data: '2026-11-26T13:07:31.000Z' };
+const cpOficial = { id: 'alert-cp-greve-23a27-nov', tipo: 'greve', operador: 'CP', status: 'Ativo', start_datetime: '2026-11-23T00:00:00.000Z', end_datetime: '2026-11-27T23:59:59.999Z' };
+const cpFalsa = G.grevesDasNoticias([cpRtp], new Date('2026-11-26T13:20:00Z'), [cpOficial]);
+ok('notícia da greve da CP em curso (com aviso oficial de 23 a 27/11) não cria greve a 3/12', cpFalsa.length === 0, JSON.stringify(cpFalsa.map((x) => [x.operador, x.start_datetime])));
 ok('dezembro → janeiro: "5 de janeiro" numa notícia de dezembro é do ano seguinte', G.diasDaGreve('greve a 5 de janeiro', DateTime.fromISO('2026-12-20T10:00:00Z'))[0]?.toISODate() === '2027-01-05');
 
 // RSS com CDATA e entidades
