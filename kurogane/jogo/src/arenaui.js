@@ -42,7 +42,7 @@ export function initArenaUI(G, { $, audio, toast }) {
       </div>
     </div>
     <div class="af"><button class="btn" id="arBack"></button><button class="btn pri" id="arGo"></button></div></div>`;
-  $('arX').innerHTML = $('mClose') ? $('mClose').innerHTML : '×';
+  const XI = $('mClose') ? $('mClose').innerHTML : '×';
   const cv = $('arPrev'), info = el.querySelector('.ainfo'), p1 = el.querySelector('.ap1'), stage = el.querySelector('.astage');
 
   const goLabel = () => mode === 'dead' ? (cd > 0 ? 'Renascer (' + cd + ')' : 'Renascer') : mode === 'menu' ? 'Voltar ao jogo' : step === 1 ? 'Escolher o kit' : 'Entrar na arena';
@@ -51,7 +51,7 @@ export function initArenaUI(G, { $, audio, toast }) {
     el.querySelector('.aT').textContent = dead ? (G.arenaBy ? 'Morto por ' + G.arenaBy : 'Morreste') : 'Arena de Tóquio';
     el.querySelector('.asc2').innerHTML = `<i class="r">${s[0]}</i><em>baixas</em><i class="b">${s[1]}</i>`;
     el.querySelectorAll('.asteps li').forEach(li => { const k = +li.dataset.s; li.className = k === step ? 'on' : k < step ? 'done' : ''; li.style.display = k === 3 && !hasAtt(kit) ? 'none' : ''; });
-    $('arX').hidden = false; $('arX').setAttribute('aria-label', mode === 'menu' ? 'Fechar' : 'Sair da arena'); $('arX').title = mode === 'menu' ? 'Fechar' : 'Sair da arena'; el.dataset.step = step;
+    { const x = $('arX'), q = mode === 'menu'; x.hidden = false; x.setAttribute('aria-label', q ? 'Fechar' : 'Sair da arena'); x.title = q ? 'Fechar' : 'Sair da arena'; x.classList.toggle('txt', !q); x.innerHTML = q ? XI : XI + '<span>Sair</span>'; } el.dataset.step = step;
     if (step === 1) p1.innerHTML = `<div class="ateams">${[0, 1].map(t => `<button class="atm t${t}${team === t ? ' on' : ''}" data-t="${t}" aria-pressed="${team === t}"><b>${TN[t]}</b><span>${t ? 'Nasces a este' : 'Nasces a oeste'}</span><em>${G.net && G.net.on ? N[t] + ' ' + (N[t] === 1 ? 'jogador' : 'jogadores') : ''}</em></button>`).join('')}</div><p class="ahelp">Os colegas de equipa aparecem a azul e não lhes acertas.</p>`;
     const K = ARENA_KITS[kit];
     if (step === 2) info.innerHTML = `<div class="akh"><span class="aks">${ARENA_KIT_SVG[kit]}</span><div><b>${esc(K.n)}</b><em>${ARENA_KIT_ORDER.indexOf(kit) + 1} de ${ARENA_KIT_ORDER.length}${mode === 'menu' ? ' · conta ao renasceres' : ''}</em></div></div><p class="akd">${esc(K.d)}</p><ul class="akl2">${lines(kit).map(l => '<li>' + esc(l) + '</li>').join('')}</ul>`;
@@ -59,7 +59,7 @@ export function initArenaUI(G, { $, audio, toast }) {
       if (!o.scope && !o.sup && !o.light) return ''; return `<div class="arow"><b>${esc(nm(g))}</b><div class="achs">${o.scope ? o.scope.map(v => chip('scope', v, SCN[v], c.scope === v)).join('') : ''}${o.sup ? chip('sup', c.sup ? 0 : 1, 'Silenciador', c.sup) : ''}${o.light ? chip('light', c.light ? 0 : 1, 'Lanterna', c.light) : ''}</div></div>`; }).join('');
     el.querySelectorAll('.adots i').forEach(i => i.className = i.dataset.k === kit ? 'on' : '');
     // barra de baixo: «voltar» do passo e o botão principal (no kit há também «Acessórios»)
-    const bk = $('arBack'); bk.textContent = step === 1 ? 'Sair da arena' : step === 2 ? 'Equipa' : 'Kit';
+    const bk = $('arBack'), bl = step === 1 ? 'Sair da arena' : step === 2 ? 'Equipa' : 'Kit'; bk.innerHTML = '<svg class="abk" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg><span>' + bl + '</span>'; bk.setAttribute('aria-label', bl);
     let ab = el.querySelector('#arAtt'); if (step === 2 && hasAtt(kit)) { if (!ab) { ab = document.createElement('button'); ab.className = 'btn'; ab.id = 'arAtt'; ab.textContent = 'Acessórios'; $('arGo').before(ab); } } else if (ab) ab.remove();
     const go = $('arGo'); go.textContent = goLabel(); go.disabled = (step === 1 && team == null) || (dead && cd > 0);
     if (step >= 2) { G.arenaPrev.mount(cv); G.arenaPrev.start(); const [g, a] = prevGun();

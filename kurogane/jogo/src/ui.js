@@ -172,7 +172,15 @@ export function initUI(G) {
     const unload = () => { const q = d.gun ? it.ammo | 0 : it.am | 0, k = it.ak || (d.gun ? ammoOf(d.gun)[0] : d.clip && d.clip.ammo[0]); if (!q || !k) return; const a = mkItem(k, q); const left = G.inv.give(a); const got = q - (left || 0); if (!got) return toast('Mochila cheia');
       if (d.gun) it.ammo = q - got; else it.am = q - got; feed(k, got); audio.play('recarregar', 0.5); if (left) toast('Mochila cheia: ficaram ' + left + ' balas'); };
     const loaded = (d.gun && (it.ammo | 0) > 0) || (d.clip && (it.am | 0) > 0);
-    if (loc.t === 'box') { add('Tirar', () => takeToMe(it, loc), true); if (loaded) add('Descarregar (' + (d.gun ? it.ammo : it.am) + ' balas)', unload); }
+    // acessórios: montar numa arma compatível (também direto da caixa ou do chão, mesmo com a mochila cheia)
+    const attActs = () => {
+      if (d.att) { const guns = [...G.inv.belt.filter(Boolean), ...G.inv.bag.list.map(e => e.it)].filter(g => fits(g, it));
+        if (!guns.length) add('Sem arma compatível', () => toast(d.att === 'sup' ? 'Este silenciador não serve nas armas que tens' : d.att === 'light' ? 'Não tens arma onde a montar' : 'Esta mira não serve nas armas que tens'));
+        // se a arma já tem uma peça nesse encaixe, troca e a antiga vai para a mochila
+        const SLOT = { scope: 'mira', sup: 'cano', light: 'calha' };
+        for (const g of guns.slice(0, 3)) { const old = g.att && g.att[d.att], lab = (old ? 'Trocar na ' : 'Pôr na ') + ITEMS[g.k].s + ' (' + SLOT[d.att] + ')'; /* a arma com os encaixes: o que recebe a peça acende */ add(lab + (old ? ' · substitui ' + ITEMS[old].s : ''), () => { removeAt(it, loc); g.att = g.att || {}; if (old) { const o = mkItem(old); const left = G.inv.give(o); if (left) { G.dropItem(o); toast('Sem espaço: ' + ITEMS[old].s + ' ficou no chão'); } } g.att[d.att] = it.k; audio.play('recarregar', 0.6); sel = null; }, !old, 'att', `<span class="ag"><img src="${G.ICONS[g.k]}" alt="">${slotsHTML(g, d.att)}</span><span class="at"><b>${lab}</b>${old ? `<small>Substitui: ${ITEMS[old].s}</small>` : ''}</span>`); } }
+    };
+    if (loc.t === 'box') { add('Tirar', () => takeToMe(it, loc), true); attActs(); if (loaded) add('Descarregar (' + (d.gun ? it.ammo : it.am) + ' balas)', unload); }
     else {
       if (d.use) add('Usar', () => { G.use(it); if (G.TOUCH) closeInv(); });
       if (d.deploy) add('Colocar', () => { G.base.deploy(it); sel = null; closeInv(); }, true); // escolhe-se o sítio no mundo (fantasma) e depois Colocar
@@ -181,12 +189,7 @@ export function initUI(G) {
       if (loc.t === 'bag' && !d.eq) add('Para o cinto', () => { const i = G.inv.belt.indexOf(null); if (i < 0) return toast('Cinto cheio'); move(it, loc, { t: 'belt', i }); }, !d.use);
       if (loc.t === 'belt') add('Para a mochila', () => toBag(it, loc));
       if (G.box) add('Pôr na caixa', () => toBox(it, loc));
-      // acessórios: montar numa arma compatível, ou tirar
-      if (d.att) { const guns = [...G.inv.belt.filter(Boolean), ...G.inv.bag.list.map(e => e.it)].filter(g => fits(g, it));
-        if (!guns.length) add('Sem arma compatível', () => toast(d.att === 'sup' ? 'Este silenciador não serve nas armas que tens' : d.att === 'light' ? 'Não tens arma onde a montar' : 'Esta mira não serve nas armas que tens'));
-        // se a arma já tem uma peça nesse encaixe, troca e a antiga vai para a mochila
-        const SLOT = { scope: 'mira', sup: 'cano', light: 'calha' };
-        for (const g of guns.slice(0, 3)) { const old = g.att && g.att[d.att], lab = (old ? 'Trocar na ' : 'Pôr na ') + ITEMS[g.k].s + ' (' + SLOT[d.att] + ')'; /* a arma com os encaixes: o que recebe a peça acende */ add(lab + (old ? ' · substitui ' + ITEMS[old].s : ''), () => { removeAt(it, loc); g.att = g.att || {}; if (old) { const o = mkItem(old); const left = G.inv.give(o); if (left) { G.dropItem(o); toast('Sem espaço: ' + ITEMS[old].s + ' ficou no chão'); } } g.att[d.att] = it.k; audio.play('recarregar', 0.6); sel = null; }, !old, 'att', `<span class="ag"><img src="${G.ICONS[g.k]}" alt="">${slotsHTML(g, d.att)}</span><span class="at"><b>${lab}</b>${old ? `<small>Substitui: ${ITEMS[old].s}</small>` : ''}</span>`); } }
+      attActs();
       if (d.gun && it.att) for (const slot of ['scope', 'sup', 'light']) if (it.att[slot]) add('Tirar ' + ITEMS[it.att[slot]].s, () => { const a = mkItem(it.att[slot]); const left = G.inv.give(a); if (left) { G.dropItem(a); toast('Sem espaço: ficou no chão'); } it.att[slot] = null; });
       // carregadores: encher, esvaziar, meter numa arma; e tirar o carregador da arma
       if (d.clip) {

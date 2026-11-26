@@ -804,6 +804,12 @@ body.mir #touch .tb>*,body.mir #touch .ghost{transform:scaleX(-1)}
 @media (orientation:landscape) and (min-height:361px){body.touch #tSprint{bottom:min(calc(214px + var(--sb)),calc(100% - var(--st) - 12px - var(--mmw) - 70px))}body.touch #tLight{bottom:min(calc(148px + var(--sb)),calc(100% - var(--st) - 12px - var(--mmw) - 136px))}}
 #inv.arena .tabs [data-tab=craft],#inv.arena .tabs [data-tab=skills]{display:none}#inv.arena.nobox #cBox,#inv.arena #iHint:empty{display:none}
 #scope .rdr{display:none}#scope.rd:not(.ir) .rdr{display:block;fill:none;stroke:#ff4a35;stroke-width:1;stroke-linecap:round;filter:drop-shadow(0 0 1.5px rgba(255,70,50,.9))}#scope.rd:not(.ir) .rdot{filter:drop-shadow(0 0 2px rgba(255,70,50,.95))}
+#iKg{display:none!important}
+#arX.txt{width:auto;padding:0 14px 0 10px;display:inline-flex;align-items:center;gap:6px;font:600 14px "Roboto Condensed",sans-serif;letter-spacing:.06em;text-transform:uppercase;color:var(--tx)}#arw .ah .close{margin-left:auto}
+#arBack{display:inline-flex;align-items:center;justify-content:center;gap:4px}#arBack .abk{display:none}
+@media (orientation:portrait){#arw .ah{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center}#arw .ah .close{grid-column:2;grid-row:1;margin-left:0}#arw .asteps{grid-column:1/-1}#arw .aht{min-width:0}#arw .aT{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}}
+@media (max-width:400px){#arw .af .btn{padding:0 10px;font-size:13px;letter-spacing:.03em}#arBack .abk{display:block}#arBack span{display:none}#arBack{flex:0 0 48px!important;padding:0!important}#arw .ah .close.txt{padding:0 10px 0 8px}}
+@media (max-width:380px){#arw .asc2 em{display:none}#arw .asc2 i{margin:0 1px}}
 </style>
 </head>
 <body>
@@ -877,7 +883,7 @@ body.mir #touch .tb>*,body.mir #touch .ghost{transform:scaleX(-1)}
   <nav class="menu"><button class="mi pri" id="sCont" hidden><b>Continuar</b><em>Voltas onde ficaste</em></button><button class="mi pri" id="sPlay"><b>Survival</b><em>Continuas onde ficaste, ou começas perto de uma vila</em></button><button class="mi" id="sArena"><b>Arena</b><em>PvP em Tóquio · Vermelha contra Azul · 5 kits</em></button><button class="mi" id="sSet"><b>Definições</b><em>Controlos, imagem e som</em></button></nav>
   <div class="onl" id="sOnl" role="status"><i class="dot" aria-hidden="true"></i><span><b>Servidor</b><em id="sOnT">A ver quem está a jogar…</em></span></div>
   <div class="keys" id="sKeys"></div>
-  <div class="foot">Protótipo 0.50 · um servidor para todos · quem sai fica a dormir no mundo</div>
+  <div class="foot">Protótipo 0.51 · um servidor para todos · quem sai fica a dormir no mundo</div>
 </div><button id="sMus" aria-label="Música do menu"><span class="on">{{volume-2}}</span><span class="off">{{volume-x}}</span></button><a class="credit" href="https://dinissousa.pt" target="_blank" rel="noopener">feito por dinissousa.pt</a></div>
 <div id="arw" class="ov" hidden></div>
 <div id="pfm" class="ov" hidden><div class="pfbox"><div class="pfh"><b id="pfT"></b><button class="close" id="pfX" aria-label="Fechar">{{x}}</button></div><div id="pfB" class="pfb"></div></div></div>

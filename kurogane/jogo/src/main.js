@@ -530,7 +530,7 @@ async function boot() {
   // peso: até à capacidade não pesa; acima andas mais devagar e cansas-te mais; 18 kg acima já não corres
   let ldT = -1, ldV = { kg: 0, cap: 28 }, ldS = 0;
   const load = () => { if (G.t - ldT > 0.25 || G.t < ldT) { ldT = G.t; const kg = G.inv ? G.inv.weight() : 0, cap = 28 + 7 * sk('res'), st = kg > cap + 18 ? 2 : kg > cap ? 1 : 0; ldV = { kg, cap };
-    if (st > ldS && G.playing && G.p && G.p.alive) G.ui.toast(st === 2 ? 'Pesado demais: já não consegues correr' : 'Estás pesado: andas mais devagar e cansas-te mais'); ldS = st; } return ldV; };
+    ldS = st; } return ldV; };
   G.load = () => { ldT = -1; return load(); };
   const skUp = (k, a) => { const p = G.p; if (!p || !p.alive) return; const S = p.sk || (p.sk = { res: 0, mira: 0, rec: 0 }), v = S[k] || 0, b = Math.floor(v * 10 + 0.05); S[k] = Math.min(0.995, v + a * (1 - v)); const n = Math.floor(S[k] * 10 + 0.05); if (n > b) { G.ui.toast(`${SKN[k]} subiu para o nível ${n}`); audio.play('ui'); } };
   G.sk = sk; G.SKN = SKN;
@@ -1334,7 +1334,7 @@ async function boot() {
   const hasLight = () => G.inv.count('lanterna') > 0 || gunLight();
   G.hasLight = hasLight;
   // mira de ferro (opção): espingardas sem mira também dão para apontar em primeira pessoa, sem ampliação
-  const IRON = { n: 'Mira de ferro', mag: 1.15, rd: 1, iron: 1 };
+  const IRON = { n: 'Mira de ferro', mag: 1.25, rd: 1, iron: 1 };
   // o que cada mira dá a apontar: precisão (multiplica o espalhamento), tempo a levantar a arma, balanço da mão e velocidade a andar
   const SIGHT = { iron: { acc: 1, ads: 0.26, sway: 1, spd: 1.3 }, reddot: { acc: 0.55, ads: 0.15, sway: 0.7, spd: 1.7 }, mira4: { acc: 0.4, ads: 0.3, sway: 1, spd: 1.1 }, mira8: { acc: 0.3, ads: 0.4, sway: 1.15, spd: 0.9 } };
   const sightOf = () => { const it = held(), k = it && it.att && it.att.scope; return SIGHT[k] || SIGHT.iron; }; G.SIGHT = SIGHT;
@@ -1416,7 +1416,7 @@ async function boot() {
   };
   const scopeFov = () => { const s = scopeItem(); return 55 / (s ? s.mag : 4); };
   // 1.ª pessoa sem apontar: ~90° na horizontal deitado; ao alto o campo vertical abre até 76° (senão via-se pouco à frente)
-  const fpFov = () => clamp(2 * Math.atan(1 / Math.max(0.3, innerWidth / innerHeight)) * 180 / Math.PI, 52, 76);
+  const fpFov = () => clamp(2 * Math.atan(1.1 / Math.max(0.3, innerWidth / innerHeight)) * 180 / Math.PI, 57, 80); // um pouco mais aberto (antes 52 a 76)
   G.fpFov = fpFov; // campo de visão real: ~55° da ocular a dividir pela ampliação
   // arrastar o dedo: na vista de cima move a mira no ecrã (e prende-se ao zombie por baixo); na mira em primeira pessoa roda a vista
   // ajuda à mira ligeira (como nos jogos de toque e comando): perto de um zombie ou jogador à vista a mira abranda um pouco
@@ -1490,7 +1490,7 @@ async function boot() {
       if (d > 0.05 && Math.abs(angDiff(Math.atan2(cx - p.x, cz - p.z), dir)) > 0.95) return;
       if (!best || d < best.d) best = { r, d, cx, cz };
     });
-    if (!best) { p.vy = 4.3; p.onGround = false; audio.play('swing', 0.4); return; }
+    if (!best) { p.vy = 5.2; /* salto de ~1 m (antes 0,7 m: quase não se via) */ p.onGround = false; audio.play('swing', 0.4); return; }
     const r = best.r; let tx, tz, th;
     if (r.top) { tx = clamp(best.cx + fx * 0.55, r.x0 + 0.25, r.x1 - 0.25); tz = clamp(best.cz + fz * 0.55, r.z0 + 0.25, r.z1 - 0.25); if (r.x1 - r.x0 < 0.5) tx = (r.x0 + r.x1) / 2; if (r.z1 - r.z0 < 0.5) tz = (r.z0 + r.z1) / 2; th = r.h; }
     else { const thinX = r.x1 - r.x0 < r.z1 - r.z0; if (thinX) { const sgn = p.x < (r.x0 + r.x1) / 2 ? 1 : -1; tx = sgn > 0 ? r.x1 + 0.5 : r.x0 - 0.5; tz = clamp(p.z, r.z0 + 0.1, r.z1 - 0.1); } else { const sgn = p.z < (r.z0 + r.z1) / 2 ? 1 : -1; tz = sgn > 0 ? r.z1 + 0.5 : r.z0 - 0.5; tx = clamp(p.x, r.x0 + 0.1, r.x1 - 0.1); } th = p.h; }
@@ -1619,7 +1619,7 @@ async function boot() {
       p.yaw = p.root + twist;
       // correr (baixa a arma)
       const fwdOk = !moving || Math.abs(angDiff(moveYaw, p.root)) < 0.9;
-      const L = load(), over = Math.max(0, L.kg - L.cap);
+      const over = 0; // sem pesos: anda-se e corre-se sempre à mesma velocidade, leves o que levares
       // na água: nadas devagar, não corres nem usas a arma, e cansas-te; sem fôlego vais perdendo vida
       { const was = p.swim; p.swim = p.alive && !p.climb && !G.car && (p.lv || 0) === 0 && W.wet(p.x, p.z); if (p.swim && !was) { if (AIM.on) aimEnd(); G.ui.toast('A nadar · sem armas e devagar'); } if (p.swim && moving) { p.stam = Math.max(0, p.stam - dt * 3.2); if (p.stam <= 0 && !(G.admF && G.admF.god)) { p.hp -= dt * 2.5; p.hurtT = 0.3; if (p.hp <= 0) die('afogado'); } } }
       const wantSprint = !p.swim && over <= 18 && (keys.has('ShiftLeft') || keys.has('ShiftRight') || (cfg.sprintPush && (!AIM.on || FPF.on) && sticks.L && sticks.L.m > 0.93) || G.autoRun) && il > 0.3 && !p.use && !back && fwdOk && !AIM.scope && !(G.t - (p.fireT ?? -9) < 0.45) && !(G.fireHeld && FPF.on);
