@@ -125,6 +125,13 @@ export function buildArena(T) {
     // dentro: balcão e caixas para te esconderes
     box(X - 3.2, Z + 2.6, 1.1, 1.1, 1.1, 0x8a6a42); box(X + 3.2, Z + 2.6, 1.1, 1.1, 1.1, 0x8a6a42);
     lantern(X - 6.4, 2.6, Z + 3.4); lantern(X + 6.4, 2.6, Z + 3.4); }
+  // cidade ao fundo (sem colisões, fora dos muros): torres de Tóquio à volta, com janelas que acendem à noite
+  { let k = 0; for (let a = 0; a < Math.PI * 2; a += 0.16) { k++; const r = 78 + ((k * 37) % 40), x = X + Math.cos(a) * r * 1.15, z = Z + Math.sin(a) * r * 0.8, w = 10 + (k * 7) % 12, d = 10 + (k * 5) % 10, h = 16 + (k * 13) % 34, c = [0x8c9096, 0x9aa0a6, 0x7a7e84, 0xb0aca4, 0x6a6e74][k % 5];
+      b.box(w, h, d, x, h / 2, z, c, { mat: 'vf' }); b.box(w + 0.4, 0.6, d + 0.4, x, h + 0.3, z, shade(c, 0.6));
+      const fx = Math.abs(Math.cos(a)) > Math.abs(Math.sin(a)), sx = Math.sign(X - x), sz = Math.sign(Z - z);
+      for (let y = 4; y < h - 2; y += 3.4) { if (fx) b.box(0.05, 1.1, d * 0.8, x + sx * (w / 2 + 0.03), y, z, (k + y) % 3 ? 0x2a3644 : new THREE.Color(1.3, 1.1, 0.7), { mat: (k + y) % 3 ? 'm' : 'lit' }); else b.box(w * 0.8, 1.1, 0.05, x, y, z + sz * (d / 2 + 0.03), (k + y) % 3 ? 0x2a3644 : new THREE.Color(1.3, 1.1, 0.7), { mat: (k + y) % 3 ? 'm' : 'lit' }); }
+      if (k % 4 === 0) { b.box(0.4, 3, 0.4, x, h + 1.5, z, 0x5a5e62); b.box(0.5, 0.5, 0.5, x, h + 3.2, z, new THREE.Color(2.2, 0.3, 0.2), { mat: 'lit' }); } } }
+  b.floor(X - 130, Z - 110, X + 130, Z + 110, 0.0, 0x6e6a64, 'conc'); // asfalto da cidade à volta (em vez de relva)
   // noren e lanternas vermelhas penduradas ao longo da viela norte; cerejeira grande ao centro do parque
   for (let u = -24; u <= 24; u += 6) lantern(X + u, 3.4, Z - 24);
   // detalhes de Tóquio: postes com fios por cima da viela, bicicletas, bandeiras nobori, cortinas noren, passadeiras pintadas

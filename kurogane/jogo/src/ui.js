@@ -1037,7 +1037,7 @@ export function initUI(G) {
 
   return {
     refresh, openInv, closeInv, toast, saveCfg, feed, hit, damage, death, toggleMap, frame, resize, safe, scopeR, scopeC,
-    arenaDeath: o => AUI.death(o), arenaFeed: m => AUI.feed(m), arenaScore: m => AUI.score(m), arenaHide: () => AUI.hide(), arenaMenu: () => AUI.menu(),
+    arenaAtt: k => AUI.attOf(k), arenaDeath: o => AUI.death(o), arenaFeed: m => AUI.feed(m), arenaScore: m => AUI.score(m), arenaHide: () => AUI.hide(), arenaMenu: () => AUI.menu(),
     closeDeath: () => { $('dead').hidden = true; clearInterval(dTick); }, sound, bedMenu, codeAsk, codeErr, codeDone, lockMenu, admRole, admList, admOpen, lbShow, lbOpen, trOpen, trRender, trOpenNow: () => !!trT, trWho: () => trT, trClose: () => { trEl.hidden = true; trT = null; },
     showHUD: msg => { $('hud').hidden = false; refresh(); toast(msg); },
     // sair para o menu (com 5 s parado se estiveres em combate)

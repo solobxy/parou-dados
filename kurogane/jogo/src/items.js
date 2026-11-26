@@ -198,3 +198,6 @@ export const KG = {"iene": 0, "tecido": 0.05, "carneC": 0.4, "carneA": 0.3, "cou
 Object.assign(KG, { candeeiro: 3, cheytac: 12.5, barrett: 13.6, m249: 7.5, pkm: 7.5, a408: 0.07, a50: 0.12, a754: 0.024, c408: 0.2, c50: 0.35, cM249: 0.4, cPKM: 0.5, ghillie: 2.5, nvg: 0.5 });
 for (const t in TINTS) { KG['capacete' + t] = KG.capacete; KG['colete' + t] = KG.colete; }
 for (const k in ITEMS) ITEMS[k].kg = KG[k] ?? 0.5;
+
+// um acessório serve nesta arma? (mira: ponto vermelho onde houver calha; 4× nas espingardas com calha; 8× só nas de longo alcance)
+export const attFits = (g, a) => { const gd = ITEMS[g] && ITEMS[g].gun, d = ITEMS[a]; if (!gd || !d || !d.att) return false; return d.att === 'sup' ? gd.sup === a : d.att === 'light' ? !!gd.light : d.rd ? !!(gd.scope || gd.rd) : !!gd.scope && (a !== 'mira8' || gd.scope >= 2); };

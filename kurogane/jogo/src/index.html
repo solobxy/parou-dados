@@ -481,6 +481,12 @@ h1 small{display:block;font:900 clamp(16px,3vw,22px)/1.2 "KJP",sans-serif;letter
 #arw .akit b{font:700 15px/1 "Roboto Condensed",sans-serif;letter-spacing:.06em;text-transform:uppercase}
 #arw .akit ul{margin:0;padding:0;list-style:none;font-size:11.5px;line-height:1.3;color:var(--tx2)}#arw .akit li+li{margin-top:2px}
 #arw .akd{margin:0;font-size:13px;color:var(--tx2)}
+#arw .aatt{display:flex;flex-direction:column;gap:6px;padding:8px 10px;border-radius:6px;background:rgba(255,255,255,.04)}
+#arw .aatt>em{font-style:normal;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--tx2)}
+#arw .arow{display:flex;align-items:center;gap:10px;flex-wrap:wrap}#arw .arow>b{font:700 14px/1 "Roboto Condensed",sans-serif;min-width:74px}
+#arw .achs{display:flex;flex-wrap:wrap;gap:5px}
+#arw .ach{min-height:34px;padding:0 10px;border-radius:17px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);color:var(--tx);font:600 13px "Roboto Condensed",sans-serif}
+#arw .ach.on{background:var(--amb);border-color:var(--amb);color:#151413}
 #arw .aft{display:flex;gap:8px;justify-content:flex-end}#arw .aft .btn.pri{min-width:180px}
 @media (max-width:640px){#arw .akits{grid-template-columns:repeat(2,minmax(0,1fr))}}
 #map .ml i{display:inline-block;width:9px;height:9px;margin-right:5px;vertical-align:-1px;border-radius:1px}
@@ -812,7 +818,7 @@ body.mir #touch .tb>*,body.mir #touch .ghost{transform:scaleX(-1)}
   <nav class="menu"><button class="mi pri" id="sCont" hidden><b>Continuar</b><em>Voltas onde ficaste</em></button><button class="mi pri" id="sPlay"><b>Jogar</b><em>Acordas perto de uma vila ou monumento</em></button><button class="mi" id="sArena"><b>Arena</b><em>PvP em Tóquio · Vermelha contra Azul · 5 kits</em></button><button class="mi" id="sSet"><b>Definições</b><em>Controlos, imagem e som</em></button></nav>
   <div class="onl" id="sOnl" role="status"><i class="dot" aria-hidden="true"></i><span><b>Servidor</b><em id="sOnT">A ver quem está a jogar…</em></span></div>
   <div class="keys" id="sKeys"></div>
-  <div class="foot">Protótipo 0.45 · um servidor para todos · quem sai fica a dormir no mundo</div>
+  <div class="foot">Protótipo 0.46 · um servidor para todos · quem sai fica a dormir no mundo</div>
 </div><button id="sMus" aria-label="Música do menu"><span class="on">{{volume-2}}</span><span class="off">{{volume-x}}</span></button><a class="credit" href="https://dinissousa.pt" target="_blank" rel="noopener">feito por dinissousa.pt</a></div>
 <div id="arw" class="ov" hidden></div>
 <div id="pfm" class="ov" hidden><div class="pfbox"><div class="pfh"><b id="pfT"></b><button class="close" id="pfX" aria-label="Fechar">{{x}}</button></div><div id="pfB" class="pfb"></div></div></div>

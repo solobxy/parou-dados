@@ -7,7 +7,7 @@ import { makeSectors } from './sectors.js';
 import { Body, ZHorde, ZHEAD, bagMesh, HIP, zombiePose, newPose, LOOK_OPTS, RDP, PCOL, lookCol } from './chars.js';
 import * as Conta from './conta.js';
 import { makeFire, fireFrame } from './fire.js';
-import { ITEMS, RECIPES, ammoOf } from './items.js';
+import { ITEMS, RECIPES, ammoOf, attFits } from './items.js';
 import { VT } from './vtypes.js';
 import { Grid, Inv, mkItem, rollLoot, capOf } from './bag.js';
 import { makeIcons } from './items3d.js';
@@ -814,6 +814,7 @@ async function boot() {
     else audio.rain(0, false);
   };
   G.sectors = SECTORS;
+  if (ARENA_ON) { SECTORS.tick = () => false; SECTORS.fill = () => { }; } // arena: sem floresta à volta (só a arena se desenha)
   // vilas e monumentos longe do centro: constrói o mais perto que falta (um por imagem) e larga os que ficaram longe
   // sliced (a jogar): no máximo ~4 ms por imagem a fazer malhas das zonas que se aproximam; sem isso (arranque, testes) faz tudo de uma vez
   const lazyTick = (px, pz, sliced = false) => { if (sliced && W.lazyStep(performance.now() + 4)) return true; let best = null, bd = 1e9; for (const L of W.lazy) { const d = Math.max(L.x0 - px, px - L.x1, L.z0 - pz, pz - L.z1, 0); if (L.meshes || L.job) { if (d > 430) W.lazyDrop(L); } else if (d < 250 && d < bd) { bd = d; best = L; } } if (best) { W.lazyBuild(best, sliced); return true; } return false; };
@@ -1243,7 +1244,8 @@ async function boot() {
   };
 
   // ---------- arena PvP: kits (o que trazes ao nascer), nascer na tua zona, mudar de equipa
-  const arenaKit = k => { const inv = new Inv(); const gun = (g, att = {}) => { const it = mkItem(g); it.ammo = capOf(it); const G2 = ITEMS[g].gun; it.att = {}; for (const s in att) if (G2[s]) it.att[s] = att[s]; return it; }; const clip = c => { const m = mkItem(c); m.am = ITEMS[c].clip.cap; return m; };
+  const arenaKit = k => { const inv = new Inv(), A0 = (G.ui.arenaAtt && G.ui.arenaAtt(k)) || {}; const gun = (g, att = {}) => { const it = mkItem(g); it.ammo = capOf(it); it.att = {}; const ch = A0[g]; // acessórios: os escolhidos no ecrã da arena, ou os do kit
+      const want = ch ? { scope: ch.scope && ch.scope !== 'iron' ? ch.scope : null, sup: ch.sup ? ITEMS[g].gun.sup : null, light: ch.light ? 'lantArma' : null } : att; for (const s in want) if (want[s] && attFits(g, want[s])) it.att[s] = want[s]; return it; }; const clip = c => { const m = mkItem(c); m.am = ITEMS[c].clip.cap; return m; };
     const K = ARENA_KITS[k] || ARENA_KITS.atirador; if (K.head) inv.eq.head = mkItem(K.head); if (K.vest) inv.eq.vest = mkItem(K.vest); inv.eq.back = mkItem('mochila');
     inv.belt = [0, 1, 2, 3, 4, 5].map(i => { const e = K.belt[i]; if (!e) return null; return ITEMS[e[0]].gun ? gun(e[0], e[1] || {}) : mkItem(e[0], e[1] || 1); });
     const rows = inv.rows(); for (const [c, n] of K.bag) { if (ITEMS[c].clip) for (let i = 0; i < n; i++) inv.bag.insert(clip(c), rows); else inv.bag.insert(mkItem(c, n), rows); }

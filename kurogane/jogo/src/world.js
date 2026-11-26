@@ -360,6 +360,8 @@ export function buildWorld(scene, mats, A, opt = {}) {
   const clutter = guard((x0, z0, x1, z1, n) => { for (let i = 0; i < n; i++) { const x = rr(x0 + 0.6, x1 - 0.6), z = rr(z0 + 0.6, z1 - 0.6), k = rnd(); if (k < 0.5) b.plane(rr(0.2, 0.32), rr(0.28, 0.4), x, 0.05, z, 0xe8e4d8, { mat: 'decal', rx: -Math.PI / 2, rz: rr(0, 3) }); else if (k < 0.75) b.cyl(0.035, 0.035, 0.22, 6, x, 0.05, z, pick([0x3a7a3a, 0x7a5a2a, 0xc8d8e0]), { rz: Math.PI / 2, ry: rr(0, 3) }); else b.box(rr(0.25, 0.4), 0.2, rr(0.2, 0.35), x, 0.1, z, pick([0xb8935a, 0x8a8478]), { ry: rr(0, 3) }); } });
   const vendI = (x, z, ry) => vend(x, z, ry, 0x2f6fb3);
 
+  // modo arena: o resto do mundo constrói-se «a seco» (colisões e dados, sem geometria nenhuma), para a arena ser leve
+  if (opt.arena) b.dry = true;
   // ============ BAIRRO ============
   // --- quarteirão NO1 (z -22..-7): clínica de 3 pisos junto ao cruzamento + torres
   { const cl = shell(-21, -19.5, -8, -8.2, { name: 'Clínica Kurogane', wall: 0xe7e5df, floor: 0xd8dcd8, mapc: '#9aa7a3', floors: 3, h: 3.2, vs: ['診療所', '#ffffff', '#1f6a9a'], roofC: 0x8f8b84,
@@ -530,7 +532,7 @@ export function buildWorld(scene, mats, A, opt = {}) {
   // Ao construir, repete-se exatamente o mesmo sorteio, por isso as paredes caem onde as colisões já estão
   W.lazy = [];
   const lazy = (x0, z0, x1, z1, fn) => { const L = { x0, z0, x1, z1, fn, s0: getSeed(), c0: [cid, tid, eid], cut0: W.cuts.length, meshes: null };
-    const r0 = W.rects.length, k0 = W.containers.length; b.dry = true; A.rec = []; try { fn(); } finally { b.dry = false; L.atl = A.rec; A.rec = null; } L.cuts = W.cuts.slice(L.cut0); L.ck = lzck(W.rects.slice(r0), W.containers.slice(k0)); W.lazy.push(L); return L; };
+    const r0 = W.rects.length, k0 = W.containers.length; const d0 = b.dry; b.dry = true; A.rec = []; try { fn(); } finally { b.dry = d0; L.atl = A.rec; A.rec = null; } L.cuts = W.cuts.slice(L.cut0); L.ck = lzck(W.rects.slice(r0), W.containers.slice(k0)); W.lazy.push(L); return L; };
   const lzck = (R, C) => R.length + ':' + C.length + ':' + R.reduce((a, r) => a + r.x0 * 3 + r.z1 * 7 + r.h, 0).toFixed(2) + ':' + C.map(c => c.id + c.table).join();
   const linkCut = (c, built) => {
     if (!c.shell) { c.group = built.cuts.get(c.id) || new THREE.Group(); return; }
@@ -553,7 +555,7 @@ export function buildWorld(scene, mats, A, opt = {}) {
 
   // mundo de fora, 2.ª parte (com a sua própria semente: o resto do mapa fica igual)
   // arena PvP de Tóquio: só no modo arena (o mundo de sobrevivência fica igual). Antes das regiões, para as placas dela terem lugar na folha de letreiros
-  if (opt.arena) { const sv = getSeed(); setSeed(777); buildArena({ b, A, W, rect, circ, mp, shell, lamp, lantern, vend, bench, hsign, vsign, shade, mat4, pole, wires, bike }); setSeed(sv); W.arena = true; }
+  if (opt.arena) { const sv = getSeed(); setSeed(777); b.dry = false; buildArena({ b, A, W, rect, circ, mp, shell, lamp, lantern, vend, bench, hsign, vsign, shade, mat4, pole, wires, bike }); setSeed(sv); W.arena = true; b.dry = true; }
   { const sv = getSeed(), t0 = performance.now(); setSeed(20261124); buildRegions({ lazy, b, A, W, rect, circ, mp, container, shell, car, pole, lamp, crate, cabinet, counter, table, chair, bed, shelf, fridge, woodFence, blood, bags, cone, barrier, bench, bike, vend, dirt, rr, ri, pick, rnd, shade, mat4, tower, lantern, sofa, books, boxes, clutter, toilet, sinkI, deskPC, plantI, wardrobe }, TW.house, TW.shop); setSeed(sv); W.regionMs = Math.round(performance.now() - t0); }
 
   // grelha para saber depressa onde já há coisas
@@ -611,6 +613,7 @@ export function buildWorld(scene, mats, A, opt = {}) {
   for (let i = 0; i < 4; i++) W.rects[W.rects.length - 1 - i].edge = true;
   { const E = new THREE.Color(1.05, 0.62, 0.2), lw = 0.26, y = 0.05; b.box(2 * MAP + lw, 0.012, lw, 0, y, -MAP, E, { mat: 'lit' }); b.box(2 * MAP + lw, 0.012, lw, 0, y, MAP, E, { mat: 'lit' }); b.box(lw, 0.012, 2 * MAP, -MAP, y, 0, E, { mat: 'lit' }); b.box(lw, 0.012, 2 * MAP, MAP, y, 0, E, { mat: 'lit' }); }
 
+  if (opt.arena) { b.dry = false; W.trees = []; W.rocks = []; }
   const built = b.build(scene, mats);
   for (const c of W.cuts) linkCut(c, built);
   W.meshes = built.meshes;
