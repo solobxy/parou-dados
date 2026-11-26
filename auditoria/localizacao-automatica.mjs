@@ -233,6 +233,9 @@ const convite = () => [...document.querySelectorAll('[data-teste="ativar-localiz
 const comPosicao = () => window.__geo.entregues > 0 && ![...document.querySelectorAll('[data-teste="ativar-localizacao"]')].some((e) => e.getBoundingClientRect().width > 0);
 { // o Chrome diz «por pedir» enquanto a localização está desligada: a app fica no convite, sem pedidos; ao ligar, aparece sozinha
   const { ctx, p, erros } = await contexto('chrome-aviso');
+  // registos de diagnóstico que a app manda ao servidor (26/11/2026: num telemóvel real ficava no convite e não chegava nada)
+  const registos = [];
+  p.on('request', (r) => { if (/\/api\/erros/.test(r.url())) { try { registos.push(r.postData() || String(r.postDataBuffer() || '')); } catch (e) { registos.push(''); } } });
   await p.goto(BASE + '/', { waitUntil: 'load', timeout: 60000 });
   await p.waitForSelector('[data-teste="ativar-localizacao"]:visible', { timeout: 45000 }).catch(() => {});
   ok('Chrome real («por pedir»), desligada: a app mostra o convite para ligar', await p.evaluate(convite));
@@ -257,6 +260,12 @@ const comPosicao = () => window.__geo.entregues > 0 && ![...document.querySelect
   await p.waitForTimeout(3000);
   const c3 = await p.evaluate(() => window.__geo.consultas);
   ok('Chrome real: com a posição no ecrã, deixa de ler a autorização', c3 - c2 <= 1, `${c3 - c2} leituras em 3 s`);
+  await p.waitForTimeout(1800);
+  const parada = registos.find((x) => /"tipo":"gps"/.test(x) && /parada há \d+ s/.test(x)) || '';
+  ok('diagnóstico: parada no convite, a app conta ao servidor o estado (autorização, marcas guardadas), sem a posição',
+    /permissão prompt/.test(parada) && /já deu 1/.test(parada) && /desligada na app 0/.test(parada) && !/41\.1|8\.58/.test(parada), parada.slice(0, 160));
+  const ligou = registos.find((x) => /"tipo":"gps"/.test(x) && /ligou depois de \d+ s parada/.test(x)) || '';
+  ok('diagnóstico: depois de ligar sozinha, manda os tempos de cada passo', /perm:granted/.test(ligou) && /auto:autorizacao/.test(ligou) && /st:active/.test(ligou) && !/41\.1|8\.58/.test(ligou), ligou.slice(0, 120));
   ok('sem erros na página (Chrome real, por pedir)', erros.length === 0, erros.join(' | '));
   await ctx.close();
 }
@@ -335,6 +344,23 @@ const comPosicao = () => window.__geo.entregues > 0 && ![...document.querySelect
   await ctx.close();
 }
 
+{ // o site está autorizado no Chrome mas a marca «já deu a localização» não está no telemóvel (dados do site apagados):
+  // ao ligar a localização, liga sozinha na mesma (passar a «autorizado» já prova que o site está autorizado)
+  const { ctx, p, erros } = await contexto('chrome-aviso');
+  await p.addInitScript({ content: `try { localStorage.removeItem('parou_localizacao_ok'); } catch (e) {}` });
+  await p.goto(BASE + '/', { waitUntil: 'load', timeout: 60000 });
+  await p.waitForSelector('[data-teste="ativar-localizacao"]:visible', { timeout: 45000 }).catch(() => {});
+  await p.waitForTimeout(2500);
+  ok('sem a marca guardada: desligada, nenhum pedido de localização', await p.evaluate(() => window.__geo.pedidos === 0));
+  const t0 = Date.now();
+  await p.evaluate(() => { window.__geo.ligada = true; });
+  const apareceu = await p.waitForFunction(comPosicao, null, { timeout: 8000 }).then(() => true).catch(() => false);
+  const ms = Date.now() - t0;
+  ok('sem a marca guardada: ao ligar a localização, liga sozinha em menos de 3 s', apareceu && ms < 3000, `${ms} ms`);
+  ok('sem erros na página (sem a marca guardada)', erros.length === 0, erros.join(' | '));
+  await ctx.close();
+}
+
 { // já deu a localização à PAROU, mas a autorização do site foi retirada: ligar a localização do telemóvel não pode levar
   // a app a pedir a posição sozinha (isso abria a pergunta do browser sem um toque)
   const { ctx, p, erros } = await contexto('prompt-ja-deu');
@@ -358,7 +384,7 @@ const comPosicao = () => window.__geo.entregues > 0 && ![...document.querySelect
   const pedidos = await p.evaluate(() => window.__geo.pedidos);
   ok('site nunca autorizado: nenhum pedido de localização sem um toque', pedidos === 0, `${pedidos} pedidos`);
   const consultas = await p.evaluate(() => window.__geo.consultas);
-  ok('site nunca autorizado: não fica a ler a autorização sem parar', consultas <= 4, `${consultas} leituras`);
+  ok('site nunca autorizado: lê a autorização devagar (no máximo ~1 vez por segundo)', consultas <= 9, `${consultas} leituras`);
   ok('sem erros na página (sem autorização)', erros.length === 0, erros.join(' | '));
   await ctx.close();
 }
