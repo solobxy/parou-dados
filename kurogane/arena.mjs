@@ -35,7 +35,7 @@ export function makeArena({ send }) {
     bcast({ t: 'akf', k: killer && killer !== victim ? killer.name : null, kt: killer ? killer.team : -1, v: victim.name, vt: victim.team, w: how || '' }); bcast(board());
   };
   const shot = (c, m) => {
-    const p = c.p, now = Date.now(); if (!p.alive) return; { p.shB = Math.min(3, (p.shB ?? 3) + (now - (p.lastShot || 0)) / 60); p.lastShot = now; if (p.shB < 1) return; p.shB -= 1; }
+    const p = c.p, now = Date.now(); if (!p.alive) return; if (now - (p.spawnT || 0) < PROT) p.spawnT = now - PROT; // quem dispara perde a proteção de nascer { p.shB = Math.min(3, (p.shB ?? 3) + (now - (p.lastShot || 0)) / 60); p.lastShot = now; if (p.shB < 1) return; p.shB -= 1; }
     const O = Array.isArray(m.o) ? m.o.map(v => num(v, -4100, 4100)) : null, D = Array.isArray(m.d) ? m.d.map(v => num(v, -1, 1)) : null; if (!O || !D || O.length !== 3 || D.length !== 3) return;
     if (Math.hypot(O[0] - p.x, O[2] - p.z) > 3) return; const dl = Math.hypot(D[0], D[1], D[2]) || 1; D[0] /= dl; D[1] /= dl; D[2] /= dl;
     const k = String(m.k || ''), n = Math.min(8, num(m.n, 1, 8, 1) | 0), L = num(m.L, 0, 400, 200), sup = !!m.sup;
@@ -86,11 +86,18 @@ export function makeArena({ send }) {
     }
     if (m.t === 'shot') { shot(c, m); return; }
     if (m.t === 'aspawn') { if (p.alive) return; if (p.deadT && now - p.deadT < 2500) return; p.alive = true; p.hp = 100; p.spawnT = now; p.hd = p.vd = null; p.hist = []; p.x = num(m.x, AX - HW, AX + HW, AX); p.z = num(m.z, AZ - HD, AZ + HD, AZ); return; } // renascer (no mínimo 2,5 s depois de morrer)
-    if (m.t === 'died') { if (!p.alive) return; p.alive = false; p.hp = 0; p.deadT = now; const by = typeof m.by === 'string' ? [...players.values()].find(o => o.p && o.p.name === m.by) : null; kill(by ? by.p : null, p, m.how || 'queda'); return; }
+    if (m.t === 'died') { if (!p.alive) return; p.alive = false; p.hp = 0; p.deadT = now; let by = typeof m.by === 'string' ? [...players.values()].find(o => o.p && o.p.name === m.by) : null;
+      // morte que não foi por tiro (granada): só conta para o outro se ele lançou uma granada há pouco, perto daqui
+      if (by && !(by.p.thrs || []).some(q => q.B && now - q.t < 12000 && Math.hypot(q.B[0] - p.x, q.B[1] - p.z) < 12)) by = null; // só se uma granada dele rebentou perto de ti
+      kill(by ? by.p : null, p, by ? 'granada' : (m.how || 'queda')); return; }
     if (m.t === 'ateam') { const t = m.team === 1 ? 1 : 0; if (t === p.team) return; const old = p.team; p.team = t; p.clan = TEAMS[t].id; if (p.alive) { p.alive = false; } send(c, { t: 'clan', info: info(t) }); bcast({ t: 'pclan', id: c.id, clan: p.clan }); for (const tt of [old, t]) bcast({ t: 'clan', info: info(tt) }, o => o !== c && o.p.team === tt); bcast(board()); return; }
     if (m.t === 'akit') { if (KITS.includes(m.kit)) p.kit = m.kit; return; }
     if (m.t === 'thr') { if (m.k !== 'gran') return; const P = Array.isArray(m.P) ? m.P.slice(0, 3).map(v => num(v, -4100, 4100)) : null; if (!P || P.length !== 3 || Math.hypot(P[0] - p.x, P[2] - p.z) > 6) return;
+      p.thrs = (p.thrs || []).filter(q => now - q.t < 8000); p.thrs.push({ t: now, P });
       bcast({ t: 'thr', k: 'gran', P, lv: num(m.lv, 0, 6) | 0, V: Array.isArray(m.V) ? m.V.slice(0, 3).map(v => num(v, -60, 60)) : [0, 0, 0], base: num(m.base, 0, 30), by: p.name }, o => o !== c); return; }
+    if (m.t === 'boom') { if (m.k !== 'gran') return; const x = num(m.x, -4100, 4100), z = num(m.z, -4100, 4100), y = num(m.y, -5, 40), lv = num(m.lv, 0, 6) | 0; // granada que rebentou: só se a lançou há pouco e perto
+      const q0 = (p.thrs || []).find(q => !q.used && now - q.t < 9000 && Math.hypot(q.P[0] - x, q.P[2] - z) < 60); if (!q0) return; q0.used = true; q0.B = [x, z]; // cada granada rebenta uma vez; fica registada para dar a baixa a quem a lançou
+      for (const o of players.values()) if (o !== c && o.p) send(o, { t: 'boom', k: 'gran', x, y, z, lv, by: p.name, nd: o.p.team === p.team ? 1 : 0 }); return; }
     if (m.t === 'ping') { send(c, { t: 'pong', k: m.k }); return; }
     if (m.t === 'lb' || m.t === 'asc') { send(c, board()); return; }
   };

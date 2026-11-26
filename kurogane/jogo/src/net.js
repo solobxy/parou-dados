@@ -96,7 +96,7 @@ export function makeNet({ G, scene, mkRemote, audio, Conta, enc, dec, hurt, die,
       case 'lkok': G.base.lockOk(m); G.ui.codeDone(m); return;
       case 'bxok': G.base.demolished(m.tt); return;
       case 'bdok': if (m.pick) G.base.picked(m.pick, m.lb); else G.base.deployed(m.k); return;
-      case 'boom': world.boom(m); return;
+      case 'boom': window.__booms = (window.__booms || 0) + 1; world.boom(m); return;
       case 'thr': world.thr(m); return;
       case 'lk': world.lock(m.i, m.hp, m.broke); return;
       case 'bg': world.bags(m.add, m.del); return;

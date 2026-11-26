@@ -252,7 +252,7 @@ async function boot() {
   // ---------- vegetação e recursos (instanciados)
   const TLOD = []; // árvores: cada bloco de 50 m tem também uma versão simples (mesmas posições), usada ao longe na 1.ª pessoa
   const iMesh = (geo, mat, list, matOf, shadow = true, CH = 50, tint = null, low = null) => { const groups = new Map(); for (const o of list) { const k = Math.floor(o.x / CH) + ',' + Math.floor(o.z / CH); if (!groups.has(k)) groups.set(k, []); groups.get(k).push(o); } const out = []; for (const l of groups.values()) { const m = new THREE.InstancedMesh(geo, mat, l.length); l.forEach((o, i) => { o.m0 = matOf(o); m.setMatrixAt(i, o.m0); o.mesh = m; o.idx = i; if (tint) m.setColorAt(i, tint(o, i)); }); m.castShadow = shadow; m.receiveShadow = true; m.computeBoundingSphere(); if (geo !== cedar && geo !== broad) m.renderOrder = 3; scene.add(m); out.push(m);
-    if (low) { const L = new THREE.InstancedMesh(low, mat, l.length); L.instanceMatrix = m.instanceMatrix; if (m.instanceColor) L.instanceColor = m.instanceColor; L.castShadow = shadow; L.receiveShadow = true; L.computeBoundingSphere(); L.visible = false; scene.add(L); let cx = 0, cz = 0; for (const o of l) { cx += o.x; cz += o.z; } TLOD.push({ hi: m, lo: L, x: cx / l.length, z: cz / l.length }); } } return out; };
+    if (low) { const L = new THREE.InstancedMesh(low, mat, l.length); L.instanceMatrix = m.instanceMatrix; if (m.instanceColor) L.instanceColor = m.instanceColor; L.castShadow = shadow; L.receiveShadow = true; L.computeBoundingSphere(); L.visible = false; scene.add(L); let cx = 0, cz = 0; for (const o of l) { cx += o.x; cz += o.z; } TLOD.push({ hi: m, lo: L, x: cx / l.length, z: cz / l.length }); out.push(L); } } return out; };
   const geo1 = fn => { const b = new Builder(0); fn(b); const out = []; for (const k of [...b.buckets.keys()]) out.push(b.merged(k)); return out.length === 1 ? out[0] : mergeAll(out); };
   const mergeAll = gs => mergeGeometries(gs, false);
   const cedar = geo1(b => { b.cyl(0.14, 0.22, 3.2, 9, 0, 1.6, 0, 0x5a4230, { mat: 'vf' }); for (const [r, h, y, c] of [[1.75, 2.6, 3.0, 0x2f4a2a], [1.45, 2.3, 3.8, 0x324e2c], [1.2, 2.2, 4.6, 0x34522e], [0.95, 2.0, 5.5, 0x3a5a32], [0.55, 1.5, 6.6, 0x426436]]) b.add(new THREE.ConeGeometry(r, h, 11), c, 'vf', mat4(0, y, 0, Math.random())); });
@@ -286,7 +286,7 @@ async function boot() {
   const _gc = new THREE.Color();
   await LP(62, 'a preparar as zonas');
   const SECTORS = makeSectors({ scene, W, nodes, addCirc, removeCirc, near, CORE, MAP, mats: { tree: tm, grass: grassMat, grassTint: () => _gc.setHSL(0.22 + Math.random() * 0.05, 0.45, 0.24 + Math.random() * 0.12) }, geos: { cedar, broad, rock: rockGeo, bush: bushGeo, grass: grassGeo, seixo: seixoGeo, fibra: fibraGeo },
-    iMesh: (geo, mat, list, matOf, shadow, CH) => iMesh(geo, mat, list, matOf, shadow, CH, geo === grassGeo ? () => _gc.setHSL(0.22 + Math.random() * 0.05, 0.45, 0.24 + Math.random() * 0.12) : null) });
+    iMesh: (geo, mat, list, matOf, shadow, CH) => iMesh(geo, mat, list, matOf, shadow, CH, geo === grassGeo ? () => _gc.setHSL(0.22 + Math.random() * 0.05, 0.45, 0.24 + Math.random() * 0.12) : null, geo === cedar ? cedarLo : geo === broad ? broadLo : null) }); // árvores da floresta também com a versão leve ao longe
   // pedras soltas e plantas de fibra também no centro do mapa (mesma posição em todos os aparelhos)
   { let sd = 977; const R = () => (sd = (sd * 16807) % 2147483647) / 2147483647, picks = { seixo: [], fibra: [] };
     for (let i = 0; i < 2600 && picks.seixo.length + picks.fibra.length < 420; i++) { const x = (R() * 2 - 1) * (CORE - 6), z = (R() * 2 - 1) * (CORE - 6), kind = R() < 0.5 ? 'seixo' : 'fibra'; if (inCity(x, z) || W.paved(x, z) || W.wet(x, z, 0.5) || solidAt(x, z, 0.8)) continue; picks[kind].push({ x, z, kind, s: 0.85 + R() * 0.4, ry: R() * 6.28 }); }
@@ -696,6 +696,7 @@ async function boot() {
   // som de cada arma (gravações reais) e o som da recarga
   const GSND = { pistola: 'pistola', revolver: 'revolver', smg: 'smg', m4: 'm4', ak: 'ak', cacadeira: 'cacadeira', caca: 'caca', cheytac: 'pesado', barrett: 'pesado', m249: 'm4', pkm: 'ak' };
   const reloadSnd = k => k === 'pistola' || k === 'revolver' ? 'recarregar-pistola' : k === 'cacadeira' ? 'recarregar-caca' : k === 'caca' || k === 'cheytac' ? 'ferrolho' : 'recarregar';
+  let thinT = 0, thinN = -1; const thinL = [], THIN_D = 85; // pormenores: até 85 m na 1.ª pessoa (a neblina já os esconde a meio)
   const _mz2 = new THREE.Vector2(), _mz3 = new THREE.Vector3();
   G.vmMuzzle = v => vm.muzzleNDC(v); G.V2 = THREE.Vector2; G.Box3 = THREE.Box3;
   const fire = (it, g) => {
@@ -781,7 +782,7 @@ async function boot() {
   const explode = (B0) => { const X = EX[B0.k], P = B0.P, lv = B0.lv || 0, onl = G.net.world;
     // zombies e tu: menos se houver parede pelo meio
     if (!B0.remote) for (const z of G.zs) { if (z.state === 'dead' || (z.lv || 0) !== lv) continue; const d = Math.hypot(z.x - P.x, z.z - P.z); if (d > X.r) continue; const f = (1 - d / X.r) * (los(P.x, P.z, z.x, z.z, null, 's', lv) ? 1 : 0.3); const l = d || 1; hurtZombie(z, X.dmg * f, (z.x - P.x) / l * 3, (z.z - P.z) / l * 3, { zone: 'body', at: new THREE.Vector3(z.x, 1.1, z.z) }); }
-    const p = G.p; if (p && p.alive && (p.lv || 0) === lv) { const d = Math.hypot(p.x - P.x, p.z - P.z); if (d < X.r) { const f = (1 - d / X.r) * (los(P.x, P.z, p.x, p.z, null, 's', lv) ? 1 : 0.3); hurtPlayer(X.dmg * 0.8 * f, 'explosao'); } G.shakeT = Math.max(G.shakeT || 0, 0.9 * (1 - Math.min(1, d / 40))); }
+    const p = G.p; if (p && p.alive && (p.lv || 0) === lv) { const d = Math.hypot(p.x - P.x, p.z - P.z); if (d < X.r && !B0.nd && !(G.ARENA && G.p.born != null && G.t - G.p.born < 2.5 && !(G.p.fireT > G.p.born))) { const f = (1 - d / X.r) * (los(P.x, P.z, p.x, p.z, null, 's', lv) ? 1 : 0.3); if (B0.by) G.killer = B0.by; hurtPlayer(X.dmg * 0.8 * f, 'explosao'); } G.shakeT = Math.max(G.shakeT || 0, 0.9 * (1 - Math.min(1, d / 40))); }
     // bases e portas trancadas
     if (lv === 0 && !onl && !B0.remote) G.base.damage(P.x, P.z, X.br, X.bdmg);
     const lk = []; if (!B0.remote) for (const D of W.doors) { if (!D.lock || D.lock.hp <= 0 || D.lv !== lv) continue; const d = Math.hypot(D.x - P.x, D.z - P.z); if (d > 2.6) continue; D.lock.hp -= X.door * (1 - d / 2.6 * 0.6); if (D.wid != null) lk.push([D.wid, Math.max(0, Math.round(D.lock.hp))]); if (D.lock.hp <= 0) { D.lock.hp = 0; D.lock.broke = Date.now(); setDoor(D, 1, false, true); G.ui.toast('A porta cedeu'); } }
@@ -1156,7 +1157,7 @@ async function boot() {
     leave: () => { G.cars.clear(); G.cars.spawnLocal(); G.base.online(null); G.base.clear(); const wd = Conta.lerMundo(); if (wd && wd.base) G.base.load(wd.base, decG); },
     base: m => G.base.applyNet(m),
     lock: (i, hp, broke) => { const D = doorById.get(i); if (!D || !D.lock) return; D.lock.hp = hp; D.lock.broke = broke; if (hp <= 0) { D.target = D.t = 1; } },
-    boom: m => { ghostGone(m.k, m.x, m.z); explode({ k: m.k, P: new THREE.Vector3(m.x, m.y, m.z), lv: m.lv, remote: true }); },
+    boom: m => { ghostGone(m.k, m.x, m.z); explode({ k: m.k, P: new THREE.Vector3(m.x, m.y, m.z), lv: m.lv, remote: true, by: m.by, nd: m.nd }); },
     thr: m => ghostBoom(m),
     z: zNet,
     door: (i, o) => { const D = doorById.get(i); if (D) setDoor(D, o, false, true); },
@@ -1761,7 +1762,7 @@ async function boot() {
     { cam.updateMatrixWorld(); _vfM.multiplyMatrices(cam.projectionMatrix, cam.matrixWorldInverse); _vf.setFromProjectionMatrix(_vfM); } // o que a câmara vê: zombies e animais fora disto não se desenham
     { const p = G.p, nr = G.fp ? 22 : 8; horde.update(G.zs, _vf, z => { if (!p) return 2; const dx = Math.abs(z.x - p.x), dz = Math.abs(z.z - p.z); return dx < nr && dz < nr ? 0 : dx < 26 && dz < 26 ? 1 : 2; }); } // perto do jogador: o corpo com mais detalhe fauna.update(G.zs, camT, _vf);
     // árvores ao longe (só na 1.ª pessoa, que vê até à neblina): a versão simples a partir de ~65 m
-    G.lodT = (G.lodT || 0) - dt; if (G.lodT <= 0) { G.lodT = 0.25; const c = cam.position, fpL = !!G.fp; for (const T of TLOD) { const far = fpL && Math.hypot(T.x - c.x, T.z - c.z) > 65; if (T.hi.visible === far) { T.hi.visible = !far; T.lo.visible = far; } } }
+    G.lodT = (G.lodT || 0) - dt; if (G.lodT <= 0) { G.lodT = 0.25; for (let i = TLOD.length - 1; i >= 0; i--) if (!TLOD[i].hi.parent) TLOD.splice(i, 1); /* setores largados */ const c = cam.position, fpL = !!G.fp; for (const T of TLOD) { const far = fpL && Math.hypot(T.x - c.x, T.z - c.z) > 65; if (T.hi.visible === far) { T.hi.visible = !far; T.lo.visible = far; } } }
     // comerciantes: respiram parados e viram-se para quem chega perto
     Body.cam = cam.position; Body.nearD = (G.fp || FPF.on) ? 22 : 45; // corpos longe: versão leve
     if (G.p) for (const N of npcs) { const dx = G.p.x - N.T.x, dz = G.p.z - N.T.z, d = Math.hypot(dx, dz); if (d > 90) { N.b.root.visible = false; continue; } N.b.root.visible = true; const want = d < 7 ? Math.atan2(dx, dz) : N.T.yaw; N.yaw += angDiff(want, N.yaw) * Math.min(1, dt * 3); N.b.root.rotation.y = N.yaw; N.b.pose(dt, 0, 0); if (G.ui.trOpenNow() && G.ui.trWho && G.ui.trWho() === N.T && d > TRADE_R + 2) G.ui.trClose(); }
@@ -1835,6 +1836,9 @@ async function boot() {
     doorMats();
     G.vmOn = G.fp && vm.on;
     G.ui.frame(dt);
+    // pormenores (postes, cadeiras, placas, carros parados, mobília): longe da câmara não se desenham (poupa triângulos no telemóvel)
+    { thinT -= 1; if (thinT <= 0) { thinT = 8; if (scene.children.length !== thinN) { thinN = scene.children.length; thinL.length = 0; for (const o of scene.children) { if (o.isMesh && o.userData.thin && o.geometry.boundingBox) thinL.push(o); else if (o.isGroup) for (const c of o.children) if (c.isMesh && c.userData.thin && c.geometry.boundingBox) thinL.push(c); } }
+        const cp = cam.position, D = G.fpv && G.fpv.on ? THIN_D : THIN_D * 2; for (const m of thinL) { const bb = m.geometry.boundingBox, dx = Math.max(bb.min.x - cp.x, 0, cp.x - bb.max.x), dz = Math.max(bb.min.z - cp.z, 0, cp.z - bb.max.z); m.visible = dx * dx + dz * dz < D * D; } } }
     if (window.__rinfoOn) { renderer.info.autoReset = false; renderer.info.reset(); }
     fireFrame(G.t, renderer, cam); renderer.render(scene, cam);
     if (G.vmOn) { renderer.autoClear = false; renderer.clearDepth(); renderer.render(vm.scene, vm.cam); renderer.autoClear = true; }

@@ -122,6 +122,7 @@ svg{width:18px;height:18px;flex:none}
 #scope .ret .thin{stroke-width:.6}#scope .ret .dots{fill:#0b0b0b;stroke:none;display:none}#scope.m8 .ret .dots{display:block}#scope .ret .c{fill:#c8201a;stroke:none}
 #scope.z-head .ret .c{fill:#ff3a20}#scope.z-head .ret path{stroke:#3a0806}
 #scope .sinfo{position:absolute;left:calc(var(--cx) + var(--r) * .62);top:calc(var(--cy) + var(--r) * .62);display:flex;flex-direction:column;font:700 14px/1.1 "Roboto Condensed",sans-serif;letter-spacing:.06em;color:#d8d2c6;opacity:var(--ro)}
+#scope.rd .sinfo,#scope.ir .sinfo{left:calc(var(--cx) + 34px);top:calc(var(--cy) + 26px);text-shadow:0 1px 3px rgba(0,0,0,.9)} /* sem luneta: ao lado do ponto, longe dos botões */
 #scope .sinfo span{font-weight:600;font-size:12px;color:#a9a399;font-variant-numeric:tabular-nums}
 #scope .ret .hold path{stroke-width:.7}#scope .ret .hold text{fill:#0b0b0b;stroke:none;font:700 6px "Roboto Condensed",sans-serif}
 #szero{position:absolute;z-index:3;--ro:0;left:0;top:0;display:flex;align-items:center;gap:6px;opacity:var(--ro);pointer-events:auto}
@@ -463,6 +464,7 @@ h1 small{display:block;font:900 clamp(16px,3vw,22px)/1.2 "KJP",sans-serif;letter
 }
 #asc{position:absolute;left:50%;top:calc(52px + var(--st));transform:translateX(-50%);display:flex;align-items:center;gap:8px;padding:3px 10px;background:rgba(12,11,10,.55);border-radius:4px;font:700 15px/1 "Roboto Condensed",sans-serif;color:#EEE9E0;pointer-events:none;font-variant-numeric:tabular-nums}
 #asc span{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--tx2)}#asc i,.asc2 i{font-style:normal;min-width:22px;text-align:center;padding:2px 5px;border-radius:3px}#asc .r,.asc2 .r{background:#b8342a}#asc .b,.asc2 .b{background:#2a5ac8}
+#aprot{position:absolute;left:50%;top:58%;transform:translateX(-50%);padding:4px 12px;border-radius:12px;background:rgba(244,241,234,.16);border:1px solid rgba(244,241,234,.45);font:700 13px/1 "Roboto Condensed",sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#F4F1EA;pointer-events:none;font-variant-numeric:tabular-nums}
 #akf{position:absolute;right:calc(10px + var(--sr));top:calc(64px + var(--st));display:flex;flex-direction:column;align-items:flex-end;gap:4px;pointer-events:none}
 .akl{display:flex;gap:6px;align-items:center;padding:3px 8px;background:rgba(12,11,10,.62);border-radius:3px;font:600 13px/1.2 "Roboto Condensed",sans-serif;color:#EEE9E0;transition:opacity .4s}.akl.out{opacity:0}.akl span{color:var(--tx2)}.akl .t0{color:#ff8a7a}.akl .t1{color:#8ab4ff}
 #arw{background:rgba(10,9,8,.9);z-index:40;padding:calc(8px + var(--st)) calc(10px + var(--sr)) calc(8px + var(--sb)) calc(10px + var(--sl))}
@@ -751,7 +753,7 @@ body.mir #touch .tb>*,body.mir #touch .ghost{transform:scaleX(-1)}
 <canvas id="c"></canvas><div id="vig" aria-hidden="true"></div>
 <div id="dmg" aria-hidden="true"></div><div id="lowhp" aria-hidden="true"></div>
 <div id="hud" hidden>
-  <div id="asc" hidden></div><div id="akf" aria-live="polite"></div><div id="cmp" data-h="cmp" aria-hidden="true"><canvas id="cmpc"></canvas><b id="cmpt"></b></div><div id="tl"><div id="mm" data-h="mm" title="Abrir mapa"><canvas id="mmc"></canvas></div><div id="zone" data-h="zone"><b>—</b><span></span></div></div>
+  <div id="asc" hidden></div><div id="aprot" hidden>Protegido</div><div id="akf" aria-live="polite"></div><div id="cmp" data-h="cmp" aria-hidden="true"><canvas id="cmpc"></canvas><b id="cmpt"></b></div><div id="tl"><div id="mm" data-h="mm" title="Abrir mapa"><canvas id="mmc"></canvas></div><div id="zone" data-h="zone"><b>—</b><span></span></div></div>
   <div id="tr" data-h="tr"><button class="hb" id="bAr" aria-label="Arena: equipa e kit" hidden>{{swords}}<span class="lab">Arena</span></button><button class="hb" id="bAdm" aria-label="Administração" hidden>{{shield}}</button><button class="hb" id="bSet" aria-label="Definições">{{settings}}</button><button class="hb" id="bMap" aria-label="Mapa">{{map}}<span class="lab">Mapa</span><kbd>M</kbd></button><button class="hb" id="bInv" aria-label="Inventário">{{backpack}}<span class="lab">Inventário</span><kbd>Tab</kbd></button></div>
   <div id="sind"></div><div id="feed" data-h="feed"></div><div id="fps" hidden></div>
   <div id="toast" hidden></div>
@@ -818,7 +820,7 @@ body.mir #touch .tb>*,body.mir #touch .ghost{transform:scaleX(-1)}
   <nav class="menu"><button class="mi pri" id="sCont" hidden><b>Continuar</b><em>Voltas onde ficaste</em></button><button class="mi pri" id="sPlay"><b>Jogar</b><em>Acordas perto de uma vila ou monumento</em></button><button class="mi" id="sArena"><b>Arena</b><em>PvP em Tóquio · Vermelha contra Azul · 5 kits</em></button><button class="mi" id="sSet"><b>Definições</b><em>Controlos, imagem e som</em></button></nav>
   <div class="onl" id="sOnl" role="status"><i class="dot" aria-hidden="true"></i><span><b>Servidor</b><em id="sOnT">A ver quem está a jogar…</em></span></div>
   <div class="keys" id="sKeys"></div>
-  <div class="foot">Protótipo 0.46 · um servidor para todos · quem sai fica a dormir no mundo</div>
+  <div class="foot">Protótipo 0.47 · um servidor para todos · quem sai fica a dormir no mundo</div>
 </div><button id="sMus" aria-label="Música do menu"><span class="on">{{volume-2}}</span><span class="off">{{volume-x}}</span></button><a class="credit" href="https://dinissousa.pt" target="_blank" rel="noopener">feito por dinissousa.pt</a></div>
 <div id="arw" class="ov" hidden></div>
 <div id="pfm" class="ov" hidden><div class="pfbox"><div class="pfh"><b id="pfT"></b><button class="close" id="pfX" aria-label="Fechar">{{x}}</button></div><div id="pfB" class="pfb"></div></div></div>

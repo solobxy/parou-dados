@@ -85,10 +85,10 @@ if KIND != 'zombie':
             BW[b_] = arr
     CURL = float(os.environ.get('CURL', '1'))
     # poses das mãos da 1.ª pessoa (ângulos em radianos por articulação: base, meio, ponta; polegar: oposição, base, meio, ponta)
-    FPP = {'gatilho': {2: (0.3, 0.55, 0.3), 3: (1.0, 1.2, 0.45), 4: (1.05, 1.2, 0.45), 5: (1.1, 1.15, 0.45), 't': (1.1, 0.35, 0.5, 0.4), 'ab': -0.08},
-           'pega': {2: (0.95, 1.15, 0.45), 3: (1.0, 1.2, 0.45), 4: (1.05, 1.2, 0.45), 5: (1.1, 1.15, 0.45), 't': (1.1, 0.35, 0.5, 0.4)},
-           'larga': {2: (0.7, 0.85, 0.35), 3: (0.75, 0.9, 0.4), 4: (0.8, 0.9, 0.4), 5: (0.85, 0.85, 0.35), 't': (0.85, 0.25, 0.3, 0.2)},
-           'punho': {2: (1.45, 1.75, 0.9), 3: (1.5, 1.8, 0.9), 4: (1.5, 1.8, 0.9), 5: (1.55, 1.75, 0.85), 't': (1.05, 0.6, 0.75, 0.6)},
+    FPP = {'gatilho': {2: (0.3, 0.55, 0.3), 3: (1.0, 1.2, 0.45), 4: (1.05, 1.2, 0.45), 5: (1.1, 1.15, 0.45), 't': (0.55, 0.5, 0.6, 0.5), 'ab': -0.08},
+           'pega': {2: (0.95, 1.15, 0.45), 3: (1.0, 1.2, 0.45), 4: (1.05, 1.2, 0.45), 5: (1.1, 1.15, 0.45), 't': (0.55, 0.5, 0.6, 0.5)},
+           'larga': {2: (0.7, 0.85, 0.35), 3: (0.75, 0.9, 0.4), 4: (0.8, 0.9, 0.4), 5: (0.85, 0.85, 0.35), 't': (0.45, 0.35, 0.4, 0.3)},
+           'punho': {2: (1.45, 1.75, 0.9), 3: (1.5, 1.8, 0.9), 4: (1.5, 1.8, 0.9), 5: (1.55, 1.75, 0.85), 't': (0.6, 0.75, 0.9, 0.7)},
            'aberta': {2: (0.25, 0.3, 0.15), 3: (0.28, 0.32, 0.15), 4: (0.3, 0.34, 0.16), 5: (0.32, 0.35, 0.16), 't': (0.35, 0.1, 0.1, 0.1)}}
     POSE = FPP.get(os.environ.get('FPPOSE', 'pega')) if FP else None
     if os.environ.get('FPDIAG'):
@@ -98,6 +98,13 @@ if KIND != 'zombie':
             ch = g(3, 4) - g(3, 1); bow = (g(3, 2) + g(3, 3)) / 2 - (g(3, 1) + g(3, 4)) / 2; bow -= ch * bow.dot(ch) / ch.dot(ch)
             print('DIAG', sd, 'hand', np.round(J[f'joint-{sd}-hand'], 3), 'lat', np.round(lat, 3), 'mid', np.round(mid / np.linalg.norm(mid), 3), 'n', np.round(n, 3), 'bow', np.round(bow * 1000, 2), 'thumb', [np.round(g(1, k), 3) for k in (1, 2, 3, 4)], 'idx1', np.round(g(2, 1), 3))
         sys.exit(0)
+    def rot_w(P, c, k, ang, w):
+        # roda cada vértice à volta do eixo k (por c) num ângulo proporcional ao seu peso: as zonas de transição torcem em vez de
+        # encolherem (misturar posições roda-e-não-roda achatava o polegar e os nós dos dedos)
+        w = np.minimum(w, 1.0); m = w > 1e-4
+        if not np.any(m): return P
+        k = k / np.linalg.norm(k); v = P[m] - c; th = (w[m] * ang)[:, None]; cs, sn = np.cos(th), np.sin(th)
+        P = P.copy(); P[m] = c + v * cs + np.cross(k, v) * sn + k * (v @ k)[:, None] * (1 - cs); return P
     def pose_hands(P0, POSE):
         P0 = P0.copy()
         for sd, sfx in (('l', '.L'), ('r', '.R')):
@@ -121,7 +128,7 @@ if KIND != 'zombie':
                     axes = [ax, ax, ax]; ang3 = angs
                     if POSE and POSE.get('ab') and f == 2:  # indicador um pouco afastado (ao longo do guarda-mato)
                         R = rotm(pn, POSE['ab'] * (1 if sd == 'l' else -1)); w = sum(BW.get(f'finger{f}-{k}{sfx}', 0) for k in range(1, 4)); c = js[0]
-                        P0 += w[:, None] * (((P0 - c) @ R.T + c) - P0)
+                        P0 = rot_w(P0, c, pn, POSE['ab'] * (1 if sd == 'l' else -1), w)
                         for k in range(1, 4): js[k] = R @ (js[k] - c) + c
                 else:
                     # polegar: oposição (roda para a frente da palma à volta do eixo da mão) e depois dobra nas três articulações
@@ -133,7 +140,7 @@ if KIND != 'zombie':
                     if np.dot(t1, pn) > np.dot(js[3] - js[0], pn): op = -op  # oposição: o polegar vem para a frente da palma
                     if POSE:
                         w = sum(BW.get(f'finger{f}-{k}{sfx}', 0) for k in range(1, 4)) + 0.5 * BW.get(f'metacarpal1{sfx}', 0)
-                        R = rotm(op, angs[0]); c = js[0]; P0 += w[:, None] * (((P0 - c) @ R.T + c) - P0)
+                        a0 = angs[0] * float(os.environ.get('FPTOP', '1')); R = rotm(op, a0); c = js[0]; P0 = rot_w(P0, c, op, a0, w)
                         for k in range(1, 4): js[k] = R @ (js[k] - c) + c
                         fx = R @ fx; angs = angs[1:]
                     axes = [fx, fx, fx]; ang3 = angs
@@ -141,7 +148,7 @@ if KIND != 'zombie':
                     w = sum(BW.get(f'finger{f}-{k}{sfx}', 0) for k in range(j + 1, 4))
                     if not np.any(w): continue
                     R = rotm(axes[j], ang3[j] * (1 if POSE else CURL)); c = js[j]
-                    P0 += w[:, None] * (((P0 - c) @ R.T + c) - P0)
+                    P0 = rot_w(P0, c, axes[j], ang3[j] * (1 if POSE else CURL), w)
                     for k in range(j + 1, 4): js[k] = R @ (js[k] - c) + c
         return P0
     P0_open = P0.copy()

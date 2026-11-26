@@ -52,6 +52,17 @@ server.listen(0, async () => {
     // mudar de equipa pelo botão da arena
     await B.ev(() => { document.getElementById('bAr').click(); }); await W(300); await B.ev(() => document.querySelector('#arw .atm.t0').click()); await W(1500);
     const tb = await B.ev(() => ({ team: G.net.clanInfo && G.net.clanInfo.nome, x: G.p.x })); const ta = await A.ev(() => { const r = [...G.net.R.values()][0]; return r && r.el.classList.contains('mate'); }); console.log('troca de equipa:', JSON.stringify(tb), 'a Ana vê-o como colega:', ta); ok(/Vermelha/.test(tb.team) && tb.x < 3620 && ta, 'muda para a vermelha, renasce a oeste e a Ana vê-o como colega');
+    // granada: a Ana (vermelha) rebenta uma granada aos pés de um azul... o Bruno agora é vermelho: volta para a azul primeiro
+    await B.ev(() => { document.getElementById('bAr').click(); }); await W(300); await B.ev(() => document.querySelector('#arw .atm.t1').click()); await W(4000);
+    await B.ev(() => { G.p.x = 3650 + 3; G.p.z = 3650 + 8; G.p.hp = 100; G.p.born = -99; }); await W(1500);
+    const s0 = await A.ev(() => (G.net.arena && G.net.arena.s || [0, 0])[0]);
+    await A.ev(() => { G.p.x = 3650 - 4; G.p.z = 3650 + 8; }); await W(400);
+    for (let i = 0; i < 2; i++) { await A.ev(() => { G.net.raw({ t: 'thr', k: 'gran', P: [G.p.x, 1.5, G.p.z], V: [1, 1, 0], lv: 0 }); }); await W(300); await A.ev(() => G.net.raw({ t: 'boom', k: 'gran', x: 3650 + 3, y: 0.2, z: 3650 + 8, lv: 0 })); await W(1200); } await W(1500); // duas granadas (o colete aguenta uma)
+    const gb = await B.ev(() => ({ al: G.p.alive, by: G.arenaBy, hp: G.p.hp, booms: window.__booms || 0 })), s1 = await A.ev(() => (G.net.arena && G.net.arena.s || [0, 0])[0]); console.log('granada:', JSON.stringify(gb), 'placar vermelha', s0, '→', s1); ok(!gb.al && gb.by === 'Ana' && s1 === s0 + 1, 'as granadas da Ana matam o Bruno (azul) e contam para a vermelha');
+    // granada falsa (sem lançar) não faz nada
+    await W(4500); await B.ev(() => G.arenaRespawn()); await W(3500); await B.ev(() => { G.p.x = 3650 + 3; G.p.z = 3650 + 8; G.p.born = -99; }); await W(1200);
+    await A.ev(() => G.net.raw({ t: 'boom', k: 'gran', x: 3650 + 3, y: 0.2, z: 3650 + 8, lv: 0 })); await W(2000);
+    const gf = await B.ev(() => G.p.alive); console.log('granada sem lançar:', gf); ok(gf, 'uma explosão sem granada lançada antes é ignorada pelo servidor');
     const errA = A.errs.filter(e => !/ERR_TUNNEL/.test(e)), errB = B.errs.filter(e => !/ERR_TUNNEL/.test(e)); console.log('erros:', errA.length, errB.length, JSON.stringify([...errA, ...errB].slice(0, 4))); ok(!errA.length && !errB.length, 'sem erros no jogo');
   } catch (e) { console.log('ERRO', e.stack || e); fails++; }
   console.log(fails ? fails + ' falhas' : 'tudo bem'); await browser.close(); server.close(); gs.kill(); process.exit(fails ? 1 : 0);
