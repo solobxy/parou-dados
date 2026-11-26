@@ -240,8 +240,8 @@ for (const largura of [390, 320]) {
     await p.waitForFunction(() => !/A calcular percursos/.test(document.body.innerText), null, { timeout: 30000 }).catch(() => {});
     const antes = planos.length;
     await botao.click();
-    await p.locator('[data-teste="seletor-partida"] [data-teste="dias-horario"] button').nth(1).click();
-    await p.locator('[data-teste="hora-partida"]').fill('22:00');
+    await p.locator('[data-teste="seletor-partida"]:visible [data-teste="dias-horario"] button').nth(1).click();
+    await p.locator('[data-teste="hora-partida"]:visible').fill('22:00');
     await p.waitForFunction((n) => true, antes, { timeout: 1000 }).catch(() => {});
     await p.waitForTimeout(600);
     await p.waitForFunction(() => !/A calcular percursos/.test(document.body.innerText), null, { timeout: 40000 }).catch(() => {});
