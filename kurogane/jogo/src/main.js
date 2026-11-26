@@ -703,12 +703,12 @@ async function boot() {
     const AM = ammoOf(g); if (!it.ak || !AM.includes(it.ak)) it.ak = AM[0];
     if (it.ammo <= 0) { audio.play('vazio'); p.cd = 0.3; startReload(true); return false; }
     const B = ITEMS[it.ak].bal, sup = !!(it.att && it.att.sup), v0 = B.v * (g.vk || 1), n = B.pel || 1;
-    it.ammo--; p.cd = g.cd; p.recoil = 1; G.combatT = G.t;
+    it.ammo--; p.cd = g.cd; p.recoil = 1; G.combatT = G.t; p.fireT = G.t; p.sprint = false; // a disparar não se corre (volta a dar logo que paras)
     const AIM = G.aimS, fp = G.fp, hipF = fp && G.fpv.on && AIM.adsT < 0.5; // 1.ª pessoa sem apontar: tiro à anca (espalha como na vista de cima)
     const lo = (AIM.lean || 0) * LEAN, O = fp ? AIM.eye.clone() : new THREE.Vector3(p.x + Math.sin(p.yaw) * 0.15 + Math.cos(p.yaw) * lo, p.y + 1.35, p.z + Math.cos(p.yaw) * 0.15 - Math.sin(p.yaw) * lo);
     const dir = fp ? AIM.dir.clone() : AIM.Aw.clone().sub(O).normalize();
     { const scI = scopeItem(), zd = fp ? (hipF ? clamp(AIM.dist || 30, 5, 400) : scI && scI.rd ? 50 : it.zero || (scI && scI.mag >= 8 ? 200 : 100)) : Math.min(400, AIM.Aw.distanceTo(O)), el = elevFor(it.ak, v0, zd); if (el) { const hz = Math.hypot(dir.x, dir.z) || 1, a = Math.atan2(dir.y, hz) + el; dir.set(dir.x / hz * Math.cos(a), Math.sin(a), dir.z / hz * Math.cos(a)); } }
-    const mv = Math.hypot(p.vx, p.vz) > 0.6 ? 1.5 : 1, spread = (G.dbgSpread ?? 1) * (fp && !hipF ? (g.acc ?? g.spread * 0.2) * mv * (p.onGround ? 1 : 2) : g.spread * (1 - 0.6 * AIM.steady) * (1 - 0.2 * sk('mira')) * mv * (p.onGround ? 1 : 2)); // na luneta conta a precisão mecânica da arma; o resto é a tua mão (balanço e respiração)
+    const mv = Math.hypot(p.vx, p.vz) > 0.6 ? 1.5 : 1, spread = (G.dbgSpread ?? 1) * (fp && !hipF ? (g.acc ?? g.spread * 0.2) * sightOf().acc * mv * (p.onGround ? 1 : 2) : g.spread * (1 - 0.6 * AIM.steady) * (1 - 0.2 * sk('mira')) * mv * (p.onGround ? 1 : 2)); // na luneta conta a precisão mecânica da arma; o resto é a tua mão (balanço e respiração)
     const D0 = spreadDir(dir, spread), ds = [];
     let MZ = null; if (fp && FPF.on && vm.muzzleNDC(_mz2)) { MZ = _mz3.set(_mz2.x, _mz2.y, 0.5).unproject(cam).sub(cam.position).normalize().multiplyScalar(0.75).add(cam.position); }
     for (let i = 0; i < n; i++) { const di = n > 1 ? spreadDir(D0, B.pat || 0, true) : D0; ds.push(di); bullets.push({ P: O.clone(), off: MZ ? MZ.clone().sub(O) : null, v: di.clone().multiplyScalar(v0), v0, cd: B.cd || 0.001, t: 0, dmg: B.dmg * (g.dk || 1), pen: B.pen, bp: B.bp ?? B.pen, pel: n > 1, fall: B.fall || 99, dist: 0, rng: g.rng, sup }); }
@@ -1308,6 +1308,9 @@ async function boot() {
   G.hasLight = hasLight;
   // mira de ferro (opção): espingardas sem mira também dão para apontar em primeira pessoa, sem ampliação
   const IRON = { n: 'Mira de ferro', mag: 1.15, rd: 1, iron: 1 };
+  // o que cada mira dá a apontar: precisão (multiplica o espalhamento), tempo a levantar a arma, balanço da mão e velocidade a andar
+  const SIGHT = { iron: { acc: 1, ads: 0.26, sway: 1, spd: 1.3 }, reddot: { acc: 0.55, ads: 0.15, sway: 0.7, spd: 1.7 }, mira4: { acc: 0.4, ads: 0.3, sway: 1, spd: 1.1 }, mira8: { acc: 0.3, ads: 0.4, sway: 1.15, spd: 0.9 } };
+  const sightOf = () => { const it = held(), k = it && it.att && it.att.scope; return SIGHT[k] || SIGHT.iron; }; G.SIGHT = SIGHT;
   const ironOk = it => !!(it && ITEMS[it.k] && ITEMS[it.k].gun && RDP[it.k] && (G.cfg || {}).fpIron !== false);
   const scopeItem = () => { const it = held(); return it && it.att && it.att.scope ? ITEMS[it.att.scope] : ironOk(it) ? IRON : null; };
   G.scopeItem = scopeItem;
@@ -1543,9 +1546,9 @@ async function boot() {
         FPF.t = Math.min(1, FPF.t + dt / 0.34); }
       if (FPF.on) AIM.fpT = 1; else AIM.fpT = clamp(AIM.fpT + (AIM.scope && AIM.raise > 0.5 ? dt / 0.42 : -dt / 0.3), 0, 1);
       // a apontar na 1.ª pessoa (mira de ferro, ponto vermelho ou luneta): 0 à anca, 1 com a mira no olho
-      AIM.adsT = clamp(AIM.adsT + (AIM.scope && AIM.raise > 0.5 && (G.fp || FPF.on) ? dt / 0.22 : -dt / 0.18), 0, 1);
+      AIM.adsT = clamp(AIM.adsT + (AIM.scope && AIM.raise > 0.5 && (G.fp || FPF.on) ? dt / sightOf().ads : -dt / 0.18), 0, 1);
       { const fpNow = (FPF.on ? FPF.t >= 0.5 : AIM.fpT > 0.55) && p.alive; if (fpNow !== !!G.fp) { G.fp = fpNow; PROJ.dirty = true; } }
-      const scI = scopeItem(), swayA = (AIM.scope ? (scI && scI.mag >= 8 ? 0.0062 : scI && scI.rd ? 0.0017 : 0.004) : 0.0012) * (1 - 0.55 * AIM.steady) * (1 - 0.85 * AIM.breath) * (still ? 1 : 2.4) * (1 + (AIM.gasp || 0)) * (1 - 0.3 * sk('mira')) * (G.dbgSway ?? 1);
+      const scI = scopeItem(), swayA = (AIM.scope ? (scI && scI.mag >= 8 ? 0.0062 : scI && scI.rd ? 0.0017 : 0.004) * sightOf().sway : 0.0012) * (1 - 0.55 * AIM.steady) * (1 - 0.85 * AIM.breath) * (still ? 1 : 2.4) * (1 + (AIM.gasp || 0)) * (1 - 0.3 * sk('mira')) * (G.dbgSway ?? 1);
       const swY = swayA * (Math.sin(G.t * 1.1) + 0.45 * Math.sin(G.t * 2.9 + 1)), swP = swayA * (0.8 * Math.sin(G.t * 0.83 + 2) + 0.35 * Math.sin(G.t * 3.7));
       { let want = 0; if (AIM.on && AIM.raise > 0.3 && cfg.autoLean !== false && p.onGround && !p.sprint && !p.climb) { AIM.leanT = (AIM.leanT || 0) - dt; if (AIM.leanT <= 0) { AIM.leanT = 0.1; AIM.leanW = leanPick(p); } want = AIM.leanW || 0; } else AIM.leanW = 0; AIM.lean = (AIM.lean || 0) + (want - (AIM.lean || 0)) * Math.min(1, dt * 9); if (Math.abs(AIM.lean) < 1e-3) AIM.lean = 0; }
       let aimYaw = null;
@@ -1592,11 +1595,11 @@ async function boot() {
       const L = load(), over = Math.max(0, L.kg - L.cap);
       // na água: nadas devagar, não corres nem usas a arma, e cansas-te; sem fôlego vais perdendo vida
       { const was = p.swim; p.swim = p.alive && !p.climb && !G.car && (p.lv || 0) === 0 && W.wet(p.x, p.z); if (p.swim && !was) { if (AIM.on) aimEnd(); G.ui.toast('A nadar · sem armas e devagar'); } if (p.swim && moving) { p.stam = Math.max(0, p.stam - dt * 3.2); if (p.stam <= 0 && !(G.admF && G.admF.god)) { p.hp -= dt * 2.5; p.hurtT = 0.3; if (p.hp <= 0) die('afogado'); } } }
-      const wantSprint = !p.swim && over <= 18 && (keys.has('ShiftLeft') || keys.has('ShiftRight') || (cfg.sprintPush && (!AIM.on || FPF.on) && sticks.L && sticks.L.m > 0.93) || G.autoRun) && il > 0.3 && !p.use && !back && fwdOk && !AIM.scope;
+      const wantSprint = !p.swim && over <= 18 && (keys.has('ShiftLeft') || keys.has('ShiftRight') || (cfg.sprintPush && (!AIM.on || FPF.on) && sticks.L && sticks.L.m > 0.93) || G.autoRun) && il > 0.3 && !p.use && !back && fwdOk && !AIM.scope && !(G.t - (p.fireT ?? -9) < 0.45) && !(G.fireHeld && FPF.on);
       if (wantSprint && AIM.on && !FPF.on) aimEnd(); // na 1.ª pessoa a arma fica na mão a correr (baixa-se sozinha no ecrã)
       if (wantSprint && p.stam > 0 && !p.stamLock && p.onGround) { p.sprint = true; p.stam -= dt * 3.3 * (1 - 0.4 * sk('res')) * (1 + over / 20); if (moving) skUp('res', dt * 5.8e-4); if (p.stam <= 0) { p.stam = 0; p.stamLock = true; } } else { p.sprint = false; p.stam = Math.min(100, p.stam + dt * (AIM.breathOn ? 0 : 9 * (1 + 0.3 * sk('res')))); if (p.stam > 20) p.stamLock = false; }
       let spd = p.sprint ? 5.0 : 3.0;
-      if (AIM.on && !p.sprint) spd = AIM.scope ? 1.1 : FPF.on ? 3.0 : 2.4; if (back) spd *= 0.62; // 1.ª pessoa: a anca é o normal, só a mira abranda
+      if (AIM.on && !p.sprint) spd = AIM.scope ? (FPF.on ? sightOf().spd : 1.1) : FPF.on ? 3.0 : 2.4; if (back) spd *= 0.62; if (FPF.on && G.t - (p.fireT ?? -9) < 0.45) spd = Math.min(spd, 2.2); // 1.ª pessoa: a anca é o normal, só a mira abranda; a disparar anda-se mais devagar
       if (moving) spd *= 0.5 + 0.5 * Math.max(0, Math.cos(Math.min(Math.PI / 2, Math.abs(angDiff(moveYaw, p.root)) * (aimingNow ? 0.6 : 1))));
       if (over > 0) spd *= Math.max(0.62, 1 - over / 45);
       if (heldDef().heavy) spd *= 0.88; // CheyTac e Barrett pesam
@@ -1767,7 +1770,7 @@ async function boot() {
       const a = FPF.on ? AIM.adsT * AIM.adsT * (3 - 2 * AIM.adsT) : 1, scI = scopeItem(), fa = a * (scI && scI.mag >= 2 ? 1 : 0); FPF.fa = FPF.on ? fa : 1;
       const S = G.ui.scopeR(), SC = G.ui.scopeC(), sf = THREE.MathUtils.degToRad(scopeFov()), fS = THREE.MathUtils.radToDeg(2 * Math.atan(Math.tan(sf / 2) * innerHeight / (2 * S))), fF = fpFov();
       cam.near = FPF.on ? 0.05 + 0.25 * a : 0.3; cam.far = FPF.on ? 142 + 758 * fa : 900; cam.aspect = innerWidth / innerHeight; cam.fov = FPF.on ? fF + ((scI && scI.rd ? Math.min(fS, fF / Math.max(1, scI.mag)) : fS) - fF) * a : fS; /* mira de ferro e ponto vermelho na vista livre: apontar nunca abre o campo (ao alto a fórmula da luneta dava mais do que a vista normal) */ cam.updateProjectionMatrix();
-      { const e = cam.projectionMatrix.elements; e[8] = -(SC.x / innerWidth * 2 - 1) * a; e[9] = -(1 - SC.y / innerHeight * 2) * a; cam.projectionMatrixInverse.copy(cam.projectionMatrix).invert(); } PROJ.mode = 'fp';
+      { const e = cam.projectionMatrix.elements, af = a * (scI && scI.mag >= 2 ? 1 : 0); e[8] = -(SC.x / innerWidth * 2 - 1) * af; e[9] = -(1 - SC.y / innerHeight * 2) * af; /* só as lunetas vão para o meio da zona livre; mira de ferro e ponto vermelho ficam no meio do ecrã, onde estava a cruz */ cam.projectionMatrixInverse.copy(cam.projectionMatrix).invert(); } PROJ.mode = 'fp';
       // braços e o que tens na mão: na vista livre sempre (punhos de mãos vazias); a apontar só com mira de ferro ou ponto vermelho (a luneta tapa o ecrã)
       { const it = held(), at = (it && it.att) || {}, k = it ? it.k : '', att = !at.scope && ironOk(it) ? { ...at, scope: 'iron' } : at, optic = !!(at.scope && at.scope !== 'reddot');
         const show = FPF.on ? !(optic && AIM.adsT > 0.5) : !!(RDP[k] && (att.scope === 'reddot' || att.scope === 'iron'));

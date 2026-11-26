@@ -39,8 +39,8 @@ export const ITEMS = {
   // acessórios
   silP: { n: 'Silenciador de pistola', s: 'Silenc. 9', w: 2, h: 1, cat: 'g', icon: 'sup', att: 'sup', desc: 'Pistola e SMG. Abafa o tiro e tira o clarão. Com balas subsónicas fica muito baixo.' },
   silR: { n: 'Silenciador de espingarda', s: 'Silenc. esp.', w: 2, h: 1, cat: 'g', icon: 'supR', att: 'sup', rare: 1, desc: 'M4, AK e caça. Abafa o disparo, mas a bala supersónica ainda estala.' },
-  mira4: { n: 'Mira 4x', s: 'Mira 4x', w: 2, h: 1, cat: 'g', icon: 'scope', att: 'scope', mag: 4, desc: 'M4, AK e caça. A apontar, a vista vai até 40 m à frente.' },
-  reddot: { n: 'Mira de ponto vermelho', s: 'Ponto verm.', w: 1, h: 1, cat: 'g', icon: 'reddot', att: 'scope', mag: 1.5, rd: 1, desc: 'M4, AK, SMG e caça. A apontar vês em primeira pessoa, quase sem ampliação, com um ponto vermelho ao centro. Treme pouco.' },
+  mira4: { n: 'Mira 4x', s: 'Mira 4x', w: 2, h: 1, cat: 'g', icon: 'scope', att: 'scope', mag: 4, desc: 'M4, AK e caça. A apontar: ampliação 4×, tiros 60% mais juntos do que com a mira de ferro. Sobe em 0,3 s e anda-se devagar.' },
+  reddot: { n: 'Mira de ponto vermelho', s: 'Ponto verm.', w: 1, h: 1, cat: 'g', icon: 'reddot', att: 'scope', mag: 1.5, rd: 1, desc: 'M4, AK, SMG e caça. A apontar: ponto vermelho ao centro, ampliação 1,5×, tiros 45% mais juntos do que com a mira de ferro, sobe em 0,15 s (mais rápida de todas), treme pouco e deixa-te andar mais depressa.' },
   lantArma: { n: 'Lanterna de arma', s: 'Lant. arma', w: 1, h: 1, cat: 'g', icon: 'wlight', att: 'light', desc: 'Monta-se por baixo do cano (todas menos o revólver). Ilumina para onde apontas; liga com F ou com o botão da luz.' },
   // carregadores: cada arma usa o seu; trocar um cheio é rápido, encher à mão é lento
   cPist: { n: 'Carregador de pistola', s: 'Carreg. 9', w: 1, h: 1, cat: 'g', icon: 'pmag', clip: { cap: 12, ammo: ['a9', 'a9s'] }, desc: '12 balas de 9 mm, para a pistola.' },
@@ -48,7 +48,7 @@ export const ITEMS = {
   cStanag: { n: 'Carregador de M4', s: 'Carreg. M4', w: 1, h: 2, cat: 'g', icon: 'mag', clip: { cap: 30, ammo: ['a556'] }, desc: '30 balas de 5,56, para a M4.' },
   cAk: { n: 'Carregador de AK', s: 'Carreg. AK', w: 1, h: 2, cat: 'g', icon: 'mag', tint: 0x6a3a22, clip: { cap: 30, ammo: ['a762'] }, desc: '30 balas de 7,62×39, para a AK.' },
   c308: { n: 'Carregador .308', s: 'Carreg. .308', w: 1, h: 1, cat: 'g', icon: 'pmag', clip: { cap: 5, ammo: ['a308'] }, desc: '5 balas .308, para a espingarda de caça.' },
-  mira8: { n: 'Mira 8x', s: 'Mira 8x', w: 2, h: 1, cat: 'g', icon: 'scope8', att: 'scope', mag: 8, rare: 1, desc: 'Espingarda de caça, CheyTac e Barrett. A vista vai até 70 m, mas treme mais.' },
+  mira8: { n: 'Mira 8x', s: 'Mira 8x', w: 2, h: 1, cat: 'g', icon: 'scope8', att: 'scope', mag: 8, rare: 1, desc: 'Espingarda de caça, CheyTac e Barrett. A apontar: ampliação 8×, tiros 70% mais juntos do que com a mira de ferro. Sobe em 0,4 s, treme mais e anda-se muito devagar.' },
   c408: { n: 'Carregador .408', s: 'Carreg. .408', w: 1, h: 1, cat: 'g', icon: 'pmag', clip: { cap: 7, ammo: ['a408'] }, desc: '7 balas .408, para a CheyTac.' },
   c50: { n: 'Carregador .50', s: 'Carreg. .50', w: 1, h: 2, cat: 'g', icon: 'mag', clip: { cap: 10, ammo: ['a50'] }, desc: '10 balas .50, para a Barrett.' },
   cM249: { n: 'Caixa de 100 (M249)', s: 'Caixa M249', w: 2, h: 1, cat: 'g', icon: 'boxmag', clip: { cap: 100, ammo: ['a556'] }, desc: '100 balas de 5,56 em fita, para a M249.' },

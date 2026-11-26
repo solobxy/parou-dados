@@ -744,12 +744,22 @@ export function initUI(G) {
     w.drawImage(off, TW(-CORE), TW(-CORE), CORE * 2 * KW, CORE * 2 * KW);
   };
   const mmc = $('mmc'), mctx = mmc.getContext('2d');
+  // arena: mapa próprio, nítido (4 px por metro), só com a arena
+  const AX = 3650, AZ = 3650, AS = 112, AK = 4; let offA = null;
+  const arenaRaster = () => { if (offA) return offA; offA = document.createElement('canvas'); offA.width = offA.height = AS * AK; const x = offA.getContext('2d'), x0 = AX - AS / 2, z0 = AZ - AS / 2, T = v => (v - x0) * AK, Tz = v => (v - z0) * AK, L = (a, b, c, d) => c > x0 && a < x0 + AS && d > z0 && b < z0 + AS;
+    x.fillStyle = '#5c6150'; x.fillRect(0, 0, offA.width, offA.height);
+    for (const q of G.W.map) if (L(q.x0, q.z0, q.x1, q.z1) && q.x1 - q.x0 < 400) { x.fillStyle = q.c; x.fillRect(T(q.x0), Tz(q.z0), (q.x1 - q.x0) * AK, (q.z1 - q.z0) * AK); }
+    x.fillStyle = '#9a7a52'; for (const q of G.W.steps) if (L(q.x0, q.z0, q.x1, q.z1) && q.y > 1) x.fillRect(T(q.x0), Tz(q.z0), (q.x1 - q.x0) * AK, (q.z1 - q.z0) * AK); // plataformas
+    for (const q of G.W.rects) if (q.k === 's' && !(q.lv > 0) && !q.car && L(q.x0, q.z0, q.x1, q.z1)) { x.fillStyle = q.h >= 2.2 ? '#2a2824' : '#55514a'; x.fillRect(T(q.x0), Tz(q.z0), Math.max(1.5, (q.x1 - q.x0) * AK), Math.max(1.5, (q.z1 - q.z0) * AK)); } // paredes escuras, coberturas baixas mais claras
+    x.fillStyle = '#e8a6b8'; for (const c of G.W.circles) if (L(c.x, c.z, c.x, c.z) && c.r >= 0.2 && c.r <= 0.45) { x.beginPath(); x.arc(T(c.x), Tz(c.z), Math.max(2, c.r * AK * 1.4), 0, 7); x.fill(); }
+    return offA; };
   const drawMini = () => {
     const sz = mmc.clientWidth * Math.min(2, devicePixelRatio || 1); if (mmc.width !== sz) { mmc.width = mmc.height = sz; }
     const c = mctx, p = G.p, span = 70, s = sz / span / K, inC = Math.max(Math.abs(p.x), Math.abs(p.z)) < CORE - 36;
     c.setTransform(1, 0, 0, 1, 0, 0); c.fillStyle = '#2a2c28'; c.fillRect(0, 0, sz, sz);
     c.save(); c.translate(sz / 2, sz / 2); c.rotate(G.YAW); c.scale(s, s);
-    if (inC) c.drawImage(off, -(p.x + CORE) * K, -(p.z + CORE) * K);
+    if (G.ARENA && Math.abs(p.x - AX) < 70 && Math.abs(p.z - AZ) < 70) { c.imageSmoothingEnabled = true; c.drawImage(arenaRaster(), (AX - AS / 2 - p.x) * K, (AZ - AS / 2 - p.z) * K, AS * K, AS * K); }
+    else if (inC) c.drawImage(off, -(p.x + CORE) * K, -(p.z + CORE) * K);
     else { // fora do centro: o mapa leve ampliado e, por cima, o que está à volta (estradas, casas, árvores e rochas carregadas)
       c.imageSmoothingEnabled = true; c.drawImage(offW, -(p.x + MAP) * K, -(p.z + MAP) * K, offW.width * K / KW, offW.height * K / KW);
       const R = 60, L = (x0, z0, x1, z1) => x1 > p.x - R && x0 < p.x + R && z1 > p.z - R && z0 < p.z + R;
@@ -773,13 +783,13 @@ export function initUI(G) {
     G.mapOpen = force ?? !G.mapOpen; $('map').hidden = !G.mapOpen; if (!G.mapOpen) { mEdit = null; edRender(); return; } drawBig();
   };
   const drawBig = () => {
-    const cv = $('mapc'), c = cv.getContext('2d'), p = G.p, span = SPANS[mapLv], mapNear = mapLv > 0, cx = mapNear ? clamp(p.x, -MAP + span / 2, MAP - span / 2) : 0, cz = mapNear ? clamp(p.z, -MAP + span / 2, MAP - span / 2) : 0, S = cv.width / span, u = cv.width / Math.max(240, cv.getBoundingClientRect().width || cv.width); // u: píxeis do desenho por píxel do ecrã
+    const cv = $('mapc'), c = cv.getContext('2d'), p = G.p, AR = !!G.ARENA, span = AR ? AS : SPANS[mapLv], mapNear = AR || mapLv > 0, cx = AR ? AX : mapNear ? clamp(p.x, -MAP + span / 2, MAP - span / 2) : 0, cz = AR ? AZ : mapNear ? clamp(p.z, -MAP + span / 2, MAP - span / 2) : 0, S = cv.width / span, u = cv.width / Math.max(240, cv.getBoundingClientRect().width || cv.width); // u: píxeis do desenho por píxel do ecrã
     c.setTransform(1, 0, 0, 1, 0, 0); c.imageSmoothingEnabled = true; c.fillStyle = '#4a6338'; c.fillRect(0, 0, cv.width, cv.height);
-    const sx = (cx - span / 2 + MAP) * KW, sz2 = span * KW; c.drawImage(offW, sx, (cz - span / 2 + MAP) * KW, sz2, sz2, 0, 0, cv.width, cv.height); c.filter = 'none';
+    const sx = (cx - span / 2 + MAP) * KW, sz2 = span * KW; if (AR) c.drawImage(arenaRaster(), 0, 0, cv.width, cv.height); else c.drawImage(offW, sx, (cz - span / 2 + MAP) * KW, sz2, sz2, 0, 0, cv.width, cv.height); c.filter = 'none';
     // perto do centro e ampliado: usa o mapa com detalhe
     if (mapNear) { const a = Math.max(-CORE, cx - span / 2), b = Math.min(CORE, cx + span / 2), a2 = Math.max(-CORE, cz - span / 2), b2 = Math.min(CORE, cz + span / 2); if (b > a && b2 > a2) c.drawImage(off, (a + CORE) * K, (a2 + CORE) * K, (b - a) * K, (b2 - a2) * K, (a - cx + span / 2) * S, (a2 - cz + span / 2) * S, (b - a) * S, (b2 - a2) * S); }
     const T = v => (v - cx + span / 2) * S, Tz = v => (v - cz + span / 2) * S;
-    if (span <= 4000) { const L = (x0, z0, x1, z1) => x1 > cx - span / 2 && x0 < cx + span / 2 && z1 > cz - span / 2 && z0 < cz + span / 2, inCore = (x, z) => Math.abs(x) < CORE && Math.abs(z) < CORE; // estradas nítidas, com berma, fora do centro
+    if (span <= 4000 && !AR) { const L = (x0, z0, x1, z1) => x1 > cx - span / 2 && x0 < cx + span / 2 && z1 > cz - span / 2 && z0 < cz + span / 2, inCore = (x, z) => Math.abs(x) < CORE && Math.abs(z) < CORE; // estradas nítidas, com berma, fora do centro
       drawWater(c, T, Tz, S, cx - span / 2, cz - span / 2, cx + span / 2, cz + span / 2);
       { const Wt = G.W.water; if (Wt) { c.strokeStyle = 'rgba(150,190,190,.45)'; c.lineWidth = 1.2 * u; for (const Lk of Wt.lakes) { if (!L(Lk.x - Lk.rx * 1.3, Lk.z - Lk.rz * 1.3, Lk.x + Lk.rx * 1.3, Lk.z + Lk.rz * 1.3)) continue; c.beginPath(); for (let k = 0; k <= 48; k++) { const a = k / 48 * 6.2832, r = Lk.rf(a), X = T(Lk.x + Math.cos(a) * r * Lk.rx), Z = Tz(Lk.z + Math.sin(a) * r * Lk.rz); if (k) c.lineTo(X, Z); else c.moveTo(X, Z); } c.stroke(); } } }
       const mw = 1.6 * u; for (const pass of [0, 1]) for (const r of G.W.roads) if (L(r.x0, r.z0, r.x1, r.z1) && !inCore((r.x0 + r.x1) / 2, (r.z0 + r.z1) / 2)) { const e = pass ? 0 : 0.9 * u, wx = Math.max(mw, (r.x1 - r.x0) * S), wz = Math.max(mw, (r.z1 - r.z0) * S), X = T((r.x0 + r.x1) / 2) - wx / 2, Z = Tz((r.z0 + r.z1) / 2) - wz / 2; c.fillStyle = pass ? (r.dirt ? '#b8a07a' : '#ddd6c8') : 'rgba(18,16,12,.6)'; c.fillRect(X - e, Z - e, wx + e * 2, wz + e * 2); }
@@ -802,7 +812,7 @@ export function initUI(G) {
         const dx = X - W2 / 2, dz = Z - W2 / 2, k = (W2 / 2 - m0) / Math.max(Math.abs(dx), Math.abs(dz)), ex = W2 / 2 + dx * k, ez = W2 / 2 + dz * k, a = Math.atan2(dz, dx), d = Math.hypot(m.x - p.x, m.z - p.z);
         c.save(); c.translate(ex, ez); c.rotate(a); c.fillStyle = '#6FA8FF'; c.strokeStyle = '#0d1520'; c.lineWidth = 1.6 * u; c.beginPath(); c.moveTo(9 * u, 0); c.lineTo(-5 * u, 6.5 * u); c.lineTo(-5 * u, -6.5 * u); c.closePath(); c.fill(); c.stroke(); c.restore();
         const lbl = m.name + ' · ' + (d >= 1000 ? (d / 1000).toFixed(1).replace('.', ',') + ' km' : Math.round(d) + ' m'), tx = clamp(ex - Math.cos(a) * 20 * u, 40 * u, W2 - 40 * u), tz = clamp(ez - Math.sin(a) * 20 * u, 12 * u, W2 - 8 * u); c.lineWidth = 3 * u; c.strokeStyle = 'rgba(12,14,16,.85)'; c.strokeText(lbl, tx, tz); c.fillStyle = '#CFE0FF'; c.fillText(lbl, tx, tz); } }
-    { // grelha de 500 m com letra e número (para dizer «estou em F7» aos colegas)
+    if (!AR) { // grelha de 500 m com letra e número (para dizer «estou em F7» aos colegas)
       c.strokeStyle = 'rgba(244,241,234,.16)'; c.lineWidth = u; c.font = `700 ${Math.round(11 * u)}px "Roboto Condensed",sans-serif`; c.textAlign = 'left'; c.textBaseline = 'top';
       for (let g = -MAP; g <= MAP; g += CELL) { const X = T(g), Z = Tz(g); if (X >= -1 && X <= cv.width + 1) { c.beginPath(); c.moveTo(X, 0); c.lineTo(X, cv.height); c.stroke(); } if (Z >= -1 && Z <= cv.height + 1) { c.beginPath(); c.moveTo(0, Z); c.lineTo(cv.width, Z); c.stroke(); } }
       const lab = (lb, tx, tz) => { c.fillStyle = 'rgba(12,11,10,.6)'; c.fillRect(tx - 2 * u, tz - 1 * u, c.measureText(lb).width + 4 * u, 13 * u); c.fillStyle = 'rgba(244,241,234,.85)'; c.fillText(lb, tx, tz); };
@@ -812,10 +822,10 @@ export function initUI(G) {
     for (const m of marks) { const X = T(m.x), Z = Tz(m.z), d = Math.hypot(m.x - p.x, m.z - p.z); if (X < -20 || Z < -20 || X > cv.width + 20 || Z > cv.height + 20) continue; if (m === mEdit) { c.strokeStyle = '#F4F1EA'; c.lineWidth = 2 * u; c.beginPath(); c.arc(X, Z, 15 * u, 0, 7); c.stroke(); } drawSym(c, m.s, X, Z, 10 * u, MCOL[m.c] || MCOL[0]); c.font = `700 ${Math.round(12 * u)}px "Roboto Condensed",sans-serif`; c.lineWidth = 3 * u; c.strokeStyle = 'rgba(12,14,16,.85)'; const lb = distTxt(d); c.strokeText(lb, X, Z + 18 * u); c.fillStyle = '#F4F1EA'; c.fillText(lb, X, Z + 18 * u); }
     { const X = T(p.x), Z = Tz(p.z); c.fillStyle = 'rgba(244,241,234,.16)'; c.strokeStyle = 'rgba(244,241,234,.9)'; c.lineWidth = 1.3 * u; c.beginPath(); c.arc(X, Z, 15 * u, 0, 7); c.fill(); c.stroke(); } // tu: um anel à volta para se ver logo
     c.save(); c.translate(T(p.x), Tz(p.z)); c.rotate(Math.atan2(Math.cos(p.yaw), Math.sin(p.yaw))); c.fillStyle = '#F4F1EA'; c.strokeStyle = '#111'; c.lineWidth = 1.6 * u; c.beginPath(); c.moveTo(10 * u, 0); c.lineTo(-6 * u, 7 * u); c.lineTo(-3 * u, 0); c.lineTo(-6 * u, -7 * u); c.closePath(); c.fill(); c.stroke(); c.restore();
-    $('mScale').textContent = (mapNear ? '' : 'Mundo · ') + (span >= 1000 ? span / 1000 + ' km' : span + ' m') + ' · ' + gridName(p.x, p.z); $('mIn').disabled = mapLv >= SPANS.length - 1; $('mOut').disabled = mapLv <= 0;
+    $('mScale').textContent = AR ? 'Arena de Tóquio · ' + (p.x < AX ? 'oeste (Vermelha)' : 'este (Azul)') : (mapNear ? '' : 'Mundo · ') + (span >= 1000 ? span / 1000 + ' km' : span + ' m') + ' · ' + gridName(p.x, p.z); $('mIn').disabled = mapLv >= SPANS.length - 1; $('mOut').disabled = mapLv <= 0;
   };
   // administração: tocar no mapa para ir a esse ponto
-  const mapPt = e => { const cv = $('mapc'), r = cv.getBoundingClientRect(), p = G.p, span = SPANS[mapLv], near = mapLv > 0, cx = near ? clamp(p.x, -MAP + span / 2, MAP - span / 2) : 0, cz = near ? clamp(p.z, -MAP + span / 2, MAP - span / 2) : 0; return { x: cx - span / 2 + (e.clientX - r.left) / r.width * span, z: cz - span / 2 + (e.clientY - r.top) / r.height * span, mpp: span / r.width }; };
+  const mapPt = e => { const cv = $('mapc'), r = cv.getBoundingClientRect(), p = G.p, AR = !!G.ARENA, span = AR ? AS : SPANS[mapLv], near = AR || mapLv > 0, cx = AR ? AX : near ? clamp(p.x, -MAP + span / 2, MAP - span / 2) : 0, cz = AR ? AZ : near ? clamp(p.z, -MAP + span / 2, MAP - span / 2) : 0; return { x: cx - span / 2 + (e.clientX - r.left) / r.width * span, z: cz - span / 2 + (e.clientY - r.top) / r.height * span, mpp: span / r.width }; };
   let mEdit = null, mLastC = 0, mLastS = 'ponto';
   const mEd = $('mEd'), mLeg = document.querySelector('#map .ml');
   const edRender = () => { const on = !!mEdit; mEd.hidden = !on; mLeg.hidden = on; $('map').classList.toggle('editing', on); if (!on) return;
@@ -990,7 +1000,7 @@ export function initUI(G) {
     ftT -= dt;
     const fvo = !!G.fpv.on, adsT = A.adsT || 0;
     if (fvo ? adsT > 0.001 && fp && p.alive : fpT > 0 && p.alive) { scEl.hidden = false; const R = scopeR(), SC = scopeC(), sm = t => t * t * (3 - 2 * t);
-      if (fvo) { const e = sm(adsT), far = Math.hypot(innerWidth, innerHeight); scEl.style.setProperty('--cx', SC.x + 'px'); scEl.style.setProperty('--cy', SC.y + 'px'); scEl.style.setProperty('--hr', (R + (far - R) * (1 - e)).toFixed(1) + 'px'); scEl.style.setProperty('--ro', e.toFixed(3)); } // na 1.ª pessoa: a luneta fecha à volta do centro
+      if (fvo) { const e = sm(adsT), far = Math.hypot(innerWidth, innerHeight), sI = G.scopeItem && G.scopeItem(), mid = !(sI && sI.mag >= 2); scEl.style.setProperty('--cx', (mid ? innerWidth / 2 : SC.x) + 'px'); scEl.style.setProperty('--cy', (mid ? innerHeight / 2 : SC.y) + 'px'); scEl.style.setProperty('--hr', (R + (far - R) * (1 - e)).toFixed(1) + 'px'); scEl.style.setProperty('--ro', e.toFixed(3)); } // na 1.ª pessoa: a luneta fecha à volta do centro
       else if (fp) { const e = sm(clamp((fpT - 0.55) / 0.45, 0, 1)); scEl.style.setProperty('--cx', SC.x + 'px'); scEl.style.setProperty('--cy', SC.y + 'px'); scEl.style.setProperty('--hr', (R * e).toFixed(1) + 'px'); scEl.style.setProperty('--ro', e.toFixed(3)); }
       else { const e = sm(clamp(fpT / 0.55, 0, 1)), q = G.proj(A.A), far = Math.hypot(innerWidth, innerHeight); scEl.style.setProperty('--cx', q.x + 'px'); scEl.style.setProperty('--cy', q.y + 'px'); scEl.style.setProperty('--hr', (far * (1 - e) + 2).toFixed(1) + 'px'); scEl.style.setProperty('--ro', '0'); }
       scEl.style.setProperty('--r', R.toFixed(0) + 'px');
@@ -1033,7 +1043,7 @@ export function initUI(G) {
     // sair para o menu (com 5 s parado se estiveres em combate)
     toMenu: () => { setTimeout(() => { pfRender(); if (G.ui_count) G.ui_count(); }, 50); if (!pfm.hidden && $('pfT').textContent === 'Clã') pfClose(); $('quit').hidden = true; $('hud').hidden = true; setEl.hidden = true; G.paused = false; closeInv(); $('map').hidden = true; if (G.ARENA) { $('dead').hidden = true; AUI.lobby(); } else $('start').hidden = false; },
     quitTick: t => { const q = $('quit'); if (t < 0) { q.hidden = true; return; } q.hidden = false; $('qN').textContent = Math.max(1, Math.ceil(t)); q.style.setProperty('--qp', (1 - t / 5).toFixed(3)); },
-    ready: () => { drawOff(); { const t = $('ldP'), b = document.querySelector('#load .bar b'); if (t) t.textContent = '100%'; if (b) b.style.width = '100%'; } $('load').hidden = true; if (G.ARENA) { const a = Conta.ativo(); if (a && a.nome) AUI.lobby(); else askName(false, () => AUI.lobby()); $('bAr').hidden = false; $('mClan').style.display = $('mLb').style.display = 'none'; } else $('start').hidden = false; pfRender(); Conta.conta() && Conta.sincronizar().then(r => { if (r === 'nuvem') { pfRender(); mnote('Trouxemos o teu jogo mais recente da nuvem.'); } }).catch(() => { }); 
+    ready: () => { drawOff(); { const t = $('ldP'), b = document.querySelector('#load .bar b'); if (t) t.textContent = '100%'; if (b) b.style.width = '100%'; } $('load').hidden = true; if (G.ARENA) { const a = Conta.ativo(); if (a && a.nome) AUI.lobby(); else askName(false, () => AUI.lobby()); $('bAr').hidden = false; $('mClan').style.display = $('mLb').style.display = 'none'; for (const id of ['mIn', 'mOut']) if ($(id)) $(id).style.visibility = 'hidden'; } else $('start').hidden = false; pfRender(); Conta.conta() && Conta.sincronizar().then(r => { if (r === 'nuvem') { pfRender(); mnote('Trouxemos o teu jogo mais recente da nuvem.'); } }).catch(() => { }); 
       // intro curta (uma vez por sessão; toca para saltar; sem animação se o sistema pedir menos movimento)
       let seen = false; try { seen = sessionStorage.getItem('kgIntro') === '1'; sessionStorage.setItem('kgIntro', '1'); } catch (e) { } if (!seen && !matchMedia('(prefers-reduced-motion: reduce)').matches) { const it = $('intro'); it.hidden = false; const end = () => { it.hidden = true; }; it.onclick = end; setTimeout(end, 2700); } },
   };
