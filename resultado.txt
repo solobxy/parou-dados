@@ -1,0 +1,44 @@
+== 2026-11-26T13:32:03Z acao=comando
+IP: 2.31.13.85
+== Saída no servidor
+== componentes com GREVE
+src/components/PertoView.tsx
+== rotas alertas
+server.main.ts:1073:app.get('/api/transit/tml/alerts', async (req: Request, res: Response) => {
+server.main.ts:1085:app.get('/api/alertas', async (req: Request, res: Response) => {
+server.main.ts:1114:app.get('/api/central-alerts', async (req: Request, res: Response) => {
+server.main.ts:1137:app.get('/api/central-alerts/diagnostic', exigirAdmin, (req: Request, res: Response) => {
+== Perto: src/components/PertoView.tsx
+src/components/ReportsView.tsx
+56:import { AvisoPartida } from './AvisoPartida';
+58:import { AvisoMesmaHora } from './AvisoMesmaHora';
+84:import { AvisoPrecisaoMapa } from './AvisoPrecisaoMapa';
+107:  /** Abre os Alertas (o aviso no topo do Perto leva lá) */
+108:  onAbrirAlertas?: () => void;
+383:  onAbrirAlertas,
+385:  const { coords: userCoords, status: gpsStatus, activateLocation, setManualLocation, stopLocation, motivoBloqueio, semAvisoSistema, afinarPosicao } = useUserLocation();
+466:  // Aviso no mapa quando a posição está pouco precisa ou sem sinal (ver utils/qualidadeGps.ts)
+527:  // Opção de viagem aberta (passo a passo e avisos): nenhuma até a pessoa tocar numa
+637:    // Ler depois de gravar: o aviso de "favoritos mudaram" chega antes de a lista de paragens ficar atualizada
+1996:    // Android: o Chrome não mostrou o aviso «Ligar a localização?» (está na pausa depois de uma recusa)
+1997:    const semAvisoAndroid = telemovelDesligado && semAvisoSistema && !eIphone;
+2004:      const texto = semAvisoAndroid
+2005:        ? 'O Chrome não mostrou o aviso do Android para a ligar: faz uma pausa depois de alguém o recusar.'
+2011:      const passos: string[] = semAvisoAndroid
+2012:        ? ['Desliza o dedo de cima para baixo e liga a Localização.', 'Para o aviso voltar: toca no ícone ao lado do endereço, repõe as permissões e toca outra vez em Ativar localização.']
+2053:          {(ajudaLocalizacao || semAvisoAndroid) && (
+2054:            <ol data-teste={semAvisoAndroid ? 'sem-aviso-android' : undefined} className="mt-2.5 text-left text-[12.5px] text-[#111111] leading-snug space-y-1 bg-[#F4F4F2] rounded-[12px] p-3 list-decimal pl-7">
+2060:            {!ajudaLocalizacao && !semAvisoAndroid && (
+2262:            onClick={() => onAbrirAlertas?.()}
+2263:            data-teste="aviso-perto"
+2271:              {topAlert.tipo === 'greve' ? t('Greve') : topAlert.severity}
+2448:              // Detetar aviso de desatualizado uma única vez por grupo/operador
+2536:                                <AvisoMesmaHora linha={dep.mesmaHoraQue} />
+2886:                              <AvisoMesmaHora linha={dep.mesmaHoraQue} />
+3047:        {/* Aviso de precisão da posição (só quando está fraca ou sem sinal) */}
+3049:          <AvisoPrecisaoMapa nivel={qualidadeGps.nivel} precisao={qualidadeGps.precisao} aTentar={aAfinarGps} onTentar={tentarOutraVezGps} />
+26:  /** Sem ocorrências: levar a pessoa ao que provavelmente procurava (alertas oficiais, transportes perto) */
+269:                      {t('Greves e alertas oficiais')}
+== Teste de fora
+https://2-31-13-85.sslip.io/health 200 0.472437s
+https://2-31-13-85.sslip.io/api/transit/loading-status 200 0.416537s
