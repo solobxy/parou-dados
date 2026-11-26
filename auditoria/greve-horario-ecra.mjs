@@ -29,6 +29,7 @@ const GREVE = { titulo: 'Greve reduz serviço do Metro esta sexta-feira', url: U
   funciona: ['Senhora da Hora – Estádio do Dragão', 'Hospital São João – Santo Ovídio'], frequencia: '15 min (7h–20h) · 30 min (6h–7h, 20h–0h)' };
 const VESPERA = { titulo: GREVE.titulo, url: URL_AVISO, operador: 'Metro do Porto', dia: AMANHA, vespera: true, fimVespera: '23:00' };
 const ESTADOS = ['sem-servico', 'incerta', 'reduzido'];
+const modo = { diaTodoIncerto: false };
 
 const browser = await chromium.launch(process.env.CHROME ? { executablePath: process.env.CHROME, args: ['--no-sandbox'] } : {});
 async function abrir({ largura = 390, altura = 844, tema = 'claro' } = {}) {
@@ -48,6 +49,8 @@ async function abrir({ largura = 390, altura = 844, tema = 'claro' } = {}) {
       const r = await rt.fetch({ headers });
       const j = await r.json().catch(() => null);
       if (j && Array.isArray(j.departures)) {
+        // as marcas reais (ex.: uma greve da CP a decorrer) saem: o teste põe as suas
+        j.departures.forEach((d) => { delete d.greve; });
         j.departures.forEach((d, i) => { if (i < 3) { d.greve = { estado: ESTADOS[i], operador: 'Metro do Porto' }; d.state = 'PROGRAMADO'; d.is_realtime = false; } });
         j.greves = [GREVE];
       }
@@ -59,8 +62,14 @@ async function abrir({ largura = 390, altura = 844, tema = 'claro' } = {}) {
       const j = await r.json().catch(() => null);
       if (j && Array.isArray(j.partidas) && j.partidas.length) {
         const n = j.partidas.length;
-        j.partidas.forEach((p, i) => { if (i >= n - 2) p.greve = 'sem-servico'; else if (i >= n - 4) p.greve = 'incerta'; });
-        j.greves = [VESPERA];
+        j.partidas.forEach((p) => { delete p.greve; });
+        if (modo.diaTodoIncerto) {
+          j.partidas.forEach((p) => { p.greve = 'incerta'; });
+          j.greves = [{ titulo: 'Greve - serviços mínimos', url: 'https://www.cp.pt/passageiros/pt/consultar-horarios/avisos', operador: 'CP', dia: AMANHA }];
+        } else {
+          j.partidas.forEach((p, i) => { if (i >= n - 2) p.greve = 'sem-servico'; else if (i >= n - 4) p.greve = 'incerta'; });
+          j.greves = [VESPERA];
+        }
       }
       return rt.fulfill({ status: r.status(), contentType: 'application/json', body: JSON.stringify(j) });
     }
@@ -129,6 +138,15 @@ for (const largura of [390, 320]) {
     ok(`[${largura}] horário do dia: leitor de ecrã ouve «sem serviço» em cada minuto riscado`, leitor.length === 2 && leitor.every((x) => /Sem serviço/.test(x || '')), JSON.stringify(leitor));
     const lateral = await p.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
     ok(`[${largura}] sem scroll para o lado`, lateral <= 0, `${lateral}px`);
+    // dia inteiro «pode não se realizar» (greve sem dizer o que funciona): fica o aviso, sem marcar cada minuto
+    modo.diaTodoIncerto = true;
+    await p.locator('[data-teste="horario-linha-dia"] [data-teste="dias-horario"] button').nth(1).click();
+    await p.waitForSelector('[data-teste="horario-dia"]:visible', { timeout: 15000 }).catch(() => {});
+    await p.waitForTimeout(500);
+    const marcadas = await p.locator('[data-teste="horario-dia"] [data-greve]').count();
+    const avisoTodo = (await textos(p, '[data-teste="horario-dia"] [data-teste="greve-horario"]'))[0] || '';
+    ok(`[${largura}] horário do dia, dia todo incerto: aviso «algumas viagens podem não se realizar» e minutos sem marca`, marcadas === 0 && /Algumas viagens podem não se realizar/.test(avisoTodo) && (await p.locator('[data-teste="legenda-greve"]:visible').count()) === 0, `${marcadas} | ${avisoTodo}`);
+    modo.diaTodoIncerto = false;
     await p.locator('[data-teste="horario-dia"]').first().scrollIntoViewIfNeeded().catch(() => {});
     await p.screenshot({ path: `${SAIDA}/greve-horario_${largura}_horario-dia.png` });
     ok(`[${largura}] sem erros na página`, erros.length === 0, erros.join(' | '));
