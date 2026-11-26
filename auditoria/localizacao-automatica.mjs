@@ -177,7 +177,7 @@ async function contexto(estado) {
 
 // GPS lento: o 1.º GPS só chega ao fim de 20 s (como no telemóvel do Dinis com «precisão baixa», 26/11/2026: a PAROU
 // demorava ~20 s e o Google Maps e a Moovit menos de 1 s). Os pedidos com tempo-limite mais curto dão «tempo esgotado».
-const GPS_LENTO = (ligadaAoAbrir) => `(() => {
+const GPS_LENTO = (ligadaAoAbrir, idadeGuardadaMin = 5) => `(() => {
   const G = window.__geo; G.ligada = ${ligadaAoAbrir}; G.lento = 20000;
   const pos = () => ({ coords: { latitude: 41.14232, longitude: -8.496067, accuracy: 40, heading: null, speed: null, altitude: null, altitudeAccuracy: null }, timestamp: Date.now() });
   const negado = { code: 1, PERMISSION_DENIED: 1, POSITION_UNAVAILABLE: 2, TIMEOUT: 3, message: 'User denied Geolocation' };
@@ -193,14 +193,60 @@ const GPS_LENTO = (ligadaAoAbrir) => `(() => {
   const geo = { getCurrentPosition: pedido, watchPosition(okf, err) { pedido(okf, () => {}, {}); return 1; }, clearWatch() {} };
   Object.defineProperty(Navigator.prototype, 'geolocation', { get: () => geo, configurable: true });
   if (G.ligada) G.ligadaEm = Date.now();
-  // última posição conhecida, de ontem (a app guardou-a da última vez)
-  localStorage.setItem('parou_ultima_posicao', JSON.stringify({ latitude: 41.1423, longitude: -8.4961, accuracy: 25, timestamp: Date.now() - 20 * 3600_000, source: 'gps_high' }));
+  // última posição conhecida (a app guardou-a da última vez), com a idade pedida
+  localStorage.setItem('parou_ultima_posicao', JSON.stringify({ latitude: 41.1423, longitude: -8.4961, accuracy: 25, timestamp: Date.now() - ${idadeGuardadaMin} * 60_000, source: 'gps_high' }));
 })();`;
 const semAtivar = () => ![...document.querySelectorAll('[data-teste="ativar-localizacao"]')].some((e) => e.getBoundingClientRect().width > 0);
 const temParagens = () => [...document.querySelectorAll('[data-teste="paragem-perto"]')].some((e) => e.getBoundingClientRect().width > 0);
 const aLocalizar = () => [...document.querySelectorAll('body *')].some((e) => e.childElementCount === 0 && /A localizar…/.test(e.textContent || '') && e.getBoundingClientRect().width > 0);
 
-{ // abrir a app com a localização ligada mas o GPS lento: aparece logo a última posição conhecida e as paragens
+{ // a posição guardada é de há 9 horas (o Dinis saiu de Campanhã às 22h e a app mostrava-o lá, 26/11/2026) e o GPS não responde
+  // logo: a app não mostra a posição velha como «onde estás»; mostra a verdadeira quando o GPS responder
+  const { ctx, p, erros } = await contexto('granted');
+  await p.addInitScript({ content: GPS_LENTO(true, 9 * 60) });
+  await p.goto(BASE + '/', { waitUntil: 'load', timeout: 60000 });
+  await p.waitForTimeout(4000);
+  const velha = await p.evaluate(temParagens);
+  const procura = await p.evaluate(aLocalizar);
+  await p.screenshot({ path: `${SAIDA}/localizacao-automatica-4b-posicao-velha.png` });
+  ok('posição guardada de há 9 h: não aparece como «onde estás» (nada de paragens desse sítio), fica «A localizar…»', !velha && procura, `paragens ${velha} | a localizar ${procura}`);
+  const chegou = await p.waitForFunction(temParagens, null, { timeout: 25000 }).then(() => true).catch(() => false);
+  ok('posição guardada de há 9 h: quando o GPS responde, aparece a posição verdadeira', chegou);
+  ok('sem erros na página (posição velha)', erros.length === 0, erros.join(' | '));
+  await ctx.close();
+}
+
+{ // app aberta e o GPS deixa de responder (sem sinal no caminho para casa): ao fim de 10 min sem nenhuma leitura, a posição
+  // do sítio onde estava deixa de aparecer como «onde estás» e a app volta a procurar
+  const { ctx, p, erros } = await contexto('granted');
+  await p.clock.install();
+  await p.addInitScript({ content: `(() => {
+    const G = window.__geo; G.ligada = true; G.dadas = 0;
+    const tempo = { code: 3, PERMISSION_DENIED: 1, POSITION_UNAVAILABLE: 2, TIMEOUT: 3, message: 'Timeout expired' };
+    const pos = () => ({ coords: { latitude: 41.14871, longitude: -8.58483, accuracy: 15, heading: null, speed: null, altitude: null, altitudeAccuracy: null }, timestamp: Date.now() });
+    // só as primeiras leituras chegam; depois o GPS fica calado
+    const pedido = (okf, err, o) => { G.pedidos++; if (G.dadas < 3) { G.dadas++; setTimeout(() => okf(pos()), 60); } else setTimeout(() => err && err(tempo), Math.min(o && o.timeout || 15000, 15000)); };
+    const geo = { getCurrentPosition: pedido, watchPosition(okf, err, o) { pedido(okf, err, o); return 1; }, clearWatch() {} };
+    Object.defineProperty(Navigator.prototype, 'geolocation', { get: () => geo, configurable: true });
+  })();` });
+  await p.goto(BASE + '/', { waitUntil: 'load', timeout: 60000 });
+  const antes = await p.waitForFunction(temParagens, null, { timeout: 30000 }).then(() => true).catch(() => false);
+  await p.clock.fastForward('11:00');
+  await p.waitForTimeout(1500);
+  await p.clock.fastForward('00:20');
+  await p.waitForTimeout(1500);
+  const depois = await p.evaluate(temParagens);
+  const procura = await p.evaluate(aLocalizar);
+  await p.screenshot({ path: `${SAIDA}/localizacao-automatica-4c-posicao-caduca.png` });
+  const semSinal = await p.evaluate(() => /Sem sinal de GPS/.test(document.body.innerText));
+  const liga = await p.evaluate(() => /Liga a localização/.test(document.body.innerText));
+  ok('GPS calado há 11 min: a posição antiga deixa de aparecer como «onde estás» e volta a procurar', antes && !depois && (procura || semSinal), `antes ${antes} | paragens depois ${depois} | a localizar ${procura} | sem sinal ${semSinal}`);
+  ok('GPS calado: diz «Sem sinal de GPS» (a localização está ligada), não «Liga a localização»', !liga, `sem sinal ${semSinal} | liga ${liga}`);
+  ok('sem erros na página (posição caduca)', erros.length === 0, erros.join(' | '));
+  await ctx.close();
+}
+
+{ // abrir a app com a localização ligada mas o GPS lento: aparece logo a última posição conhecida (de há 5 min) e as paragens
   const { ctx, p, erros } = await contexto('granted');
   await p.addInitScript({ content: GPS_LENTO(true) });
   const t0 = Date.now();
@@ -209,7 +255,7 @@ const aLocalizar = () => [...document.querySelectorAll('body *')].some((e) => e.
   const apareceu = await p.waitForFunction(temParagens, null, { timeout: 15000 }).then(() => true).catch(() => false);
   const ms = Date.now() - t0;
   await p.screenshot({ path: `${SAIDA}/localizacao-automatica-4-gps-lento.png` });
-  ok('GPS lento (20 s) ao abrir: as paragens aparecem muito antes do GPS (última posição conhecida)', apareceu && ms < 12000, `${ms} ms (página carregada aos ${tCarregou} ms)`);
+  ok('GPS lento (20 s) ao abrir: as paragens aparecem muito antes do GPS (última posição, de há 5 min)', apareceu && ms < 12000, `${ms} ms (página carregada aos ${tCarregou} ms)`);
   ok('GPS lento ao abrir: não fica em «A localizar…»', !(await p.evaluate(aLocalizar)));
   ok('GPS lento ao abrir: diz que está a afinar a posição', await p.evaluate(() => /a afinar a posição/.test(document.body.innerText)));
   ok('sem erros na página (GPS lento)', erros.length === 0, erros.join(' | '));
