@@ -190,7 +190,7 @@ export function buildRegions(H, house, shop) {
         else if (k === 'shop') { F.shop(0, 2.4 + 4, 11, 8, pick(['商店', '酒屋', 'スーパー']), pick(['Mercearia', 'Loja', 'Supermercado'])); const [x, z] = F.P(-6.6, 1.2); vend(x, z, F.ry, 0xc23a2e); bike(...F.P(6.6, 1.4), F.ry); }
         else if (k === 'koban') koban(F); else if (k === 'clinic') clinic(F); else if (k === 'garage') garage(F); else if (k === 'shrine') shrine(F); else if (k === 'barn') barn(F); }); });
     // postes e candeeiros ao longo da rua
-    lazy(X - (ax === 'x' ? n * 9 + 20 : 12), Z - (ax === 'x' ? 12 : n * 9 + 20), X + (ax === 'x' ? n * 9 + 20 : 12), Z + (ax === 'x' ? 12 : n * 9 + 20), () => { const L = n * 8.5 + 10; for (let a = -L; a <= L; a += 22) { const x = ax === 'x' ? X + a : X - HW - 0.9, z = ax === 'x' ? Z - HW - 0.9 : Z + a; pole(x, z, 8.2); } blood(X + rr(-10, 10), Z + rr(-10, 10), 1.1); });
+    lazy(X - (ax === 'x' ? n * 9 + 20 : 12), Z - (ax === 'x' ? 12 : n * 9 + 20), X + (ax === 'x' ? n * 9 + 20 : 12), Z + (ax === 'x' ? 12 : n * 9 + 20), () => { const L = n * 8.5 + 10; for (let a = -L; a <= L; a += 22) { const x = ax === 'x' ? X + a : X - HW - 0.9, z = ax === 'x' ? Z - HW - 0.9 : Z + a; pole(x, z, 8.2); } for (let a = -L + 11; a <= L; a += 22) { if (ax === 'x') lamp(X + a, Z + HW + 0.9, Math.PI); else lamp(X + HW + 0.9, Z + a, -Math.PI / 2); } /* candeeiros do outro lado da rua: de noite vê-se a vila */ blood(X + rr(-10, 10), Z + rr(-10, 10), 1.1); });
     // campos à volta
     for (let k = 0; k < 2; k++) { const sd = k ? 1 : -1, off = 40 + rr(0, 10), x0 = ax === 'x' ? X + rr(-n * 6, n * 3) : X + sd * off, z0 = ax === 'x' ? Z + sd * off : Z + rr(-n * 6, n * 3); lazy(x0 - 2, z0 - 2, x0 + 30, z0 + 24, () => field(x0, z0, x0 + 26, z0 + 20, pick([0x5a7a32, 0x6a8a3a, 0x7a8a2a]))); } };
 
@@ -203,7 +203,7 @@ export function buildRegions(H, house, shop) {
         b.cyl(0.12, 0.12, 7, 8, -16, 3.5, -1.5, 0x8a8e92, { mat: 'm' }); b.box(1.4, 3.6, 0.3, -16, 6.4, -1.5, 0x2a2b2c);
         for (const u of [-13, -10.6]) b.cyl(0.9, 0.9, 2.6, 12, u, 1.3, -21, 0xd8d6d0, { mat: 'm', rz: Math.PI / 2 }); });
       for (const u of [-7, 7]) for (const v of [6, 12]) F.R(u - 0.3, v - 0.3, u + 0.3, v + 0.3, 's', 6);
-      for (const u of [-3.5, 3.5]) { F.R(u - 0.4, 8.4, u + 0.4, 9.6, 's', 1.6); F.C(u, 7.9, 'Encher galão na bomba', 'bomba', { y: 1.0 }); }
+      for (const u of [-3.5, 3.5]) { F.R(u - 0.4, 8.4, u + 0.4, 9.6, 's', 1.6); F.C(u, 7.9, 'Bomba de gasolina', 'bomba', { y: 1.0 }); }
       F.R(-14.4, 20.1, -9.2, 21.9, 's', 2); sgn(F, -16, 6.4, 1.32, 'ガソリン', '#c8321e', '#ffffff', 1.2, 3.3);
       F.shop(10, 18.5, 10, 7, 'ガソリン', 'Loja do posto');
       F.car(-3.5, 12.2, 0.05, pick(CARC)); if (rnd() < 0.6) F.car(3.5, 5.6, Math.PI + 0.1, pick(CARC), { wreck: true });
@@ -262,7 +262,7 @@ export function buildRegions(H, house, shop) {
   const F_shops = (F, us) => { const SH = [['薬局', 'Farmácia'], ['コンビニ', 'Konbini'], ['酒屋', 'Loja de bebidas'], ['本屋', 'Livraria'], ['電器店', 'Eletrónica'], ['スーパー', 'Supermercado']]; for (const u of us) { const s = pick(SH); F.shop(u, 3 + 4, 12, 8, s[0], s[1]); } };
   const posto0 = F => { F.floor(-19, 0.2, 19, 24, 0.035, 0xffffff, 'asph');
     F.g(() => { for (const u of [-7, 7]) for (const v of [6, 12]) b.box(0.6, 6.0, 0.6, u, 3, -v, 0xd8d6d0); b.box(18, 0.6, 9, 0, 6.2, -9, 0xe8e6e0); b.box(18.1, 0.4, 9.1, 0, 6.0, -9, VERM); for (const u of [-3.5, 3.5]) { b.box(0.8, 1.6, 1.2, u, 0.8, -9, 0xe8e6e0); b.box(0.82, 0.4, 1.22, u, 1.5, -9, VERM); } });
-    for (const u of [-7, 7]) for (const v of [6, 12]) F.R(u - 0.3, v - 0.3, u + 0.3, v + 0.3, 's', 6); for (const u of [-3.5, 3.5]) { F.R(u - 0.4, 8.4, u + 0.4, 9.6, 's', 1.6); F.C(u, 7.9, 'Encher galão na bomba', 'bomba', { y: 1.0 }); }
+    for (const u of [-7, 7]) for (const v of [6, 12]) F.R(u - 0.3, v - 0.3, u + 0.3, v + 0.3, 's', 6); for (const u of [-3.5, 3.5]) { F.R(u - 0.4, 8.4, u + 0.4, 9.6, 's', 1.6); F.C(u, 7.9, 'Bomba de gasolina', 'bomba', { y: 1.0 }); }
     F.shop(11, 18.5, 9, 7, 'ガソリン', 'Loja do posto'); F.car(-3.5, 12, 0.05, pick(CARC)); };
 
   // ---------- as terras novas
@@ -323,7 +323,7 @@ export function buildRegions(H, house, shop) {
       for (let k = 0; k < 3; k++) crate(x0 + 3 + k * 2.4, z1 - 1.4, 0, 'Abrir caixa militar', k === 1 ? 'paiol' : 'militar'); cabinet(x1 - 1.2, z1 - 0.6, 1.4, 'Abrir armário', 'oficina', Math.PI, 0x6a7078); for (const dz of [-2726, -2723]) drum(x1 - 2, dz, 0x3a5a3a); container(x0 + 4, z0 + 6, 'Revistar bancada', 'oficina', { y: 0.9 }); } });
     // depósitos de combustível
     lazy(3150, -2700, 3250, -2600, () => { for (const [x, z] of [[3172, -2680], [3200, -2680], [3186, -2650]]) { b.cyl(9, 9, 10, 20, x, 5, z, 0xd8d6d0, { mat: 'm' }); b.cyl(9.1, 9.1, 0.5, 20, x, 10.2, z, 0xa8acb0, { mat: 'm' }); circ(x, z, 9); mp(x - 9, z - 9, x + 9, z + 9, '#a8acb0'); }
-      fenceBox(3158, -2700, 3240, -2628, [['s', 3192, 3202]]); for (const x of [3176, 3190]) { b.box(0.8, 1.6, 1.2, x, 0.8, -2622, 0xe8e6e0); rect(x - 0.4, -2622.6, x + 0.4, -2621.4, 's', 1.6); container(x, -2620.6, 'Encher galão na bomba', 'bomba', { y: 1.0 }); }
+      fenceBox(3158, -2700, 3240, -2628, [['s', 3192, 3202]]); for (const x of [3176, 3190]) { b.box(0.8, 1.6, 1.2, x, 0.8, -2622, 0xe8e6e0); rect(x - 0.4, -2622.6, x + 0.4, -2621.4, 's', 1.6); container(x, -2620.6, 'Bomba de gasolina', 'bomba', { y: 1.0 }); }
       truck(3215, -2618, Math.PI / 2, 0xd8d6d0); });
     // zona militar a oeste: vedação, torres de vigia, bunkers, caserna, heliporto
     lazy(2140, -2730, 2380, -2550, () => { b.floor(2160, -2720, 2360, -2560, 0.022, 0xffffff, 'conc'); mp(2160, -2720, 2360, -2560, '#6e7062');

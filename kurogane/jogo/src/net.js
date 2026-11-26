@@ -166,7 +166,10 @@ export function makeNet({ G, scene, mkRemote, audio, Conta, enc, dec, hurt, die,
       const vis = !b[11] && b[10] && !((b[7] | 0) & 8) && (b[4] || 0) === lv && see({ x, z, lv: b[4] || 0 });
       r.b.root.visible = vis; if (!vis) { r.el.style.display = 'none'; continue; }
       r.b.root.position.set(x, y, z); r.b.root.rotation.set(0, S.yaw, 0);
-      const an = b[7] | 0; { r.wt = (r.wt || 0) - dt; if (r.wt <= 0 && G.wallAhead) { r.wt = 0.1; r.wk = Math.max(0, Math.min(1, (0.85 - G.wallAhead(x, z, S.yaw, b[4])) / 0.35)); } } r.b.pose(dt, Math.min(b[6], r.spd / 3 + 0.03), MODES[an & 3], -1, 0, 0, -1, r.step, (an & 4 ? 1 : 0.25) * (1 - 0.85 * (r.wk || 0)), null);
+      const an = b[7] | 0; { r.wt = (r.wt || 0) - dt; if (r.wt <= 0 && G.wallAhead) { r.wt = 0.1; r.wk = Math.max(0, Math.min(1, (0.85 - G.wallAhead(x, z, S.yaw, b[4])) / 0.35)); } } // recarga, granada e ligadura dos outros: o progresso conta-se aqui desde que o sinal chega
+      const nowS = now / 1000, edge = (bit, key) => { if (an & bit) { if (r[key] == null) r[key] = nowS; return nowS - r[key]; } r[key] = null; return -1; };
+      const rs = edge(16, 'rS'), ts = edge(32, 'tS'), us = edge(64, 'uS'), gd = ITEMS[r.w] && ITEMS[r.w].gun, rd = gd ? gd.reload : 2;
+      r.b.pose(dt, Math.min(b[6], r.spd / 3 + 0.03), MODES[an & 3], -1, 0, 0, -1, r.step, (an & 4 ? 1 : 0.25) * (1 - 0.85 * (r.wk || 0)), us >= 0 ? { kind: 'heal', t: (us % 3) / 3 } : null, { rel: rs >= 0 ? Math.min(0.99, rs / rd) : -1, thr: ts >= 0 ? Math.min(0.99, ts / 0.7) : -1 });
       if (r.gh && me && !mate(r.clan) && Math.hypot(x - me.x, z - me.z) > 12) r.el.style.display = 'none'; else place(r.el, x, y + 2.05, z); // de ghillie não se vê o nome ao longe
     }
     for (const s of sleepers.values()) {

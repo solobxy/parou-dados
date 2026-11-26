@@ -78,6 +78,7 @@ export const audio = {
       case 'm4': this.noise(t, 0.2, 6500, 400, 0.75 * v); this.tone(t, 0.09, 140, 45, 0.55 * v, 'triangle'); break;
       case 'vazio': this.tone(t, 0.03, 1800, 1200, 0.25 * v, 'square'); break;
       case 'recarregar': this.tone(t, 0.04, 900, 600, 0.2 * v, 'square'); this.tone(t + 0.5, 0.05, 700, 500, 0.25 * v, 'square'); this.noise(t + 0.9, 0.08, 3000, 1500, 0.3 * v, 'bandpass', 2); break;
+      case 'derrapar': this.noise(t, 0.45, 2400, 1800, 0.22 * v, 'bandpass', 6); this.tone(t, 0.4, 820, 760, 0.05 * v, 'sawtooth'); break; // pneus a chiar
       case 'swing': this.noise(t, 0.18, 900, 2600, 0.35 * v, 'bandpass', 1.2); break;
       case 'carne': this.noise(t, 0.12, 900, 200, 0.7 * v); this.tone(t, 0.1, 120, 60, 0.4 * v); break;
       case 'madeira': this.tone(t, 0.09, 420, 200, 0.5 * v, 'triangle'); this.noise(t, 0.08, 2400, 800, 0.4 * v, 'bandpass', 3); break;

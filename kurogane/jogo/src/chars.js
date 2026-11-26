@@ -2,10 +2,11 @@
 import * as THREE from 'three';
 import { Builder, mat4, shade } from './builder.js';
 import { ITEMS, TINTS } from './items.js';
-import { GUNS, GUNA, dataTpl } from './guns.js';
+import { GUNS, GUNA, GUNP, dataTpl } from './guns.js';
 import { GEARDATA } from './geardata.js';
 import { ZBODY } from './zbody.js';
 import { PBODY } from './pbody.js';
+import { FPARMS } from './fparms.js';
 
 export const HIP = 0.92, SHY = 1.42, SHX = 0.27;
 export const LONG = ['m4', 'ak', 'smg', 'cacadeira', 'caca', 'cheytac', 'barrett', 'm249', 'pkm'];
@@ -156,7 +157,11 @@ export const WPUSH = [0.07, SHY - HIP - 0.12, 0.16];
 for (const k of LONG) { const A = GUNA(k); if (!A) continue; if (RDP[k]) RDP[k] = [A.rail[0] + 0.026, A.rail[1] + 0.02]; } // ponto vermelho em cima da calha das armas novas
 // armas brancas e ferramentas novas (Blender): no lugar das antigas, com o mesmo encaixe na mão
 const MELEEK = ['pedra', 'machado', 'picareta', 'lanca', 'faca', 'bastao', 'pecabra', 'machete', 'katana'];
-export function weaponGeos() { const o = weaponGeos0(); for (const k of MELEEK) if (GUNA(k)) o[k] = geoOf(b => { b.push(0, -0.56, 0, 0, Math.PI / 2, 0); GUNS[k](b); b.pop(); }); return o; }
+export function weaponGeos() { const o = weaponGeos0(); for (const k of MELEEK) if (GUNA(k)) o[k] = geoOf(b => { b.push(0, -0.56, 0, 0, Math.PI / 2, 0); GUNS[k](b); b.pop(); });
+  for (const pk in GUNP) o[pk] = geoOf(b => { b.push(...partPush(pk)); GUNP[pk](b); b.pop(); }); return o; }
+// peças soltas (mag_, bolt_, pump_): o mesmo empurrão da arma e o ponto de encaixe nesse espaço
+const partPush = pk => { const k = pk.slice(pk.indexOf('_') + 1); return LONG.includes(k) ? [0.07, SHY - HIP - 0.12, 0.16] : [0, -0.56, 0, 0, Math.PI / 2, 0]; };
+export const partPivot = pk => { const k = pk.slice(pk.indexOf('_') + 1), t = pk.slice(0, pk.indexOf('_')), A = GUNA(k); if (!A || !A[t + 'c']) return null; const c = A[t + 'c']; return new THREE.Vector3(c[0], c[1], c[2]).applyMatrix4(mat4(...partPush(pk))); };
 function weaponGeos0() {
   const BLK = 0x1c1e21, WOOD = 0x7a5232, ST = 0x8f8d86;
   const inHand = fn => geoOf(b => { b.push(0, -0.56, 0, 0, Math.PI / 2, 0); fn(b); b.pop(); });
@@ -226,6 +231,7 @@ function ik2(upper, fore, sh, target, pole, a = UPPER, b2 = 0.31) {
   y.copy(u).negate(); z.crossVectors(h, y).normalize(); m.makeBasis(h, y, z); upper.quaternion.setFromRotationMatrix(m);
   fore.rotation.set(-(Math.PI - be), 0, 0);
 }
+const _t2 = new THREE.Vector3(), _t3 = new THREE.Vector3(), _t4 = new THREE.Vector3();
 const _t = new THREE.Vector3(), _sh = new THREE.Vector3(), _pl = new THREE.Vector3(), _rx = new THREE.Matrix4(), _hq = new THREE.Quaternion(), _hq2 = new THREE.Quaternion();
 // onde pegam as mãos em cada arma comprida (no espaço da arma, antes do empurrão para o ombro): punho e guarda-mão
 const GRIP = { m4: [[0, -0.1, -0.02], [0, -0.04, 0.36]], ak: [[0, -0.09, -0.06], [0, -0.035, 0.34]], smg: [[0, -0.07, 0.04], [0, -0.03, 0.26]], cacadeira: [[0, -0.06, 0.0], [0, -0.04, 0.36]], caca: [[0, -0.06, -0.12], [0, -0.03, 0.3]],
@@ -264,6 +270,62 @@ const maskFrag = sh => {
 #endif`);
 };
 const SEGN = ['torso', 'head', 'armL', 'armR', 'foreL', 'foreR', 'legL', 'legR', 'shinL', 'shinR'];
+// braços da 1.ª pessoa: os braços e as mãos do próprio corpo (a mesma malha, textura e cores), postos por IK em cada frame.
+// place(lado, ombro, alvo da mão, para onde vai o cotovelo, para onde vira a palma): tudo no espaço de quem chama.
+const _fa = { a1: new THREE.Vector3(), a2: new THREE.Vector3(), a3: new THREE.Vector3(), b1: new THREE.Vector3(), b2: new THREE.Vector3(), b3: new THREE.Vector3(), d: new THREE.Vector3(), n: new THREE.Vector3(), E: new THREE.Vector3(), w: new THREE.Vector3(), A: new THREE.Matrix4(), B: new THREE.Matrix4(), M: new THREE.Matrix4(), T: new THREE.Matrix4() };
+const mapBasis = (a1, a2, b1, b2, out) => { const F = _fa; F.a2.copy(a2).addScaledVector(a1, -a2.dot(a1)).normalize(); F.a3.crossVectors(a1, F.a2); F.b2.copy(b2).addScaledVector(b1, -b2.dot(b1)); if (F.b2.lengthSq() < 1e-8) F.b2.set(0, 0, 1).addScaledVector(b1, -b1.z); F.b2.normalize(); F.b3.crossVectors(b1, F.b2);
+  F.A.makeBasis(a1, F.a2, F.a3); F.B.makeBasis(b1, F.b2, F.b3); return out.multiplyMatrices(F.B, F.A.transpose()); };
+export function fpArms(c) {
+  PTEX.load(); const g = bodyGeo(FPARMS), SI = g.attributes.segI.array, SW = g.attributes.segW.array, P = g.attributes.position.array;
+  // o que no corpo pesa no tronco (o ombro) fica preso ao braço do mesmo lado
+  for (let v = 0; v < P.length / 3; v++) for (let j = 0; j < 4; j++) { const q = SI[v * 4 + j]; if (q < 2 || q > 5) SI[v * 4 + j] = P[v * 3] < 0 ? 2 : 3; }
+  const dom = v => { let b = -1, w = -1; for (let j = 0; j < 4; j++) if (SW[v * 4 + j] > w) { w = SW[v * 4 + j]; b = SI[v * 4 + j]; } return b; };
+  // pele certa no pulso e na mão (a textura tinha ali um bocado de outra peça: parecia uma pulseira tatuada)
+  { const sk = new Float32Array(P.length / 3); for (let v = 0; v < sk.length; v++) { const d = dom(v); sk[v] = (d === 4 || d === 5) && P[v * 3 + 1] < 0.893 ? 1 : 0; } g.setAttribute('skinW', new THREE.BufferAttribute(sk, 1)); }
+  // poses das mãos (gatilho, pega, larga, punho, aberta): posições e normais dos vértices dos dedos, trocadas quando a pega muda
+  const PI_ = new Uint16Array(zbuf(FPARMS.pi)), POSES = {}, NA = g.attributes.normal.array;
+  for (const nm in FPARMS.poses || {}) { const Q = new Int16Array(zbuf(FPARMS.poses[nm].p)), Nq = new Int8Array(zbuf(FPARMS.poses[nm].nm)); const pp = new Float32Array(Q.length); for (let i = 0; i < Q.length; i++) pp[i] = Q[i] / 32767 * 2; POSES[nm] = { p: pp, n: Nq }; }
+  const curPose = [null, null];
+  const setPose = (side, nm) => { if (curPose[side] === nm || !POSES[nm]) return; curPose[side] = nm; const Q = POSES[nm]; for (let k = 0; k < PI_.length; k++) { const v = PI_[k]; if ((P[v * 3] > 0) !== !!side) continue; P[v * 3] = Q.p[k * 3]; P[v * 3 + 1] = Q.p[k * 3 + 1]; P[v * 3 + 2] = Q.p[k * 3 + 2]; NA[v * 3] = Q.n[k * 3]; NA[v * 3 + 1] = Q.n[k * 3 + 1]; NA[v * 3 + 2] = Q.n[k * 3 + 2]; } g.attributes.position.needsUpdate = true; g.attributes.normal.needsUpdate = true; };
+  // ponto onde a mão agarra (centro da mão fechada) de cada lado
+  const B = PBODY.bind, grip = [4, 5].map(sg => { const o = new THREE.Vector3(); let n = 0; for (let v = 0; v < P.length / 3; v++) if (dom(v) === sg && P[v * 3 + 1] < 0.86) { o.x += P[v * 3]; o.y += P[v * 3 + 1]; o.z += P[v * 3 + 2]; n++; } return o.divideScalar(n || 1); });
+  const data = new Float32Array(30 * 4), tex = new THREE.DataTexture(data, 30, 1, THREE.RGBAFormat, THREE.FloatType);
+  for (let k = 0; k < 10; k++) { data[k * 12] = 1; data[k * 12 + 5] = 1; data[k * 12 + 10] = 1; } tex.needsUpdate = true;
+  const uni = { boneTex: { value: tex }, maskMap: { value: null }, uTop: { value: new THREE.Vector3(1, 1, 1) }, uLegs: { value: new THREE.Vector3(1, 1, 1) }, uSkin: { value: new THREE.Vector3(1, 1, 1) }, uHair: { value: new THREE.Vector3(1, 1, 1) }, uHasMask: { value: 0 } };
+  const m = new THREE.MeshStandardMaterial({ color: c.top ?? 0x8a8a80, roughness: 0.78 }); m.userData.uni = uni;
+  // mãos limpas: a pele da textura foi pintada para a mão aberta (as sombras dos dedos ficavam riscos com a mão fechada); aqui a pele é lisa, com o relevo só da luz
+  uni.uSkinC = { value: new THREE.Color(PREF.skin) }; // tom de referência: o shader da máscara pinta depois com a pele escolhida
+  skinPatch(m, uni, 'fpa', sh => { sh.__uni = uni; maskFrag(sh); sh.uniforms.uSkinC = uni.uSkinC; sh.vertexShader = 'attribute float skinW;\nvarying float vSkinW;\n' + sh.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n  vSkinW = skinW;'); sh.fragmentShader = 'uniform vec3 uSkinC;\nvarying float vSkinW;\n' + sh.fragmentShader.replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>
+  { vec4 mk2 = texture2D(maskMap, vMapUv); float sk = max(smoothstep(0.35, 0.8, mk2.b), vSkinW) * uHasMask; normal = normalize(mix(normal, nonPerturbedNormal, sk)); }`).replace('#include <color_fragment>', `#include <color_fragment>
+#ifdef USE_MAP
+  { vec4 mk3 = texture2D(maskMap, vMapUv); float sk = max(smoothstep(0.35, 0.8, mk3.b), vSkinW) * uHasMask; diffuseColor.rgb = mix(diffuseColor.rgb, uSkinC * uSkin, sk); }
+#endif`); }); PTEX.mats.add(m); PTEX.apply(m);
+  const mesh = new THREE.Mesh(g, m); mesh.frustumCulled = false;
+  const self = { mesh, uni, grip, setPose,
+    setColors(c) { Body.prototype.setColors.call(self, c); },
+    dispose() { PTEX.mats.delete(m); m.dispose(); tex.dispose(); g.dispose(); },
+    // lado 0 = esquerdo, 1 = direito; palma: direção para onde vira a palma da mão (no espaço de quem chama)
+    place(side, S, H, pole, palm, fwd) {
+      const F = _fa, bA = B[side ? 'armR' : 'armL'], bF = B[side ? 'foreR' : 'foreL'], L1 = Math.hypot(bF[0] - bA[0], bF[1] - bA[1], bF[2] - bA[2]);
+      const Gl = F.w.set(grip[side].x - bF[0], grip[side].y - bF[1], grip[side].z - bF[2]), L2 = Gl.length();
+      // longe demais: o ombro vai atrás da mão (como quem estica o corpo), para a mão chegar sempre ao sítio
+      F.d.subVectors(H, S); let D = F.d.length(); const Dm = L1 + L2 - 0.03; S = F.w2 = (F.w2 || new THREE.Vector3()).copy(S); if (D > Dm) { S.addScaledVector(F.d, (D - Dm) / D); D = Dm; } D = Math.max(D, Math.abs(L1 - L2) + 0.01); F.d.normalize();
+      F.n.copy(pole).addScaledVector(F.d, -pole.dot(F.d)).normalize();
+      if (fwd) { F.E.copy(H).addScaledVector(fwd, -L2); F.b2.subVectors(S, F.E).normalize(); S.copy(F.E).addScaledVector(F.b2, L1); } // antebraço na direção pedida (a mão fica bem virada); o ombro acompanha
+      else { const a = (L1 * L1 - L2 * L2 + D * D) / (2 * D), h = Math.sqrt(Math.max(0, L1 * L1 - a * a)); F.E.copy(S).addScaledVector(F.d, a).addScaledVector(F.n, h); }
+      const hx = side ? -1 : 1; // palma de cada mão no corpo em pé: virada para dentro
+      // antebraço: o ponto de agarrar vai ao alvo e a palma vira para onde se pede
+      F.b1.subVectors(H, F.E).normalize(); F.a1.copy(Gl).normalize(); const Rf = mapBasis(F.a1, F.b3.set(0, 0, 1), F.b1, palm, F.Rf || (F.Rf = new THREE.Matrix4())); // 'palm' = para onde aponta o polegar (o eixo do que a mão agarra)
+      // braço: do ombro ao cotovelo, rodado o mesmo que o antebraço (sem torcer o cotovelo)
+      const pw = (F.pw || (F.pw = new THREE.Vector3())).set(hx, 0, 0).applyMatrix4(Rf); F.b1.subVectors(F.E, S).normalize(); F.a1.set(bF[0] - bA[0], bF[1] - bA[1], bF[2] - bA[2]).normalize(); const Ru = mapBasis(F.a1, F.b3.set(hx, 0, 0), F.b1, pw, F.Ru || (F.Ru = new THREE.Matrix4()));
+      const put = (k, R, at, b) => { F.M.makeTranslation(at.x, at.y, at.z).multiply(R).multiply(F.T.makeTranslation(-b[0], -b[1], -b[2])); const e = F.M.elements, o = k * 12;
+        data[o] = e[0]; data[o + 1] = e[4]; data[o + 2] = e[8]; data[o + 3] = e[12]; data[o + 4] = e[1]; data[o + 5] = e[5]; data[o + 6] = e[9]; data[o + 7] = e[13]; data[o + 8] = e[2]; data[o + 9] = e[6]; data[o + 10] = e[10]; data[o + 11] = e[14]; };
+      put(side ? 3 : 2, Ru, S, bA); put(side ? 5 : 4, Rf, F.E, bF); tex.needsUpdate = true; if (self.dbg) (self.last || (self.last = []))[side] = [S, F.E, H].map(v => v.toArray().map(x => +x.toFixed(3))); return F.E;
+    },
+    restAt(side, x, y, z, rx = 0, ry = 0) { const R = new THREE.Matrix4().makeRotationFromEuler(new THREE.Euler(rx, ry, 0)); for (const k of side ? [3, 5] : [2, 4]) { const gp = grip[side], M = new THREE.Matrix4().makeTranslation(x, y, z).multiply(R).multiply(new THREE.Matrix4().makeTranslation(-gp.x, -gp.y, -gp.z)); const e = M.elements, o = k * 12; data[o] = e[0]; data[o + 1] = e[4]; data[o + 2] = e[8]; data[o + 3] = e[12]; data[o + 4] = e[1]; data[o + 5] = e[5]; data[o + 6] = e[9]; data[o + 7] = e[13]; data[o + 8] = e[2]; data[o + 9] = e[6]; data[o + 10] = e[10]; data[o + 11] = e[14]; } tex.needsUpdate = true; },
+    hide(side) { const o = (side ? 3 : 2) * 12, o2 = (side ? 5 : 4) * 12; for (const q of [o, o2]) { data.fill(0, q, q + 12); } tex.needsUpdate = true; } };
+  self.setColors(c); return self;
+}
 const _rm = new THREE.Matrix4(), _rk = new THREE.Matrix4();
 const relTo = (root, o, out) => { out.copy(o.matrix); for (let p = o.parent; p && p !== root; p = p.parent) out.premultiply(p.matrix); return out; };
 export const PCOL = { skin: 0xd9a882, top: 0x5c6846, legs: 0x3a3f33, shoes: 0x23211f, hair: 0x2a211b, beard: 0x6a4a32 };
@@ -285,9 +347,9 @@ export class Body {
     const sx = (geo, par) => { const g = meshOf(geo, mats); g.visible = false; par.add(g); return g; };
     this.suitX = G.gh_head ? [sx(G.gh_head, this.head), sx(G.gh_armL, this.arms[0]), sx(G.gh_armR, this.arms[1]), sx(G.gh_foreL, this.arms[0].userData.fore), sx(G.gh_foreR, this.arms[1].userData.fore), sx(G.gh_legL, this.legs[0]), sx(G.gh_legR, this.legs[1]), sx(G.gh_shinL, this.legs[0].userData.knee), sx(G.gh_shinR, this.legs[1].userData.knee)]
       : [...this.arms.flatMap(a => [sx(G.suitU, a), sx(G.suitF, a.userData.fore)]), ...this.legs.flatMap(l => [sx(G.suitT, l), sx(G.suitS, l.userData.knee)])];
-    this.weps = {}; for (const k in Wp) { const g = meshOf(Wp[k], mats); g.visible = false; const base = k.replace(/^(sup|sc8|sc|rd|lt)_/, ''); if (LONG.includes(base)) this.torso.add(g); else { g.position.y = 0.53; this.arms[1].userData.hand.add(g); } this.weps[k] = g; }
+    this.weps = {}; for (const k in Wp) { const g = meshOf(Wp[k], mats); g.visible = false; const base = k.replace(/^(sup|sc8|sc|rd|lt|mag|bolt|pump)_/, ''); if (LONG.includes(base)) this.torso.add(g); else { g.position.y = 0.53; this.arms[1].userData.hand.add(g); } this.weps[k] = g; }
     // o que tens na mão ao usar: comida, bebida ou ligadura
-    this.props = { eat: meshOf(geoOf(b => { b.rbox(0.13, 0.17, 0.05, 0.02, 0, 0, 0, 0xd8c8a0); b.box(0.135, 0.05, 0.055, 0, 0.05, 0, 0xc8321e); }), mats), drink: meshOf(geoOf(b => { b.cyl(0.04, 0.04, 0.2, 10, 0, 0, 0, 0x8ab8d8); b.cyl(0.02, 0.025, 0.04, 8, 0, 0.12, 0, 0x2a6aa8); }), mats), heal: meshOf(geoOf(b => { b.cyl(0.05, 0.05, 0.08, 12, 0, 0, 0, 0xf2f0ea, { rz: Math.PI / 2 }); }), mats) };
+    this.props = { eat: meshOf(geoOf(b => { b.rbox(0.13, 0.17, 0.05, 0.02, 0, 0, 0, 0xd8c8a0); b.box(0.135, 0.05, 0.055, 0, 0.05, 0, 0xc8321e); }), mats), drink: meshOf(geoOf(b => { b.cyl(0.04, 0.04, 0.2, 10, 0, 0, 0, 0x8ab8d8); b.cyl(0.02, 0.025, 0.04, 8, 0, 0.12, 0, 0x2a6aa8); }), mats), heal: meshOf(geoOf(b => { b.cyl(0.05, 0.05, 0.08, 12, 0, 0, 0, 0xf2f0ea, { rz: Math.PI / 2 }); }), mats), gran: meshOf(geoOf(b => { b.sph(0.034, 0, 0, 0, 0x4a5236, { ws: 10, hs: 8 }); b.cyl(0.012, 0.012, 0.022, 8, 0, 0.038, 0, 0x6a6e62); }), mats) };
     for (const k in this.props) { const m = this.props[k]; m.visible = false; m.position.set(0, -0.04, 0.05); this.arms[1].userData.hand.add(m); }
     this.phase = 0; this.t = Math.random() * 10; this.amp = 0; this.run = 0;
   }
@@ -328,12 +390,13 @@ export class Body {
     this.skin[0].visible = near; this.skin[1].visible = !near;
   }
   setGear(eq) { const on = gearKeys(eq); for (const k in this.gear) this.gear[k].visible = on.has(k); for (const g of this.suitX) g.visible = on.has('suit'); }
-  setWeapon(k, att = {}) { const sc = att.scope ? (att.scope === 'mira8' ? 'sc8_' : att.scope === 'reddot' ? 'rd_' : 'sc_') + k : null, sp = att.sup ? 'sup_' + k : null, lt = att.light ? 'lt_' + k : null; const vis = [sc, sp, lt].filter(w => w && this.weps[w]); for (const w in this.weps) this.weps[w].visible = w === k || vis.includes(w); this.wk = k; this.wkAtt = vis; }
+  setWeapon(k, att = {}) { const sc = att.scope ? (att.scope === 'mira8' ? 'sc8_' : att.scope === 'reddot' ? 'rd_' : 'sc_') + k : null, sp = att.sup ? 'sup_' + k : null, lt = att.light ? 'lt_' + k : null; const vis = [sc, sp, lt, 'mag_' + k, 'bolt_' + k, 'pump_' + k].filter(w => w && this.weps[w]); this.wkMag = this.weps['mag_' + k] || null; this.wkPiv = this.wkMag ? partPivot('mag_' + k) : null; for (const w in this.weps) this.weps[w].visible = w === k || vis.includes(w); this.wk = k; this.wkAtt = vis; }
   // um membro: coxa/braço (rotação x = para a frente/trás, z = abrir) e a dobra do joelho/cotovelo
   limb(g, rx, rz, bend, ry = 0) { g.quaternion.setFromEuler(_pe.set(rx, ry, rz, 'XYZ')); const k = g.userData.knee || g.userData.fore; k.rotation.set(bend, 0, 0); if (g.userData.hand) g.userData.hand.rotation.set(0, 0, 0); }
   // anim: mv (0..1.5), mode ('rifle','pistol','melee','none'), swing (0..1 ou -1), dt
   pose(...a) { this._pose(...a); this.skinUpd(); }
-  _pose(dt, mv, mode, swing = -1, recoil = 0, twist = 0, climb = -1, step = 0, raise = 1, use = null) {
+  _pose(dt, mv, mode, swing = -1, recoil = 0, twist = 0, climb = -1, step = 0, raise = 1, use = null, act = null) {
+    const rl = act && act.rel >= 0 ? act.rel : -1, thr = act && act.thr >= 0 ? act.thr : -1;
     this.phase += step * 2.7; this.t += dt;
     const k8 = Math.min(1, dt * 8); this.amp += (Math.min(1, mv) - this.amp) * k8; this.run += ((mv > 1.15 ? 1 : 0) - this.run) * Math.min(1, dt * 5);
     const A = this.amp, Rn = this.run, ph = this.phase, s = Math.sin(ph), cph = Math.cos(ph), idle = 1 - Math.min(1, A * 3), t = this.t;
@@ -351,23 +414,34 @@ export class Body {
       const hip = -sw * (0.42 + 0.22 * Rn) * A - 0.04 * Rn, knee = 0.06 + (0.15 + 0.25 * Rn) * A + (0.55 + 0.6 * Rn) * A * Math.max(0, Math.sin(q - 0.6)) + idle * 0.03;
       this.limb(L, hip, sg * (0.03 + 0.02 * idle), knee); }
     if (climb >= 0) { const c = climb, k = Math.sin(c * Math.PI); this.limb(AR, -2.6 + c * 1.8, -0.2, -0.4 + c * 0.3); this.limb(AL, -2.6 + c * 1.8, 0.2, -0.4 + c * 0.3); this.limb(LL, -1.4 * k, -0.05, 1.7 * k); this.limb(LR, -0.5 * k, 0.05, 0.6 * k); this.torso.rotation.x = 0.45 * k; this.hips.position.y = HIP - 0.12 * k; return; }
-    const lo = 1 - raise, wk = this.wk && this.weps[this.wk];
-    if (wk && LONG.includes(this.wk)) { const rx = lo * 0.62; wk.rotation.x = rx; for (const a of this.wkAtt || []) if (a) this.weps[a].rotation.x = rx; }
+    const re0 = rl >= 0 ? Math.min(1, rl * 6, (1 - rl) * 6) : 0, lo = (1 - raise) * (1 - re0), wk = this.wk && this.weps[this.wk]; // a recarregar, a arma sobe para o peito
+    // recarga: a arma inclina (poço do carregador para cima e para o lado), o carregador sai com a mão esquerda e volta
+    const re = rl >= 0 ? Math.min(1, rl * 8, (1 - rl) * 8) : 0, sm = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
+    const magOff = rl < 0 ? 0 : rl < 0.12 ? 0 : rl < 0.3 ? sm(0.12, 0.3, rl) * 0.3 : rl < 0.5 ? 0.3 : rl < 0.66 ? 0.3 * (1 - sm(0.5, 0.66, rl)) : 0;
+    if (wk && LONG.includes(this.wk)) { const rx = lo * 0.62 + 0.18 * re, rz = -0.45 * re, ry = 0.15 * re; wk.rotation.set(rx, ry, rz); for (const a of this.wkAtt || []) if (a) this.weps[a].rotation.set(rx, ry, rz);
+      if (this.wkMag) { this.wkMag.position.set(0, -magOff, 0).applyEuler(wk.rotation); this.wkMag.visible = wk.visible && !(rl > 0.28 && rl < 0.46); } }
+    else if (this.wkMag) { this.wkMag.position.set(0, 0.53, -magOff * 0.8); this.wkMag.visible = !(rl > 0.28 && rl < 0.46); }
     // braços a balançar (sem arma na mão): opostos às pernas, cotovelo dobra mais a correr
     const swingArms = (onlyL) => { for (const [Ar, sg, off] of [[AL, -1, Math.PI], [AR, 1, 0]]) { if (onlyL && Ar === AR) continue; const q = ph + off, sw = Math.sin(q);
-      this.limb(Ar, -sw * (0.42 + 0.3 * Rn) * A + Math.sin(t * 1.7) * 0.015 * idle, sg * -(0.07 + 0.04 * Rn), -(0.18 + (0.25 + 0.9 * Rn) * A + 0.25 * A * Math.max(0, sw))); } };
+      // a andar: braço quase estendido, dobra só quando vem à frente; a correr: cotovelo a 90° e o braço a bombear (mais atrás do que à frente)
+      const walkB = 0.12 + 0.35 * Math.max(0, sw), runB = 1.25 + 0.25 * sw, swA = (0.38 + 0.42 * Rn) * A, back = Math.max(0, -sw) * 0.25 * Rn * A;
+      this.limb(Ar, -sw * swA + back + 0.04 * A + Math.sin(t * 1.7) * 0.015 * idle, sg * -(0.06 + 0.05 * Rn), -(0.1 * idle + A * (walkB * (1 - Rn) + runB * Rn))); } };
     if (mode === 'rifle' && wk && GRIP[this.wk]) {
       // as duas mãos na arma: punho e guarda-mão, com a mesma rotação da arma (para baixo quando está em baixo)
-      const g = GRIP[this.wk], rx = lo * 0.62 - recoil * 0.06; _rx.makeRotationX(rx);
+      const g = GRIP[this.wk]; _pe.set(wk.rotation.x - recoil * 0.06, wk.rotation.y, wk.rotation.z); _rx.makeRotationFromEuler(_pe);
       AR.position.set(SHX, SHY - HIP, 0); _t.set(WPUSH[0] + 0.03 + g[0][0], WPUSH[1] + g[0][1], WPUSH[2] + g[0][2]).applyMatrix4(_rx); _sh.copy(AR.position); _pl.set(1.2, -0.6, -0.5);
       AR.userData.hand.quaternion.identity(); ik2(AR, AR.userData.fore, _sh, _t, _pl);
       _t.set(WPUSH[0] - 0.05 + g[1][0], WPUSH[1] + g[1][1], WPUSH[2] + g[1][2]).applyMatrix4(_rx); _sh.set(-SHX + 0.04, SHY - HIP - 0.02, 0.07); AL.position.copy(_sh); _pl.set(-1, -0.8, -0.3);
+      if (rl >= 0) { // mão ao carregador → à bolsa do cinto → de volta ao poço → ao guarda-mão
+        const mp = this.wkPiv ? _t2.copy(this.wkPiv).add(_t3.set(0, -0.05 - magOff, 0)).applyMatrix4(_rx) : _t2.set(0.07, -0.02, 0.22).applyMatrix4(_rx), belt = _t3.set(-0.16, -0.05, 0.12);
+        const k1 = sm(0.0, 0.12, rl), k2 = sm(0.3, 0.4, rl) * (1 - sm(0.46, 0.56, rl)), k3 = sm(0.68, 0.84, rl);
+        _t4.copy(_t).lerp(mp, k1); _t4.lerp(belt, k2); _t4.lerp(_t, k3); _t.copy(_t4); }
       ik2(AL, AL.userData.fore, _sh, _t, _pl);
       this.torso.rotation.y = twist - 0.14 * raise;
     } else if (mode === 'pistol') {
       // pistola a duas mãos à frente do peito (em baixo, a apontar para o chão)
       AR.position.set(SHX, SHY - HIP, 0); _t.set(0.02, SHY - HIP - 0.06 - lo * 0.34 + recoil * 0.03, 0.42 - lo * 0.14 - recoil * 0.05); _sh.copy(AR.position); _pl.set(1, -0.7, -0.3); ik2(AR, AR.userData.fore, _sh, _t, _pl);
-      _t.x -= 0.06; _t.y -= 0.03; _t.z -= 0.03; _sh.set(-SHX + 0.03, SHY - HIP, 0.05); AL.position.copy(_sh); _pl.set(-1, -0.7, -0.3); ik2(AL, AL.userData.fore, _sh, _t, _pl);
+      _t.x -= 0.06; _t.y -= 0.03; _t.z -= 0.03; if (rl >= 0) { const k = sm(0.05, 0.2, rl) * (1 - sm(0.5, 0.68, rl)); _t.lerp(_t2.set(-0.16, -0.05, 0.12), k); _t.y -= 0.12 * re * (1 - k); } _sh.set(-SHX + 0.03, SHY - HIP, 0.05); AL.position.copy(_sh); _pl.set(-1, -0.7, -0.3); ik2(AL, AL.userData.fore, _sh, _t, _pl);
       // a mão da arma fica sempre virada para a frente (a pistola aponta para onde olhas), seja qual for a dobra do cotovelo
       const H = AR.userData.hand; _hq.copy(AR.quaternion).multiply(AR.userData.fore.quaternion).invert(); _hq2.setFromEuler(_pe.set(-Math.PI / 2 + lo * 0.9 - recoil * 0.25, 0, 0)); H.quaternion.copy(_hq).multiply(_hq2);
     } else {
@@ -381,9 +455,14 @@ export class Body {
         } else { this.limb(AR, -0.45 - s * 0.2 * A, -0.12, -0.9); swingArms(true); }
       } else swingArms(false);
     }
+    if (thr >= 0 && !(mode === 'rifle' || mode === 'pistol')) { const back = thr < 0.42 ? sm(0, 0.42, thr) : 1 - sm(0.42, 0.62, thr), fw = thr < 0.42 ? 0 : Math.sin(Math.min(1, (thr - 0.42) / 0.45) * Math.PI);
+      AR.position.set(SHX, SHY - HIP, 0); AL.position.set(-SHX, SHY - HIP, 0); this.limb(AR, -2.3 * back - 1.2 * fw, -0.25 * back, -1.4 * back - 0.2 * fw); this.limb(AL, -1.2 * back - 0.3 * fw, 0.2, -0.3);
+      this.torso.rotation.y = twist - 0.45 * back + 0.35 * fw; this.torso.rotation.x += 0.12 * fw; }
+    this.props.gran.visible = thr >= 0 && thr < 0.45;
     // a usar alguma coisa: a arma vai para o lado e as mãos fazem o gesto (levar à boca, beber, enrolar a ligadura)
-    const uk = use ? use.kind : null; for (const k in this.props) this.props[k].visible = k === uk;
+    const uk = use ? use.kind : null; for (const k in this.props) if (k !== 'gran') this.props[k].visible = k === uk;
     if (this.wk && this.weps[this.wk]) { const hide = !!uk; this.weps[this.wk].visible = !hide; for (const a of this.wkAtt || []) if (a) this.weps[a].visible = !hide; }
+    if (this.wkMag && rl > 0.28 && rl < 0.46) this.wkMag.visible = false;
     if (uk) { const tt = use.t, e = Math.min(1, tt * 6, (1 - tt) * 6), w = Math.sin(tt * Math.PI * (uk === 'heal' ? 10 : uk === 'drink' ? 3 : 6));
       AL.position.set(-SHX, SHY - HIP, 0); AR.position.set(SHX, SHY - HIP, 0); AR.userData.hand.rotation.set(0, 0, 0);
       if (uk === 'heal') { this.limb(AR, -0.9 + w * 0.2 * e, -0.45 + w * 0.1, -1.0, 0.35); this.limb(AL, -0.8 - w * 0.2 * e, 0.5, -1.0, -0.35); this.torso.rotation.x += 0.22 * e; this.head.rotation.x += 0.3 * e; }

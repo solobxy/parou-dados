@@ -305,7 +305,7 @@ const boom = (c, p, m) => { const X = EXB[m.k]; if (!X) return; const ti = (p.th
 
 
 // ---------- carros: quem conduz manda a posição; o servidor guarda gasolina, estado e quem vai em cada lugar
-const cRow = (id, c) => [id, Math.round(c.x * 10), Math.round(c.z * 10), Math.round(c.yaw * 100), Math.round((c.v || 0) * 10), +(+c.fuel).toFixed(1), Math.round(c.hp), c.k || 'sedan', c.s.map(x => x || 0), Math.round(c.ts || 0), Math.round((c.alt || 0) * 10)];
+const cRow = (id, c) => [id, Math.round(c.x * 10), Math.round(c.z * 10), Math.round(c.yaw * 100), Math.round((c.v || 0) * 10), +(+c.fuel).toFixed(1), Math.round(c.hp), c.k || 'sedan', c.s.map(x => x || 0), Math.round(c.ts || 0), Math.round((c.alt || 0) * 10), c.li == null ? -1 : c.li ? 1 : 0];
 const carMsg = (c, p, m, now) => {
   const car = S.w.cars[String(m.id || '')];
   if (m.t === 'cin') { const seat = num(m.seat, 0, car ? car.s.length - 1 : 0) | 0; const holder = car && car.s[seat] && players.get(car.s[seat]);
@@ -315,7 +315,9 @@ const carMsg = (c, p, m, now) => {
   if (m.t === 'cu') { if (!Array.isArray(m.L)) return; for (const a of m.L.slice(0, 2)) { const o = S.w.cars[a[0]]; if (!o || o.s[0] !== c.id || o.hp <= 0) continue;
       o.x = num(a[1], -41000, 41000) / 10; o.z = num(a[2], -41000, 41000) / 10; o.yaw = num(a[3], -100000, 100000) / 100; o.v = num(a[4], -300, 300) / 10; o.fuel = Math.min(o.fuel, num(a[5], 0, 200)); o.hp = Math.min(o.hp, num(a[6], 0, 5000)); o.alt = vt(o.k).fly ? num(a[7], 0, 600) / 10 : 0; o.ts = num(a[8], 0, 1e13, 0); o.pad = vt(o.k).fly ? Math.min(o.alt, num(a[9], 0, 600, 0) / 10) : 0;
       if (o.hp <= 0) { o.dead = now; o.s = o.s.map(() => 0); o.v = 0; o.alt = 0; } dirty = true; } return; }
-  if (m.t === 'cf') { if (!car || Math.hypot(car.x - p.x, car.z - p.z) > 6 || !vt(car.k).tank) return; { const L = ledOf(p); if ((L.T.gasolina || 0) < 1) { send(c, { t: 'fix', T: L.T }); return; } addT(L.T, { gasolina: 1 }, -1); } car.fuel = Math.min(vt(car.k).tank, car.fuel + num(m.add, 0, 20)); dirty = true; return; }
+  if (m.t === 'cfp') { if (!car || car.s[0] !== c.id || !vt(car.k).tank || now - (p.cfpT || 0) < 8000) return; p.cfpT = now; car.fuel = vt(car.k).tank; dirty = true; return; } // abastecer na bomba (com o carro parado ao lado)
+  if (m.t === 'cl') { if (!car || !car.s.includes(c.id)) return; car.li = m.on ? 1 : 0; dirty = true; return; } // faróis: ficam como o condutor os deixou
+  if (m.t === 'cf') { if (!car || Math.hypot(car.x - p.x, car.z - p.z) > 6 || !vt(car.k).tank) return; { const L = ledOf(p); if ((L.T.gasolina || 0) < 1) { send(c, { t: 'fix', T: L.T }); return; } addT(L.T, { gasolina: 1 }, -1); addT(L.T, { galaoV: 1 }); } car.fuel = Math.min(vt(car.k).tank, car.fuel + num(m.add, 0, 20)); dirty = true; return; }
   // atropelar outro jogador: quem conduz diz quem; o servidor confirma que o carro estava mesmo ao lado
   if (m.t === 'ck') { const o = players.get(m.to | 0), mine = Object.values(S.w.cars).find(q => q.s[0] === c.id); if (!o || !o.p || !o.p.alive || !mine || Math.hypot(mine.x - o.p.x, mine.z - o.p.z) > 5) return;
     if (p.clan && o.p.clan === p.clan) return; const v = o.p, dmg = num(m.dmg, 0, 120); v.hp = Math.max(0, v.hp - dmg); const kill = v.hp <= 0; if (kill) v.alive = false;
@@ -389,7 +391,7 @@ const onMsg = (c, m) => {
     if (p.alive && al0 && (p.lv | 0) === 0 && p.y < 3 && Math.hypot(nx - p.x, nz - p.z) < 8 && wallCross(p.x, p.z, nx, nz)) { p.wallN = (p.wallN || 0) + 1; if (p.wallN % 20 === 1) console.log('parede', p.name, p.wallN); send(c, { t: 'pos', x: p.x, z: p.z, lv: p.lv }); p.lastSt = now; return; } // atravessar paredes da base
     p.lastSt = now; p.x = nx; p.z = nz; p.y = num(m.y, -5, 40); p.lv = num(m.lv, 0, 6) | 0;
     { const H = p.hist || (p.hist = []); H.push([now, p.x, p.y, p.z]); while (H.length > 2 && now - H[0][0] > 650) H.shift(); } // onde esteve nos últimos 0,65 s (para o tiro de quem o via um pouco atrás)
-    p.ts = num(m.ts, 0, 1e13, 0); p.yaw = num(m.yaw, -10, 10); p.mv = num(m.mv, 0, 3); p.an = num(m.an, 0, 15) | 0; p.w = typeof m.w === 'string' ? m.w.slice(0, 12) : '';
+    p.ts = num(m.ts, 0, 1e13, 0); p.yaw = num(m.yaw, -10, 10); p.mv = num(m.mv, 0, 3); p.an = num(m.an, 0, 127) | 0; p.w = typeof m.w === 'string' ? m.w.slice(0, 12) : '';
     const al = !!m.al, hp = num(m.hp, 0, 100, p.hp); if (al && !p.alive) { p.hp = hp; p.hd = p.vd = null; } else p.hp = Math.min(hp, p.hp + 3); p.alive = al; // a vida que o servidor tirou não volta de repente
     if (Array.isArray(m.ar)) { const a = [num(m.ar[0], 0, 4) | 0, num(m.ar[1], 0, 4) | 0]; if (a[0] !== p.ar[0]) p.hd = null; if (a[1] !== p.ar[1]) p.vd = null; p.ar = a; }
     if (typeof m.gk === 'string' && (m.gk !== p.gkRaw || now - (p.gkT || 0) > 2000)) { p.gkRaw = m.gk.slice(0, 80); p.gkT = now; const T = ledOf(p).T, q = p.gkRaw.split(','); p.gk = GKS.map((s, i) => { const k = q[i] || ''; return ITEMS[k] && ITEMS[k].eq === s && T[k] > 0 ? k : ''; }).join(); p.ghillie = p.gk.includes('ghillie'); } return; }
@@ -428,7 +430,8 @@ const onMsg = (c, m) => {
   if (m.t === 'bag') { const x = num(m.x, -4100, 4100), z = num(m.z, -4100, 4100); if (Math.hypot(x - p.x, z - p.z) > 12) return; const it = cleanIt(m.it), t = tally(it), L = ledOf(p); if (!fits(t, L.T)) { strike(c, p, 'largar'); send(c, { t: 'fix', T: L.T }); return; } addT(L.T, t, -1); dirty = true; mkBag(x, z, num(m.y, -5, 40), num(m.lv, 0, 6) | 0, it); return; }
   if (['bp', 'bu', 'bx', 'bdo', 'bd', 'bdr', 'bdn', 'bdc', 'fu', 'lkc', 'lkset'].includes(m.t)) { baseMsg(c, p, m, now); return; }
   if (m.t === 'boom') { boom(c, p, m); return; }
-  if (['cin', 'cout', 'cu', 'cf', 'ck'].includes(m.t)) { carMsg(c, p, m, now); return; }
+  if (m.t === 'gf') { const L = ledOf(p); if ((L.T.galaoV || 0) < 1 || now - (p.gfT || 0) < 1500) { send(c, { t: 'fix', T: L.T }); return; } p.gfT = now; addT(L.T, { galaoV: 1 }, -1); addT(L.T, { gasolina: 1 }); dirty = true; return; } // encher um galão vazio na bomba
+  if (['cin', 'cout', 'cu', 'cf', 'ck', 'cl', 'cfp'].includes(m.t)) { carMsg(c, p, m, now); return; }
   // granada lançada ou C4 colado: os outros por perto veem-nos (a explosão vem depois, de quem os lançou)
   if (m.t === 'thr') { if (m.k !== 'gran' && m.k !== 'c4') return; { const L = ledOf(p), ik = m.k === 'gran' ? 'granada' : 'c4'; if ((L.T[ik] || 0) < 1) { strike(c, p, 'explosivo ' + ik); send(c, { t: 'fix', T: L.T }); return; } addT(L.T, { [ik]: 1 }, -1); (p.thr || (p.thr = [])).push({ k: m.k, t: now }); dirty = true; } const P = Array.isArray(m.P) ? m.P.slice(0, 3).map(v => num(v, -4100, 4100)) : null; if (!P || P.length !== 3 || Math.hypot(P[0] - p.x, P[2] - p.z) > 6) return;
     const o = { t: 'thr', k: m.k, P, lv: num(m.lv, 0, 6) | 0 }; if (m.k === 'gran') { o.V = Array.isArray(m.V) ? m.V.slice(0, 3).map(v => num(v, -60, 60)) : [0, 0, 0]; o.base = num(m.base, 0, 30); } else { o.yaw = num(m.yaw, -10, 10); o.st = m.st ? 1 : 0; }
@@ -606,7 +609,7 @@ setInterval(() => {
         seen.add(i); const row = zRow(i, z, own), sig = zSig(z, own, row); if (c.zc.get(i) !== sig) { c.zc.set(i, sig); u.push(row); } }
       const g = []; for (const i of c.zc.keys()) if (!seen.has(i)) { c.zc.delete(i); g.push(i); }
       if (u.length) msg.zu = u; if (g.length) msg.zg = g; }
-    if (full && c.cc) { const u = [], seen = new Set(); for (const [id, car] of Object.entries(S.w.cars)) { if (Math.hypot(car.x - c.p.x, car.z - c.p.z) > 400 && car.s.indexOf(c.id) < 0) continue; seen.add(id); const row = cRow(id, car), drv = car.s[0] === c.id, sig = drv ? 'd' + row.slice(5, 11).join() : row.join(); if (c.cc.get(id) !== sig) { c.cc.set(id, sig); u.push(row); } }
+    if (full && c.cc) { const u = [], seen = new Set(); for (const [id, car] of Object.entries(S.w.cars)) { if (Math.hypot(car.x - c.p.x, car.z - c.p.z) > 400 && car.s.indexOf(c.id) < 0) continue; seen.add(id); const row = cRow(id, car), drv = car.s[0] === c.id, sig = drv ? 'd' + row.slice(5, 12).join() : row.join(); if (c.cc.get(id) !== sig) { c.cc.set(id, sig); u.push(row); } }
       const g = []; for (const id of c.cc.keys()) if (!seen.has(id)) { c.cc.delete(id); g.push(id); } if (u.length) msg.cu = u; if (g.length) msg.cg = g; }
     send(c, msg);
   }

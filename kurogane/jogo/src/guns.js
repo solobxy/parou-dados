@@ -14,6 +14,9 @@ const gunTpl = k => dataTpl(GUNSDATA, k, _gd);
 const blendGun = k => b => { for (const T of gunTpl(k)) b.add(T.g, T.c, T.m); };
 // pontos de encaixe das armas novas (boca do cano, calha, mira de ferro, lanterna, punho, guarda-mão)
 export const GUNA = k => GUNSDATA[k] ? GUNSDATA[k].a : null;
+// peças soltas para as recargas (carregador, ferrolho, bomba): mesmo espaço da arma, desenhadas à parte
+const partTpl = (k, t) => dataTpl({ [k + '#' + t]: { g: GUNSDATA[k].t[t], s: GUNSDATA[k].s } }, k + '#' + t, _gd);
+export const GUNP = {}; for (const k in GUNSDATA) if (GUNSDATA[k].t) for (const t in GUNSDATA[k].t) GUNP[t + '_' + k] = b => { for (const T of partTpl(k, t)) b.add(T.g, T.c, T.m); };
 
 // calha picatinny: barra com dentes
 const rail = (b, y, z0, z1, w = 0.028) => { const L = z1 - z0; b.box(w, 0.01, L, 0, y, (z0 + z1) / 2, BLK, { mat: 'm' }); for (let z = z0 + 0.008; z < z1 - 0.004; z += 0.02) b.box(w + 0.006, 0.007, 0.009, 0, y + 0.007, z, BLK, { mat: 'm' }); };

@@ -165,6 +165,12 @@ export class Atlas {
   constructor(W = 2048, H = 2048) { this.W = W; this.H = H; this.c = document.createElement('canvas'); this.c.width = W; this.c.height = H; this.x = this.c.getContext('2d'); this.cx = 0; this.cy = 0; this.row = 0; }
   // prateleiras por altura: cada letreiro vai para a prateleira mais baixa onde cabe (assim os altos não gastam linhas inteiras)
   alloc(w, h) {
+    // zonas que se constroem outra vez (ao chegar perto): reutilizam o mesmo sítio da primeira vez (antes enchia o atlas e
+    // as placas novas iam parar ao canto de cima, a mostrar a folha inteira de letreiros)
+    if (this.rep) { const i = this.rep.findIndex(r => r.w === w && r.h === h); if (i >= 0) return this.rep.splice(i, 1)[0]; }
+    const s0 = this.alloc0(w, h); if (this.rec) this.rec.push(s0); return s0;
+  }
+  alloc0(w, h) {
     this.sh = this.sh || []; let S = this.sh.find(q => q.h >= h && q.h <= h * 1.5 + 8 && q.x + w <= this.W);
     if (!S) { const top = this.sh.reduce((m, q) => Math.max(m, q.y + q.h + 2), 0); if (top + h > this.H) { console.warn('atlas cheio'); S = this.sh.find(q => q.h >= h && q.x + w <= this.W) || { x: 0, y: 0, h }; } else { S = { x: 0, y: top, h }; this.sh.push(S); } }
     const s = { px: S.x, py: S.y, w, h, u0: S.x / this.W, u1: (S.x + w) / this.W, v1: 1 - S.y / this.H, v0: 1 - (S.y + h) / this.H };

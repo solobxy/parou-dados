@@ -10,6 +10,7 @@ import numpy as np
 
 KIND = 'player' if 'player' in sys.argv else 'zombie'
 PREV = '--preview' in sys.argv
+FP = 'fparms' in sys.argv  # só os braços com as mãos fechadas (para a 1.ª pessoa): escreve src/fparms.js e sai
 MH = os.environ.get('MH', '/tmp/mpfb/src/mpfb/data/')
 HERE = os.path.dirname(os.path.abspath(__file__)); ROOT = os.path.join(HERE, '..')
 NAME = 'zbody' if KIND == 'zombie' else 'pbody'
@@ -77,26 +78,64 @@ def rotm(ax, ang):
 if KIND != 'zombie':
     BW = {}
     for b_, lst in Wb.items():
-        if b_.startswith('finger'):
+        if b_.startswith(('finger', 'metacarpal1')):
             arr = np.zeros(len(used))
             for vi, w in lst:
                 if vi in remap: arr[remap[vi]] += w
             BW[b_] = arr
     CURL = float(os.environ.get('CURL', '1'))
-    for sd, sfx in (('l', '.L'), ('r', '.R')):
-        lat = J[f'joint-{sd}-finger-2-1'] - J[f'joint-{sd}-finger-5-1']
-        for f, angs in ((2, (0.45, 0.7, 0.4)), (3, (0.5, 0.75, 0.45)), (4, (0.55, 0.8, 0.45)), (5, (0.65, 0.85, 0.5)), (1, (0.12, 0.2, 0.25))):
-            js = [J[f'joint-{sd}-finger-{f}-{k}'].copy() for k in (1, 2, 3, 4)]
-            d = js[1] - js[0]; ax = np.cross(lat, d) if f != 1 else lat.copy()
-            if f != 1:  # sentido: a ponta do dedo vai para o lado da palma (na malha base a palma está virada para baixo)
-                tip = rotm(ax, 0.5) @ (js[3] - js[0]) + js[0]
-                if tip[1] > js[3][1]: ax = -ax
-            for j in range(3):
-                w = sum(BW.get(f'finger{f}-{k}{sfx}', 0) for k in range(j + 1, 4))
-                if not np.any(w): continue
-                R = rotm(ax, angs[j] * CURL); c = js[j]
-                P0 += w[:, None] * (((P0 - c) @ R.T + c) - P0)
-                for k in range(j + 1, 4): js[k] = R @ (js[k] - c) + c
+    # poses das mãos da 1.ª pessoa (ângulos em radianos por articulação: base, meio, ponta; polegar: oposição, base, meio, ponta)
+    FPP = {'gatilho': {2: (0.15, 0.3, 0.15), 3: (1.0, 1.2, 0.45), 4: (1.05, 1.2, 0.45), 5: (1.1, 1.15, 0.45), 't': (0.7, 0.2, 0.2, 0.12), 'ab': -0.08},
+           'pega': {2: (0.95, 1.15, 0.45), 3: (1.0, 1.2, 0.45), 4: (1.05, 1.2, 0.45), 5: (1.1, 1.15, 0.45), 't': (0.7, 0.2, 0.2, 0.12)},
+           'larga': {2: (0.7, 0.85, 0.35), 3: (0.75, 0.9, 0.4), 4: (0.8, 0.9, 0.4), 5: (0.85, 0.85, 0.35), 't': (0.55, 0.15, 0.15, 0.1)},
+           'punho': {2: (1.45, 1.75, 0.9), 3: (1.5, 1.8, 0.9), 4: (1.5, 1.8, 0.9), 5: (1.55, 1.75, 0.85), 't': (0.9, 0.45, 0.4, 0.35)},
+           'aberta': {2: (0.25, 0.3, 0.15), 3: (0.28, 0.32, 0.15), 4: (0.3, 0.34, 0.16), 5: (0.32, 0.35, 0.16), 't': (0.35, 0.1, 0.1, 0.1)}}
+    POSE = FPP.get(os.environ.get('FPPOSE', 'pega')) if FP else None
+    def pose_hands(P0, POSE):
+        P0 = P0.copy()
+        for sd, sfx in (('l', '.L'), ('r', '.R')):
+            lat = J[f'joint-{sd}-finger-2-1'] - J[f'joint-{sd}-finger-5-1']
+            mid = J[f'joint-{sd}-finger-3-2'] - J[f'joint-{sd}-finger-3-1']; mid /= np.linalg.norm(mid)
+            pn = np.cross(lat, mid); pn /= np.linalg.norm(pn)  # normal da palma (o sentido acerta-se a seguir)
+            tipm = rotm(np.cross(lat, mid), 0.5) @ (J[f'joint-{sd}-finger-3-4'] - J[f'joint-{sd}-finger-3-1'])
+            if pn[1] < 0: pn = -pn  # normal da palma: na malha base (pose em A) a palma está virada para baixo, nas duas mãos
+            fingers = ((2, (0.45, 0.7, 0.4)), (3, (0.5, 0.75, 0.45)), (4, (0.55, 0.8, 0.45)), (5, (0.65, 0.85, 0.5)), (1, (0.12, 0.2, 0.25)))
+            if POSE: fingers = tuple((f, POSE[f]) for f in (2, 3, 4, 5)) + ((1, POSE['t']),)
+            for f, angs in fingers:
+                js = [J[f'joint-{sd}-finger-{f}-{k}'].copy() for k in (1, 2, 3, 4)]
+                d = js[1] - js[0]
+                if f != 1:
+                    ax = np.cross(lat, d)
+                    tip = rotm(ax, 0.5) @ (js[3] - js[0]) + js[0]
+                    if tip[1] > js[3][1]: ax = -ax
+                    axes = [ax, ax, ax]; ang3 = angs
+                    if POSE and POSE.get('ab') and f == 2:  # indicador um pouco afastado (ao longo do guarda-mato)
+                        R = rotm(pn, POSE['ab'] * (1 if sd == 'l' else -1)); w = sum(BW.get(f'finger{f}-{k}{sfx}', 0) for k in range(1, 4)); c = js[0]
+                        P0 += w[:, None] * (((P0 - c) @ R.T + c) - P0)
+                        for k in range(1, 4): js[k] = R @ (js[k] - c) + c
+                else:
+                    # polegar: oposição (roda para a frente da palma à volta do eixo da mão) e depois dobra nas três articulações
+                    td = js[1] - js[0]; td /= np.linalg.norm(td)
+                    fx = np.cross(pn, td); fx /= np.linalg.norm(fx)
+                    t0 = rotm(fx, 0.4) @ (js[3] - js[0])
+                    if np.dot(t0, pn) < np.dot(js[3] - js[0], pn): fx = -fx  # a dobra leva a ponta para o lado da palma
+                    op = mid.copy(); t1 = rotm(op, 0.4) @ (js[3] - js[0])
+                    if np.dot(t1, pn) < np.dot(js[3] - js[0], pn): op = -op
+                    if POSE:
+                        w = sum(BW.get(f'finger{f}-{k}{sfx}', 0) for k in range(1, 4)) + 0.5 * BW.get(f'metacarpal1{sfx}', 0)
+                        R = rotm(op, angs[0]); c = js[0]; P0 += w[:, None] * (((P0 - c) @ R.T + c) - P0)
+                        for k in range(1, 4): js[k] = R @ (js[k] - c) + c
+                        fx = R @ fx; angs = angs[1:]
+                    axes = [fx, fx, fx]; ang3 = angs
+                for j in range(3):
+                    w = sum(BW.get(f'finger{f}-{k}{sfx}', 0) for k in range(j + 1, 4))
+                    if not np.any(w): continue
+                    R = rotm(axes[j], ang3[j] * (1 if POSE else CURL)); c = js[j]
+                    P0 += w[:, None] * (((P0 - c) @ R.T + c) - P0)
+                    for k in range(j + 1, 4): js[k] = R @ (js[k] - c) + c
+        return P0
+    P0_open = P0.copy()
+    P0 = pose_hands(P0, POSE)
 
 # ---------- 3. pose e medidas do jogo ----------
 HIP, SHY, SHX, THIGH, UPPER, NECK = 0.92, 1.42, 0.27, 0.44, 0.30, 0.74
@@ -140,7 +179,13 @@ print('pose do jogo: altura', P[:, 1].max().round(3), 'pés', P[:, 1].min().roun
 hv = P[(W[:, 1] > 0.95) & (TAG == 0)]; hc = (hv.min(0) + hv.max(0)) / 2 - G['head']; hr = float(((hv.max(0) - hv.min(0)) / 2)[[0, 2]].mean())
 print('cabeça: centro', hc.round(3), 'raio', round(hr, 3))  # cabeça desenhada (para a mira e o capacete)
 BIND = {s: G[s].tolist() for s in SEG}
-np.savez('/tmp/mh/rest_' + KIND + '.npz', P=P, W=W, TAG=TAG)
+def game_pose(Pq):
+    Pg = np.zeros_like(Pq)
+    for k, s_ in enumerate(SEG):
+        R, o = B[s_]; Pg += W[:, k:k + 1] * (GM[s_] + (Pq - o) @ R)
+    return Pg
+POSED = {nm: game_pose(pose_hands(P0_open, FPP[nm])) for nm in FPP} if FP else {}
+if not FP: np.savez('/tmp/mh/rest_' + KIND + '.npz', P=P, W=W, TAG=TAG)
 
 # ---------- Blender: malha na pose do jogo ----------
 bpy.ops.wm.read_factory_settings(use_empty=True)
@@ -463,11 +508,33 @@ def reduced(name, tris):
     # cara e mãos perdem menos detalhe (peso menor = reduz menos)
     vg = o.vertex_groups.new(name='decim'); Pc = np.zeros(len(o.data.vertices) * 3); o.data.vertices.foreach_get('co', Pc); Pc = Pc.reshape(-1, 3)
     face = (Pc[:, 1] > NECK_Y + 0.02) & (Pc[:, 2] > -0.02); hand = (np.abs(Pc[:, 0]) > 0.17) & (Pc[:, 1] < 0.9) & (Pc[:, 1] > 0.6)
-    wv = np.where(face | hand, 0.15, 1.0)
+    wv = np.where(face | hand, 0.0 if (FP and name == 'fa') else 0.15, 1.0)
     for k in range(len(wv)): vg.add([k], float(wv[k]), 'REPLACE')
     dm.vertex_group = 'decim'; dm.vertex_group_factor = 1.0
     bpy.ops.object.select_all(action='DESELECT'); o.select_set(True); bpy.context.view_layer.objects.active = o; bpy.ops.object.modifier_apply(modifier='d')
     print(name, sum(len(p.vertices) - 2 for p in o.data.polygons), 'triângulos'); return o
+if FP:  # braços da 1.ª pessoa: só os braços, mãos com todo o detalhe (a mesma topologia em todas as poses), resto reduzido
+    import bmesh as _bm
+    NV = len(me.vertices); va = me.attributes.new('vid', 'INT', 'POINT'); va.data.foreach_set('value', list(range(NV)))
+    Pall = np.zeros(NV * 3); me.vertices.foreach_get('co', Pall); Pall = Pall.reshape(-1, 3)
+    PN = os.environ.get('FPPOSE', 'pega'); os.makedirs('/tmp/fp', exist_ok=True); np.save(f'/tmp/fp/{PN}.npy', Pall)
+    if os.environ.get('FPONLYPOS'): print('pose guardada', PN, NV); sys.exit(0)
+    FPOS = {nm: np.load(f'/tmp/fp/{nm}.npy') for nm in FPP if os.path.exists(f'/tmp/fp/{nm}.npy')}
+    FPOS = {nm: q for nm, q in FPOS.items() if q.shape == Pall.shape}
+    moved = np.zeros(NV, bool)
+    for q in FPOS.values(): moved |= np.linalg.norm(q - Pall, axis=1) > 1e-6
+    print('poses', list(FPOS), 'vértices que mexem', int(moved.sum()))
+    fa = ob.copy(); fa.data = me.copy(); fa.name = 'fa'; sc.collection.objects.link(fa)
+    bm = _bm.new(); bm.from_mesh(fa.data); dl = bm.verts.layers.deform.verify(); ia = [fa.vertex_groups[n].index for n in ('armL', 'armR', 'foreL', 'foreR')]
+    _bm.ops.delete(bm, geom=[v for v in bm.verts if sum(v[dl].get(i, 0) for i in ia) < 0.7], context='VERTS'); bm.to_mesh(fa.data); bm.free(); fa.data.update()
+    vids = np.zeros(len(fa.data.vertices), int); fa.data.attributes['vid'].data.foreach_get('value', vids)
+    hand = moved[vids] | ((np.abs(Pall[vids, 0]) > 0.15) & (Pall[vids, 1] < 0.88))
+    vg = fa.vertex_groups.new(name='decim')
+    for k in range(len(vids)): vg.add([k], 0.0 if hand[k] else 1.0, 'REPLACE')
+    nt = sum(len(p_.vertices) - 2 for p_ in fa.data.polygons); ht = int(os.environ.get('FPTRIS', '9000'))
+    dm = fa.modifiers.new('d', 'DECIMATE'); dm.decimate_type = 'UNSUBDIV'; dm.iterations = int(os.environ.get('FPUNSUB', '1'))  # desfaz a subdivisão: os vértices que ficam não mudam de sítio (as poses continuam a bater certo)
+    bpy.ops.object.select_all(action='DESELECT'); fa.select_set(True); bpy.context.view_layer.objects.active = fa; bpy.ops.object.modifier_apply(modifier='d')
+    print('fa', nt, '→', sum(len(p_.vertices) - 2 for p_ in fa.data.polygons), 'triângulos')
 lo = reduced('lo', TARGET_TRIS); lo1 = reduced('lo1', 1500)
 ob.hide_render = True; lo1.hide_render = True  # só a leve de perto entra nas contas da textura
 
@@ -492,16 +559,17 @@ def bake(kind, image, sel=True, emit=None):
     bpy.ops.object.bake(type=kind, normal_space='TANGENT') if kind == 'NORMAL' else bpy.ops.object.bake(type=kind)
     hi.hide_render = True
     return np.array(image.pixels[:]).reshape(TEX, TEX, 4)
-sc.cycles.samples = 4; Nm = bake('NORMAL', img('nrm', True))
-sc.cycles.samples = 64; sc.world.light_settings.distance = 0.05; AOm = bake('AO', img('ao', True), sel=False)
-geo = bn.nodes.new('ShaderNodeNewGeometry'); add = bn.nodes.new('ShaderNodeVectorMath'); add.operation = 'ADD'; add.inputs[1].default_value = (1, 1, 1)
-bn.links.new(geo.outputs['Position'], add.inputs[0]); sc.cycles.samples = 1
-POS = bake('EMIT', img('pos', True), sel=False, emit=add.outputs[0])
-at_ = bn.nodes.new('ShaderNodeAttribute'); at_.attribute_name = 'reg'; at_.attribute_type = 'GEOMETRY'; mul = bn.nodes.new('ShaderNodeMath'); mul.operation = 'MULTIPLY'; mul.inputs[1].default_value = 0.1
-bn.links.new(at_.outputs['Fac'], mul.inputs[0])
-REGm = bake('EMIT', img('reg', True), sel=False, emit=mul.outputs[0])
-np.savez_compressed('/tmp/mh/maps_' + KIND + '.npz', N=Nm, AO=AOm, POS=POS, REG=REGm)
-print('mapas feitos')
+if not FP:
+    sc.cycles.samples = 4; Nm = bake('NORMAL', img('nrm', True))
+    sc.cycles.samples = 64; sc.world.light_settings.distance = 0.05; AOm = bake('AO', img('ao', True), sel=False)
+    geo = bn.nodes.new('ShaderNodeNewGeometry'); add = bn.nodes.new('ShaderNodeVectorMath'); add.operation = 'ADD'; add.inputs[1].default_value = (1, 1, 1)
+    bn.links.new(geo.outputs['Position'], add.inputs[0]); sc.cycles.samples = 1
+    POS = bake('EMIT', img('pos', True), sel=False, emit=add.outputs[0])
+    at_ = bn.nodes.new('ShaderNodeAttribute'); at_.attribute_name = 'reg'; at_.attribute_type = 'GEOMETRY'; mul = bn.nodes.new('ShaderNodeMath'); mul.operation = 'MULTIPLY'; mul.inputs[1].default_value = 0.1
+    bn.links.new(at_.outputs['Fac'], mul.inputs[0])
+    REGm = bake('EMIT', img('reg', True), sel=False, emit=mul.outputs[0])
+    np.savez_compressed('/tmp/mh/maps_' + KIND + '.npz', N=Nm, AO=AOm, POS=POS, REG=REGm)
+    print('mapas feitos')
 
 
 # ---------- 8. exportar as malhas leves (perto e longe) com pesos, UV e tangentes ----------
@@ -513,12 +581,13 @@ def export(o):
         for gg in v.groups:
             if gg.group in gi: gw[v.index, gi[gg.group]] = gg.weight
     gw[gw.sum(1) == 0, 0] = 1
+    global VI; VI = []
     km, Pv, Nv, Tv, Uv, Si, Sw, I = {}, [], [], [], [], [], [], []
     for t in m.loop_triangles:
         for li, vi in zip(t.loops, t.vertices):
             L = m.loops[li]; uv = tuple(uvl[li].uv); key = (vi, round(uv[0], 5), round(uv[1], 5))
             if key not in km:
-                km[key] = len(Pv); Pv.append(tuple(m.vertices[vi].co)); Nv.append(tuple(m.vertices[vi].normal)); Tv.append((*L.tangent, L.bitangent_sign)); Uv.append(uv)
+                km[key] = len(Pv); VI.append(vi); Pv.append(tuple(m.vertices[vi].co)); Nv.append(tuple(m.vertices[vi].normal)); Tv.append((*L.tangent, L.bitangent_sign)); Uv.append(uv)
                 w = gw[vi]; top = np.argsort(-w)[:4]; ww = w[top] / max(1e-6, w[top].sum()); q = np.round(ww * 255).astype(int); q[0] += 255 - q.sum()
                 Si.append(top.tolist()); Sw.append(q.tolist())
             I.append(km[key])
@@ -527,6 +596,29 @@ def export(o):
     return {'n': len(Pv), 'p': b(np.clip(np.round(Pv / 2.0 * 32767), -32767, 32767).astype(np.int16)), 'nm': b(np.clip(np.round(np.array(Nv) * 127), -127, 127).astype(np.int8)),
             'tg': b(np.clip(np.round(np.array(Tv) * 127), -127, 127).astype(np.int8)), 'uv': b(np.clip(np.round(np.array(Uv) * 65535), 0, 65535).astype(np.uint16)),
             'si': b(np.array(Si, np.uint8)), 'sw': b(np.array(Sw, np.uint8)), 'i': b(np.array(I, np.uint16 if len(Pv) < 65536 else np.uint32))}
+if FP:
+    D_ = export(fa)
+    # poses das mãos: os mesmos vértices (a mão não foi reduzida), só os dedos mudam de sítio
+    dec = lambda k, t: np.frombuffer(base64.b64decode(D_[k]), t)
+    Pe = dec('p', np.int16).reshape(-1, 3) / 32767 * 2.0; Ie = dec('i', np.uint16 if D_['n'] < 65536 else np.uint32).reshape(-1, 3).astype(np.int64)
+    vidE = np.zeros(len(fa.data.vertices), int); fa.data.attributes['vid'].data.foreach_get('value', vidE); src = vidE[np.array(VI)]
+    he = np.where(moved[src])[0]; print('poses: vértices exportados que mexem', len(he))
+    Dp = {}; b_ = lambda a: base64.b64encode(np.ascontiguousarray(a).tobytes()).decode()
+    for nm, PP in FPOS.items():
+        Q = Pe.copy(); Q[he] = PP[src[he]]
+        fnrm = np.cross(Q[Ie[:, 1]] - Q[Ie[:, 0]], Q[Ie[:, 2]] - Q[Ie[:, 0]]); acc = np.zeros_like(Q)
+        for c in range(3): np.add.at(acc, Ie[:, c], fnrm)
+        agg = np.zeros((NV, 3)); np.add.at(agg, src, acc); Nn = agg[src[he]]; Nn /= np.maximum(1e-9, np.linalg.norm(Nn, axis=1))[:, None]
+        Dp[nm] = {'p': b_(np.clip(np.round(Q[he] / 2.0 * 32767), -32767, 32767).astype(np.int16)), 'nm': b_(np.clip(np.round(Nn * 127), -127, 127).astype(np.int8))}
+    D_['poses'] = Dp; D_['pi'] = b_(he.astype(np.uint16))
+    open(os.path.join(ROOT, 'src', 'fparms.js'), 'w').write('// gerado por blender/human.py fparms: braços e mãos do jogador (1.ª pessoa) com as poses das mãos, a textura e os pesos do corpo. Não editar à mão.\nexport const FPARMS = ' + json.dumps(D_) + ';\n')
+    print('escrito fparms.js', os.path.getsize(os.path.join(ROOT, 'src', 'fparms.js')) // 1024, 'KB')
+    if PREV:
+        for o_ in list(sc.objects):
+            if o_ is not fa: o_.hide_render = True
+        pm = bpy.data.materials.new('pv'); pm.use_nodes = True; pn = pm.node_tree; ti = pn.nodes.new('ShaderNodeTexImage'); ti.image = bpy.data.images.load(os.path.join(ROOT, 'assets', 'tex', 'player.jpg')); pn.links.new(ti.outputs['Color'], pn.nodes['Principled BSDF'].inputs['Base Color'])
+        fa.hide_render = False; preview(fa, 'fp', mat=pm, cams=('mao', 'frente'))
+    sys.exit(0)
 OUTD = {'seg': SEG, 'bind': BIND, 'headC': hc.round(4).tolist(), 'headR': round(hr, 4), 'lod0': export(lo), 'lod1': export(lo1)}
 def export_rigid(o):  # cabelo: preso só à cabeça (coordenadas em relação ao ponto de rotação da cabeça)
     m = o.data; m.calc_loop_triangles(); ca = m.color_attributes.get('Col')

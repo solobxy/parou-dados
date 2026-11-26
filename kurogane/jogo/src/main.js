@@ -182,7 +182,7 @@ async function boot() {
   const nav = makeNav(near, MAP - 1);
   const segRect = (x0, z0, x1, z1, r) => { let t0 = 0, t1 = 1; const dx = x1 - x0, dz = z1 - z0; for (const [o, d, a, b] of [[x0, dx, r.x0, r.x1], [z0, dz, r.z0, r.z1]]) { if (Math.abs(d) < 1e-9) { if (o < a || o > b) return false; } else { let ta = (a - o) / d, tb = (b - o) / d; if (ta > tb) [ta, tb] = [tb, ta]; t0 = Math.max(t0, ta); t1 = Math.min(t1, tb); if (t0 > t1) return false; } } return true; };
   const walkLine = (x0, z0, x1, z1, lv) => { const dx = x1 - x0, dz = z1 - z0, L = Math.hypot(dx, dz); if (L < 0.01) return true; const nx = -dz / L * 0.28, nz = dx / L * 0.28; let ok = true;
-    near(Math.min(x0, x1) - 0.5, Math.min(z0, z1) - 0.5, Math.max(x0, x1) + 0.5, Math.max(z0, z1) + 0.5, r => { if (!ok || (r.lv || 0) !== lv || r.off || r.h <= 0.4 || (r.yb || 0) > 1.8) return; for (let s = -1; s <= 1; s++) if (segRect(x0 + nx * s, z0 + nz * s, x1 + nx * s, z1 + nz * s, r)) { ok = false; return; } },
+    near(Math.min(x0, x1) - 0.5, Math.min(z0, z1) - 0.5, Math.max(x0, x1) + 0.5, Math.max(z0, z1) + 0.5, r => { if (!ok || (r.lv || 0) !== lv || r.off || r.h <= 0.4 || (r.lv ? 0 : r.yb || 0) > 1.8) return; for (let s = -1; s <= 1; s++) if (segRect(x0 + nx * s, z0 + nz * s, x1 + nx * s, z1 + nz * s, r)) { ok = false; return; } },
       c => { if (!ok || (c.lv || 0) !== lv || c.on === false || c.k !== 's') return; const t = clamp(((c.x - x0) * dx + (c.z - z0) * dz) / (L * L), 0, 1), px = x0 + dx * t - c.x, pz = z0 + dz * t - c.z; if (px * px + pz * pz < (c.r + 0.26) ** 2) ok = false; });
     return ok; };
   let navBudget = 0;
@@ -190,7 +190,7 @@ async function boot() {
   const collide = (o, rad) => {
     const lv = o.lv || 0, hh = o.h || 0;
     for (let it = 0; it < 2; it++) near(o.x - rad, o.z - rad, o.x + rad, o.z + rad, r => {
-      if ((r.lv || 0) !== lv || r.h <= hh + 0.35 || (r.yb || 0) > hh + 1.75) return; // o que está acima da cabeça (a parede por cima de uma porta) não trava
+      if ((r.lv || 0) !== lv || r.h <= hh + 0.35 || (r.lv ? 0 : r.yb || 0) > hh + 1.75) return; /* nos pisos de cima o yb é a altura do piso (não é uma verga): antes as paredes lá de cima não travavam */ // o que está acima da cabeça (a parede por cima de uma porta) não trava
       const cx = clamp(o.x, r.x0, r.x1), cz = clamp(o.z, r.z0, r.z1), dx = o.x - cx, dz = o.z - cz, d2 = dx * dx + dz * dz;
       if (d2 >= rad * rad) return;
       if (d2 > 1e-9) { const d = Math.sqrt(d2), k = (rad - d) / d; o.x += dx * k; o.z += dz * k; }
@@ -212,7 +212,7 @@ async function boot() {
   // altura do que está construído à volta (telhados, torres): o helicóptero passa por cima
   const tallAt = (x, z, m = 4) => { let h = 0; near(x - m, z - m, x + m, z + m, r => { if (x > r.x0 - m && x < r.x1 + m && z > r.z0 - m && z < r.z1 + m) h = Math.max(h, (r.h || 0) + (r.lv || 0) * 3.7); }, () => {}); return h; };
   const solidAt = (x, z, m = 0.4, lv = 0) => { let hit = false; near(x - m, z - m, x + m, z + m, r => { if ((r.lv || 0) === lv && x > r.x0 - m && x < r.x1 + m && z > r.z0 - m && z < r.z1 + m) hit = true; }, c => { if ((c.lv || 0) === lv && Math.hypot(x - c.x, z - c.z) < c.r + m) hit = true; }); return hit; };
-  for (const r of W.rects) { const th = Math.min(r.x1 - r.x0, r.z1 - r.z0); r.top = !r.stairRail && !r.door && th >= 0.45 && r.h <= 2.9 && r.k !== 'g'; r.climb = !r.stairRail && !r.door && r.h > 0.35 && r.h <= 2.9; }
+  for (const r of W.rects) { const th = Math.min(r.x1 - r.x0, r.z1 - r.z0); r.top = !r.stairRail && !r.door && th >= 0.45 && r.h <= 2.9 && r.k !== 'g'; r.climb = !r.door && r.h > 0.35 && r.h <= 2.9; } // o corrimão também se salta
   // altura do que está por baixo dos pés (tejadilhos, caixas, muros largos)
   const support = (o) => { let sup = 0; const lv = o.lv || 0; near(o.x - 0.05, o.z - 0.05, o.x + 0.05, o.z + 0.05, r => { if (r.top && (r.lv || 0) === lv && r.h <= (o.h || 0) + 0.25 && o.x > r.x0 && o.x < r.x1 && o.z > r.z0 && o.z < r.z1 && r.h > sup) sup = r.h; }); return sup; };
   // escadas: em que piso estás e a que altura
@@ -518,7 +518,7 @@ async function boot() {
   const GK = ['head', 'vest', 'suit', 'eyes', 'back']; // equipamento que os outros veem (chaves dos itens, pela mesma ordem do servidor)
   const refresh = () => { body.setGear(G.inv.eq); const d = heldDef(); body.setWeapon(held() ? (d.gun || d.melee ? held().k : null) : null, held() && held().att || {}); G.ui.refresh(); };
   G.refresh = refresh; G.mkItem = mkItem; G.dbgBody = () => body; G.dbgNodes = () => nodes; /* testes */
-  const select = i => { if (G.sel === i) return; G.sel = i; if (G.aimEnd) G.aimEnd(); AIM.raise = 0; G.p.reload = 0; G.p.use = null; G.p.swing = -1; audio.play('ui'); refresh(); };
+  const select = i => { if (G.sel === i) return; G.sel = i; if (G.aimEnd) G.aimEnd(); AIM.raise = 0; G.p.reload = 0; G.p.use = null; G.p.swing = -1; G.p.thrT = -1; G.p.thrIt = null; audio.play('ui'); refresh(); };
   G.select = select;
   // ---------- treino: o corpo habitua-se ao que fazes. Cada ganho é proporcional ao que falta (sobe depressa no início, devagar perto do máximo); perde-se tudo ao morrer
   // resistência (a correr): ~20 min de corrida para metade; pontaria (disparos e acertos): ~120 acertos para metade; recolha (golpes em árvores e rochas): ~90 golpes para metade
@@ -755,7 +755,9 @@ async function boot() {
     BOOMS.push({ k: 'c4', P, V: null, t: 11, m: g, led, lv: m.lv || 0, beep: 0, ghost: true }); };
   // a explosão de outro jogador: tira a granada ou o C4 que se estava a ver
   const ghostGone = (k, x, z) => { let bi = -1, bd = 5; BOOMS.forEach((B, i) => { if (!B.ghost || B.k !== k) return; const d = Math.hypot(B.P.x - x, B.P.z - z); if (d < bd) { bd = d; bi = i; } }); if (bi >= 0) { scene.remove(BOOMS[bi].m); BOOMS.splice(bi, 1); } };
-  const throwGrenade = it => { const p = G.p; if (p.cd > 0) return; p.cd = 0.8; const lv = p.lv || 0;
+  // lançar: o braço vai atrás e a granada sai a meio do gesto
+  const throwGrenade = it => { const p = G.p; if (p.cd > 0 || p.thrT >= 0) return; p.cd = 0.8; p.thrT = 0; p.thrIt = it; };
+  const releaseGrenade = it => { const p = G.p; const lv = p.lv || 0;
     const tx = AIM.on && AIM.Aw ? AIM.Aw.x : p.x + Math.sin(p.yaw) * 10, tz = AIM.on && AIM.Aw ? AIM.Aw.z : p.z + Math.cos(p.yaw) * 10;
     let dx = tx - p.x, dz = tz - p.z; const d = Math.min(22, Math.max(3, Math.hypot(dx, dz))); const l = Math.hypot(dx, dz) || 1; dx /= l; dz /= l;
     const T = 0.55 + d / 22 * 0.75, h0 = 1.5 - 0.07, vy = (4.9 * T * T - h0) / T, dd = d * 0.88; const m = new THREE.Mesh(gGeo, gMat); m.castShadow = true; scene.add(m);
@@ -812,7 +814,7 @@ async function boot() {
   G.lazyTick = lazyTick;
   // só para testes: vista de cima (ortográfica) de um quadrado de lado L à volta de (x, z), devolvida como imagem
   G.TR = { PRICE, SELL, TRADERS }; G.trade = tradeFn; npcInit(); G.npcs = npcs; initPWA(G);
-  G.dbgDoors = () => W.doors; G.dbgDie = c => die(c || 'teste'); G.vm = vm; G.horde = horde; G.dbgL = { torch, baseL, scene, cam }; G.dbgHurtZ = (z, d) => hurtZombie(z, d, 0, 0, {});
+  G.dbgDoors = () => W.doors; G.dbgW = W; G.dbgDie = c => die(c || 'teste'); G.vm = vm; G.horde = horde; G.dbgL = { torch, baseL, scene, cam }; G.dbgHurtZ = (z, d) => hurtZombie(z, d, 0, 0, {});
   G.dbgCam = (pos, at, fov = 30, w = 800, h = 600) => { const pc = new THREE.PerspectiveCamera(fov, w / h, 0.05, 300); pc.position.set(...pos); pc.lookAt(...at); const s0 = new THREE.Vector2(); renderer.getSize(s0); const r0 = renderer.getPixelRatio(); renderer.setPixelRatio(1); renderer.setSize(w, h, false); fireFrame(G.t, renderer, pc); renderer.render(scene, pc); const url = renderer.domElement.toDataURL('image/jpeg', 0.88); renderer.setPixelRatio(r0); renderer.setSize(s0.x, s0.y, false); return url; }; // testes: vista de perto
   G.dbgTop = (x, z, L, px = 900) => { for (let i = 0; i < 80 && lazyTick(x, z); i++); const oc = new THREE.OrthographicCamera(-L / 2, L / 2, L / 2, -L / 2, 1, 400); oc.position.set(x, 200, z + 0.01); oc.lookAt(x, 0, z); const s0 = new THREE.Vector2(); renderer.getSize(s0); const r0 = renderer.getPixelRatio(); renderer.setPixelRatio(1); renderer.setSize(px, px, false); const fg = scene.fog; scene.fog = null; renderer.render(scene, oc); scene.fog = fg; const url = renderer.domElement.toDataURL('image/jpeg', 0.85); renderer.setPixelRatio(r0); renderer.setSize(s0.x, s0.y, false); return url; };
   G.weather = (on = true) => { G.rainT = on ? 1 : 0; WX.t = on ? 300 : 900; };
@@ -821,7 +823,9 @@ async function boot() {
   const meleeHit = m => {
     const p = G.p; let hit = 0;
     const tgt = G.zs.filter(z => z.state !== 'dead' && sameLevel(p, z)).map(z => ({ z, d: Math.hypot(z.x - p.x, z.z - p.z), a: Math.abs(angDiff(Math.atan2(z.x - p.x, z.z - p.z), p.yaw)) })).filter(o => o.d < m.rng + 0.35 && o.a < m.arc / 2 && los(p.x, p.z, o.z.x, o.z.z, null, 'sg', p.lv, 0.5)).sort((a, b) => a.d - b.d).slice(0, 2);
-    for (const o of tgt) { hurtZombie(o.z, m.dmg * (0.9 + Math.random() * 0.2), (o.z.x - p.x) / o.d, (o.z.z - p.z) / o.d, { at: new THREE.Vector3(o.z.x, (o.z.y || 0) + 1.25, o.z.z) }); hit++; }
+    // na 1.ª pessoa conta onde estás a olhar: a mira na cabeça dá golpe na cabeça (antes era sempre no corpo)
+    const mEnd = G.fp ? _a.copy(AIM.eye).addScaledVector(AIM.dir, m.rng + 0.9) : null;
+    for (const o of tgt) { const zh = mEnd ? zoneHit(o.z, AIM.eye, mEnd) : null, head = zh && zh.zone === 'head'; hurtZombie(o.z, m.dmg * (head ? 2 : 1) * (0.9 + Math.random() * 0.2), (o.z.x - p.x) / o.d, (o.z.z - p.z) / o.d, head ? { zone: 'head', at: zh.point || new THREE.Vector3(o.z.x, (o.z.y || 0) + 1.62, o.z.z) } : { at: new THREE.Vector3(o.z.x, (o.z.y || 0) + 1.25, o.z.z) }); hit++; }
     if (hit) { noise(p.x, p.z, 7); return; }
     let best = null, bd = 9;
     for (const n of nodes) { if (!n.alive || p.lv || n.pick) continue; const d = Math.hypot(n.x - p.x, n.z - p.z) - n.r; if (d > m.rng || d > bd) continue; const a = Math.abs(angDiff(Math.atan2(n.x - p.x, n.z - p.z), p.yaw)); if (a > 0.9) continue; best = n; bd = d; }
@@ -848,6 +852,7 @@ async function boot() {
     p.use = { it, t: 0, dur: u.t }; audio.play(u.food || u.water ? 'comer' : 'apanhar');
   };
   G.use = startUse;
+  const swapItem = (it, k) => { const w = G.inv.where(it); if (!w) return null; const nw = mkItem(k); if (it.n > 1) { it.n--; const left = G.inv.give(nw); if (left) G.dropItem(nw); return nw; } if (w.t === 'belt') G.inv.belt[w.i] = nw; else { G.inv.bag.remove(it); const left = G.inv.give(nw); if (left) G.dropItem(nw); } return nw; };
   const consume = it => { it.n--; if (it.n <= 0) { const w = G.inv.where(it); if (!w) return; if (w.t === 'bag') G.inv.bag.remove(it); else if (w.t === 'belt') G.inv.belt[w.i] = null; } };
   const attack = () => { if (!G.p.alive || G.invOpen) return; const it = held(), d = heldDef(); if (d.gun) return; else if (d.melee) swing(d.melee); else if (d.use) startUse(it); else swing(FISTS.melee); };
 
@@ -899,7 +904,8 @@ async function boot() {
     if (pr.dog) { const z = pr.dog; if (z.pet) { z.stay = !z.stay; z.prey = null; G.ui.toast(z.stay ? 'O cão fica aqui à tua espera' : 'O cão vem contigo'); audio.play('ladrar', 0.5); return; }
       if (!pr.food) { G.ui.toast('Precisas de comida (carne, latas, ração) para o adotar'); return; }
       G.inv.take(pr.food, 1); G.ui.refresh(true); if (G.net.world && z.nid != null) G.net.raw({ t: 'adopt', i: z.nid }); z.pet = G.net.world ? G.net.uid : 'local'; z.state = 'wander'; z.prey = null; z.stay = false;
-      audio.play('ladrar', 0.8); G.ui.toast('O cão confia em ti: segue-te, ladra quando vem alguém e ataca zombies'); return; } if (pr.drink) { G.p.water = Math.min(100, G.p.water + 20); audio.play('comer'); G.ui.toast('Bebeste água'); G.ui.refresh && G.ui.refresh(true); return; } if (pr.lockPut && G.lockT) { G.ui.lockMenu(G.lockT); return; } if (pr.carExit) { G.cars.exit(); return; } if (pr.car) { if (pr.full) return; if (pr.fuel) { const h = held(); if (h && h.k === 'gasolina' && G.cars.refuel(pr.car, h)) { consume(h); G.ui.refresh(true); } return; } G.cars.enter(pr.car); return; } if (pr.own && pr.bed) { G.base.use(pr); return; } if (pr.own && pr.bench) { G.box = null; G.ui.openInv(null, 'craft'); return; } if (pr.door) { const D = pr.door; if (D.lock && D.lock.hp > 0) { G.ui.toast('Trancada. Só abre com explosivos (' + Math.round(D.lock.hp / D.lock.max * 100) + '%)'); audio.play('vazio'); return; } if (!setDoor(D, D.target ? 0 : 1)) G.ui.toast('Está alguém na porta'); return; } openBox(pr); };
+      audio.play('ladrar', 0.8); G.ui.toast('O cão confia em ti: segue-te, ladra quando vem alguém e ataca zombies'); return; } if (pr.drink) { G.p.water = Math.min(100, G.p.water + 20); audio.play('comer'); G.ui.toast('Bebeste água'); G.ui.refresh && G.ui.refresh(true); return; } if (pr.lockPut && G.lockT) { G.ui.lockMenu(G.lockT); return; } if (pr.pumpFill) { const h = held(); if (h && h.k === 'galaoV') { swapItem(h, 'gasolina'); if (G.net.world) G.net.raw({ t: 'gf' }); audio.play('apanhar'); G.ui.toast('Galão cheio: 20 L'); refresh(); G.ui.refresh(true); } return; }
+      if (pr.carPump) { const c = G.car, T = VT[c.k]; c.fuel = T.tank; if (G.net.world) G.net.raw({ t: 'cfp', id: c.id }); audio.play('apanhar'); G.ui.toast('Depósito cheio: ' + T.tank + ' L'); return; } if (pr.carExit) { G.cars.exit(); return; } if (pr.car) { if (pr.full) return; if (pr.fuel) { const h = held(); if (h && h.k === 'gasolina' && G.cars.refuel(pr.car, h)) { swapItem(h, 'galaoV'); refresh(); G.ui.refresh(true); } return; } G.cars.enter(pr.car); return; } if (pr.own && pr.bed) { G.base.use(pr); return; } if (pr.own && pr.bench) { G.box = null; G.ui.openInv(null, 'craft'); return; } if (pr.door) { const D = pr.door; if (D.lock && D.lock.hp > 0) { G.ui.toast('Trancada. Só abre com explosivos (' + Math.round(D.lock.hp / D.lock.max * 100) + '%)'); audio.play('vazio'); return; } if (!setDoor(D, D.target ? 0 : 1)) G.ui.toast('Está alguém na porta'); return; } openBox(pr); };
 
   // ---------- zombies
   await LP(90, 'a espalhar os zombies');
@@ -1261,8 +1267,8 @@ async function boot() {
   const _qF = new THREE.Quaternion();
   const lockPtr = () => { try { const r = canvas.requestPointerLock && canvas.requestPointerLock({ unadjustedMovement: true }); /* sem a aceleração do rato do sistema */ if (r && r.catch) r.catch(() => { try { const r2 = canvas.requestPointerLock(); if (r2 && r2.catch) r2.catch(() => { }); } catch (e) { } }); } catch (e) { } }; // o browser pode recusar (sem clique): não é erro
   const FPF = G.fpv = { on: false, t: 1, P: new THREE.Vector3(), Q: new THREE.Quaternion(), M: new THREE.Matrix4() };
-  G.fpFree = false;
-  G.viewToggle = () => { G.fpFree = !G.fpFree; if (G.cfg) G.cfg.fpView = G.fpFree; try { G.ui.saveCfg && G.ui.saveCfg(); } catch (e) { } audio.play('ui'); if (!G.fpFree && AIM.scope) { AIM.scope = false; AIM.reseed = true; } if (G.fpFree && !TOUCH) lockPtr(); else if (!G.fpFree) try { if (document.pointerLockElement) document.exitPointerLock(); } catch (e) { } };
+  G.FP_ONLY = true; G.fpFree = true; // teste: só 1.ª pessoa
+  G.viewToggle = () => { if (G.FP_ONLY) return; G.fpFree = !G.fpFree; if (G.cfg) G.cfg.fpView = G.fpFree; try { G.ui.saveCfg && G.ui.saveCfg(); } catch (e) { } audio.play('ui'); if (!G.fpFree && AIM.scope) { AIM.scope = false; AIM.reseed = true; } if (G.fpFree && !TOUCH) lockPtr(); else if (!G.fpFree) try { if (document.pointerLockElement) document.exitPointerLock(); } catch (e) { } };
   const fpBuild = () => G.buildK === 'planta' || G.buildK === 'martelo' || G.base.placing(); // a construir volta à vista de cima (o fantasma da peça põe-se a ver de cima)
   // lanterna: a de mão no inventário, ou a montada na arma que tens na mão
   const gunLight = () => { const it = held(); return !!(it && it.att && it.att.light); };
@@ -1409,7 +1415,7 @@ async function boot() {
   // corpo a corpo no telemóvel: toque rápido vira-se para o mais perto e ataca
   const faceTo = yaw => { const p = G.p; p.aim = yaw; p.yaw = yaw; if (Math.abs(angDiff(yaw, p.root)) > 1.2) p.root = yaw - Math.sign(angDiff(yaw, p.root)) * 1.2; G.aimHold = 0.5; };
   G.tapAttack = () => { const p = G.p; if (!p.alive || p.climb) return; if (G.car && !heldDef().gun) return; if (heldDef().gun) { G.fireDown(); G.fireUp(); return; } if (G.fp) { attack(); return; } /* na 1.ª pessoa bate para onde estás a olhar */ const best = bestTarget(); if (best && Math.hypot(best.x - p.x, best.z - p.z) < 3.2) faceTo(Math.atan2(best.x - p.x, best.z - p.z)); else if (!p.lv) { let nb = null, nd = 2.2; for (const n of nodes) { if (!n.alive || Math.abs(n.x - p.x) > 6 || Math.abs(n.z - p.z) > 6) continue; const d = Math.hypot(n.x - p.x, n.z - p.z) - n.r; if (d < nd) { nd = d; nb = n; } } if (nb) faceTo(Math.atan2(nb.x - p.x, nb.z - p.z)); } /* sem zombie perto, vira-se para a árvore ou rocha ao lado */ attack(); };
-  G.toggleLight = () => { if (!G.playing || !G.p.alive) return; if (!G.lightOn && !hasLight()) { G.ui.toast('Precisas de uma lanterna'); return; } G.lightOn = !G.lightOn; audio.play('ui'); G.ui.refresh(true); };
+  G.toggleLight = () => { if (!G.playing || !G.p.alive) return; if (G.car && G.carSeat === 0 && !VT[G.car.k].fly) { G.cars.lights(G.car); G.ui.refresh(true); return; } /* a conduzir: o botão Luz liga e desliga os faróis */ if (!G.lightOn && !hasLight()) { G.ui.toast('Precisas de uma lanterna'); return; } G.lightOn = !G.lightOn; audio.play('ui'); G.ui.refresh(true); };
   // saltar; se houver algo trepável à frente, trepa
   G.jump = () => {
     const p = G.p; if (!G.playing || !p.alive || p.climb || !p.onGround || p.use || p.st || G.invOpen) return;
@@ -1485,9 +1491,11 @@ async function boot() {
       // ---- mira
       const gunH = heldDef().gun;
       if (AIM.on && (!gunH || !p.alive || p.climb || p.use || G.invOpen)) aimEnd();
+      // só 1.ª pessoa: a arma está sempre pronta (dispara-se à anca logo; o botão Mira aponta pela mira, mesmo a de ferro)
+      if (G.FP_ONLY && gunH && !AIM.on && p.alive && !p.climb && !p.use && !G.invOpen && !p.swim && !(G.car && !G.carSeat)) aimStart();
       if (AIM.scope && !scopeItem()) AIM.scope = false;
       AIM.raise = clamp(AIM.raise + (AIM.on ? dt / 0.25 : -dt / 0.2), 0, 1);
-      AIM.idle += dt; if (AIM.on && !AIM.scope && !AIM.rmb && !G.fireHeld && AIM.idle > (FPF.on ? 4 : 6)) aimEnd();
+      AIM.idle += dt; if (!G.FP_ONLY && AIM.on && !AIM.scope && !AIM.rmb && !G.fireHeld && AIM.idle > (FPF.on ? 4 : 6)) aimEnd();
       const still = Math.hypot(p.vx, p.vz) < 0.35;
       AIM.steady = clamp(AIM.steady + (AIM.on && still ? dt * 1.3 : -dt * 2.2), 0, 1);
       // suster a respiração na mira: 4 s quase sem tremer, gasta energia; depois treme mais um bocado
@@ -1508,6 +1516,8 @@ async function boot() {
       const swY = swayA * (Math.sin(G.t * 1.1) + 0.45 * Math.sin(G.t * 2.9 + 1)), swP = swayA * (0.8 * Math.sin(G.t * 0.83 + 2) + 0.35 * Math.sin(G.t * 3.7));
       { let want = 0; if (AIM.on && AIM.raise > 0.3 && cfg.autoLean !== false && p.onGround && !p.sprint && !p.climb) { AIM.leanT = (AIM.leanT || 0) - dt; if (AIM.leanT <= 0) { AIM.leanT = 0.1; AIM.leanW = leanPick(p); } want = AIM.leanW || 0; } else AIM.leanW = 0; AIM.lean = (AIM.lean || 0) + (want - (AIM.lean || 0)) * Math.min(1, dt * 9); if (Math.abs(AIM.lean) < 1e-3) AIM.lean = 0; }
       let aimYaw = null;
+      // a trepar na 1.ª pessoa: a câmara acompanha o corpo (antes ficava parada e saltava no fim) e olha um pouco para a borda
+      if (p.alive && p.climb && (G.fp || FPF.on)) { eyePos(AIM.eye); const k = Math.sin(p.climb.t * Math.PI), yy = AIM.fy, pp = AIM.fpit - 0.32 * k; AIM.dir.set(Math.sin(yy) * Math.cos(pp), Math.sin(pp), Math.cos(yy) * Math.cos(pp)); AIM.eye.y -= 0.12 * k; }
       if (p.alive && !p.climb) {
         if (G.fp || FPF.on) {
           eyePos(AIM.eye); const yy = AIM.fy + swY, pp = AIM.fpit + swP + AIM.kick;
@@ -1571,7 +1581,7 @@ async function boot() {
         p.h = c.t < 0.55 ? c.fh + (c.peak - c.fh) * e(c.t / 0.55) : c.peak + (c.th - c.peak) * e((c.t - 0.55) / 0.45);
         p.vx = p.vz = 0; if (c.t >= 1) { p.climb = null; p.h = c.th; p.vy = 0; }
       } else if (p.alive) {
-        p.x += p.vx * dt; p.z += p.vz * dt; collide(p, 0.3);
+        p.x += p.vx * dt; p.z += p.vz * dt; collide(p, 0.3); if (!G.car && (p.lv || 0) === 0) G.cars.pushCars(p, 0.3, null); // os carros (também os que andam) não se atravessam
         // gravidade e o que está por baixo dos pés
         const sup = support(p);
         if (p.h > sup + 0.001 || p.vy > 0) { p.vy -= 13 * dt; p.h += p.vy * dt; if (p.h <= sup) { if (p.vy < -9) hurtPlayer(Math.min(60, (-p.vy - 9) * 9), 'queda'); p.h = sup; p.vy = 0; } }
@@ -1591,6 +1601,7 @@ async function boot() {
       p.cd -= dt; p.recoil = Math.max(0, p.recoil - dt * 8);
       if (p.swing >= 0) { const dur = Math.min(0.55, p.swingM.cd * 0.85); p.swing += dt / dur; if (!p.swingHit && p.swing >= 0.36) { p.swingHit = true; meleeHit(p.swingM); } if (p.swing >= 1) p.swing = -1; }
       if (p.reload > 0) { p.reload -= dt; if (p.reload <= 0) { doReload(); G.ui.refresh(); } }
+      if (p.thrT >= 0) { const o0 = p.thrT; p.thrT += dt / 0.7; if (o0 < 0.42 && p.thrT >= 0.42 && p.thrIt) { const it = p.thrIt; p.thrIt = null; if (p.alive && (G.inv.belt.includes(it) || G.inv.where(it))) releaseGrenade(it); } if (p.thrT >= 1) p.thrT = -1; }
       if (p.use) { p.use.t += dt; if (p.use.t >= p.use.dur) { const it = p.use.it, u = ITEMS[it.k].use; if (u.hp) p.hp = Math.min(100, p.hp + u.hp); if (u.bleed) p.bleed = 0; if (u.food) p.food = Math.min(100, p.food + u.food); if (u.sick && Math.random() < u.sick) { p.water = Math.max(0, p.water - 18); p.food = Math.max(0, p.food - 8); p.hp = Math.max(1, p.hp - 5); G.ui.toast('A carne crua fez-te mal: perdeste água. Coze-a antes de comer.'); G.shakeT = 0.3; } if (u.water) p.water = clamp(p.water + u.water, 0, 100); if (u.stam) p.stam = Math.min(100, p.stam + u.stam); consume(it); p.use = null; G.ui.refresh(); } }
       // corpo
       if (p.alive) {
@@ -1605,7 +1616,7 @@ async function boot() {
         const d = heldDef(), mode = d.gun ? (d.long ? 'rifle' : 'pistol') : (d.melee && held()) ? 'melee' : (p.swing >= 0 ? 'melee' : 'none');
         const uu = p.use && ITEMS[p.use.it.k] && ITEMS[p.use.it.k].use, ukind = uu ? ((uu.water || 0) > (uu.food || 0) ? 'drink' : uu.food ? 'eat' : 'heal') : null;
         const wf = d.gun ? ray(p.x, p.z, Math.sin(p.yaw), Math.cos(p.yaw), 1.0, null, 's', p.lv || 0, 1.2) : 1; p.wallK = (p.wallK || 0) + (clamp((0.85 - wf) / 0.35, 0, 1) - (p.wallK || 0)) * Math.min(1, dt * 12);
-        body.pose(dt, p.mv, mode, p.swing, p.recoil, twist, p.climb ? p.climb.t : -1, p.step, d.gun ? AIM.raise * (1 - 0.85 * p.wallK) : 1, ukind ? { kind: ukind, t: Math.min(1, p.use.t / p.use.dur) } : null);
+        body.pose(dt, p.mv, mode, p.swing, p.recoil, twist, p.climb ? p.climb.t : -1, p.step, d.gun ? AIM.raise * (1 - 0.85 * p.wallK) : 1, ukind ? { kind: ukind, t: Math.min(1, p.use.t / p.use.dur) } : null, { rel: p.reload > 0 && p.reloadDur ? 1 - p.reload / p.reloadDur : -1, thr: p.thrT >= 0 ? p.thrT : -1 });
         // passos: um som em cada pé que assenta (relva, betão ou madeira dentro de casa), mais forte a correr
         { const ph = Math.floor(body.phase / Math.PI); if (ph !== G.stepPh) { if (G.stepPh != null && p.onGround && !p.swim && p.mv > 0.15 && !G.car) { const inside = (p.lv || 0) > 0 || !!G.inside; audio.step(inside ? 'madeira' : W.paved(p.x, p.z) ? 'betao' : 'relva', Math.min(1, 0.35 + p.mv * 0.45)); } G.stepPh = ph; } }
         p.swimY = (p.swimY || 0) + ((p.swim ? 0.95 : 0) - (p.swimY || 0)) * Math.min(1, dt * 5);
@@ -1623,7 +1634,9 @@ async function boot() {
       if (dn && (!best || dn.d < bd - 0.2) && (!cfg.autoDoor || Math.hypot(p.vx, p.vz) < 0.5 || !dn.D.auto)) best = { door: dn.D, label: dn.D.lock && dn.D.lock.hp > 0 ? 'Porta trancada' : dn.D.target ? 'Fechar porta' : 'Abrir porta', x: dn.D.x, z: dn.D.z };
       { const T = best && best.door && best.door.base ? { door: best.door.base } : best && best.dep && (best.dep.k === 'bau' || best.dep.k === 'bauG') ? { dep: best.dep } : null; G.lockT = T; // fechadura: porta ou baú da base à tua frente
         if (T) { const h = held(), cl = G.base.lockOf(T); if (h && h.k === 'fechadura' && !cl) best = { ...(T.door ? { door: best.door } : {}), label: 'Pôr fechadura', lockPut: true, x: best.x, z: best.z }; else if (cl === 1 && G.net.world && !G.base.lockMine(T)) best = T.door ? { ...best, label: best.door.target ? 'Fechar porta' : 'Abrir porta · código' } : best; } }
+      if (best && best.table === 'bomba' && held() && held().k === 'galaoV') best = { label: 'Encher o galão', pumpFill: true, x: best.x, z: best.z };
       if (G.car) best = { label: (G.car.alt || 0) > 0.8 ? 'Aterra para sair' : VT[G.car.k].two ? 'Descer' : 'Sair', carExit: true, x: p.x, z: p.z };
+      if (G.car && G.carSeat === 0 && VT[G.car.k].tank && Math.abs(G.car.v) < 0.5 && G.car.fuel < VT[G.car.k].tank - 1 && W.containers.some(c => c.table === 'bomba' && Math.hypot(c.x - G.car.x, c.z - G.car.z) < 6)) best = { label: 'Abastecer na bomba', carPump: true, x: p.x, z: p.z };
       else if (p.alive && !p.climb && !p.lv) { const c = G.cars.nearest(p); if (c) { const cd = Math.hypot(c.x - p.x, c.z - p.z) - 1.2, h = held();
           const T = VT[c.k], nm = T.n.toLowerCase();
           if (!best || cd < bd) best = h && h.k === 'gasolina' && T.tank ? { label: 'Pôr gasolina (' + Math.round(c.fuel) + ' de ' + T.tank + ' L)', car: c, fuel: true, x: c.x, z: c.z } : G.cars.seatFree(c) < 0 ? { label: 'Não há lugar', car: c, full: true, x: c.x, z: c.z } : { label: c.seats[0] ? (T.two ? 'Ir à pendura' : 'Entrar (passageiro)') : c.k === 'bike' ? 'Pedalar' : c.k === 'moto' ? 'Conduzir a mota' : 'Conduzir · ' + nm, car: c, x: c.x, z: c.z }; } }
@@ -1638,7 +1651,7 @@ async function boot() {
       if (!best && p.alive && !G.car && !p.lv && p.water < 97 && (p.swim || W.wet(p.x, p.z, 1.4))) best = { label: 'Beber água', drink: true, x: p.x, z: p.z };
       G.prompt = best;
       if (G.net.on) { const d = heldDef(), it = held(), mode = d.gun ? (d.long ? 2 : 1) : d.melee && it ? 3 : 0, eq = G.inv.eq, lvl = s => eq[s] ? ITEMS[eq[s].k].lvl || 0 : 0;
-        G.net.frame(dt, { x: +p.x.toFixed(2), z: +p.z.toFixed(2), y: +(p.y - (p.swimY || 0)).toFixed(2), lv: p.lv || 0, yaw: +Math.atan2(Math.sin(p.root), Math.cos(p.root)).toFixed(2), mv: +Math.min(3, p.mv || 0).toFixed(2), an: (G.car && !G.leanOut ? 8 : mode + (AIM.on ? 4 : 0)), w: mode ? it.k : '', hp: Math.round(Math.max(0, p.hp)), al: p.alive ? 1 : 0, ar: [lvl('head'), lvl('vest')], gk: GK.map(s => eq[s] ? eq[s].k : '').join() }, o => canSee(p, o)); }
+        G.net.frame(dt, { x: +p.x.toFixed(2), z: +p.z.toFixed(2), y: +(p.y - (p.swimY || 0)).toFixed(2), lv: p.lv || 0, yaw: +Math.atan2(Math.sin(p.root), Math.cos(p.root)).toFixed(2), mv: +Math.min(3, p.mv || 0).toFixed(2), an: (G.car && !G.leanOut ? 8 : mode + (AIM.on ? 4 : 0) + (p.reload > 0 ? 16 : 0) + (p.thrT >= 0 ? 32 : 0) + (p.use ? 64 : 0)), w: mode ? it.k : '', hp: Math.round(Math.max(0, p.hp)), al: p.alive ? 1 : 0, ar: [lvl('head'), lvl('vest')], gk: GK.map(s => eq[s] ? eq[s].k : '').join() }, o => canSee(p, o)); }
       if (G.box && (Math.hypot(G.box.x - p.x, G.box.z - p.z) > 2.6)) { G.box = null; if (G.invOpen) G.ui.openInv(null); }
       updZombies(dt); G.cars.update(dt);
       // sacos: os vazios desaparecem, os velhos também
@@ -1724,7 +1737,9 @@ async function boot() {
       { const it = held(), at = (it && it.att) || {}, k = it ? it.k : '', att = !at.scope && ironOk(it) ? { ...at, scope: 'iron' } : at, optic = !!(at.scope && at.scope !== 'reddot');
         const show = FPF.on ? !(optic && AIM.adsT > 0.5) : !!(RDP[k] && (att.scope === 'reddot' || att.scope === 'iron'));
         const sm = (v, w) => v + (w - v) * Math.min(1, dt * 9); FPF.rel = sm(FPF.rel || 0, p.reload > 0 ? 1 : 0); FPF.spr = sm(FPF.spr || 0, p.sprint && Math.hypot(p.vx, p.vz) > 1 ? 1 : 0);
-        vm.set(show ? (k || 'mao') : '', att, myLook); vm.update(dt, cam, { day: G.day, nv: G.nv, mv: Math.min(1, Math.hypot(p.vx || 0, p.vz || 0) / 3), ads: FPF.on ? a : 1, sw: p.swing, rel: FPF.rel, spr: FPF.spr * (1 - a), up: FPF.on ? FPF.t : 1, raise: heldDef().gun ? AIM.raise : 1 }); }
+        const uu = p.use && ITEMS[p.use.it.k] && ITEMS[p.use.it.k].use, VD = G.vmDbg || {}, use = VD.use || (uu ? { kind: (uu.water || 0) > (uu.food || 0) ? 'drink' : uu.food ? 'eat' : 'heal', t: Math.min(1, p.use.t / p.use.dur) } : null), thr = VD.thr ?? (p.thrT >= 0 ? p.thrT : -1);
+        const vk = p.climb ? 'climb' : use ? 'use:' + use.kind : thr >= 0 ? 'granada' : (k || 'mao'), clb = p.climb ? { t: p.climb.t, dy: clamp(p.y - p.h + p.climb.peak - AIM.eye.y, -0.7, 0.2) } : null;
+        vm.set(show || use || thr >= 0 || clb ? vk : '', att, myLook); vm.update(dt, cam, { day: G.day, nv: G.nv, mv: Math.min(1, Math.hypot(p.vx || 0, p.vz || 0) / 3), ads: FPF.on ? a : 1, sw: p.swing, rel: FPF.rel, rp: VD.rp ?? (p.reload > 0 && p.reloadDur ? 1 - p.reload / p.reloadDur : -1), rm: p.reloadMode, spr: FPF.spr * (1 - a), up: FPF.on ? FPF.t : 1, raise: heldDef().gun ? AIM.raise : 1, use, thr, climb: clb }); }
     } else {
       vm.set('', {}, myLook);
       if (PROJ.dirty || PROJ.mode !== 'top') topProj();
@@ -1741,7 +1756,7 @@ async function boot() {
     // círculo de visão
     // máscara da linha de vista (refeita quando te mexes ou uma porta muda)
     if (p && G.playing && p.alive && !G.fp) { VU.uVisK.value = 0.06 + 0.03 * (G.day ?? 1); VIS.t -= dt; const dk = W.doors.reduce((a, D) => a + (D.rc.off ? 1 : 0), 0) + ':' + p.lv + ':' + Math.round((AIM.lean || 0) * 4); VIS.cd = (VIS.cd || 0) - dt; const lo = (AIM.lean || 0) * LEAN, vcx = p.x + Math.cos(p.yaw) * lo, vcz = p.z - Math.sin(p.yaw) * lo; if (Math.hypot(vcx - VIS.x, vcz - VIS.z) > 0.002 || dk !== VIS.key || VIS.t <= 0) { VIS.x = vcx; VIS.z = vcz; VIS.key = dk; VIS.t = 0.5; drawVis(vcx, vcz, p.lv, p.bld && p.lv > 0 ? p.bld : null); } }
-    else VU.uVisK.value = 1;
+    else { VU.uVisK.value = 1; VU.uVisO.value.set(1e7, 1e7); VIS.key = ''; } // 1.ª pessoa: sem a sombra de "fora da vista" (só faz sentido vista de cima)
     if (G0.xray) G0.xray.visible = !G.fp && !FPF.on && !onRoof(G.p); // em 1.ª pessoa não há contornos; em cima de um telhado, os contornos das portas lá de baixo atravessavam-no
     body.root.visible = !!(p && G.playing && p.alive && !G.fp && (!G.car || G.leanOut));
     // onde fica o círculo no ecrã (para os sons à volta e a mira)

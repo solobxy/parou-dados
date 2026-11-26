@@ -256,6 +256,12 @@ export function buildWorld(scene, mats, A) {
         for (let i = 0; i < N; i++) { const u = bot + st.dir * (i + 0.5) * run, hh = (i + 1) * rise; if (ax) b.box(run + 0.01, hh, cw, u, hh / 2, cc, o.stairC ?? 0x9a8a72); else b.box(cw, hh, run + 0.01, cc, hh / 2, u, o.stairC ?? 0x9a8a72); }
         const op = st.open, oc = op === 's' ? st.z1 : op === 'n' ? st.z0 : op === 'e' ? st.x1 : st.x0;
         for (let i = 0; i <= N; i += 2) { const u = bot + st.dir * Math.min(len - 0.05, i * run + 0.05), hh = Math.max(0.05, i * rise); if (ax) { b.box(0.05, 0.95, 0.05, u, hh + 0.47, oc, 0x5a5e62, { mat: 'm' }); if (i < N) b.box(run * 2, 0.05, 0.06, u + st.dir * run, hh + 0.95 + rise, oc, 0x5a5e62, { mat: 'm', rz: -st.dir * Math.atan(rise / run) }); } else { b.box(0.05, 0.95, 0.05, oc, hh + 0.47, u, 0x5a5e62, { mat: 'm' }); if (i < N) b.box(0.06, 0.05, run * 2, oc, hh + 0.95 + rise, u + st.dir * run, 0x5a5e62, { mat: 'm', rx: st.dir * Math.atan(rise / run) }); } }
+        // guarda do piso de cima à volta do buraco da escada (antes só existia a colisão: batia-se num corrimão invisível)
+        { const RC = 0x5a5e62, y1 = fh + 0.95, M = { mat: 'm' };
+          if (ax) { b.box(len, 0.05, 0.06, (st.x0 + st.x1) / 2, y1, oc, RC, M); b.box(len, 0.04, 0.04, (st.x0 + st.x1) / 2, fh + 0.5, oc, RC, M); for (let k = 0; k <= 4; k++) b.box(0.05, 0.95, 0.05, st.x0 + len * k / 4, fh + 0.475, oc, RC, M);
+            b.box(0.06, 0.05, cw, bot, y1, cc, RC, M); b.box(0.04, 0.04, cw, bot, fh + 0.5, cc, RC, M); for (let k = 0; k <= 2; k++) b.box(0.05, 0.95, 0.05, bot, fh + 0.475, st.z0 + cw * k / 2, RC, M); }
+          else { b.box(0.06, 0.05, len, oc, y1, (st.z0 + st.z1) / 2, RC, M); b.box(0.04, 0.04, len, oc, fh + 0.5, (st.z0 + st.z1) / 2, RC, M); for (let k = 0; k <= 4; k++) b.box(0.05, 0.95, 0.05, oc, fh + 0.475, st.z0 + len * k / 4, RC, M);
+            b.box(cw, 0.05, 0.06, cc, y1, bot, RC, M); b.box(cw, 0.04, 0.04, cc, fh + 0.5, bot, RC, M); for (let k = 0; k <= 2; k++) b.box(0.05, 0.95, 0.05, st.x0 + cw * k / 2, fh + 0.475, bot, RC, M); } }
         // colisões: corrimão dos dois pisos, topo fechado em baixo, ponta de baixo fechada em cima
         const th = 0.12;
         const rr2 = (lv, a0_, c0, a1_, c1) => { const k = W.rects.push({ x0: Math.min(a0_, a1_), z0: Math.min(c0, c1), x1: Math.max(a0_, a1_), z1: Math.max(c0, c1), k: 'l', h: 1.0, lv, stairRail: true }); };
@@ -523,7 +529,7 @@ export function buildWorld(scene, mats, A) {
   // Ao construir, repete-se exatamente o mesmo sorteio, por isso as paredes caem onde as colisões já estão
   W.lazy = [];
   const lazy = (x0, z0, x1, z1, fn) => { const L = { x0, z0, x1, z1, fn, s0: getSeed(), c0: [cid, tid, eid], cut0: W.cuts.length, meshes: null };
-    const r0 = W.rects.length, k0 = W.containers.length; b.dry = true; try { fn(); } finally { b.dry = false; } L.cuts = W.cuts.slice(L.cut0); L.ck = lzck(W.rects.slice(r0), W.containers.slice(k0)); W.lazy.push(L); return L; };
+    const r0 = W.rects.length, k0 = W.containers.length; b.dry = true; A.rec = []; try { fn(); } finally { b.dry = false; L.atl = A.rec; A.rec = null; } L.cuts = W.cuts.slice(L.cut0); L.ck = lzck(W.rects.slice(r0), W.containers.slice(k0)); W.lazy.push(L); return L; };
   const lzck = (R, C) => R.length + ':' + C.length + ':' + R.reduce((a, r) => a + r.x0 * 3 + r.z1 * 7 + r.h, 0).toFixed(2) + ':' + C.map(c => c.id + c.table).join();
   const linkCut = (c, built) => {
     if (!c.shell) { c.group = built.cuts.get(c.id) || new THREE.Group(); return; }
@@ -532,8 +538,8 @@ export function buildWorld(scene, mats, A) {
     c.gR = built.cuts.get(c.id + ':R') || new THREE.Group(); };
   // sliced: as peças guardam-se já, mas as malhas fazem-se aos bocados nas imagens seguintes (W.lazyStep), para andar sem soluços
   W.lazyBuild = (L, sliced = false) => { if (L.meshes || L.job) return; const s = getSeed(), C = [cid, tid, eid], lens = {}; for (const k in W) if (Array.isArray(W[k])) lens[k] = W[k].length;
-    const bk = b.buckets, lg = b.log, cur = CUR; b.buckets = new Map(); b.log = []; setSeed(L.s0); [cid, tid, eid] = L.c0; let built = null; b.wet = true; b.defer = sliced;
-    try { L.fn(); } finally { const ck = lzck(W.rects.slice(lens.rects), W.containers.slice(lens.containers)); if (ck !== L.ck) { console.warn('zona preguiçosa diferente', L.x0, L.z0); W.lazyBad = (W.lazyBad || 0) + 1; } if (sliced) L.job = b.sliced(scene, mats); else built = b.build(scene, mats); for (const k in lens) W[k].length = lens[k]; setSeed(s); [cid, tid, eid] = C; b.buckets = bk; b.log = lg; CUR = cur; b.cut = null; b.wet = false; b.defer = false; }
+    const bk = b.buckets, lg = b.log, cur = CUR; b.buckets = new Map(); b.log = []; setSeed(L.s0); [cid, tid, eid] = L.c0; let built = null; b.wet = true; b.defer = sliced; A.rep = (L.atl || []).slice();
+    try { L.fn(); } finally { A.rep = null; const ck = lzck(W.rects.slice(lens.rects), W.containers.slice(lens.containers)); if (ck !== L.ck) { console.warn('zona preguiçosa diferente', L.x0, L.z0); W.lazyBad = (W.lazyBad || 0) + 1; } if (sliced) L.job = b.sliced(scene, mats); else built = b.build(scene, mats); for (const k in lens) W[k].length = lens[k]; setSeed(s); [cid, tid, eid] = C; b.buckets = bk; b.log = lg; CUR = cur; b.cut = null; b.wet = false; b.defer = false; }
     if (built) lazyDone(L, built); };
   const lazyDone = (L, built) => { L.job = null; L.meshes = built.meshes; L.groups = [...built.cuts.values()]; for (const c of L.cuts) linkCut(c, built); W.onLazy && W.onLazy(L, true); };
   // continua a zona que está a meio; devolve true se ainda há trabalho

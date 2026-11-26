@@ -67,6 +67,8 @@ export function makeCars({ scene, G, W, collide, solidAt, tallAt = () => 0, grou
   const burnt = M(0x2a2624, { r: 0.95, m: 0.1 });
   const wreck = c => { if (c.dead) return; c.dead = true; c.v = 0; c.m.g.traverse(o => { if (o.isMesh && o.material !== glass && o.material !== tyre) o.material = burnt; }); };
   const HL = [0].map(i => /* um só farol a sério (cada luz a mais pesa em cada píxel do ecrã) */ { const L = new THREE.SpotLight(0xfff2d6, 0, 42, 0.62, 0.6, 1.1); if (!i) { L.castShadow = true; L.shadow.mapSize.set(512, 512); L.shadow.bias = -0.0008; L.shadow.camera.near = 0.5; L.shadow.camera.layers.enable(1); } scene.add(L, L.target); return L; });
+  const TLt = new THREE.PointLight(0xff1e10, 0, 9, 1.8); scene.add(TLt);
+  const litOf = c => c.hp > 0 && (c.li != null && c.li >= 0 ? !!c.li : !!c.seats[0]); // faróis: como ficaram (c.li) ou, sem escolha, acesos com condutor
   const onRoad = (x, z) => { for (const r of W.roads) if (x > r.x0 - 0.5 && x < r.x1 + 0.5 && z > r.z0 - 0.5 && z < r.z1 + 0.5) return true; return false; };
   const me = () => (G.net && G.net.on ? G.net.id : -1);
   // helicóptero: acelerar inclina o nariz e ganha velocidade aos poucos; trás trava até pairar (não há marcha-atrás) e, já parado, desce a pique
@@ -133,8 +135,11 @@ export function makeCars({ scene, G, W, collide, solidAt, tallAt = () => 0, grou
       for (let d = 0; d < 4; d++) { const a = i + (d === 0 ? 1 : d === 1 ? -1 : 0), b = j + (d === 2 ? 1 : d === 3 ? -1 : 0); if (a < -H || a > H || b < -H || b > H) continue; const k = (b + H) * N + a + H; if (seen[k]) continue; seen[k] = 1;
         const px = x0 + a * S, pz = z0 + b * S; if (Math.abs(px) > 3990 || Math.abs(pz) > 3990 || solidAt(px, pz, 2.35) || W.wet(px, pz, 1)) continue; q[qt++] = k; } }
     return false; };
+  // empurra um círculo (pessoa, ou parte de um carro) para fora dos carros (os parados já são obstáculos; os que andam também)
+  const pushCars = (o, r, skip) => { for (const q of list) { if (q === skip || q.dead === 'gone' || VT[q.k].fly && (q.alt || 0) > 0.6) continue; if (Math.abs(q.x - o.x) > 6 || Math.abs(q.z - o.z) > 6) continue; const T = VT[q.k], qr = T.wid / 2, qe = Math.max(0, T.len / 2 - qr), fx = Math.sin(q.yaw), fz = Math.cos(q.yaw);
+    for (const k of [-qe, -qe / 2, 0, qe / 2, qe]) { const cx = q.x + fx * k, cz = q.z + fz * k, dx = o.x - cx, dz = o.z - cz, d2 = dx * dx + dz * dz, R = r + qr; if (d2 < R * R && d2 > 1e-9) { const d = Math.sqrt(d2), kk = (R - d) / d; o.x += dx * kk; o.z += dz * kk; } } } };
   const C = {
-    list, escapes, goodClear: () => GOOD.clear(), free: (x, z) => ({ wet: W.wet(x, z, 3), solid: solidAt(x, z, 3.2) }),
+    list, escapes, pushCars, isLit: c => litOf(c), goodClear: () => GOOD.clear(), free: (x, z) => ({ wet: W.wet(x, z, 3), solid: solidAt(x, z, 3.2) }),
     get mine() { return G.car || null; },
     // onde há carros no início: na estrada, perto das vilas (iguais em todos os aparelhos)
     spawnPoints(raw) { const out = [];
@@ -152,6 +157,7 @@ export function makeCars({ scene, G, W, collide, solidAt, tallAt = () => 0, grou
     dbgAdd(k, x, z, yaw) { return add('T' + Math.random().toString(36).slice(2, 7), x, z, yaw, { k, fuel: 30 }); }, dbgDel(c) { del(c); }, // só para testes
     // perto de um carro (para entrar ou pôr gasolina)
     nearest(p, r = 3.2) { let best = null, bd = r; for (const c of list) { if (c.hp <= 0 || Math.abs((p.y || 0) - groundY(c.x, c.z, 0) - (c.alt || 0)) > 2.5) continue; /* noutro andar ou no telhado: não chega */ const d = Math.hypot(c.x - p.x, c.z - p.z) - (VT[c.k].two ? 0.4 : 1.2); if (d < bd) { bd = d; best = c; } } return best; },
+    lights(c) { c.li = litOf(c) ? 0 : 1; audio.play('ui'); G.ui.toast(c.li ? 'Faróis acesos' : 'Faróis apagados'); if (G.net && G.net.world) G.net.raw({ t: 'cl', id: c.id, on: c.li }); },
     seatFree(c) { return c.seats.findIndex(s => !s); },
     // entrar: o primeiro lugar livre (o do condutor primeiro)
     enter(c) { const i = this.seatFree(c); if (i < 0) { G.ui.toast(VT[c.k].two ? 'Já não cabe mais ninguém' : 'O carro está cheio'); return; } if (G.net && G.net.world) { G.net.raw({ t: 'cin', id: c.id, seat: i }); return; } this.seated(c, i); },
@@ -180,18 +186,28 @@ export function makeCars({ scene, G, W, collide, solidAt, tallAt = () => 0, grou
       else c.v -= Math.sign(c.v) * Math.min(sp0, (1.4 + sp0 * 0.06) * dt);
       if (c.v > vtop) c.v = Math.max(vtop, c.v - 6 * dt); c.v = Math.max(c.v, -(T.two ? 1.5 : MAXR));
       // direção (modelo de bicicleta): o volante vira menos quanto mais depressa vais, por isso a alta velocidade não fica nervoso
-      const sv = Math.abs(c.v), wb = T.len * 0.6, agil = T.turn / 1.75, ang = c.st * (0.5 + (0.11 - 0.5) * Math.min(1, sv / (T.vmax * 0.95))) * agil, yr = c.v / wb * Math.tan(ang);
-      c.yaw += yr * dt;
-      // um pouco de deriva nas curvas rápidas (mais fora da estrada); o carro endireita sozinho
-      c.slip = to(c.slip || 0, -yr * sv * (road ? 0.012 : 0.03), dt * 6);
-      c.lean = (c.lean || 0) + ((T.two ? -c.st * Math.min(1, sv / 8) * 0.38 : -c.slip * 0.04) - (c.lean || 0)) * Math.min(1, dt * 6);
-      const fx = Math.sin(c.yaw), fz = Math.cos(c.yaw), ox0 = c.x, oz0 = c.z; c.x += (fx * c.v + Math.cos(c.yaw) * c.slip) * dt; c.z += (fz * c.v - Math.sin(c.yaw) * c.slip) * dt;
+      const sv = Math.abs(c.v), wb = T.len * 0.6, agil = T.turn / 1.75, ang = c.st * (0.52 + (0.17 - 0.52) * Math.min(1, sv / (T.vmax * 0.95))) * agil;
+      // física de pneus simples: a velocidade é um vetor (para a frente + de lado). Virar roda o carro; a parte de lado
+      // só desaparece à medida que os pneus agarram (menos na terra, a alta velocidade e com o volante todo virado): derrapa e endireita
+      const f0x = Math.sin(c.yaw), f0z = Math.cos(c.yaw), r0x = Math.cos(c.yaw), r0z = -Math.sin(c.yaw), Vx = f0x * c.v + r0x * (c.slip || 0), Vz = f0z * c.v + r0z * (c.slip || 0);
+      const yr = c.v / wb * Math.tan(ang) * (1 - Math.min(0.35, Math.abs(c.slip || 0) / 12)); c.yaw += yr * dt;
+      { const fx1 = Math.sin(c.yaw), fz1 = Math.cos(c.yaw), rx1 = Math.cos(c.yaw), rz1 = -Math.sin(c.yaw);
+        const grip0 = T.two ? 11 : road ? 7.5 : 3.2, fast = Math.max(0, sv - T.vmax * 0.45) / (T.vmax * 0.55), hard = Math.max(0, Math.abs(c.st) - 0.55) / 0.45, brakeSlide = th < -0.3 && c.v > 6 ? 0.55 : 1;
+        const grip = grip0 * (1 - 0.6 * Math.min(1, fast * (0.4 + 0.6 * hard))) * brakeSlide;
+        c.v = Vx * fx1 + Vz * fz1; c.slip = (Vx * rx1 + Vz * rz1) * Math.exp(-grip * dt);
+        const sl = Math.abs(c.slip); if (sl > 2.2 && sv > 8) { c.skidT = (c.skidT || 0) - dt; if (c.skidT <= 0) { c.skidT = 0.35; audio.play('derrapar', Math.min(0.7, sl / 9)); } } }
+      c.lean = (c.lean || 0) + ((T.two ? -c.st * Math.min(1, sv / 8) * 0.38 : -c.slip * 0.012) - (c.lean || 0)) * Math.min(1, dt * 6);
+      const fx = Math.sin(c.yaw), fz = Math.cos(c.yaw), ox0 = c.x, oz0 = c.z, dX = (fx * c.v + Math.cos(c.yaw) * c.slip) * dt, dZ = (fz * c.v - Math.sin(c.yaw) * c.slip) * dt;
       // água: o carro não entra (para à beira)
       { const s = Math.sign(c.v) || 1, h = T.len / 2 + 0.2; if (W.wet(c.x + fx * h * s, c.z + fz * h * s)) { c.x = ox0; c.z = oz0; if (Math.abs(c.v) > 6) c.hp = Math.max(0, c.hp - (Math.abs(c.v) - 6) * 6); c.v = 0; if (!c.wetT || G.t > c.wetT) { c.wetT = G.t + 4; G.ui.toast('O carro não entra na água'); } } }
       if (!pedal) c.fuel = Math.max(0, c.fuel - Math.abs(c.v) * dt * USE * (c.k === 'humvee' ? 1.8 : c.k === 'moto' ? 0.4 : 1));
-      // batidas: três círculos ao longo do carro
-      const cr = T.wid / 2 + 0.03, ce = Math.max(0, T.len / 2 - cr); let px = 0, pz = 0, n = 0; for (const k of [-ce, 0, ce]) { const o = { x: c.x + fx * k, z: c.z + fz * k, lv: 0, h: 0 }, ox = o.x, oz = o.z; collide(o, cr); if (Math.abs(o.x - ox) + Math.abs(o.z - oz) > 1e-4) { px += o.x - ox; pz += o.z - oz; n++; } }
-      if (n) { c.x += px / n; c.z += pz / n; const sp = Math.abs(c.v); if (sp > 4) { c.hp = Math.max(0, c.hp - (sp - 4) * 9 * (c.k === 'humvee' ? 0.4 : 1)); audio.play('partir', Math.min(1, sp / 12)); G.buzz && G.buzz(40); G.shakeT = Math.max(G.shakeT || 0, Math.min(0.5, sp / 30)); if (c.hp <= 0) G.ui.toast('O carro ficou desfeito'); } c.v *= sp > 4 ? -0.2 : 0.4; }
+      // batidas: cinco círculos ao longo do carro, em passos de 12 cm (a alta velocidade passava através de muros finos) e contra os outros carros
+      const cr = T.wid / 2 + 0.03, ce = Math.max(0, T.len / 2 - cr); let n = 0;
+      const NS = Math.max(1, Math.ceil(Math.hypot(dX, dZ) / 0.12));
+      for (let st = 0; st < NS; st++) { c.x += dX / NS; c.z += dZ / NS; let px = 0, pz = 0, m = 0;
+        for (const k of [-ce, -ce / 2, 0, ce / 2, ce]) { const o = { x: c.x + fx * k, z: c.z + fz * k, lv: 0, h: 0 }, ox = o.x, oz = o.z; collide(o, cr); pushCars(o, cr, c); if (Math.abs(o.x - ox) + Math.abs(o.z - oz) > 1e-4) { px += o.x - ox; pz += o.z - oz; m++; } }
+        if (m) { c.x += px / m; c.z += pz / m; n++; } }
+      if (n) { const sp = Math.abs(c.v); if (sp > 4) { c.hp = Math.max(0, c.hp - (sp - 4) * 9 * (c.k === 'humvee' ? 0.4 : 1)); audio.play('partir', Math.min(1, sp / 12)); G.buzz && G.buzz(40); G.shakeT = Math.max(G.shakeT || 0, Math.min(0.5, sp / 30)); if (c.hp <= 0) G.ui.toast('O carro ficou desfeito'); } c.v *= sp > 4 ? -0.2 : 0.4; }
       // atropelar: zombies (e, online, outros jogadores)
       const sp = Math.abs(c.v); const rx = Math.cos(c.yaw), rz = -Math.sin(c.yaw);
       const inside = (x, z) => { const dx = x - c.x, dz = z - c.z, a = dx * fx + dz * fz, b = dx * rx + dz * rz; return Math.abs(a) < T.len / 2 + 0.3 && Math.abs(b) < T.wid / 2 + 0.33 ? { a, b } : null; };
@@ -210,18 +226,20 @@ export function makeCars({ scene, G, W, collide, solidAt, tallAt = () => 0, grou
         if (VT[c.k].fly && !c.T && !(c === G.car && G.carSeat === 0)) { c.rot = Math.max(0, (c.rot || 0) - dt * 0.08); c.pt = (c.pt || 0) * 0.9; c.rl = (c.rl || 0) * 0.9; } // sem piloto: o rotor perde rotação e o aparelho assenta
         else if (VT[c.k].fly && c.T && !(c === G.car && G.carSeat === 0)) { const a = c.alt > 1 ? clamp(-0.07 * (c.v || 0) / VT[c.k].vmax * 2, -0.2, 0) : 0; c.pt = (c.pt || 0) + (a - (c.pt || 0)) * Math.min(1, dt * 3); }
         if (c.hp <= 0) wreck(c); place(c); for (const w of c.m.wheels) w.rotation.x = c.spin; if (c.m.rotor) { c.m.rotor.rotation.y += (c.rot || (c.alt > 0.05 ? 1 : 0)) * dt * 22; c.m.trot.rotation.x += (c.rot || (c.alt > 0.05 ? 1 : 0)) * dt * 30; }
-        const night = 1 - (G.day ?? 1); if (c.m.lamp) c.m.lamp.emissiveIntensity = c.seats[0] ? 0.4 + night * 2.4 : 0.15; if (c.m.tail) c.m.tail.emissiveIntensity = c.seats[0] ? (c.v < -0.2 || (c === G.car && c.brk) ? 1.8 : 0.5) : 0.2;
+        const night = 1 - (G.day ?? 1), lit = litOf(c), brk = c.v < -0.2 || (c === G.car && c.brk); if (c.m.lamp) c.m.lamp.emissiveIntensity = lit ? 0.4 + night * 2.4 : 0.15; if (c.m.tail) c.m.tail.emissiveIntensity = brk ? 2.2 : lit ? 0.9 + night * 0.8 : 0.15;
         c.m.heads.forEach((h, i) => h.visible = !!c.seats[i] && !(c === G.car && (G.fp || (G.leanOut && i === G.carSeat))));
         // parado e sem condutor: volta a ser um obstáculo
         if (!c.seats[0] && Math.abs(c.v) < 0.3 && (!c.rc || Math.hypot(c.x - c.rcx, c.z - c.rcz) > 0.15 || Math.abs(angDiff(c.yaw, c.rcy)) > 0.05)) setRect(c);
         else if (c.seats[0] && c.rc && (c === G.car || Math.abs(c.v) > 0.3)) { removeRect(c.rc); c.rc = null; }
       }
       // faróis a sério: os 2 carros com condutor mais perto de ti acendem um foco à frente (mais forte de noite)
-      { const night = 1 - (G.day ?? 1), P = G.p || { x: 0, z: 0 }, on = list.filter(q => q.seats[0] && q.hp > 0 && Math.hypot(q.x - P.x, q.z - P.z) < 90).sort((a, b) => (a === G.car ? -1 : b === G.car ? 1 : Math.hypot(a.x - P.x, a.z - P.z) - Math.hypot(b.x - P.x, b.z - P.z)));
+      { const night = 1 - (G.day ?? 1), P = G.p || { x: 0, z: 0 }, on = list.filter(q => litOf(q) && q.hp > 0 && Math.hypot(q.x - P.x, q.z - P.z) < 90).sort((a, b) => (a === G.car ? -1 : b === G.car ? 1 : Math.hypot(a.x - P.x, a.z - P.z) - Math.hypot(b.x - P.x, b.z - P.z)));
         HL.forEach((L, i) => { const q = on[i]; if (!q) { L.intensity = 0; return; } const fx = Math.sin(q.yaw), fz = Math.cos(q.yaw);
           // helicóptero no ar: holofote por baixo, a apontar ao chão um pouco à frente; um círculo largo que cresce com a altura
           if (VT[q.k].fly && (q.alt || 0) > 1.5) { const a = q.alt, gy = groundY(q.x, q.z, 0); L.angle = 0.72; L.penumbra = 0.75; L.distance = a + 40; L.position.set(q.x + fx * 1.2, gy + a - 0.2, q.z + fz * 1.2); L.target.position.set(q.x + fx * a * 0.12, gy, q.z + fz * a * 0.12); L.intensity = (5 + night * 100) * Math.pow(Math.max(1, a / 5), 1.15); return; }
-          L.angle = 0.62; L.penumbra = 0.6; L.distance = 42; L.position.set(q.x + fx * 2.2, 0.85, q.z + fz * 2.2); L.target.position.set(q.x + fx * 20, 0, q.z + fz * 20); L.intensity = night > 0.12 ? 6 + night * 140 : 0; }); HL.forEach(L => { L.shadow.autoUpdate = L.intensity > 0; }); } // de dia os faróis não se notam: sem luz nem sombra (poupa uma passagem inteira de desenho)
+          L.angle = 0.62; L.penumbra = 0.6; L.distance = 42; L.position.set(q.x + fx * 2.2, 0.85, q.z + fz * 2.2); L.target.position.set(q.x + fx * 20, 0, q.z + fz * 20); L.intensity = night > 0.12 ? 6 + night * 140 : 0; }); HL.forEach(L => { L.shadow.autoUpdate = L.intensity > 0; });
+        // luz vermelha atrás (farolins e travão) do carro aceso mais perto
+        { const q = on.find(q => !VT[q.k].fly); if (q && night > 0.12) { const T = VT[q.k], fx = Math.sin(q.yaw), fz = Math.cos(q.yaw), b = q.v < -0.2 || (q === G.car && q.brk); TLt.position.set(q.x - fx * (T.len / 2 + 0.6), groundY(q.x, q.z, 0) + 0.7, q.z - fz * (T.len / 2 + 0.6)); TLt.intensity = (b ? 9 : 3.5) * (0.4 + night); } else TLt.intensity = 0; } } // de dia os faróis não se notam: sem luz nem sombra (poupa uma passagem inteira de desenho)
       const c = G.car, p = G.p; if (!c || !p) { if (audio.engine) audio.engine(0, 0); return; }
       const T = VT[c.k], [sx0, , sz] = T.seats[G.carSeat] || T.seats[0]; const cs = Math.cos(c.yaw), sn = Math.sin(c.yaw);
       // passageiro a apontar: debruça-se pela janela (fica à mostra, fora da carroçaria); quem conduz não dispara
@@ -231,10 +249,10 @@ export function makeCars({ scene, G, W, collide, solidAt, tallAt = () => 0, grou
     },
     // online: os carros que o servidor manda (e quem vai em cada lugar)
     rows(U) { const now = performance.now(), my = me();
-      for (const [id, x10, z10, y100, v10, fuel, hp, k, seats, ts, a10] of U) { let c = byId.get(id); const x = x10 / 10, z = z10 / 10, yaw = y100 / 100;
+      for (const [id, x10, z10, y100, v10, fuel, hp, k, seats, ts, a10, li] of U) { let c = byId.get(id); const x = x10 / 10, z = z10 / 10, yaw = y100 / 100;
         if (c && c.k !== k && c !== G.car) { del(c); c = null; }
         if (!c) { c = add(id, x, z, yaw, { k, fuel, hp }); }
-        const d0 = seats[0]; c.seats = seats.slice(); c.hp = hp;
+        const d0 = seats[0]; c.seats = seats.slice(); c.hp = hp; if (li != null && !(G.car === c && G.carSeat === 0)) c.li = li;
         if (G.car === c && !seats.includes(my)) { c.seats[G.carSeat] = my; this.exit(false); c.seats = seats.slice(); G.ui.toast(hp <= 0 ? 'O veículo ficou desfeito' : 'Saíste do veículo'); }
         if (G.car === c && G.carSeat === 0) continue; // o teu: a posição és tu que mandas
         c.fuel = fuel; if (d0) { if (!c.T || c.drv !== d0) { c.T = track(); c.drv = d0; } push(c.T, ts || now, now, { x, z, y: (a10 || 0) / 10, yaw, v: v10 / 10 }); } else { c.T = null; c.drv = 0; c.x = x; c.z = z; c.yaw = yaw; c.v = 0; c.alt = (a10 || 0) / 10; }

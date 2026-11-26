@@ -9,8 +9,9 @@ def reset():
     global PARTS; PARTS = []
 PARTS = []
 MIRROR = True
+TAG = None  # peças soltas (carregador, ferrolho, bomba): exportadas à parte para as animações de recarga
 class Part:
-    def __init__(s, ob, col, mat, bev, seg, ang): s.ob, s.col, s.mat, s.bev, s.seg, s.ang, s.cuts = ob, col, mat, bev, seg, ang, []
+    def __init__(s, ob, col, mat, bev, seg, ang): s.ob, s.col, s.mat, s.bev, s.seg, s.ang, s.cuts, s.tag = ob, col, mat, bev, seg, ang, [], TAG
 def _obj(bm, name='p'):
     me = bpy.data.meshes.new(name); bm.to_mesh(me); bm.free()
     ob = bpy.data.objects.new(name, me); bpy.context.scene.collection.objects.link(ob)
@@ -119,18 +120,24 @@ def export(name, anchors, scale=1.6):
         TLr = TL.reshape(-1, 3)[:, ::-1].ravel() if MIRROR else TL  # espelho em x: o lado direito da arma real fica em −x no jogo (inverte a ordem dos vértices)
         Vm = V[LV[TLr]].copy(); Nm = CN[TLr].copy()
         if MIRROR: Vm[:, 0] *= -1; Nm[:, 0] *= -1
-        g = G.setdefault((P.col, P.mat), [[], []]); g[0].append(Vm); g[1].append(Nm); ntri += nt
+        g = G.setdefault((P.tag, P.col, P.mat), [[], []]); g[0].append(Vm); g[1].append(Nm); ntri += nt
         if os.environ.get('PARTS'): print('  parte', P.ob.name, len(P.cuts), 'cortes', nt)
         ev.to_mesh_clear()
     out = {'g': [], 'a': anchors}
-    for (col, mat), (Ps, Ns) in G.items():
+    for (tag, col, mat), (Ps, Ns) in G.items():
         Pp = np.concatenate(Ps); Nn = np.concatenate(Ns)
         qp = np.clip(np.round(Pp / scale * 32767), -32767, 32767).astype(np.int16); qn = np.clip(np.round(Nn * 127), -127, 127).astype(np.int8)
         key = np.concatenate([qp.astype(np.int64), qn.astype(np.int64)], 1)
         uk, inv = np.unique(key, axis=0, return_inverse=True); inv = inv.ravel()
         idx = inv.astype(np.uint16 if len(uk) < 65536 else np.uint32)
         b = lambda a: base64.b64encode(np.ascontiguousarray(a).tobytes()).decode()
-        out['g'].append({'c': col, 'm': mat, 'p': b(uk[:, :3].astype(np.int16)), 'n': b(uk[:, 3:].astype(np.int8)), 'i': b(idx), 'w': 4 if idx.dtype == np.uint32 else 2})
+        grp = {'c': col, 'm': mat, 'p': b(uk[:, :3].astype(np.int16)), 'n': b(uk[:, 3:].astype(np.int8)), 'i': b(idx), 'w': 4 if idx.dtype == np.uint32 else 2}
+        if tag: out.setdefault('t', {}).setdefault(tag, []).append(grp)
+        else: out['g'].append(grp)
+    for tag in {k[0] for k in G if k[0]}:  # ponto de encaixe de cada peça solta: centro em cima (carregador) ou centro (ferrolho, bomba)
+        Pp = np.concatenate([np.concatenate(v[0]) for k, v in G.items() if k[0] == tag]); lo, hi = Pp.min(0), Pp.max(0)
+        anchors[tag + 'c'] = [round(float((lo[0] + hi[0]) / 2), 4), round(float(hi[1] if tag == 'mag' else (lo[1] + hi[1]) / 2), 4), round(float((lo[2] + hi[2]) / 2), 4)]
+        anchors[tag + 'h'] = round(float(hi[1] - lo[1]), 4)
     out['s'] = scale
     print(name, 'triângulos', ntri, 'grupos', len(G))
     return out, ntri

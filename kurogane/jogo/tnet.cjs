@@ -30,6 +30,7 @@ server.listen(0, async () => {
     await A.ev(s => { G.p.x = s[0]; G.p.z = s[1]; G.net.start(); }, spot);
     await B.ev(s => { G.p.x = s[0] + 6; G.p.z = s[1]; G.p.root = 0; G.net.start(); }, spot);
     await W(3500);
+    await A.ev(() => { const r = [...G.net.R.values()][0]; if (r) { const a = Math.atan2(r.x - G.p.x, r.z - G.p.z); G.aimS.fy = a; G.aimS.fpit = 0; G.p.root = a; G.p.yaw = a; } }); for (let i = 0; i < 20 && !(await A.ev(() => { const r = [...G.net.R.values()][0]; return r && r.el.style.display !== 'none'; })); i++) await W(400); // na 1.ª pessoa só se vê o nome de quem está à frente
     const seen = await A.ev(() => { const r = [...G.net.R.values()][0]; return r ? { name: r.name, vis: r.b.root.visible, tag: r.el.style.display !== 'none', x: r.x } : null; });
     console.log('A vê:', JSON.stringify(seen)); ok(seen && seen.name === 'Bruno' && seen.vis && seen.tag, 'A vê o Bruno com o nome por cima');
     await A.page.screenshot({ path: path.join(outDir, 'net-ver.png') });
@@ -61,7 +62,7 @@ server.listen(0, async () => {
     await B.ev(() => G.respawn(false)); await W(500);
     await A.ev(() => G.net.clanCmd('create', 'Ronin')); await W(600);
     const code = await A.ev(() => G.net.clanInfo && G.net.clanInfo.codigo); console.log('código do clã:', code); ok(!!code, 'clã criado com código');
-    await B.ev(c => G.net.clanCmd('join', c), code); await W(800);
+    await B.ev(c => G.net.clanCmd('join', c), code); for (let i = 0; i < 10 && !(await B.ev(() => G.net.clanInfo && G.net.clanInfo.membros.length > 1)); i++) await W(500);
     const cb = await B.ev(() => G.net.clanInfo && G.net.clanInfo.membros.join(',')); ok(cb === 'Ana,Bruno', 'o Bruno entrou no clã (' + cb + ')');
     await A.ev(s => { G.p.x = s[0]; G.p.z = s[1]; }, spot); await B.ev(s => { G.p.x = s[0] + 6; G.p.z = s[1]; G.p.hp = 100; }, spot); await W(1200);
     await A.ev(() => { const r = [...G.net.R.values()][0]; G.aimS.Aw = new G.V3(r.x, (r.y || 0) + 1.15, r.z); G.p.reload = 0; G.p.cd = 0; G.inv.belt[G.sel].ammo = 5; return G.dbg.fire(); }); await W(800);

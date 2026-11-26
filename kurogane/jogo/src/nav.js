@@ -7,7 +7,7 @@ export function makeNav(near, MAP) {
   const heap = [], hf = [];
   const push = (i, f) => { heap.push(i); hf.push(f); let k = heap.length - 1; while (k > 0) { const p = (k - 1) >> 1; if (hf[p] <= hf[k]) break; [heap[p], heap[k]] = [heap[k], heap[p]]; [hf[p], hf[k]] = [hf[k], hf[p]]; k = p; } };
   const pop = () => { const top = heap[0], lastI = heap.pop(), lastF = hf.pop(); if (heap.length) { heap[0] = lastI; hf[0] = lastF; let k = 0; for (;;) { const l = 2 * k + 1, r = l + 1; let m = k; if (l < heap.length && hf[l] < hf[m]) m = l; if (r < heap.length && hf[r] < hf[m]) m = r; if (m === k) break; [heap[m], heap[k]] = [heap[k], heap[m]]; [hf[m], hf[k]] = [hf[k], hf[m]]; k = m; } } return top; };
-  const blocks = (r, lv) => (r.lv || 0) === lv && !r.off && r.h > 0.4 && !((r.yb || 0) > 1.8) && !r.edge;
+  const blocks = (r, lv) => (r.lv || 0) === lv && !r.off && r.h > 0.4 && !((r.lv ? 0 : r.yb || 0) > 1.8) && !r.edge;
   return {
     // tenta com uma margem pequena; se não houver caminho, alarga a janela
     find(x0, z0, x1, z1, lv) { const a = this.find1(x0, z0, x1, z1, lv, 10, 7000); if (a.ok) return a; const b = this.find1(x0, z0, x1, z1, lv, 28, 16000); return b.ok || b.pts.length >= a.pts.length ? b : a; },

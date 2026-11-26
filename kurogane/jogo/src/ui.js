@@ -342,7 +342,7 @@ export function initUI(G) {
   if (cfg.sensV !== 2) { if (cfg.sens === 1) cfg.sens = SENS0; cfg.sensV = 2; }
   if (!cfg.autoV) { cfg.autoV = 1; if (cfg.hud && cfg.hud.sprint) cfg.hud.sprint.on = 1; } // o botão de correr sempre passa a aparecer
   if (!cfg.q2) { cfg.q2 = 1; cfg.quick = true; } // 0.22: o botão grande passa a disparar logo (antes o 1.º toque só levantava a arma)
-  G.cfg = cfg; G.fpFree = !!cfg.fpView; // a vista escolhida fica guardada
+  G.cfg = cfg; G.FP_ONLY = true; G.fpFree = G.FP_ONLY || !!cfg.fpView; // teste: o jogo só em 1.ª pessoa (a 3.ª continua para os outros te verem) // a vista escolhida fica guardada
   const saveCfg = () => { try { localStorage.setItem('kurogane-cfg-v1', JSON.stringify(cfg)); } catch (e) { } };
 
   // ---------- música do menu: começa no primeiro toque (os browsers não deixam antes), entra e sai devagar
@@ -967,12 +967,12 @@ export function initUI(G) {
     const hk = (G.inv.belt[G.sel] || {}).k, fl = G.base.placing() ? 'Colocar' : G.buildK === 'planta' ? 'Construir' : G.buildK === 'martelo' ? 'Melhorar' : hk === 'granada' ? 'Lançar' : hk === 'c4' ? 'Colocar' : gun ? (armed || cfg.quick ? 'Disparar' : A.on ? '' : 'Levantar') : 'Bater'; if (vals.fl !== fl) { vals.fl = fl; fb.querySelector('em').textContent = fl; }
     // olho: 1.ª ou 3.ª pessoa (sempre à mão). «Mira»: só na 1.ª pessoa, com uma arma que tenha mira (de ferro, ponto vermelho ou luneta)
     const fv = !!G.fpv.on, hasSc = !!(gun && G.scopeItem && G.scopeItem()), vb = $('tView'); if (vals.fv !== G.fpFree) { vals.fv = G.fpFree; vb.classList.toggle('on', !!G.fpFree); vb.setAttribute('aria-pressed', G.fpFree ? 'true' : 'false'); vb.querySelector('em').textContent = G.fpFree ? '3.ª pessoa' : '1.ª pessoa'; vb.setAttribute('aria-label', G.fpFree ? 'Passar para a 3.ª pessoa' : 'Passar para a 1.ª pessoa'); }
-    $('tAds').hidden = !(fv && hasSc); $('tLower').hidden = !(gun && A.on); $('tAds').classList.toggle('on', !!A.scope); $('tBreath').hidden = !fp || !A.scope || !!(it && it.att && it.att.scope === 'reddot') || !!(G.scopeItem && G.scopeItem() && G.scopeItem().iron); $('tBreath').classList.toggle('on', !!A.breathOn);
+    $('tAds').hidden = !(fv && hasSc); $('tLower').hidden = !(gun && A.on) || !!G.FP_ONLY; $('tAds').classList.toggle('on', !!A.scope); $('tBreath').hidden = !fp || !A.scope || !!(it && it.att && it.att.scope === 'reddot') || !!(G.scopeItem && G.scopeItem() && G.scopeItem().iron); $('tBreath').classList.toggle('on', !!A.breathOn);
     $('padR').querySelector('.knob').style.visibility = gun || fv ? 'hidden' : ''; if (fp) { $('gR').style.opacity = 0; $('gL').style.opacity = 0; }
     // avisos
     if (toastT > 0) { toastT -= dt; if (toastT <= 0.3) toastEl.style.opacity = Math.max(0, toastT / 0.3); if (toastT <= 0) toastEl.hidden = true; }
     for (const o of SI) if (o.t > 0) { o.t -= dt; o.el.style.opacity = (Math.min(1, o.t / 0.4) * o.a).toFixed(2); }
-    $('tLight').classList.toggle('on', !!G.lightOn);
+    $('tLight').classList.toggle('on', G.car && G.carSeat === 0 && G.cars ? G.cars.isLit(G.car) : !!G.lightOn);
     for (let i = feeds.length - 1; i >= 0; i--) { const f = feeds[i]; f.t -= dt; if (f.t < 0.4) f.el.classList.add('out'); if (f.t <= 0) { f.el.remove(); feeds.splice(i, 1); } }
     mmT -= dt; if (mmT <= 0) { mmT = 0.12; drawMini(); }
     if (G.invOpen) { G.invT = (G.invT || 0) - dt; if (G.invT <= 0) { G.invT = 0.5; if (tab === 'craft') renderCraft(); } }
