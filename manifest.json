@@ -1,12 +1,12 @@
 {
-  "built_at": "2026-11-26T13:07:44.319591+00:00",
-  "db_bytes": 873500672,
-  "gz_bytes": 226007973,
+  "built_at": "2026-11-26T23:57:32.878934+00:00",
+  "db_bytes": 873504768,
+  "gz_bytes": 226016862,
   "totals": {
     "lines": 2838,
     "stops": 50690,
     "trips": 147232,
-    "stop_times": 4617521,
+    "stop_times": 4617507,
     "operators": 34,
     "operators_ok": 31,
     "operators_desatualizados": 2
@@ -190,17 +190,17 @@
       "lines": 80,
       "stops": 2016,
       "trips": 3794,
-      "valid_until": "2027-02-28",
+      "valid_until": "2027-03-31",
       "validade": "ok",
-      "dias_validade": 94,
+      "dias_validade": 125,
       "horario_prolongado": false,
       "url": "https://www.tub.pt/developer/gtfs/feed/tub.zip",
       "last_error": null,
       "servicos_associados": null,
       "servicos_sem_calendario": null,
-      "viagens_hoje": 2102,
+      "viagens_hoje": 0,
       "viagens_amanha": 2103,
-      "dias_uteis_sem_servico": 0
+      "dias_uteis_sem_servico": 1
     },
     {
       "id": "guimabus",
@@ -660,7 +660,7 @@
     }
   ],
   "desenhos": {
-    "bytes": 11241095,
+    "bytes": 11242737,
     "por_operador": {
       "barraqueiro_oeste": {
         "viagens": 119,
@@ -674,8 +674,8 @@
       },
       "carris": {
         "viagens": 30844,
-        "com_desenho": 30601,
-        "desenhos": 303
+        "com_desenho": 30844,
+        "desenhos": 310
       },
       "cmh": {
         "viagens": 50122,
@@ -799,8 +799,8 @@
       },
       "tub_braga": {
         "viagens": 3794,
-        "com_desenho": 3730,
-        "desenhos": 395
+        "com_desenho": 3717,
+        "desenhos": 392
       },
       "tuba_barcelos": {
         "viagens": 644,
@@ -1008,13 +1008,13 @@
           "total": 385
         },
         "servicos_com_data_hoje": [
-          "FU",
-          "BU",
           "EU",
-          "AU",
+          "FU",
+          "BexpU",
+          "BU",
           "DU",
-          "CU",
-          "BexpU"
+          "AU",
+          "CU"
         ],
         "viagens_por_servico": [
           {
@@ -1072,12 +1072,12 @@
   "andante": {
     "fonte_zonas": "https://andante.pt/titulos-ocasionais/",
     "fonte_precos": "https://andante.pt/comprar/andante-azul/",
-    "zonas_obtidas": "2026-11-26T13:07:22+00:00",
+    "zonas_obtidas": "2026-11-26T23:57:14+00:00",
     "n_zonas": 154,
     "n_paragens": 13711,
     "precos_em_vigor_desde": "2026-01-01",
-    "precos_obtidos": "2026-11-26T13:07:22+00:00",
+    "precos_obtidos": "2026-11-26T23:57:14+00:00",
     "z2": 1.4
   },
-  "duration_s": 311
+  "duration_s": 292
 }
