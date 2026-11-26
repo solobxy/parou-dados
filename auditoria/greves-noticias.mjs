@@ -40,6 +40,10 @@ ok('"unir" (verbo) não é a UNIR', !a.some((x) => x.operador === 'UNIR'));
 ok('notícia com mais de 10 dias não conta', !a.some((x) => x.source_url === 'https://x/antiga'));
 ok('a notícia da CP sem dia na manchete usa "hoje" (25/11) e já passou → nada', !a.some((x) => x.operador === 'CP'), JSON.stringify(a.filter((x) => x.operador === 'CP').map((x) => x.start_datetime)));
 
+const eco = { ...rtp, fonte: 'ECO', url: 'https://eco.sapo.pt/x', data: '2026-11-25T21:00:00Z' };
+const tres = G.grevesDasNoticias([rtp, sapo, eco], AGORA)[0];
+ok('três fontes: «RTP Notícias, SAPO 24 e ECO»', /^Fonte: RTP Notícias, SAPO 24 e ECO \(/.test(tres?.descrição || ''), tres?.descrição?.slice(0, 80));
+
 // Com aviso oficial do operador para o mesmo dia, fica o oficial
 const oficial = { tipo: 'greve', operador: 'Metro do Porto', status: 'Futuro', start_datetime: '2026-11-27T00:00:00Z', end_datetime: '2026-11-27T23:59:00Z' };
 ok('com aviso oficial para o mesmo dia, a notícia não duplica', G.grevesDasNoticias([rtp], AGORA, [oficial]).length === 0);

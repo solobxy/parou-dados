@@ -306,6 +306,14 @@ jobs:
           SAIDA=../res timeout 300 node paragem-fecha-destino.mjs 2>&1 | tee ../res/paragem-fecha-destino.txt | tail -30
           exit ${PIPESTATUS[0]}
 
+      - name: Testar o aviso de greve no topo do Perto (abre os Alertas; 320 e 390 px)
+        continue-on-error: true
+        working-directory: auditoria
+        run: |
+          mkdir -p ../res
+          SAIDA=../res timeout 300 node aviso-perto.mjs 2>&1 | tee ../res/aviso-perto.txt | tail -20
+          exit ${PIPESTATUS[0]}
+
       - name: Testar que um erro não aparece como «sem resultados» (planeador e horários, browser)
         continue-on-error: true
         working-directory: auditoria
