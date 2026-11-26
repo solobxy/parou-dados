@@ -54,6 +54,53 @@ for (const largura of [320, 390]) {
   }
   await ctx.close();
 }
+// Duas greves ao mesmo tempo (26/11/2026): a da CP a decorrer e a do Metro do Porto no dia seguinte, com o serviço a acabar
+// mais cedo nessa noite. Só aparecia a primeira da lista (CP). Agora aparecem as duas, cada uma a dizer quando é; uma
+// terceira, daqui a 5 dias, não entra.
+{
+  const agora = Date.now();
+  const diaLx = (ms) => new Date(ms).toLocaleDateString('sv-SE', { timeZone: 'Europe/Lisbon' });
+  // meia-noite de amanhã em Lisboa (inverno: UTC+0; o teste corre em qualquer data, por isso procura-se a hora certa)
+  let amanha = Date.parse(diaLx(agora + 86_400_000) + 'T00:00:00Z');
+  while (diaLx(amanha - 1) === diaLx(amanha)) amanha -= 3600_000;
+  while (diaLx(amanha) !== diaLx(agora + 86_400_000)) amanha += 3600_000;
+  const CP = { ...GREVE, id: 'alert-cp-greve', título: 'Greve - Perturbações na circulação - 23 a 27 de novembro', operador: 'CP', status: 'Ativo', start_datetime: new Date(agora - 3 * 86_400_000).toISOString(), end_datetime: new Date(agora + 86_400_000).toISOString(), source: 'CP — avisos oficiais' };
+  const MP = { ...GREVE, start_datetime: new Date(amanha).toISOString(), end_datetime: new Date(amanha + 86_399_000).toISOString(), vespera_desde: new Date(agora - 10 * 60_000).toISOString(), status: 'Futuro' };
+  const LONGE = { ...GREVE, id: 'longe', título: 'Greve na STCP daqui a cinco dias', operador: 'STCP', status: 'Futuro', start_datetime: new Date(agora + 5 * 86_400_000).toISOString(), end_datetime: new Date(agora + 5.5 * 86_400_000).toISOString() };
+  for (const largura of [320, 390]) {
+    const ctx = await browser.newContext({ viewport: { width: largura, height: 800 }, locale: 'pt-PT', timezoneId: 'Europe/Lisbon', hasTouch: true, isMobile: true, userAgent: UA_TEL, geolocation: CAMPANHA, permissions: ['geolocation'] });
+    await ctx.addInitScript({ content: `try{ localStorage.setItem('parou_aviso_instalar','1'); localStorage.setItem('parou_bemvindo','visto'); }catch(e){}` });
+    await ctx.route(/(tile|openstreetmap|arcgisonline|cartocdn|basemaps)\./i, (r) => r.fulfill({ status: 200, contentType: 'image/png', body: PNG }));
+    await ctx.route('**/api/transit/nearby**', async (r) => {
+      const resp = await r.fetch();
+      const j = await resp.json().catch(() => ({}));
+      j.alerts = [CP, LONGE, MP];
+      await r.fulfill({ response: resp, body: JSON.stringify(j), headers: { ...resp.headers(), 'content-type': 'application/json' } });
+    });
+    const p = await ctx.newPage();
+    const erros = [];
+    p.on('pageerror', (e) => erros.push(String(e).slice(0, 200)));
+    try {
+      await p.goto(BASE + '/', { waitUntil: 'load', timeout: 60000 });
+      await p.locator('[data-teste="aviso-perto"]:visible').first().waitFor({ state: 'visible', timeout: 40000 });
+      await p.waitForTimeout(500);
+      const linhas = await p.$$eval('[data-teste="aviso-perto"]', (els) => els.filter((e) => e.getBoundingClientRect().width > 0).map((e) => e.innerText.replace(/\s+/g, ' ')));
+      ok(`[${largura}] duas greves: aparecem as duas (CP e Metro do Porto), e não a de daqui a 5 dias`, linhas.length === 2 && linhas.some((x) => /CP|Perturbações/.test(x)) && linhas.some((x) => /Metro do Porto/.test(x)) && !linhas.some((x) => /STCP/.test(x)), JSON.stringify(linhas));
+      ok(`[${largura}] a do Metro (véspera a decorrer) vem primeiro e diz «Hoje»`, /Metro do Porto/.test(linhas[0] || '') && /HOJE|Hoje/.test(linhas[0] || ''), linhas[0]);
+      ok(`[${largura}] a da CP (a decorrer) diz «Greve»`, /GREVE|Greve/.test(linhas[1] || ''), linhas[1]);
+      const alturas = await p.$$eval('[data-teste="aviso-perto"]', (els) => els.filter((e) => e.getBoundingClientRect().width > 0).map((e) => Math.round(e.getBoundingClientRect().height)));
+      ok(`[${largura}] duas greves: cada aviso com alvo de toque ≥ 40 px`, alturas.length === 2 && alturas.every((h) => h >= 40), JSON.stringify(alturas));
+      const lateral = await p.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+      ok(`[${largura}] duas greves: sem scroll para o lado`, lateral <= 0, `${lateral}px`);
+      await p.screenshot({ path: `${SAIDA}/aviso-perto-duas_${largura}.png` });
+      ok(`[${largura}] sem erros na página (duas greves)`, erros.length === 0, erros.join(' | '));
+    } catch (e) {
+      ok(`[${largura}] duas greves: o ecrã abriu`, false, String(e).slice(0, 200));
+    }
+    await ctx.close();
+  }
+}
+
 await browser.close();
 console.log();
 console.log(falhas ? `${falhas} falha(s)` : 'Tudo OK');
