@@ -1,0 +1,177 @@
+== 2026-11-26T12:51:48Z acao=comando
+IP: 2.31.13.85
+== Saída no servidor
+== ficheiros
+src/hooks/useUserLocation.ts
+src/utils/movimentoAparelho.ts
+src/utils/filtroGps.ts
+src/utils/posicaoSuave.ts
+== src/utils/movimentoAparelho.ts
+// Movimento do telemóvel (acelerómetro): diz se o aparelho está quieto ou a ser levado a andar.
+// Serve ao filtro do GPS: dentro de casa o GPS dá posições "por rede" que saltam dezenas de metros mesmo com a pessoa parada,
+// e só com o GPS não se distingue isso de uma pessoa a andar devagar. Com o telemóvel quieto, o filtro fica mais teimoso.
+// Sem sensor, ou sem licença (iPhone), o estado fica "null" e nada muda: o filtro funciona como antes.
+//
+// Como: tira-se a gravidade (média lenta) à intensidade da aceleração e mede-se a energia do que sobra.
+// Telemóvel numa mesa ≈ 0,02 m/s²; na mão a ler ≈ 0,05–0,3; a andar (mão ou bolso) ≈ 1,5–5 (limiares: estimativa, não foram
+// calibrados em aparelhos reais).
+
+export type EstadoAparelho = 'parado' | 'a-andar' | null;
+
+const LIMIAR_PARADO = 0.45; // m/s² (rms em ~4 s)
+const LIMIAR_ANDAR = 0.9; // m/s² (rms em ~2 s)
+const PARADO_DESDE_MS = 3000; // tem de estar quieto este tempo seguido
+const SEM_EVENTOS_MS = 4000; // sem eventos há mais do que isto: estado desconhecido
+
+let aOuvir = false;
+let ultimoEvento = 0;
+let ultimoT = 0;
+let gravidade = 0;
+let e2Lento = 0; // energia média em ~4 s
+let e2Rapido = 0; // energia média em ~2 s
+let quietoDesde = 0;
+let andarAte = 0;
+let amostras = 0;
+let ligacoes = 0;
+
+function aoMexer(e: Event) {
+  const ev = e as DeviceMotionEvent;
+  const g = ev.accelerationIncludingGravity;
+  let x = g?.x, y = g?.y, z = g?.z;
+  if (typeof x !== 'number' || typeof y !== 'number' || typeof z !== 'number') {
+    // Alguns aparelhos só dão a aceleração sem gravidade
+    const a = ev.acceleration;
+    x = a?.x ?? undefined; y = a?.y ?? undefined; z = a?.z ?? undefined;
+    if (typeof x !== 'number' || typeof y !== 'number' || typeof z !== 'number') return;
+  }
+  const agora = Date.now();
+  const dt = ultimoT ? Math.min(0.5, Math.max(0.002, (agora - ultimoT) / 1000)) : 0.016;
+  ultimoT = agora;
+  ultimoEvento = agora;
+  const mag = Math.sqrt(x * x + y * y + z * z);
+  if (!Number.isFinite(mag)) return;
+  if (amostras === 0) gravidade = mag;
+  amostras++;
+  // Média lenta (≈ 0,6 s) = gravidade (+ aceleração constante); o resto é movimento
+  gravidade += (mag - gravidade) * (1 - Math.exp(-dt / 0.6));
+  const hp = mag - gravidade;
+  const e2 = hp * hp;
+  e2Lento += (e2 - e2Lento) * (1 - Math.exp(-dt / 4));
+  e2Rapido += (e2 - e2Rapido) * (1 - Math.exp(-dt / 2));
+  if (amostras < 20) return; // arranque: ainda sem média
+  if (Math.sqrt(e2Rapido) >= LIMIAR_ANDAR) { andarAte = agora; quietoDesde = 0; }
+  if (Math.sqrt(e2Lento) < LIMIAR_PARADO) { if (!quietoDesde) quietoDesde = agora; } else { quietoDesde = 0; }
+}
+
+/** Começa a ouvir o acelerómetro (não pede nada: onde falta licença, como no iPhone, simplesmente não chegam eventos). Devolve a função que para. */
+export function ligarMovimento(): () => void {
+  if (typeof window === 'undefined' || !('DeviceMotionEvent' in window)) return () => {};
+  ligacoes++;
+  if (!aOuvir) {
+    aOuvir = true;
+    ultimoT = 0; amostras = 0; e2Lento = 0; e2Rapido = 0; quietoDesde = 0; andarAte = 0;
+    window.addEventListener('devicemotion', aoMexer, { passive: true } as AddEventListenerOptions);
+  }
+  let ativo = true;
+  return () => {
+    if (!ativo) return;
+    ativo = false;
+    ligacoes--;
+    if (ligacoes <= 0) {
+      ligacoes = 0;
+      aOuvir = false;
+      window.removeEventListener('devicemotion', aoMexer);
+    }
+  };
+}
+
+/** 'parado': quieto há mais de 3 s · 'a-andar': movimento sustentado de quem anda · null: não se sabe */
+export function estadoAparelho(agora: number = Date.now()): EstadoAparelho {
+  if (!aOuvir || agora - ultimoEvento > SEM_EVENTOS_MS) return null;
+  if (agora - andarAte < 3000) return 'a-andar';
+  if (quietoDesde && agora - quietoDesde >= PARADO_DESDE_MS) return 'parado';
+  return null;
+}
+== src/utils/filtroGps.ts
+450 src/utils/filtroGps.ts
+8://  3. Filtro de Kalman de velocidade constante (posição + velocidade em cada eixo, em metros):
+10://     Como a velocidade faz parte do estado, o ruído é alisado sem atraso (o ponto não fica para trás no autocarro).
+11://  4. Usa também a velocidade e o rumo medidos pelo GPS (efeito Doppler), que são muito mais certos do que
+15://  6. Parado (paragem, semáforo): a velocidade fica a zero e o ponto praticamente não se mexe,
+17://  7. estimarEm(): onde estamos *agora* (avança a posição pela velocidade desde a última leitura),
+32:  /** velocidade em m/s medida pelo GPS (efeito Doppler), se o telemóvel a der */
+33:  velocidade?: number | null;
+44:  velocidade: number;
+45:  /** componentes da velocidade (m/s): leste e norte */
+50:  parado: boolean;
+57:/** Um eixo: posição e velocidade (metros, m/s) e a sua covariância. */
+114:    // Telemóvel quieto (acelerómetro) com pouca informação do GPS (sem velocidade e precisão declarada ≥ accBaixa m: dentro de casa,
+115:    // rua estreita, posição "por rede"): a velocidade tirada só das posições é ruído e um salto de grupo de leituras parece uma
+116:    // manobra. Quem está parado não se teletransporta, por isso o filtro fica menos ágil e confia menos em cada leitura.
+127:  private parado = false;
+131:  private ignoradas = 0;
+136:  /** leituras seguidas sem velocidade do GPS utilizável */
+139:  aparelho: 'parado' | 'a-andar' | null = null;
+140:  /** últimas velocidades estimadas (m/s): se a mediana é alta vai-se de veículo e o "telemóvel quieto" não quer dizer pessoa parada */
+158:    this.parado = false;
+162:    this.ignoradas = 0;
+183:  private velocidadeDoppler(l: LeituraGps): { ve: number; vn: number; R: number; v: number } | null {
+184:    const v = l.velocidade;
+185:    if (v === null || v === undefined || !Number.isFinite(v) || v < 0) return null;
+188:    if (h === null || h === undefined || !Number.isFinite(h)) return null;
+201:    const d = this.velocidadeDoppler(l);
+208:    this.parado = false;
+212:    this.ignoradas = 0;
+222:    if (!Number.isFinite(l.lat) || !Number.isFinite(l.lon) || !Number.isFinite(l.t)) return null;
+243:    if (l.t <= this.t) return null; // repetida ou fora de ordem
+244:    if (excesso > 20_000) return null;
+247:    // Leitura "por rede" (Wi-Fi/antenas) com o GPS bom: ignora, mas não para sempre (túnel longo)
+248:    if (accEf > 120 && sigmaAtual < 50 && dtSeg < 60 && this.ignoradas < 10) {
+249:      this.ignoradas++;
+252:      return null;
+254:    this.ignoradas = 0;
+263:    const quieto = this.aparelho === 'parado' && velMediana < this.ajustes.velVeiculo && l.t >= this.agilAte;
+264:    const baixa = quieto && this.semVel >= 3 && this.accMedia >= this.ajustes.accBaixa;
+265:    const dop = accEf < 100 ? this.velocidadeDoppler(l) : null;
+266:    const sa = this.parado ? 0.08 : Math.min(baixa ? this.ajustes.saMaxBaixa : this.ajustes.saMax, Math.max(this.ajustes.saMin, this.ajustes.saMin * Math.sqrt(Math.max(1, this.nis / this.ajustes.nisBase))));
+281:    // viagem acumula depressa. Passado o limite fica ágil durante 30 s (telemóvel quieto na mão dentro de um veículo sem velocidade do GPS)
+288:      this.parado = false;
+296:      if (this.surpresas >= (quieto ? this.ajustes.surpBaixa : 5)) {
+297:        this.reposicionar(z, accEf, this.velocidadeDoppler(l));
+301:      // Em andamento, uma leitura muito fora (reflexo do sinal) quase não conta; parado conta mais, porque
+303:      // (Se a velocidade medida pelo GPS diz "parado" e a posição salta, o salto é reflexo do sinal: rejeita como em andamento)
+305:      R *= (this.parado || this.surpresas >= this.ajustes.fimRejeitar) && !gpsDizParado ? Math.min(6, d2 / limiarD2) : Math.min(this.ajustes.capR, Math.pow(d2 / limiarD2, this.ajustes.expR));
+327:    // Sem velocidade do GPS, parado a velocidade fica a zero e não serve de pista: sai-se quando as leituras
+328:    // se afastam do ponto parado 3 vezes seguidas
+329:    const emMovimento = dop ? dop.v > 1.0 : (this.parado ? d2 > this.ajustes.saindoD2 : velEst > 1.2);
+332:    if (!this.parado && this.contParado >= 3) {
+333:      this.parado = true;
+334:    } else if (this.parado && this.contMov >= (dop ? 2 : (baixa ? this.ajustes.saindoNBaixa : this.ajustes.saindoN))) {
+335:      this.parado = false;
+338:    if (this.parado) {
+356:    this.parado = false;
+363:    const mover = this.parado ? 0 : dt;
+372:    if (!this.parado && vel >= 2.0) {
+376:    return { lat, lon, precisao, velocidade: this.parado ? 0 : vel, ve: this.parado ? 0 : this.x.v, vn: this.parado ? 0 : this.y.v, rumo, parado: this.parado, t: t + dt * 1000, semLeituras: semChegada };
+380:   * Onde estamos neste instante (relógio local, ms): avança a posição pela velocidade desde a última leitura,
+== src/utils/posicaoSuave.ts
+99 src/utils/posicaoSuave.ts
+2:// (avançada pela velocidade desde a última leitura do GPS) e aproxima o ponto desse sítio com uma curva suave.
+16:  velocidade: number;
+17:  parado: boolean;
+56:  const q: QuadroPosicao = { lat: deslizador.lat, lon: deslizador.lon, precisao: est.precisao, rumo: deslizador.rumo, velocidade: est.velocidade, parado: est.parado, semLeituras: est.semLeituras };
+== erros gps no servidor
+Nov 26 03:19:58 parou env[808155]: [Erro no browser] gps | / | a pedir a localização há mais de 15 s | permissão granted | visible | 78:st:idle 656:g1:L/6s 656:g2:H/15s 656:w3:H/15s 656:w3=#1 669:g1:erro1 671:g2:erro1 671:g4:L/12s 671:w3:erro1 678:g4:erro1 679:st:requesting/sistema 693:st:denied/sistema 12090:x#1 12090:g5:L/6s 12092:g6:H/15s 12093:w7:H/15s 12093:w7=#2 12111:st:requesting/sistema 12112:g8:L/5s 17113:g8:erro3 18090:g5:erro3 21079:g9:L/5s 24082:g10:L/5s 26079:g9:erro3 27024:x#2 27024:g11:L/6s 27024:g12:H/15s 27024:w13:H/15s 27024:w13=#3 27079:g14:L/5s 27093:g6:erro3 27093:g15:L/12s 29083:g10:erro3 29568:x#3 29568:g16:L/6s 29568:g17:H/15s 29568:w18:H/15s 29568:w18=#4 30080:g19:L/5s | Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Mobile Safari/537.36
+Nov 26 06:12:00 parou env[845201]: [Erro no browser] gps | / | muitas mudanças de estado em 30 s | permissão denied | visible | 59:st:idle 6172:g1:L/6s 6172:g2:H/15s 6172:w3:H/15s 6172:w3=#26 6175:st:requesting 6188:g2:erro1 6188:g4:L/12s 6188:w3:erro1 6189:g1:erro1 6189:g4:erro1 6195:st:denied 6196:st:denied/site 8027:x#26 8027:g5:L/6s 8027:g6:H/15s 8027:w7:H/15s 8027:w7=#31 8031:st:requesting/site 8031:g5:erro1 8031:g6:erro1 8031:g8:L/12s 8031:w7:erro1 8037:g8:erro1 8044:st:denied/site 9437:x#31 9437:g9:L/6s 9437:g10:H/15s 9437:w11:H/15s 9437:w11=#37 9441:st:requesting/site 9441:g9:erro1 9441:g10:erro1 9441:g12:L/12s 9441:w11:erro1 9443:g12:erro1 9449:st:denied/site | Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.1 Mobile/15E1
+Nov 26 07:18:51 parou env[845201]: [Erro no browser] gps | / | muitas mudanças de estado em 30 s | permissão denied | visible | 75:st:idle 4391:g1:L/6s 4392:g2:H/15s 4392:w3:H/15s 4392:w3=#119 4394:st:requesting 4396:g2:erro1 4396:g4:L/12s 4396:w3:erro1 4396:g1:erro1 4396:g4:erro1 4401:st:denied 4404:st:denied/site 5811:x#119 5811:g5:L/6s 5811:g6:H/15s 5811:w7:H/15s 5811:w7=#152 5814:st:requesting/site 5814:g5:erro1 5815:g6:erro1 5815:g8:L/12s 5815:w7:erro1 5818:g8:erro1 5826:st:denied/site 6810:x#152 6810:g9:L/6s 6810:g10:H/15s 6810:w11:H/15s 6810:w11=#155 6813:st:requesting/site 6813:g9:erro1 6813:g10:erro1 6813:g12:L/12s 6813:w11:erro1 6818:g12:erro1 6821:st:denied/site | Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.6.1 Mobile/15
+Nov 26 07:59:28 parou env[845201]: [Erro no browser] gps | / | muitas mudanças de estado em 30 s | permissão granted | visible | 97:st:active 203:g1:L/6s 204:g2:H/15s 204:w3:H/15s 204:w3=#1 238:st:requesting/sistema 294:g1:erro1 298:g2:erro1 298:g4:L/12s 301:w3:erro1 306:g4:erro1 335:st:denied/sistema 2544:x#1 2544:g5:L/6s 2544:g6:H/15s 2544:w7:H/15s 2544:w7=#2 2552:st:requesting/sistema 2566:g5:erro1 2567:g6:erro1 2567:g8:L/12s 2567:w7:erro1 2567:g8:erro1 2586:st:denied/sistema 12102:x#2 12102:g9:L/6s 12102:g10:H/15s 12102:w11:H/15s 12102:w11=#3 12107:st:requesting/sistema 12107:g12:L/2s 12599:st:active/sistema 12817:g10:ok:5m 12821:g9:ok:5m 12822:g12:ok:5m 12822:w11:ok:5m 12840:st:active | Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Mobile Safari/537.36
+Nov 26 08:10:19 parou env[845201]: [Erro no browser] gps | / | muitas mudanças de estado em 30 s | permissão denied | visible | 45:st:idle 74451:g1:L/6s 74452:g2:H/15s 74452:w3:H/15s 74452:w3=#111 74454:st:requesting 74463:g2:erro1 74463:g4:L/12s 74464:w3:erro1 74464:g1:erro1 74464:g4:erro1 74470:st:denied/site 75968:x#111 75968:g5:L/6s 75968:g6:H/15s 75968:w7:H/15s 75968:w7=#120 75970:st:requesting/site 75973:g5:erro1 75974:g6:erro1 75974:g8:L/12s 75974:w7:erro1 75976:g8:erro1 75979:st:denied/site 77034:x#120 77034:g9:L/6s 77034:g10:H/15s 77034:w11:H/15s 77034:w11=#126 77037:st:requesting/site 77042:g9:erro1 77042:g10:erro1 77042:g12:L/12s 77042:w11:erro1 77046:g12:erro1 77052:st:denied/site 78026:x#126 78026:g13:L/6s | Mozilla/5.0 (iPhone; CPU iPhone OS 27_2_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/158.0.8127.35 Mo
+Nov 26 08:10:52 parou env[845201]: [Erro no browser] gps | / | muitas mudanças de estado em 30 s | permissão denied | visible | 40:st:idle 1064:g1:L/6s 1064:g2:H/15s 1064:w3:H/15s 1064:w3=#22 1066:st:requesting 1072:g2:erro1 1072:g4:L/12s 1072:w3:erro1 1072:g1:erro1 1072:g4:erro1 1078:st:denied 1082:st:denied/site 9374:x#22 9374:g5:L/6s 9374:g6:H/15s 9374:w7:H/15s 9374:w7=#91 9376:st:requesting/site 9377:g5:erro1 9377:g6:erro1 9377:g8:L/12s 9377:w7:erro1 9382:g8:erro1 9385:st:denied/site 10847:x#91 10847:g9:L/6s 10847:g10:H/15s 10847:w11:H/15s 10847:w11=#126 10848:st:requesting/site 10849:g9:erro1 10849:g10:erro1 10849:g12:L/12s 10849:w11:erro1 10851:g12:erro1 10853:st:denied/site | Mozilla/5.0 (iPhone; CPU iPhone OS 27_2_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) GSA/448.4.1021463781 M
+Nov 26 08:55:21 parou env[845201]: [Erro no browser] gps | / | muitas mudanças de estado em 30 s | permissão denied | visible | 42:st:idle 7602:g1:L/6s 7602:g2:H/15s 7602:w3:H/15s 7602:w3=#26 7604:st:requesting 7614:g2:erro1 7614:g4:L/12s 7614:w3:erro1 7615:g1:erro1 7615:g4:erro1 7620:st:denied 7621:st:denied/site 10156:x#26 10156:g5:L/6s 10156:g6:H/15s 10156:w7:H/15s 10156:w7=#42 10159:st:requesting/site 10159:g5:erro1 10159:g6:erro1 10159:g8:L/12s 10159:w7:erro1 10163:g8:erro1 10166:st:denied/site 13245:x#42 13245:g9:L/6s 13245:g10:H/15s 13245:w11:H/15s 13245:w11=#60 13248:st:requesting/site 13248:g9:erro1 13248:g10:erro1 13248:g12:L/12s 13248:w11:erro1 13252:g12:erro1 13255:st:denied/site | Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.2 Mobile/15E1
+Nov 26 10:11:48 parou env[845201]: [Erro no browser] gps | / | a pedir a localização há mais de 15 s | permissão granted | visible | 277:st:idle 5361:st:active 60186:g1:L/6s 60187:g2:H/15s 60187:w3:H/15s 60187:w3=#1 60203:st:requesting 63584:x#1 63584:g4:L/6s 63584:g5:H/15s 63584:w6:H/15s 63585:w6=#2 66187:g1:erro3 69591:g4:erro3 74116:x#2 74116:g7:L/6s 74116:g8:H/15s 74116:w9:H/15s 74116:w9=#3 75187:g2:erro3 75192:g10:L/12s | Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Mobile Safari/537.36
+Nov 26 11:19:42 parou env[845201]: [Erro no browser] gps | / | muitas mudanças de estado em 30 s | permissão prompt | visible | 22:st:idle 15550:g1:L/6s 15550:g2:H/15s 15550:w3:H/15s 15550:w3=#1 15553:st:requesting 15660:g1:erro1 15662:st:denied 15664:g2:erro1 15664:g4:L/12s 15686:st:denied/recusado 15745:w3:erro1 17350:x#1 17350:g5:L/6s 17351:g6:H/15s 17351:w7:H/15s 17351:w7=#2 17354:st:requesting/recusado 17414:g4:erro1 17417:st:denied/recusado 17441:g5:erro1 17445:g6:erro1 17445:g8:L/12s 17538:w7:erro1 33622:g8:erro1 36990:x#2 36990:g9:L/6s 36990:g10:H/15s 36990:w11:H/15s 36990:w11=#3 36994:st:requesting/recusado 37062:g9:erro1 37064:st:denied/recusado 37066:g10:erro1 37066:g12:L/12s 37139:w11:erro1 38839:x#3 38839: | Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:161.0) Gecko/20100101 Firefox/161.0
+Nov 26 12:03:30 parou env[978124]: [Erro no browser] gps | / | a pedir a localização há mais de 15 s | permissão prompt | visible | 62:st:idle 937:g1:L/6s 937:g2:H/15s 937:w3:H/15s 937:w3=#1 943:st:requesting 6937:g1:erro3 13969:x#1 13969:g4:L/6s 13969:g5:H/15s 13969:w6:H/15s 13969:w6=#2 15937:g2:erro3 15940:g7:L/12s 15978:x#2 15978:g8:L/6s 15978:g9:H/15s 15978:w10:H/15s 15978:w10=#3 17129:x#3 17129:g11:L/6s 17129:g12:H/15s 17129:w13:H/15s 17129:w13=#4 17843:x#4 17843:g14:L/6s 17843:g15:H/15s 17843:w16:H/15s 17843:w16=#5 18279:x#5 18279:g17:L/6s 18279:g18:H/15s 18279:w19:H/15s 18279:w19=#6 19969:g4:erro3 | Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Mobile Safari/537.36
+Nov 26 12:04:03 parou env[978124]: [Erro no browser] gps | / | a pedir a localização há mais de 15 s | permissão granted | hidden | 119:st:idle 52341:g1:L/6s 52341:g2:H/15s 52342:w3:H/15s 52342:w3=#1 52350:st:requesting | Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/158.0.0.0 Mobile Safari/537.36
+== Teste de fora
+https://2-31-13-85.sslip.io/health 200 0.506307s
+https://2-31-13-85.sslip.io/api/transit/loading-status 200 0.507731s
