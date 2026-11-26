@@ -1,0 +1,34 @@
+== 2026-11-26T11:33:01Z acao=comando
+IP: 2.31.13.85
+== Saída no servidor
+== local
+[{"relation":["delegate_permission/common.handle_all_urls"],"target":{"namespace":"android_app","package_name":"pt.parou.app","sha256_cert_fingerprints":["13:BD:79:AE:A8:96:4D:FF:FD:7E:D3:12:46:F5:59:3A:C6:5D:5F:65:90:9C:C0:CB:56:FD:FA:60:EE:DE:27:3B"]}}]
+== publico
+[{"relation":["delegate_permission/common.handle_all_urls"],"target":{"namespace":"android_app","package_name":"pt.parou.app","sha256_cert_fingerprints":["13:BD:79:AE:A8:96:4D:FF:FD:7E:D3:12:46:F5:59:3A:C6:5D:5F:65:90:9C:C0:CB:56:FD:FA:60:EE:DE:27:3B"]}}]
+== env
+== codigo
+/opt/parou/atual/server.main.ts:217:// Google Play (assinatura da app) junta-se pela variável ANDROID_SHA256_EXTRA (separadas por vírgula).
+/opt/parou/atual/server.main.ts:220:  ...String(process.env.ANDROID_SHA256_EXTRA || '').split(',').map((x) => x.trim()).filter(Boolean),
+/opt/parou/atual/server.main.ts:222:app.get('/.well-known/assetlinks.json', (_req: Request, res: Response) => {
+bunfig.toml
+data
+dist
+index.html
+metadata.json
+node_modules
+package.json
+package-lock.json
+public
+server.main.ts
+server.ts
+src
+tsconfig.json
+vite.config.ts
+vite.temas.ts
+== systemd
+EnvironmentFile=/etc/parou.env
+Environment=PATH=/usr/local/bin:/usr/bin:/bin
+ExecStart=/usr/bin/env node --import tsx server.ts
+== Teste de fora
+https://2-31-13-85.sslip.io/health 200 0.659902s
+https://2-31-13-85.sslip.io/api/transit/loading-status 200 0.482754s
