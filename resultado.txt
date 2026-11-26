@@ -1,0 +1,69 @@
+== 2026-11-26T13:32:42Z acao=comando
+IP: 2.31.13.85
+== Saída no servidor
+primeira linha topAlert: 1717
+1717:  const topAlert = contextualAlerts[0] || null;
+2259:        {!emRota && topAlert && localizacaoPronta && (
+2268:              <span className="font-semibold truncate">{topAlert.título || (topAlert as any).title}</span>
+2271:              {topAlert.tipo === 'greve' ? t('Greve') : topAlert.severity}
+      if (!porId.has(id)) { m.marker.remove(); marcadores.delete(id); }
+    });
+
+    porId.forEach((stop, id) => {
+      const lat = Number(stop.latitude);
+      const lon = Number(stop.longitude);
+      const modo = normalizeTransportMode(stop.transportMode);
+      const sel = selecionadaId === id;
+      const atual = marcadores.get(id);
+      if (atual) {
+        if (atual.lat !== lat || atual.lon !== lon) { atual.marker.setLatLng([lat, lon]); atual.lat = lat; atual.lon = lon; }
+        if (atual.modo !== modo || atual.sel !== sel) {
+          atual.marker.setIcon(iconeParagem(modo, sel));
+          atual.marker.setZIndexOffset(sel ? 1000 : 0);
+          atual.modo = modo; atual.sel = sel;
+        }
+        return;
+      }
+      const estilo = ESTILO_MODO[modo] || ESTILO_MODO.Autocarro;
+      const marker = L.marker([lat, lon], { icon: iconeParagem(modo, sel), zIndexOffset: sel ? 1000 : 0, title: `${estilo.plural} – ${formatTransitName(stop.name)}` }).addTo(map);
+      // Lê a paragem mais recente (os dados vão sendo atualizados de 30 em 30 s)
+      marker.on('click', () => {
+        const maisRecente = paragensPorIdRef.current.get(id) || stop;
+        setSelectedStop(maisRecente);
+        setFollowMode(false);
+        safeFlyTo(mapRef.current, Number(maisRecente.latitude), Number(maisRecente.longitude), 16.5);
+      });
+      marcadores.set(id, { marker, modo, sel, lat, lon });
+    });
+  }, [filteredStops, selectedStop?.id, linhaNoMapa]);
+
+  // Ajusta o mapa quando muda de altura
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      mapRef.current?.invalidateSize();
+    }, 320);
+    return () => clearTimeout(timer);
+  }, [mapaExpandido, Boolean(linhaAberta)]);
+
+  // Primary short alert
+  const topAlert = contextualAlerts[0] || null;
+
+  const raio = raioUsado || selectedRadius;
+  const raioTexto = raio >= 1000 ? `${(raio / 1000).toLocaleString(LOCALE)} km` : textoMetros(raio);
+  const subtitulo = !localizacaoPronta
+    ? (gpsStatus === 'requesting' ? t('A obter a tua localização…') : t('À espera da tua localização'))
+    : isDbLoading && filteredStops.length === 0
+      ? traduzirCarregamento(dbLoadingMessage || 'A carregar horários…')
+      : userCoords?.isManual
+        ? t('Perto de {local}', { local: userCoords.locationLabel || t('local escolhido') })
+        : `${tn(filteredStops.length, '{n} paragem até {d}', '{n} paragens até {d}', { d: raioTexto })}${
+            userCoords && userCoords.accuracy > 150 ? t(' · a afinar a posição…') : ''
+          }`;
+
+  const iconeModo = (modo: string) => {
+    const m = normalizeTransportMode(modo);
+== aviso real
+{"t":"Greve - serviços mínimos a 24 e 25 de novembro","op":"CP","st":"Ativo","tipo":"greve","s":"2026-11-23T00:00:00.000Z","e":"2026-11-27T23:59:59.999Z","src":"CP — avisos oficiais"}
+== Teste de fora
+https://2-31-13-85.sslip.io/health 200 1.351705s
+https://2-31-13-85.sslip.io/api/transit/loading-status 200 0.477492s
