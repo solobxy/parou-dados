@@ -145,7 +145,10 @@ jobs:
           # de ponta a ponta: com o metro em greve, aparece a melhor opção sem greve (Trindade → Aeroporto, 601)
           APP=$PWD node --import tsx ../auditoria/planeador-greve-alternativa.mjs 2>&1 | grep -v "Experimental\|trace-warnings" | tee ../res/planeador-greve-alternativa.txt | tail -20
           l=${PIPESTATUS[0]}
-          exit $(( a || b || c || d || e || f || g || h || i || j || k || l ))
+          # estado das linhas da Metro do Porto (página inicial): leitor da lista oficial
+          APP=$PWD node --import tsx ../auditoria/metro-porto-estado.mjs 2>&1 | grep -v "Experimental\|trace-warnings" | tee ../res/metro-porto-estado.txt | tail -20
+          m=${PIPESTATUS[0]}
+          exit $(( a || b || c || d || e || f || g || h || i || j || k || l || m ))
 
       - name: Testes da pesquisa de destinos, da cache com limite e do idioma do aparelho
         continue-on-error: true
