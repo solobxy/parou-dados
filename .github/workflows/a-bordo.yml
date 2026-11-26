@@ -241,6 +241,14 @@ jobs:
           mkdir -p ../res
           SAIDA=../res RAPIDO=${{ inputs.rapido }} timeout 1800 node a-bordo.mjs 2>&1 | tee ../res/consola.txt | tail -250
 
+      - name: Testar o aviso de saída em direto (acompanha o autocarro atrasado ou adiantado)
+        continue-on-error: true
+        working-directory: app
+        run: |
+          mkdir -p ../res
+          APP=$PWD node --import tsx ../auditoria/lembrete-direto.mjs 2>&1 | grep -v "Experimental\|trace-warnings" | tee ../res/lembrete-direto.txt | tail -40
+          exit ${PIPESTATUS[0]}
+
       - name: Testar a localização automática (ligar a localização do telemóvel com a app aberta, sem tocar em nada)
         continue-on-error: true
         working-directory: auditoria
