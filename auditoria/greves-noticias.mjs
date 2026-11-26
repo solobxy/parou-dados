@@ -71,6 +71,37 @@ const cpRtp = { titulo: 'Greve dos maquinistas da CP suprime quase 30% dos combo
 const cpOficial = { id: 'alert-cp-greve-23a27-nov', tipo: 'greve', operador: 'CP', status: 'Ativo', start_datetime: '2026-11-23T00:00:00.000Z', end_datetime: '2026-11-27T23:59:59.999Z' };
 const cpFalsa = G.grevesDasNoticias([cpRtp], new Date('2026-11-26T13:20:00Z'), [cpOficial]);
 ok('notícia da greve da CP em curso (com aviso oficial de 23 a 27/11) não cria greve a 3/12', cpFalsa.length === 0, JSON.stringify(cpFalsa.map((x) => [x.operador, x.start_datetime])));
+// 26/11/2026: o resumo «O Essencial RTP» de segunda 23/11 («notícias desta segunda-feira») criou uma greve falsa da CP a 30/11.
+const essencial = { titulo: 'O Essencial RTP. Greve dos maquinistas da CP e nova fábrica da Lego em Portugal', resumo: 'Conheça aqui o Essencial das notícias desta segunda-feira.', fonte: 'RTP Notícias', url: 'https://www.rtp.pt/noticias/pais/essencial', data: '2026-11-23T20:25:43.000Z' };
+const essencialFalsa = G.grevesDasNoticias([essencial], new Date('2026-11-26T03:50:00Z'), [cpOficial]);
+ok('«O Essencial RTP» de segunda 23/11 ("desta segunda-feira") não cria greve da CP a 30/11', essencialFalsa.length === 0, JSON.stringify(essencialFalsa.map((x) => [x.operador, x.start_datetime])));
+
+// Dia da semana que já passou: uma notícia a meio da greve («que começou na segunda-feira») não anuncia uma greve na
+// segunda-feira seguinte. Sem isto, qualquer balanço escrito no passado criava uma greve falsa uma semana depois.
+const QUINTA = DateTime.fromISO('2026-11-26T09:00:00Z'), SEGUNDA = DateTime.fromISO('2026-11-23T21:00:00Z'), SEXTA = DateTime.fromISO('2026-11-27T08:00:00Z');
+const diasDe = (texto, quando) => G.diasDaGreve(texto, quando).map((d) => d.toISODate()).join();
+ok('"que começou na segunda-feira" numa notícia de quinta: não é um dia de greve', diasDe('A greve dos maquinistas da CP, que começou na segunda-feira, continua a suprimir comboios', QUINTA) === '', diasDe('A greve dos maquinistas da CP, que começou na segunda-feira, continua a suprimir comboios', QUINTA));
+ok('"em greve desde segunda-feira": não é um dia de greve', diasDe('Maquinistas em greve desde segunda-feira', QUINTA) === '', diasDe('Maquinistas em greve desde segunda-feira', QUINTA));
+ok('"iniciada na segunda-feira" e "teve início na segunda-feira": não', diasDe('A paralisação iniciada na segunda-feira mantém-se', QUINTA) === '' && diasDe('A greve teve início na segunda-feira', QUINTA) === '' && diasDe('A greve arrancou às 00h00 de segunda-feira', QUINTA) === '');
+ok('"na passada segunda-feira" e "segunda-feira passada": não', diasDe('A greve na passada segunda-feira parou os comboios', QUINTA) === '' && diasDe('A greve de segunda-feira passada parou os comboios', QUINTA) === '' && diasDe('Greve do último sábado deixou o Porto sem metro', QUINTA) === '');
+ok('balanço "a greve de terça-feira suprimiu 75% dos comboios" numa notícia de quinta: não', diasDe('A greve de terça-feira suprimiu 75% dos comboios', QUINTA) === '' && diasDe('Greve de terça-feira teve adesão de 90%', QUINTA) === '', diasDe('A greve de terça-feira suprimiu 75% dos comboios', QUINTA));
+ok('"começou esta segunda-feira" numa notícia de segunda → o próprio dia', diasDe('A greve na STCP começou esta segunda-feira com 90% de adesão', SEGUNDA) === '2026-11-23', diasDe('A greve na STCP começou esta segunda-feira com 90% de adesão', SEGUNDA));
+ok('"começou na segunda-feira" numa notícia de segunda à noite → o próprio dia (não a semana seguinte)', diasDe('A greve na STCP começou na segunda-feira', SEGUNDA) === '2026-11-23', diasDe('A greve na STCP começou na segunda-feira', SEGUNDA));
+ok('"começou na segunda-feira e repete-se na sexta-feira" → sexta 27/11', diasDe('A greve, que começou na segunda-feira, repete-se na sexta-feira', QUINTA) === '2026-11-27', diasDe('A greve, que começou na segunda-feira, repete-se na sexta-feira', QUINTA));
+ok('"prolonga-se até sexta-feira" numa notícia de quinta → 27/11', diasDe('A greve prolonga-se até sexta-feira', QUINTA) === '2026-11-27', diasDe('A greve prolonga-se até sexta-feira', QUINTA));
+ok('"prolonga-se até sexta-feira" numa notícia de sexta → o próprio dia (não a semana seguinte)', diasDe('A greve prolonga-se até sexta-feira', SEXTA) === '2026-11-27' && diasDe('Greve na CP até à sexta-feira', SEXTA) === '2026-11-27', diasDe('A greve prolonga-se até sexta-feira', SEXTA));
+ok('"termina na sexta-feira" numa notícia de sexta → o próprio dia; numa de quinta → 27/11', diasDe('A greve na CP termina na sexta-feira', SEXTA) === '2026-11-27' && diasDe('A greve na CP termina na sexta-feira', QUINTA) === '2026-11-27', diasDe('A greve na CP termina na sexta-feira', SEXTA));
+ok('"desta quinta-feira" numa notícia publicada à meia-noite e dez de sexta: é a véspera, não a quinta seguinte', diasDe('A greve suprimiu 160 comboios desta quinta-feira', DateTime.fromISO('2026-11-27T00:10:00Z')) === '', diasDe('A greve suprimiu 160 comboios desta quinta-feira', DateTime.fromISO('2026-11-27T00:10:00Z')));
+ok('"esta sexta-feira" numa notícia de quarta e "esta segunda-feira" numa de domingo continuam a ser os dias que aí vêm', diasDe('Greve na Carris esta sexta-feira', DateTime.fromISO('2026-11-25T10:00:00Z')) === '2026-11-27' && diasDe('Greve na Carris esta segunda-feira', DateTime.fromISO('2026-11-29T10:00:00Z')) === '2026-11-30',
+  `${diasDe('Greve na Carris esta sexta-feira', DateTime.fromISO('2026-11-25T10:00:00Z'))} ${diasDe('Greve na Carris esta segunda-feira', DateTime.fromISO('2026-11-29T10:00:00Z'))}`);
+ok('o futuro continua a contar: "começa na segunda-feira", "vai começar", "arranca", "a partir de" → 30/11', ['A greve começa na segunda-feira', 'A greve vai começar na segunda-feira', 'A greve arranca na segunda-feira', 'Greve na STCP a partir de segunda-feira', 'Greve marcada para segunda-feira'].every((x) => diasDe(x, QUINTA) === '2026-11-30'),
+  ['A greve começa na segunda-feira', 'A greve vai começar na segunda-feira', 'A greve arranca na segunda-feira', 'Greve na STCP a partir de segunda-feira', 'Greve marcada para segunda-feira'].map((x) => diasDe(x, QUINTA)).join(' | '));
+const cpMeio = { titulo: 'Greve dos maquinistas da CP continua', resumo: 'A greve dos maquinistas da CP, que começou na segunda-feira, continua a suprimir comboios.', fonte: 'RTP Notícias', url: 'https://www.rtp.pt/noticias/economia/cp-meio', data: '2026-11-26T09:00:00.000Z' };
+const cpMeioA = G.grevesDasNoticias([cpMeio], new Date('2026-11-26T09:30:00Z'), [cpOficial]);
+ok('notícia a meio da greve da CP ("que começou na segunda-feira") não cria greve a 30/11', cpMeioA.length === 0, JSON.stringify(cpMeioA.map((x) => [x.operador, x.start_datetime])));
+const stcpMeio = { titulo: 'Greve na STCP continua a parar autocarros', resumo: 'A greve na STCP, que começou na segunda-feira, registou uma adesão de 80%.', fonte: 'Jornal de Notícias', url: 'https://www.jn.pt/stcp-meio', data: '2026-11-26T09:00:00.000Z' };
+const stcpMeioA = G.grevesDasNoticias([stcpMeio], new Date('2026-11-26T09:30:00Z'));
+ok('o mesmo num operador sem aviso oficial (STCP): nenhuma greve falsa na semana seguinte', stcpMeioA.length === 0, JSON.stringify(stcpMeioA.map((x) => [x.operador, x.start_datetime])));
 ok('dezembro → janeiro: "5 de janeiro" numa notícia de dezembro é do ano seguinte', G.diasDaGreve('greve a 5 de janeiro', DateTime.fromISO('2026-12-20T10:00:00Z'))[0]?.toISODate() === '2027-01-05');
 
 // RSS com CDATA e entidades
