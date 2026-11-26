@@ -1,0 +1,76 @@
+== 2026-11-26T12:21:47Z acao=comando
+IP: 2.31.13.85
+== Saída no servidor
+== check 40:0C:8F:67:81:17:6C:E8:09:F6:E2:F8:E9:BE:32:94:84:C4:DF:3E:8A:CE:5E:68:FE:B9:5B:09:1F:27:FC:0D
+{
+  "linked": true,
+  "maxAge": "2360.546248546s"
+}
+
+== check 13:BD:79:AE:A8:96:4D:FF:FD:7E:D3:12:46:F5:59:3A:C6:5D:5F:65:90:9C:C0:CB:56:FD:FA:60:EE:DE:27:3B
+{
+  "linked": true,
+  "maxAge": "246.501614676s"
+}
+
+== list
+{
+  "statements": [
+    {
+      "source": {
+        "web": {
+          "site": "https://parou.pt."
+        }
+      },
+      "relation": "delegate_permission/common.handle_all_urls",
+      "target": {
+        "androidApp": {
+          "packageName": "pt.parou.app",
+          "certificate": {
+            "sha256Fingerprint": "13:BD:79:AE:A8:96:4D:FF:FD:7E:D3:12:46:F5:59:3A:C6:5D:5F:65:90:9C:C0:CB:56:FD:FA:60:EE:DE:27:3B"
+          }
+        }
+      }
+    },
+    {
+      "source": {
+        "web": {
+          "site": "https://parou.pt."
+        }
+      },
+      "relation": "delegate_permission/common.handle_all_urls",
+      "target": {
+        "androidApp": {
+          "packageName": "pt.parou.app",
+          "certificate": {
+            "sha256Fingerprint": "40:0C:8F:67:81:17:6C:E8:09:F6:E2:F8:E9:BE:32:94:84:C4:DF:3E:8A:CE:5E:68:FE:B9:5B:09:1F:27:FC:0D"
+          }
+        }
+      }
+    },
+    {
+      "source": {
+        "web": {
+          "site": "https://parou.pt."
+        }
+      },
+      "relation": "delegate_permission/common.handle_all_urls",
+      "target": {
+        "androidApp": {
+          "packageName": "pt.parou.app",
+          "certificate": {
+            "sha256Fingerprint": "EB:C8:C6:BE:1E:70:DB:10:F1:1F:09:D3:59:B9:C8:90:2C:64:CB:F1:DF:D8:0D:33:61:3C:83:7A:75:AB:95:AA"
+          }
+        }
+      }
+    }
+  ],
+  "maxAge": "2360.178517668s"
+}
+
+== redirecionamentos
+200 
+308 https://parou.pt/.well-known/assetlinks.json
+== Teste de fora
+https://2-31-13-85.sslip.io/health 200 0.420180s
+https://2-31-13-85.sslip.io/api/transit/loading-status 200 0.383798s
