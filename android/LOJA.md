@@ -93,3 +93,7 @@ Depois do primeiro envio: Play Console › Testar e lançar › **Integridade da
 ## Atualizar a app
 
 GitHub › solobxy/parou-dados › Actions › **App Android (Google Play)** › Run workflow, com a versão seguinte (ex.: 1.0.1) e o número seguinte (ex.: 2). A app abre o parou.pt, por isso quase todas as melhorias chegam sem atualizar a app na loja.
+
+## Localização (versão 1.0.1)
+
+Na 1.0.0 a localização era «delegada» à app Android: o Android pedia uma autorização própria da PAROU e, em vários telemóveis, esse pedido não aparecia (a localização ficava recusada sem a pessoa ter recusado nada, e o mapa mostrava a última posição guardada, parada). Desde a 1.0.1 a localização é tratada pelo Chrome, como no site: aparece o pedido normal «parou.pt quer saber a sua localização».
