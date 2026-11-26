@@ -5,7 +5,9 @@
 //   - ecrã (Campanhã, base de teste do CI): o botão «Agora» abre os dias, a hora e «Última de cada linha»; escolher amanhã às
 //     22:00 mostra horas fixas (nada de «X min») iguais às do servidor; «Última de cada linha» mostra uma por linha e destino;
 //     «Agora» volta às partidas em direto; erro com «Tentar outra vez» que recupera; 320 px sem scroll lateral,
-//     alvos de toque de 40 px; capturas a 320/390/1280 px e nos temas.
+//     alvos de toque de 40 px; capturas a 320/390/1280 px e nos temas;
+//   - percurso de uma linha: «Horário do dia nesta paragem» (com a viagem: o sentido dela e as linhas com o mesmo nome);
+//   - rotas: «Sair agora» → amanhã às 22:00 volta a calcular com essa hora; «Agora» volta a agora.
 // Não é num telemóvel a sério.
 // Uso: BASE=http://127.0.0.1:3000 SAIDA=res node escolher-hora.mjs
 import { chromium } from 'playwright';
@@ -180,6 +182,40 @@ for (const largura of [390, 320]) {
     ok('sem erros na página (erro)', erros.length === 0, erros.join(' | '));
   } catch (e) {
     ok('erro: o ecrã funcionou', false, String(e).slice(0, 200));
+  }
+  await ctx.close();
+}
+
+// ---------------------------------------------------------------- percurso aberto: «Horário do dia nesta paragem»
+for (const largura of [390, 320]) {
+  const { ctx, p, erros } = await abrir({ largura });
+  const pedidosDia = [];
+  p.on('request', (r) => { if (/\/api\/lines\/[^/?]+\/dia\?/.test(r.url())) pedidosDia.push(r.url()); });
+  try {
+    // toca na primeira partida da paragem aberta (abre o percurso da linha)
+    await p.locator('.painel-paragem [role="button"][aria-label^="Ver o percurso da linha"]:visible').first().click({ timeout: 15000 });
+    await p.waitForSelector('[data-teste="percurso-linha"]:visible', { timeout: 15000 });
+    const botao = p.locator('[data-teste="horario-linha-paragem"]:visible');
+    await botao.waitFor({ state: 'visible', timeout: 15000 });
+    ok(`[${largura}] percurso: há «Horário do dia nesta paragem»`, /Horário do dia nesta paragem/.test(await botao.innerText()));
+    await botao.click();
+    await p.waitForSelector('[data-teste="horario-dia"]:visible, [data-teste="horario-dia-vazio"]:visible', { timeout: 15000 }).catch(() => {});
+    const horas = await p.$$eval('[data-teste="horario-dia"]', (els) => (els[0]?.innerText || '').match(/\d{1,2}/g)?.length || 0);
+    ok(`[${largura}] percurso: mostra o horário do dia (por horas)`, horas > 0 || await p.locator('[data-teste="horario-dia-vazio"]:visible').count() === 1, `${horas} números`);
+    ok(`[${largura}] percurso: o pedido leva a viagem aberta (sentido e linhas com o mesmo nome)`, /[?&]viagem=/.test(pedidosDia.at(-1) || ''), pedidosDia.at(-1));
+    await p.locator('[data-teste="horario-linha-dia"] [data-teste="dias-horario"] button').nth(1).click();
+    await p.waitForTimeout(400);
+    ok(`[${largura}] percurso: «Amanhã» pede o horário de amanhã`, (pedidosDia.at(-1) || '').includes(`data=${AMANHA}`), pedidosDia.at(-1));
+    await p.waitForSelector('[data-teste="horario-dia"]:visible, [data-teste="horario-dia-vazio"]:visible', { timeout: 15000 }).catch(() => {});
+    const lateral = await p.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+    ok(`[${largura}] percurso: sem scroll para o lado`, lateral <= 0, `${lateral}px`);
+    await p.screenshot({ path: `${SAIDA}/escolher-hora_${largura}_horario-linha.png` });
+    await botao.click();
+    ok(`[${largura}] percurso: «Ver o percurso» volta às paragens da viagem`, await p.locator('[data-teste="horario-linha-dia"]:visible').count() === 0 && /Horário do dia/.test(await botao.innerText()));
+    ok(`[${largura}] sem erros na página (percurso)`, erros.length === 0, erros.join(' | '));
+  } catch (e) {
+    ok(`[${largura}] percurso: o ecrã funcionou`, false, String(e).slice(0, 200));
+    await p.screenshot({ path: `${SAIDA}/escolher-hora_${largura}_horario-linha_erro.png` }).catch(() => {});
   }
   await ctx.close();
 }
