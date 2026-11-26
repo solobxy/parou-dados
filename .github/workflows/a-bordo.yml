@@ -249,6 +249,16 @@ jobs:
           APP=$PWD node --import tsx ../auditoria/lembrete-direto.mjs 2>&1 | grep -v "Experimental\|trace-warnings" | tee ../res/lembrete-direto.txt | tail -40
           exit ${PIPESTATUS[0]}
 
+      - name: Testar partilhar a viagem (servidor e ecrã)
+        continue-on-error: true
+        working-directory: app
+        run: |
+          mkdir -p ../res
+          APP=$PWD node --import tsx ../auditoria/partilha-viagem.mjs 2>&1 | grep -v "Experimental\|trace-warnings" | tee ../res/partilha-viagem.txt | tail -30
+          a=${PIPESTATUS[0]}
+          (cd ../auditoria && SAIDA=../res timeout 300 node partilha-ui.mjs 2>&1 | tee ../res/partilha-ui.txt | tail -30)
+          exit $a
+
       - name: Testar a localização automática (ligar a localização do telemóvel com a app aberta, sem tocar em nada)
         continue-on-error: true
         working-directory: auditoria
