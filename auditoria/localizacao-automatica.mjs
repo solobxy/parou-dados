@@ -16,9 +16,14 @@ const ok = (nome, cond, extra = '') => { if (!cond) falhas++; console.log(cond ?
 const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGP4z8DwHwAFAAH/q842iQAAAABJRU5ErkJggg==', 'base64');
 const UA = 'Mozilla/5.0 (Linux; Android 14; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Mobile Safari/537.36';
 
-// estado: 'granted' (site autorizado) ou 'prompt' (nunca perguntado)
+// estado: 'granted' (site autorizado, e o browser di-lo sempre), 'prompt' (nunca perguntado), ou como o Chrome real no
+// Android (lido no código do Chromium, geolocation_permission_context_android.cc): com a localização do telemóvel
+// desligada, o Chrome responde que a autorização de um site JÁ autorizado está «por pedir» ('chrome-aviso', quando ainda
+// pode mostrar o aviso «Ligar a localização?») ou «recusada» ('chrome-pausa', na pausa depois de alguém fechar esse
+// aviso), e só volta a «autorizado» quando a pessoa liga a localização. 'prompt-ja-deu': a pessoa já deu a localização
+// à PAROU mas a autorização do site foi retirada entretanto.
 const TELEMOVEL = (estado) => `(() => {
-  const G = { ligada: false, pedidos: 0, entregues: 0, watches: new Map(), id: 1 };
+  const G = { ligada: false, pedidos: 0, entregues: 0, consultas: 0, watches: new Map(), id: 1 };
   window.__geo = G;
   const erro = { code: 1, PERMISSION_DENIED: 1, POSITION_UNAVAILABLE: 2, TIMEOUT: 3, message: 'User denied Geolocation' };
   const pos = () => ({ coords: { latitude: 41.15054, longitude: -8.586245, accuracy: 12, heading: null, speed: null, altitude: null, altitudeAccuracy: null }, timestamp: Date.now() });
@@ -33,10 +38,12 @@ const TELEMOVEL = (estado) => `(() => {
   setInterval(() => { if (G.ligada) for (const n of G.watches.values()) try { n.okf(pos()); } catch (e) {} }, 1000);
   Object.defineProperty(Navigator.prototype, 'geolocation', { get: () => geo, configurable: true });
   const q = navigator.permissions.query.bind(navigator.permissions);
-  navigator.permissions.query = (d) => (d && d.name === 'geolocation') ? Promise.resolve({ state: '${estado}', onchange: null }) : q(d);
+  const MODO = '${estado}';
+  const autorizacao = () => MODO === 'chrome-aviso' ? (G.ligada ? 'granted' : 'prompt') : MODO === 'chrome-pausa' ? (G.ligada ? 'granted' : 'denied') : MODO === 'prompt-ja-deu' ? 'prompt' : MODO;
+  navigator.permissions.query = (d) => (d && d.name === 'geolocation') ? (G.consultas++, Promise.resolve({ state: autorizacao(), onchange: null })) : q(d);
   try {
     localStorage.setItem('parou_aviso_instalar', '1'); localStorage.setItem('parou_bemvindo', 'visto');
-    if ('${estado}' === 'granted') localStorage.setItem('parou_localizacao_ok', '1');
+    if (MODO !== 'prompt') localStorage.setItem('parou_localizacao_ok', '1');
   } catch (e) {}
 })();`;
 
@@ -218,6 +225,100 @@ const aLocalizar = () => [...document.querySelectorAll('body *')].some((e) => e.
   await ctx.close();
 }
 
+// ---- Chrome real no Android (26/11/2026: no telemóvel do Dinis era preciso tocar em «Ativar localização» depois de
+// ligar a localização, e na Moovit aparecia em 1 s; nos cenários de cima o browser diz sempre «autorizado», o que o
+// Chrome real não faz com a localização do telemóvel desligada).
+const convite = () => [...document.querySelectorAll('[data-teste="ativar-localizacao"]')].some((e) => e.getBoundingClientRect().width > 0);
+// o telemóvel já entregou a posição à app e o convite saiu do ecrã
+const comPosicao = () => window.__geo.entregues > 0 && ![...document.querySelectorAll('[data-teste="ativar-localizacao"]')].some((e) => e.getBoundingClientRect().width > 0);
+{ // o Chrome diz «por pedir» enquanto a localização está desligada: a app fica no convite, sem pedidos; ao ligar, aparece sozinha
+  const { ctx, p, erros } = await contexto('chrome-aviso');
+  await p.goto(BASE + '/', { waitUntil: 'load', timeout: 60000 });
+  await p.waitForSelector('[data-teste="ativar-localizacao"]:visible', { timeout: 45000 }).catch(() => {});
+  ok('Chrome real («por pedir»), desligada: a app mostra o convite para ligar', await p.evaluate(convite));
+  await p.waitForTimeout(1500);
+  const c0 = await p.evaluate(() => window.__geo.consultas);
+  await p.waitForTimeout(3000);
+  const c1 = await p.evaluate(() => window.__geo.consultas);
+  const pedidos = await p.evaluate(() => window.__geo.pedidos);
+  ok('Chrome real, desligada: nenhum pedido de localização (não pode abrir a pergunta do browser sozinha)', pedidos === 0, `${pedidos} pedidos`);
+  ok('Chrome real, desligada: vai lendo a autorização, sem exagerar (2 a 8 vezes em 3 s)', c1 - c0 >= 2 && c1 - c0 <= 8, `${c1 - c0} leituras`);
+  const t0 = Date.now();
+  await p.evaluate(() => { window.__geo.ligada = true; });
+  const apareceu = await p.waitForFunction(comPosicao, null, { timeout: 8000 }).then(() => true).catch(() => false);
+  const ms = Date.now() - t0;
+  ok('Chrome real («por pedir»): ao ligar a localização, a app pede e recebe a posição sem ninguém tocar em nada', apareceu, `${ms} ms`);
+  ok('Chrome real («por pedir»): e fá-lo depressa (menos de 2 s)', apareceu && ms < 2000, `${ms} ms`);
+  await p.waitForTimeout(1200);
+  ok('Chrome real («por pedir»): fica com a posição (não volta ao convite nem fica em «A localizar…»)', await p.evaluate(semAtivar) && !(await p.evaluate(aLocalizar)));
+  await p.screenshot({ path: `${SAIDA}/localizacao-automatica-6-chrome-real.png` });
+  // já com a posição no ecrã, deixa de ler a autorização
+  const c2 = await p.evaluate(() => window.__geo.consultas);
+  await p.waitForTimeout(3000);
+  const c3 = await p.evaluate(() => window.__geo.consultas);
+  ok('Chrome real: com a posição no ecrã, deixa de ler a autorização', c3 - c2 <= 1, `${c3 - c2} leituras em 3 s`);
+  ok('sem erros na página (Chrome real, por pedir)', erros.length === 0, erros.join(' | '));
+  await ctx.close();
+}
+
+{ // o Chrome diz «recusada» enquanto a localização está desligada (pausa do aviso): ao ligar, aparece sozinha e depressa
+  const { ctx, p, erros } = await contexto('chrome-pausa');
+  await p.goto(BASE + '/', { waitUntil: 'load', timeout: 60000 });
+  await p.waitForSelector('[data-teste="ativar-localizacao"]:visible', { timeout: 45000 }).catch(() => {});
+  ok('Chrome real («recusada»), desligada: a app pede para ligar a localização', await p.evaluate(convite));
+  await p.waitForTimeout(2500);
+  const t0 = Date.now();
+  await p.evaluate(() => { window.__geo.ligada = true; });
+  const apareceu = await p.waitForFunction(comPosicao, null, { timeout: 15000 }).then(() => true).catch(() => false);
+  const ms = Date.now() - t0;
+  ok('Chrome real («recusada»): ao ligar a localização, aparece sozinha em menos de 2 s', apareceu && ms < 2000, `${ms} ms`);
+  await p.waitForTimeout(1200);
+  ok('Chrome real («recusada»): fica com a posição (não volta ao pedido nem fica em «A localizar…»)', await p.evaluate(semAtivar) && !(await p.evaluate(aLocalizar)));
+  ok('sem erros na página (Chrome real, recusada)', erros.length === 0, erros.join(' | '));
+  await ctx.close();
+}
+
+{ // a pessoa sai da app para ligar a localização nas Definições e volta: com a página escondida nada acontece; ao voltar, aparece
+  const { ctx, p, erros } = await contexto('chrome-aviso');
+  await p.goto(BASE + '/', { waitUntil: 'load', timeout: 60000 });
+  await p.waitForSelector('[data-teste="ativar-localizacao"]:visible', { timeout: 45000 }).catch(() => {});
+  await p.waitForTimeout(1500);
+  await p.evaluate(() => {
+    Object.defineProperty(document, 'visibilityState', { get: () => 'hidden', configurable: true });
+    document.dispatchEvent(new Event('visibilitychange'));
+  });
+  await p.waitForTimeout(800);
+  const c0 = await p.evaluate(() => window.__geo.consultas);
+  await p.evaluate(() => { window.__geo.ligada = true; });
+  await p.waitForTimeout(3000);
+  const escondida = await p.evaluate(() => ({ consultas: window.__geo.consultas, pedidos: window.__geo.pedidos }));
+  ok('página escondida: não lê a autorização nem faz pedidos', escondida.consultas - c0 <= 1 && escondida.pedidos === 0, `${escondida.consultas - c0} leituras, ${escondida.pedidos} pedidos`);
+  const t0 = Date.now();
+  await p.evaluate(() => {
+    Object.defineProperty(document, 'visibilityState', { get: () => 'visible', configurable: true });
+    document.dispatchEvent(new Event('visibilitychange'));
+  });
+  const apareceu = await p.waitForFunction(comPosicao, null, { timeout: 8000 }).then(() => true).catch(() => false);
+  const ms = Date.now() - t0;
+  ok('de volta à app com a localização já ligada: aparece sozinha em menos de 2 s', apareceu && ms < 2000, `${ms} ms`);
+  ok('sem erros na página (voltar das Definições)', erros.length === 0, erros.join(' | '));
+  await ctx.close();
+}
+
+{ // já deu a localização à PAROU, mas a autorização do site foi retirada: ligar a localização do telemóvel não pode levar
+  // a app a pedir a posição sozinha (isso abria a pergunta do browser sem um toque)
+  const { ctx, p, erros } = await contexto('prompt-ja-deu');
+  await p.goto(BASE + '/', { waitUntil: 'load', timeout: 60000 });
+  await p.waitForSelector('[data-teste="ativar-localizacao"]:visible', { timeout: 45000 }).catch(() => {});
+  await p.evaluate(() => { window.__geo.ligada = true; });
+  await p.waitForTimeout(4000);
+  const pedidos = await p.evaluate(() => window.__geo.pedidos);
+  ok('autorização do site retirada: nenhum pedido de localização sem um toque', pedidos === 0, `${pedidos} pedidos`);
+  ok('autorização do site retirada: continua o convite', await p.evaluate(convite));
+  ok('sem erros na página (autorização retirada)', erros.length === 0, erros.join(' | '));
+  await ctx.close();
+}
+
 { // nunca autorizou o site: a app não pergunta sozinha (a pergunta do browser só com um toque)
   const { ctx, p, erros } = await contexto('prompt');
   await p.goto(BASE + '/', { waitUntil: 'load', timeout: 60000 });
@@ -226,6 +327,8 @@ const aLocalizar = () => [...document.querySelectorAll('body *')].some((e) => e.
   await p.waitForTimeout(5000);
   const pedidos = await p.evaluate(() => window.__geo.pedidos);
   ok('site nunca autorizado: nenhum pedido de localização sem um toque', pedidos === 0, `${pedidos} pedidos`);
+  const consultas = await p.evaluate(() => window.__geo.consultas);
+  ok('site nunca autorizado: não fica a ler a autorização sem parar', consultas <= 4, `${consultas} leituras`);
   ok('sem erros na página (sem autorização)', erros.length === 0, erros.join(' | '));
   await ctx.close();
 }
