@@ -116,8 +116,7 @@ for (const largura of [390, 320]) {
     // amanhã às 22:00
     await p.locator('[data-teste="dias-horario"] button').nth(1).click();
     await p.locator('[data-teste="hora-escolhida"]').fill('22:00');
-    // depois de escolher a hora (o seletor fecha), o painel fecha e fica a lista à vista
-    await p.locator('[data-teste="hora-escolhida"]').blur();
+    // ao confirmar a hora no seletor do telemóvel (evento «change»), o painel fecha e fica a lista à vista
     await p.waitForSelector('[data-teste="partida-hora"]:visible', { timeout: 15000 }).catch(() => {});
     const linhas = await visiveis(p, '[data-teste="partida-hora"]');
     ok(`[${largura}] depois de escolher a hora, o painel fecha`, await p.locator('[data-teste="seletor-hora"]:visible').count() === 0);
@@ -172,7 +171,6 @@ for (const largura of [390, 320]) {
   try {
     await p.locator('[data-teste="botao-hora"]:visible').click();
     await p.locator('[data-teste="hora-escolhida"]').fill('22:00');
-    await p.locator('[data-teste="hora-escolhida"]').blur();
     await p.waitForSelector('[data-teste="partidas-hora-erro"]:visible', { timeout: 15000 }).catch(() => {});
     ok('erro: diz que não foi possível e oferece «Tentar outra vez» (não «sem partidas»)', await p.locator('[data-teste="partidas-hora-erro"]:visible').count() === 1 && await p.locator('[data-teste="partidas-hora-vazio"]:visible').count() === 0);
     estado.falhar = false;
@@ -186,13 +184,68 @@ for (const largura of [390, 320]) {
   await ctx.close();
 }
 
+// ---------------------------------------------------------------- rotas: «Sair agora» → amanhã às 22:00
+const TRINDADE = { id: 'teste:trindade', title: 'Estação da Trindade', subtitle: 'Porto', latitude: 41.15228, longitude: -8.609299, type: 'PLACE' };
+for (const largura of [390, 320]) {
+  const { ctx, p, erros } = await abrir({ largura });
+  const planos = [];
+  await ctx.route('**/api/transit/destinations**', (r) => r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ suggestions: [TRINDADE] }) }));
+  p.on('request', (r) => { if (/\/api\/transit\/plan-route\?/.test(r.url())) planos.push(r.url()); });
+  try {
+    // volta à lista e pesquisa um destino
+    await p.locator('[aria-label="Voltar aos transportes perto"]:visible').first().click().catch(() => {});
+    const campo = p.locator('input[placeholder="Para onde vais?"]:visible').first();
+    await campo.click({ timeout: 8000 });
+    await campo.fill('trindade');
+    await p.locator('text=Estação da Trindade >> visible=true').first().click({ timeout: 10000 });
+    await p.waitForSelector('[data-teste="botao-partida"]:visible', { timeout: 20000 });
+    const botao = p.locator('[data-teste="botao-partida"]:visible').first();
+    ok(`[${largura}] rotas: há o botão «Sair agora»`, /Sair agora/.test(await botao.innerText()), await botao.innerText());
+    await p.waitForFunction(() => !/A calcular percursos/.test(document.body.innerText), null, { timeout: 30000 }).catch(() => {});
+    const antes = planos.length;
+    await botao.click();
+    await p.locator('[data-teste="seletor-partida"] [data-teste="dias-horario"] button').nth(1).click();
+    await p.locator('[data-teste="hora-partida"]').fill('22:00');
+    await p.waitForFunction((n) => true, antes, { timeout: 1000 }).catch(() => {});
+    await p.waitForTimeout(600);
+    await p.waitForFunction(() => !/A calcular percursos/.test(document.body.innerText), null, { timeout: 40000 }).catch(() => {});
+    const ultimo = planos.at(-1) || '';
+    const quando = new URL(ultimo || 'http://x/').searchParams.get('quando') || '';
+    const esperado = (() => { // amanhã 22:00 em Lisboa, como instante
+      const g = Date.parse(`${AMANHA}T22:00:00Z`);
+      const lx = new Date(g).toLocaleString('sv-SE', { timeZone: 'Europe/Lisbon' }).replace(' ', 'T');
+      return new Date(g - (Date.parse(`${lx}Z`) - g)).toISOString();
+    })();
+    ok(`[${largura}] rotas: volta a calcular para amanhã às 22:00 (quando=… certo)`, planos.length > antes && quando === esperado, `${quando} vs ${esperado}`);
+    const rotulo = await botao.innerText();
+    ok(`[${largura}] rotas: o botão diz «Sair amanhã, 22:00»`, /amanhã/i.test(rotulo) && /22:00/.test(rotulo), rotulo);
+    const texto = await p.evaluate(() => document.body.innerText);
+    // cada opção começa por «22:03 – 22:14» (sair – chegar)
+    const saidas = [...texto.matchAll(/\b(\d{2}):(\d{2}) – \d{2}:\d{2}\b/g)].map((m) => Number(m[1]) * 60 + Number(m[2]));
+    const semOpcoes = /Sem ligações encontradas/.test(texto);
+    if (semOpcoes) nota(`[${largura}] rotas: sem ligações na base de teste para amanhã às 22:00`);
+    ok(`[${largura}] rotas: as opções saem a partir das 22:00 (ou diz que não há ligações)`, semOpcoes || (saidas.length > 0 && saidas.every((m) => m >= 22 * 60 - 1 || m < 6 * 60)), JSON.stringify(saidas.slice(0, 5)));
+    const lateral = await p.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+    ok(`[${largura}] rotas: sem scroll para o lado`, lateral <= 0, `${lateral}px`);
+    await p.screenshot({ path: `${SAIDA}/escolher-hora_${largura}_rotas.png` });
+    await p.locator('[data-teste="partida-agora"]:visible').first().click();
+    await p.waitForTimeout(600);
+    const depois = new URL(planos.at(-1) || 'http://x/').searchParams.get('quando');
+    ok(`[${largura}] rotas: «Agora» volta a calcular para agora (sem quando)`, !depois && /Sair agora/.test(await botao.innerText()), String(depois));
+    ok(`[${largura}] sem erros na página (rotas)`, erros.length === 0, erros.join(' | '));
+  } catch (e) {
+    ok(`[${largura}] rotas: o ecrã funcionou`, false, String(e).slice(0, 200));
+    await p.screenshot({ path: `${SAIDA}/escolher-hora_${largura}_rotas_erro.png` }).catch(() => {});
+  }
+  await ctx.close();
+}
+
 // capturas nos temas e em 1280 px
 for (const [largura, tema] of [[390, 'escuro'], [390, 'ambar'], [1280, 'claro']]) {
   const { ctx, p } = await abrir({ largura, altura: largura > 1000 ? 860 : 844, tema });
   try {
     await p.locator('[data-teste="botao-hora"]:visible').click();
     await p.locator('[data-teste="hora-escolhida"]').fill('22:00');
-    await p.locator('[data-teste="hora-escolhida"]').blur();
     await p.waitForSelector('[data-teste="partida-hora"]:visible', { timeout: 15000 }).catch(() => {});
     await p.screenshot({ path: `${SAIDA}/escolher-hora_${largura}_${tema}.png` });
     await p.locator('[data-teste="botao-hora"]:visible').click();
