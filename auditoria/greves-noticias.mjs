@@ -122,8 +122,8 @@ ok('autocarro da STCP na sexta não leva a greve do metro', !P.greveDoTroco('stc
 
 // O que continua a funcionar: linha Amarela e Sra. da Hora–Dragão (textos reais da Lusa e da Fama Rádio)
 const sv = G.servicoNaGreve(rtp.resumo + ' Segundo a Metro do Porto, as frequências de passagem em ambas as ligações serão de 15 minutos entre as 07h00 e as 20h00 e de 30 minutos entre as 06h00 e as 07h00.');
-ok('serviço na greve: linha Amarela, troço Senhora da Hora–Estádio do Dragão, 15 min das 7h às 20h',
-  sv && sv.linhas.join() === 'amarela' && sv.trocos.length === 1 && sv.trocos[0][0] === 'senhora da hora' && sv.trocos[0][1] === 'estadio do dragao' && sv.frequencia === '15 min (7h–20h)', JSON.stringify(sv));
+ok('serviço na greve: linha Amarela, troço Senhora da Hora–Estádio do Dragão, 15 min das 7h às 20h e 30 min das 6h às 7h',
+  sv && sv.linhas.join() === 'amarela' && sv.trocos.length === 1 && sv.trocos[0][0] === 'senhora da hora' && sv.trocos[0][1] === 'estadio do dragao' && sv.frequencia === '15 min (7h–20h) · 30 min (6h–7h)', JSON.stringify(sv));
 const sv2 = G.servicoNaGreve('Na sexta-feira, os comboios vão circular exclusivamente entre a Sra. da Hora e o Estádio do Dragão, no tronco comum da rede, e no percurso da Linha Amarela (D), entre o Hospital de S. João e Santo Ovídio.');
 ok('serviço na greve com "Sra." e "S. João": dois troços', sv2 && sv2.trocos.length === 2 && sv2.trocos[0][0] === 'senhora da hora' && sv2.trocos[1][0] === 'hospital de sao joao' && sv2.trocos[1][1] === 'santo ovidio', JSON.stringify(sv2));
 ok('"entre as 07h00 e as 20h00" não é um troço', !(sv?.trocos || []).some(([x]) => /\d/.test(x)));
