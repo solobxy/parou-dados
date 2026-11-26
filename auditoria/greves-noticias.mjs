@@ -33,7 +33,7 @@ ok('a greve começa na sexta 00:00', g.start_datetime && L(g.start_datetime).toF
 ok('véspera: serviço a acabar mais cedo desde quinta às 22:00 (últimas partidas ~23h)', g.vespera_desde && L(g.vespera_desde).toFormat('yyyy-MM-dd HH:mm') === '2026-11-26 22:00', g.vespera_desde);
 const semHora = G.grevesDasNoticias([{ ...rtp, resumo: 'Com impactos já na quinta-feira.' }], AGORA)[0];
 ok('véspera sem hora no texto: 22:00 (o habitual)', semHora && L(semHora.vespera_desde).toFormat('HH:mm') === '22:00', semHora && semHora.vespera_desde);
-ok('a fonte é a notícia (dito como tal), com ligação para ela', /^Notícia — RTP Notícias$/.test(g.source || '') && g.source_url === rtp.url && /Fonte: notícia de RTP Notícias \(também SAPO 24\)/.test(g.descrição || ''), g.source);
+ok('a fonte é a notícia (dito como tal), com ligação para ela', /^Notícia — RTP Notícias$/.test(g.source || '') && g.source_url === rtp.url && /^Fonte: RTP Notícias e SAPO 24 \(o operador ainda não publicou aviso no site\)\. O Metro do Porto/.test(g.descrição || ''), g.source);
 ok('tipo greve, gravidade grave, região do Porto', g.tipo === 'greve' && g.severity === 'Grave' && g.região === 'Área Metropolitana do Porto');
 ok('greve noutro setor (médicos) não cria aviso', !a.some((x) => /medic/i.test(x.título)));
 ok('"unir" (verbo) não é a UNIR', !a.some((x) => x.operador === 'UNIR'));
