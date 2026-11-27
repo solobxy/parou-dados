@@ -20,7 +20,10 @@ export function initUI(G) {
   const GAP = 2; let CS = 44;
 
   // ---------- gestos do sistema: sem puxar para atualizar, sem zoom, menos saídas por engano
-  document.addEventListener('touchmove', e => { if (!e.target.closest('.scroll,.sbody,#inv .ibody')) e.preventDefault(); }, { passive: false });
+  // o ecrã não se mexe com o dedo (puxar para atualizar, zoom), mas o que tem scroll dentro (listas, novidades, skins, perfil…) desliza
+  { let scrollOk = false; const canScroll = el => { for (let a = el; a && a !== document.body; a = a.parentElement) { if (a.closest && a.closest('.scroll,.sbody,#inv .ibody')) return true; const cs = getComputedStyle(a); if ((/(auto|scroll)/.test(cs.overflowY) && a.scrollHeight > a.clientHeight + 1) || (/(auto|scroll)/.test(cs.overflowX) && a.scrollWidth > a.clientWidth + 1)) return true; } return false; };
+    document.addEventListener('touchstart', e => { scrollOk = e.target && e.target.nodeType === 1 && !e.target.closest('#hud,.pad,canvas') ? canScroll(e.target) : false; }, { passive: true, capture: true });
+    document.addEventListener('touchmove', e => { if (!scrollOk || e.touches.length > 1) e.preventDefault(); }, { passive: false }); }
   for (const ev of ['gesturestart', 'gesturechange', 'gestureend', 'dblclick']) document.addEventListener(ev, e => e.preventDefault(), { passive: false });
   document.addEventListener('contextmenu', e => e.preventDefault());
   addEventListener('wheel', e => { if (e.ctrlKey) e.preventDefault(); }, { passive: false });
@@ -390,7 +393,12 @@ export function initUI(G) {
   setInterval(musRun, 100);
   document.addEventListener('visibilitychange', () => MUS.hide(document.hidden));
   // o 1.º toque desbloqueia o som (tem de ser dentro do gesto)
-  const kick = () => { musGo = true; musRun(); }; addEventListener('pointerdown', kick, true); addEventListener('keydown', kick, true);
+  // o browser só deixa tocar som depois de um toque: no telemóvel o «pointerdown» ainda não conta, só o levantar do dedo (ou o clique).
+  // Por isso, em cada um destes, acorda o som (se estiver suspenso) e põe a música do menu a tocar
+  const kick = () => { musGo = true; const c = audio.context(); if (c && c.state === 'suspended') { try { c.resume(); } catch (e) { } } musRun(); };
+  for (const ev of ['pointerdown', 'pointerup', 'touchend', 'click', 'keydown']) addEventListener(ev, kick, true);
+  // e tenta logo ao abrir (se o browser já der licença, por ex. com o jogo instalado, começa sem tocar)
+  setTimeout(() => { try { const c = audio.context(); if (c && c.state === 'running') { musGo = true; musRun(); } } catch (e) { } }, 600);
   const musBtn = () => $('sMus').classList.toggle('mute', cfg.music === false);
   $('sMus').onclick = e => { e.stopPropagation(); cfg.music = cfg.music === false; saveCfg(); musBtn(); musRun(); };
   G.music = MUS;
@@ -478,6 +486,7 @@ export function initUI(G) {
   $('sHow').onclick = () => { audio.play('ui'); $('pfT').textContent = 'Como se joga'; pfm.classList.remove('wide', 'kpw'); pfB.innerHTML = `<div class="keys howk">${$('sKeys').innerHTML}</div><p class="note">Revista tudo, come e bebe, treina o corpo (perde-se ao morrer) e evita a cidade de noite. O melhor loot está no centro, onde há PvP.</p>`; pfm.hidden = false; };
   // ---------- novidades (as mais recentes primeiro; o ponto vermelho some depois de as abrires)
   const NEWS = [
+    { id: '0.87', d: '27/11/2026', t: 'Deslizar nos menus e música', img: 'menu/n-scroll.jpg', b: '<p>Já dá para deslizar com o dedo nas Novidades, nas Skins, no Perfil e em todos os menus com mais conteúdo do que cabe. Com o telemóvel de pé, a lista das novidades desliza para baixo.</p><ul><li>A música do menu começa ao primeiro toque no ecrã (o browser não deixa antes disso); antes só começava depois de entrar no jogo</li></ul>' },
     { id: '0.86', d: '27/11/2026', t: 'Colinas a sério', img: 'menu/n-colinas.jpg', b: '<p>O campo e as florestas passam a ter colinas onde se anda de verdade, mais altas no norte com neve. As cidades, as estradas, a água e as casas ficam planas, com rampas suaves à volta.</p><ul><li>Árvores, pedras, arbustos, zombies, animais, carros e mochilas ficam assentes no chão (os carros inclinam-se na encosta)</li><li>As balas param nas colinas: não se acerta em ninguém atrás de uma (o servidor confirma)</li><li>As bases numa encosta ficam niveladas, com a fundação a descer até ao chão</li><li>O mapa mostra o relevo</li></ul>' },
     { id: '0.85', d: '27/11/2026', t: 'Menus em todos os ecrãs', img: 'menu/n-ecras.jpg', b: '<p>Todos os menus passam a caber no ecrã, de telemóveis pequenos deitados a tablets e computadores. Se algo não couber, desliza dentro do menu em vez de ficar cortado.</p><ul><li>No ecrã das Skins podes ver como fica qualquer skin, mesmo trancada: toca nela</li><li>Em ecrãs baixos, o menu principal arruma os botões em grelha e o Jogar fica sempre à vista</li></ul>' },
     { id: '0.84', d: '27/11/2026', t: 'Rede mais rápida', img: 'menu/n-rede.jpg', b: '<p>O teu movimento chega aos outros jogadores logo que o mandas, sem esperar pela volta seguinte do servidor. O atraso que o servidor punha baixou de cerca de 20 ms (até 34 ms) para menos de 1 ms, e os outros aparecem mais perto de onde estão de verdade.</p><ul><li>Survival e arena</li><li>Os zombies dos outros atualizam 15 vezes por segundo em vez de 10</li></ul>' },

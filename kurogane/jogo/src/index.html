@@ -980,16 +980,16 @@ body.driving #dHov{right:calc(40px + var(--sr));bottom:calc(158px + var(--sb))}
 /* novidades: lista à esquerda, notícia à direita */
 #news{z-index:47;flex-direction:column;justify-content:flex-start;padding:calc(10px + var(--st)) calc(16px + var(--sr)) calc(12px + var(--sb)) calc(16px + var(--sl));background:rgba(10,9,8,.95)}
 .nw-h{justify-content:flex-start}.nw-ic svg{width:26px;height:26px}.nw-h .close{margin-left:auto}
-.nw-b{flex:1;min-height:0;width:100%;display:grid;grid-template-columns:minmax(220px,36%) 1fr;gap:18px}
-.nw-list{display:flex;flex-direction:column;gap:8px;overflow:auto;padding-right:4px}
+.nw-b{flex:1;min-height:0;width:100%;display:grid;grid-template-columns:minmax(220px,36%) 1fr;grid-template-rows:minmax(0,1fr);gap:18px}
+.nw-list{display:flex;flex-direction:column;gap:8px;overflow:auto;padding-right:4px;min-height:0;overscroll-behavior:contain}.nw-it{flex:none}
 .nw-it{display:flex;flex-direction:column;gap:3px;padding:11px 14px;background:var(--pan);border:1px solid rgba(255,250,240,.08);text-align:left;color:var(--tx);position:relative}
 .nw-it b{font:700 15px/1.2 "Roboto Condensed",sans-serif;letter-spacing:.03em;text-transform:uppercase}.nw-it span{font:500 12px "Roboto Condensed",sans-serif;color:var(--tx2);font-variant-numeric:tabular-nums}
 .nw-it.on{background:rgba(58,55,50,.9);border-color:rgba(255,250,240,.4)}.nw-it .dot{position:absolute;top:10px;right:10px;width:8px;height:8px;border-radius:50%;background:var(--verm)}
-.nw-d{overflow:auto;padding-right:6px}.nw-d h2{margin:0;font:700 24px/1.15 "Roboto Condensed",sans-serif;letter-spacing:.03em;text-transform:uppercase}
+.nw-d{overflow:auto;padding-right:6px;min-height:0;overscroll-behavior:contain}.nw-d h2{margin:0;font:700 24px/1.15 "Roboto Condensed",sans-serif;letter-spacing:.03em;text-transform:uppercase}
 .nw-d time{display:block;margin:4px 0 10px;font:500 13px "Roboto Condensed",sans-serif;color:var(--tx2)}
 .nw-d img{width:100%;max-height:46vh;object-fit:cover;display:block;margin-bottom:12px;background:#24211e}
 .nw-d p{margin:0 0 9px;font-size:14.5px;line-height:1.5;color:#D9D4CA}.nw-d ul{margin:0 0 10px;padding-left:18px;font-size:14.5px;line-height:1.5;color:#D9D4CA}
-@media (orientation:portrait){.nw-b{grid-template-columns:1fr;grid-template-rows:auto 1fr}.nw-list{flex-direction:row;overflow-x:auto;padding:0 0 4px}.nw-it{flex:none;width:68%}}
+@media (orientation:portrait){.nw-b{grid-template-columns:1fr;grid-template-rows:minmax(0,34%) minmax(0,1fr);gap:14px}.nw-list{padding:0 4px 0 0}.nw-d img{max-height:30vh}}
 /* definições: categorias numa coluna à esquerda (deitado), linhas largas, Não/Sim, valores à vista */
 @media (orientation:landscape) and (min-width:640px){
   #set .sp2{width:min(1060px,100%);display:grid;grid-template-columns:minmax(190px,230px) 1fr;grid-template-rows:auto 1fr;column-gap:18px}
@@ -1085,7 +1085,7 @@ body.driving #dHov{right:calc(40px + var(--sr));bottom:calc(158px + var(--sb))}
       <div class="fld" id="gPw"><label for="gP">Palavra-passe</label><input id="gP" type="password" maxlength="72" autocomplete="current-password"></div>
       <div class="pmsg" id="gM"></div><button class="gb pri wide" id="gOk" type="submit"><span>Entrar</span></button><p class="gf-n" id="gfN"></p></form>
   </div>
-  <div class="gt-foot"><span id="gVer">Protótipo 0.86</span><span>A sessão fica guardada neste aparelho</span></div>
+  <div class="gt-foot"><span id="gVer">Protótipo 0.87</span><span>A sessão fica guardada neste aparelho</span></div>
 </div>
 <div id="start" class="ov" hidden>
   <header class="lb-top">
@@ -1100,7 +1100,7 @@ body.driving #dHov{right:calc(40px + var(--sr));bottom:calc(158px + var(--sb))}
   <nav class="lb-right"><button class="lb-row" id="sLook"><b>Aparência</b>{{shirt}}</button><button class="lb-row" id="sSkins"><b>Skins</b>{{paintbrush}}</button><button class="lb-row" id="sProf"><b>Perfis</b>{{users}}</button><button class="lb-row" id="sAcc"><b id="sAccT">Conta</b>{{cloud}}</button></nav>
   <div class="mnote" id="mnote" hidden></div>
   <div class="lb-go"><div class="onl" id="sOnl" role="status"><i class="dot" aria-hidden="true"></i><span><em id="sOnT">A ver quem está a jogar…</em></span></div><button class="lb-play" id="sGo"><span>Jogar</span></button></div>
-  <div class="lb-foot"><span class="foot">Protótipo 0.86</span><a class="credit" href="https://dinissousa.pt" target="_blank" rel="noopener">feito por dinissousa.pt</a></div>
+  <div class="lb-foot"><span class="foot">Protótipo 0.87</span><a class="credit" href="https://dinissousa.pt" target="_blank" rel="noopener">feito por dinissousa.pt</a></div>
   <div id="sKeys" hidden></div><button id="sCont" hidden></button>
 </div>
 <div id="modes" class="ov" hidden><div class="md-h"><b class="cond">Escolhe o modo</b><button class="close" id="mdX" aria-label="Fechar">{{x}}</button></div>
