@@ -81,6 +81,16 @@ def capacete():
             o = box(0.012, 0.0022, l, 0, 0, 0, STRAP, 'v', 0)
             M = Matrix.Translation(tuple(m)) @ Vector((0, 0, 1)).rotation_difference(Vector(tuple(d / l))).to_matrix().to_4x4()
             for v in o.ob.data.vertices: v.co = M @ v.co
+    # pormenores (0.70): contrapeso com MOLLE atrás, luz estroboscópica em cima, lanterna no trilho direito, velcro em cima
+    box(0.075, 0.05, 0.026, 0, HC[1] + 0.012, HC[2] - 0.128, 0x4a5236, 'v', 0.004, rx=0.18)
+    for k in range(2): box(0.078, 0.006, 0.004, 0, HC[1] + 0.0 + k * 0.018, HC[2] - 0.143 + k * 0.0033, 0x3a4029, 'v', 0, rx=0.18)
+    box(0.022, 0.016, 0.03, 0, HC[1] + 0.128, HC[2] - 0.045, BLK, 'm', 0.003, rx=-0.25); box(0.014, 0.006, 0.014, 0, HC[1] + 0.138, HC[2] - 0.045, 0x2f6a3a, 'm', 0.001, rx=-0.25)
+    box(0.06, 0.004, 0.05, 0, HC[1] + 0.142, HC[2] + 0.025, 0x4a5236, 'v', 0.0015, rx=0.12)
+    ds = D @ np.array([1.0, 0.0, 0.0]); rs = float(rad[int(np.argmax(ds))])
+    cyl(0.0095, HC[2] - 0.02, HC[2] + 0.075, BLK, 'm', x=HC[0] + rs + 0.017, y=HC[1] + 0.05, seg=16, bev=0.0012)
+    cyl(0.011, HC[2] + 0.06, HC[2] + 0.078, 0x15161a, 'm', x=HC[0] + rs + 0.017, y=HC[1] + 0.05, seg=16, bev=0.001)
+    cyl(0.0085, HC[2] + 0.078, HC[2] + 0.0795, 0xd8d4c0, 'm', x=HC[0] + rs + 0.017, y=HC[1] + 0.05, seg=16)
+    box(0.012, 0.012, 0.03, HC[0] + rs + 0.008, HC[1] + 0.05, HC[2] + 0.03, BLK, 'm', 0.002)
     all_shift(HEADP)
     return {}
 
@@ -151,6 +161,17 @@ def colete():
         place_box(0.07, 0.11, 0.032, 1.18, t, 0.05, 0x7e6f4c, 'v', 0.004); place_box(0.074, 0.028, 0.036, 1.245, t, 0.05, 0x6f6244, 'v', 0.003)
     place_box(0.16, 0.08, 0.018, 1.33, 0.0, 0.055, 0x7e6f4c, 'v', 0.004)
     place_box(0.14, 0.12, 0.02, 1.25, math.pi, 0.055, 0x7e6f4c, 'v', 0.004)
+    # pormenores (0.70): MOLLE e puxadores nas bolsas, fivelas dos lados, rádio com antena, garrote no ombro, emblema
+    for t in (-0.42, 0.0, 0.42):
+        for y in (1.155, 1.19): place_box(0.072, 0.008, 0.004, y, t, 0.082, 0x6f6244, 'v', 0)
+        place_box(0.012, 0.03, 0.006, 1.232, t, 0.086, BLK, 'v', 0.002)
+    for sx in (-1, 1):
+        place_box(0.032, 0.034, 0.012, 1.15, sx * 1.25, 0.05, BLK, 'm', 0.003)
+        place_box(0.02, 0.012, 0.014, 1.15, sx * 1.25, 0.06, 0x2a2b26, 'm', 0.002)
+    place_box(0.06, 0.12, 0.04, 1.17, -2.05, 0.045, 0x6f6244, 'v', 0.004); place_box(0.064, 0.026, 0.044, 1.24, -2.05, 0.045, 0x7e6f4c, 'v', 0.003)
+    ap = on_surface(1.25, -2.05, 0.07); cyly(0.0042, 1.24, 1.53, float(ap[0]), float(ap[2]), BLK, 'm', 6, 0); cyly(0.006, 1.24, 1.27, float(ap[0]), float(ap[2]), 0x15161a, 'm', 8, 0)
+    tp = on_surface(1.37, 0.52, 0.068); cyly(0.013, 1.335, 1.395, float(tp[0]), float(tp[2]), 0x1c1d1f, 'v', 12, 0.002); cyly(0.0135, 1.375, 1.385, float(tp[0]), float(tp[2]), 0x8a2a22, 'v', 12, 0)
+    place_box(0.05, 0.03, 0.003, 1.335, -0.03, 0.073, 0x3a4029, 'v', 0.001); place_box(0.016, 0.03, 0.0035, 1.335, -0.06, 0.0735, 0x6a2a24, 'v', 0)
     place_box(0.07, 0.02, 0.03, 1.40, math.pi, 0.06, BLK, 'v', 0.004)
     all_shift(TORSOP)
     return {}

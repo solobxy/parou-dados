@@ -161,7 +161,7 @@ async function boot() {
       roughnessFactor = clamp( roughnessFactor + ( texture2D( uDet, ( abs( vDetN.y ) > 0.6 ? vDetP.xz : vDetP.xy + vDetP.zy ) * 0.9 ).g - 0.5 ) * 0.18, 0.04, 1.0 );`); };
     m.customProgramCacheKey = () => 'det-' + key; return m; };
   const wmats = { ...mats, v: detail(S(), 1, 'v'), vf: detail(S({ flatShading: true }), 1, 'vf'), m: detail(S({ roughness: 0.38, metalness: 0.55 }), 0.55, 'm') }; // só o que está construído no mapa (personagens e armas ficam sem isto)
-  const cmats = { ...mats, v: wear(S(), 'cv', 0), vf: wear(S({ flatShading: true }), 'cvf', 0), m: wear(S({ roughness: 0.32, metalness: 0.62, envMapIntensity: 1.35 }), 'cm', 1) }; // personagens, proteções, armas e sacos: desgaste e brilho no metal
+  const cmats = { ...mats, v: wear(S(), 'cv', 0, 2.6), vf: wear(S({ flatShading: true }), 'cvf', 0, 2.6), m: wear(S({ roughness: 0.32, metalness: 0.62, envMapIntensity: 1.35 }), 'cm', 1, 2) }; // personagens, proteções, armas e sacos: desgaste e brilho no metal
   const ARENA_ON = (() => { try { return sessionStorage.getItem('kgArena') === '1' || /[?&]arena\b/.test(location.search); } catch (e) { return false; } })(); // modo arena: só PvP no mapa de Tóquio
   await loadProps(); // adereços do Blender (ficheiro ao lado); se falhar, o mapa usa as caixas simples
   await LP(12, 'a construir a cidade');
@@ -515,7 +515,7 @@ async function boot() {
     p: null, inv: new Inv(), sel: 0, zs: [], bags: [], box: null, prompt: null,
     cam, renderer, scene, camT, YAW,
   };
-  G.dbgW = W; G.dbgOl = () => ({ n: OL.objs.length, key: !!OL.key, lbl: G.prompt && G.prompt.label }); G.olRefresh = () => { OL.wm = null; for (const c of W.containers) c._olg = undefined; OL.key = null; };
+  G.dbgW = W; G.dbgScene = scene; G.dbgOl = () => ({ n: OL.objs.length, key: !!OL.key, lbl: G.prompt && G.prompt.label }); G.olRefresh = () => { OL.wm = null; for (const c of W.containers) c._olg = undefined; OL.key = null; };
   G.dbgNav = { nav, walkLine: (a, b, c, d, lv) => walkLine(a, b, c, d, lv || 0), find: (a, b, c, d, lv) => nav.find(a, b, c, d, lv || 0) };
   // bases construídas pelo jogador
   // mancha de luz no chão por baixo de cada candeeiro (barata: dá para todos os do mapa ao mesmo tempo)
@@ -1169,6 +1169,13 @@ async function boot() {
   const _wa = new THREE.Vector3(), _wb = new THREE.Vector3();
   // ---------- carros
   G.cars = makeCars({ scene, G, W, collide, solidAt, tallAt, groundY, addRect, removeRect, audio, hurtZombie, sameLevel, roofAt });
+  // luzes que só entram nas contas quando fazem falta: de dia, na rua, cada píxel do ecrã só faz contas com o sol e o céu (antes eram 11 luzes, mesmo apagadas).
+  // N: candeeiros, luz à volta do boneco e luz da base (noite ou dentro de casa); S: lanterna, farol e luz de travão. Os 4 estados compilam-se ao carregar.
+  const LG = { N: [...lampL, glow, ...baseL], S: [], on: { N: true, S: true }, hold: { N: 0, S: 0 } };
+  scene.traverse(o => { if (o.isSpotLight || (o.isPointLight && o.color.getHex() === 0xff1e10)) LG.S.push(o); });
+  const lgSet = (k, v) => { if (LG.on[k] === v) return; LG.on[k] = v; for (const l of LG[k]) l.visible = v; };
+  const lgTick = dt => { for (const k of ['N', 'S']) { if (LG[k].some(l => l.intensity > 0.001)) { LG.hold[k] = 4; lgSet(k, true); } else if ((LG.hold[k] -= dt) <= 0) lgSet(k, false); } };
+  G.dbgLG = () => ({ N: LG.on.N, S: LG.on.S, nS: LG.S.length });
   // o mundo partilhado (online): aplicar o que vem do servidor
   const doorById = new Map(W.doors.filter(D => D.wid != null).map(D => [D.wid, D]));
   const nodeWait = new Map(); // chave → quando volta (ms), para setores que ainda não estão carregados
@@ -2002,6 +2009,7 @@ async function boot() {
     { thinT -= 1; if (thinT <= 0) { thinT = 8; if (scene.children.length !== thinN) { thinN = scene.children.length; thinL.length = 0; for (const o of scene.children) { if (o.isMesh && o.userData.thin && o.geometry.boundingBox) thinL.push(o); else if (o.isGroup) for (const c of o.children) if (c.isMesh && c.userData.thin && c.geometry.boundingBox) thinL.push(c); } }
         const cp = cam.position, D = G.fpv && G.fpv.on ? THIN_D : THIN_D * 2; for (const m of thinL) { const bb = m.geometry.boundingBox, dx = Math.max(bb.min.x - cp.x, 0, cp.x - bb.max.x), dz = Math.max(bb.min.z - cp.z, 0, cp.z - bb.max.z); m.visible = dx * dx + dz * dz < D * D; } } }
     if (window.__rinfoOn) { renderer.info.autoReset = false; renderer.info.reset(); }
+    lgTick(dt);
     fireFrame(G.t, renderer, cam); renderer.render(scene, cam); olRender();
     if (G.vmOn) { renderer.autoClear = false; renderer.clearDepth(); renderer.render(vm.scene, vm.cam); renderer.autoClear = true; }
   };
@@ -2009,7 +2017,7 @@ async function boot() {
   body.root.visible = false;
   G.p = newPlayer(0, -2); G.p.alive = false;
   await LP(98, 'a preparar os gráficos'); // compila os shaders antes de mostrar o menu (senão o 1.º desenho prendia o ecrã)
-  try { if (renderer.compileAsync) await wait(renderer.compileAsync(scene, cam), 20000); } catch (e) { }
+  for (const [n, sp] of [[true, true], [true, false], [false, true], [false, false]]) { lgSet('N', n); lgSet('S', sp); try { if (renderer.compileAsync) await wait(renderer.compileAsync(scene, cam), 20000); } catch (e) { } } // os 4 jogos de luzes, para não prender ao anoitecer nem ao ligar a lanterna
   loop(); await new Promise(r => requestAnimationFrame(() => setTimeout(r, 0))); // 1.º desenho ainda atrás do ecrã de carregamento
   G.ui.ready();
   window.__ready = true;

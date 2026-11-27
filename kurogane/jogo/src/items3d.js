@@ -191,7 +191,7 @@ export function makeIcons(DPR = 2) {
   const PCOL = { skin: 0xd9a882, top: 0x5c6846, legs: 0x3a3f33 };
   let LOOK = {}; const setLook = l => { LOOK = l || {}; };
   // retrato: o mesmo corpo do jogo (aparência e equipamento), de corpo inteiro
-  const pmats = { v: wear(new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.75 }), 'pv', 0), m: wear(new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.32, metalness: 0.62, envMapIntensity: 1.35 }), 'pm', 1) };
+  const pmats = { v: wear(new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.75 }), 'pv', 0, 2.6), m: wear(new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.32, metalness: 0.62, envMapIntensity: 1.35 }), 'pm', 1, 2) };
   const portrait = (o, W, H, look) => { const L = look || LOOK;
     ir.setSize(W, H, false);
     const sc = new THREE.Scene(); sc.environment = env; sc.environmentIntensity = 0.4; lights().forEach(l => { l.intensity *= 0.6; sc.add(l); }); // luz mais suave que nos ícones: as cores ficam como no jogo
