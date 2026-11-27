@@ -1,6 +1,7 @@
 // Ícones 3D dos objetos e retrato da personagem (desenhados uma vez numa tela à parte).
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+import { wear } from './wear.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { Builder } from './builder.js';
 import { GUNS } from './guns.js';
@@ -152,7 +153,7 @@ export function makeIcons(DPR = 2) {
   IT.sumo = () => { const g = new THREE.Group(); put(RB(0.06, 0.1, 0.04, 0.006, 0xf2a03a), 0, 0, 0, g); put(B(0.061, 0.03, 0.041, 0xffffff), 0, 0.02, 0, g); put(Cy(0.003, 0.003, 0.05, 6, 0xffffff), 0.015, 0.07, 0, g).rotation.z = -0.2; return g; };
   IT.cafe = () => { const g = new THREE.Group(); put(Cy(0.028, 0.028, 0.1, 18, 0x6a4a32, { m: 0.6, r: 0.35 }), 0, 0, 0, g); put(Cy(0.0285, 0.0285, 0.03, 18, 0xe8e2d4), 0, 0.02, 0, g); put(Cy(0.024, 0.028, 0.008, 18, 0xc6cacb, { m: 0.9 }), 0, 0.053, 0, g); return g; };
   // armas: o mesmo desenho detalhado que se vê na mão (guns.js), de lado
-  const GM = { v: new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.62, metalness: 0.08 }), m: new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.36, metalness: 0.62 }) };
+  const GM = { v: wear(new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.62, metalness: 0.08 }), 'iv', 0), m: wear(new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.34, metalness: 0.66 }), 'im', 1) };
   const gunIcon = k => () => { const b = new Builder(0); GUNS[k](b); const g = new THREE.Group(); for (const mk of [...b.buckets.keys()]) { const geo = b.merged(mk); if (geo) g.add(new THREE.Mesh(geo, GM[mk] || GM.v)); } g.rotation.y = Math.PI / 2; const w = new THREE.Group(); w.add(g); return w; };
   IT.m4 = gunIcon('m4'); IT.ak = gunIcon('ak'); IT.smg = gunIcon('smg'); IT.pistol = gunIcon('pistola'); IT.revolver = gunIcon('revolver'); IT.shotgun = gunIcon('cacadeira'); IT.hunting = gunIcon('caca'); IT.cheytac = gunIcon('cheytac'); IT.barrett = gunIcon('barrett'); IT.m249 = gunIcon('m249'); IT.pkm = gunIcon('pkm'); for (const k of ['machado', 'picareta', 'lanca', 'faca', 'bastao', 'pecabra', 'machete', 'katana']) IT[k] = gunIcon(k); // armas brancas novas
   IT.lampada = () => { const g = new THREE.Group(); put(Cy(0.012, 0.016, 0.5, 8, 0x3a3c3e, { m: 0.5 }), 0, -0.05, 0, g); put(B(0.1, 0.015, 0.1, 0x3a3c3e, { m: 0.5 }), 0, -0.3, 0, g); put(B(0.016, 0.016, 0.1, 0x3a3c3e), 0, 0.2, 0.04, g); put(Cy(0.03, 0.035, 0.07, 10, 0x3a3c3e, { m: 0.5 }), 0, 0.16, 0.09, g); put(Cy(0.026, 0.03, 0.055, 10, 0xffd9a0, { e: 0xffb860, ei: 1.2 }), 0, 0.16, 0.09, g); g.rotation.y = 0.5; return g; };
@@ -190,7 +191,7 @@ export function makeIcons(DPR = 2) {
   const PCOL = { skin: 0xd9a882, top: 0x5c6846, legs: 0x3a3f33 };
   let LOOK = {}; const setLook = l => { LOOK = l || {}; };
   // retrato: o mesmo corpo do jogo (aparência e equipamento), de corpo inteiro
-  const pmats = { v: new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.75 }) };
+  const pmats = { v: wear(new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.75 }), 'pv', 0), m: wear(new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.32, metalness: 0.62, envMapIntensity: 1.35 }), 'pm', 1) };
   const portrait = (o, W, H, look) => { const L = look || LOOK;
     ir.setSize(W, H, false);
     const sc = new THREE.Scene(); sc.environment = env; sc.environmentIntensity = 0.4; lights().forEach(l => { l.intensity *= 0.6; sc.add(l); }); // luz mais suave que nos ícones: as cores ficam como no jogo

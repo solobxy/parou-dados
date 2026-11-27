@@ -10,6 +10,7 @@ server.listen(0, async () => {
   const browser = await chromium.launch({ channel: 'chrome', headless: true, args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist', '--enable-webgl', '--autoplay-policy=no-user-gesture-required'] });
   const VP = { mobile: [844, 390, 1, 2], portrait: [390, 844, 1, 2], small: [360, 640, 1, 2], tablet: [820, 1180, 1, 2], tabletL: [1180, 820, 1, 2], desktop: [1280, 720, 0, 1], wide: [1920, 1080, 0, 1], tall: [800, 1000, 0, 1], tiny: [320, 568, 1, 2], shortL: [640, 300, 1, 2], andL: [800, 360, 1, 2] }[mode] || [1280, 720, 0, 1];
   const ctx = await browser.newContext({ viewport: { width: VP[0], height: VP[1] }, deviceScaleFactor: VP[3], isMobile: !!VP[2], hasTouch: !!VP[2] });
+  if (process.env.KG_NOWEAR) await ctx.addInitScript(() => { window.__noWear = 1; });
   if (process.env.KG_ARENA) await ctx.addInitScript(() => { try { sessionStorage.setItem('kgArena', '1'); } catch (e) { } });
   if (!process.env.NOPROF) await ctx.addInitScript(() => { try { if (!localStorage.getItem('kg.perfis')) localStorage.setItem('kg.perfis', JSON.stringify({ ativo: 'pt', lista: [{ id: 'pt', nome: 'Teste', criado: 1 }] })); sessionStorage.setItem('kgIntro', '1'); } catch (e) { } });
   const page = await ctx.newPage();

@@ -25,6 +25,7 @@ import { makeVM } from './vm.js';
 import { track, push, sample } from './interp.js';
 import { TRADERS, PRICE, SELL, TRADE_R } from './traders.js';
 import { initPWA } from './pwa.js';
+import { wear } from './wear.js';
 import { ANK, ANBYK, ANLOOT, spawnAnimals, anHit, anPart, animalAI, Fauna } from './animals.js';
 
 const TOUCH = matchMedia('(pointer: coarse)').matches || ('ontouchstart' in window && navigator.maxTouchPoints > 0);
@@ -160,6 +161,7 @@ async function boot() {
       roughnessFactor = clamp( roughnessFactor + ( texture2D( uDet, ( abs( vDetN.y ) > 0.6 ? vDetP.xz : vDetP.xy + vDetP.zy ) * 0.9 ).g - 0.5 ) * 0.18, 0.04, 1.0 );`); };
     m.customProgramCacheKey = () => 'det-' + key; return m; };
   const wmats = { ...mats, v: detail(S(), 1, 'v'), vf: detail(S({ flatShading: true }), 1, 'vf'), m: detail(S({ roughness: 0.38, metalness: 0.55 }), 0.55, 'm') }; // só o que está construído no mapa (personagens e armas ficam sem isto)
+  const cmats = { ...mats, v: wear(S(), 'cv', 0), vf: wear(S({ flatShading: true }), 'cvf', 0), m: wear(S({ roughness: 0.32, metalness: 0.62, envMapIntensity: 1.35 }), 'cm', 1) }; // personagens, proteções, armas e sacos: desgaste e brilho no metal
   const ARENA_ON = (() => { try { return sessionStorage.getItem('kgArena') === '1' || /[?&]arena\b/.test(location.search); } catch (e) { return false; } })(); // modo arena: só PvP no mapa de Tóquio
   await loadProps(); // adereços do Blender (ficheiro ao lado); se falhar, o mapa usa as caixas simples
   await LP(12, 'a construir a cidade');
@@ -332,6 +334,43 @@ async function boot() {
   };
   const doorBlocked = D => { const r = D.rc, m = 0.34, inR = o => (o.lv || 0) === D.lv && o.x > r.x0 - m && o.x < r.x1 + m && o.z > r.z0 - m && o.z < r.z1 + m; if (G.p && G.p.alive && inR(G.p)) return true; for (const z of G.zs) if (z.state !== 'dead' && inR(z)) return true; if (G.net && G.net.on) for (const o of G.net.R.values()) if (o.s1 && o.s1[10] && inR({ x: o.x, z: o.z, lv: o.s1[4] })) return true; return false; };
   const setDoor = (D, open, auto = false, remote = false) => { if (D.target === open) return true; if (D.lock && D.lock.hp > 0) return false; if (D.base && G.net && G.net.world && !remote) { G.net.raw({ t: 'bdo', k: D.base.k, o: open ? 1 : 0 }); return true; } if (!open && doorBlocked(D)) { if (remote && G.net.on && D.wid != null) G.net.door(D.wid, 1); return false; } D.target = open; D.auto = auto && open === 1; D.autoT = 0; if (!remote && G.net && G.net.on && D.wid != null && !D.base) G.net.door(D.wid, open); audio.play(open ? 'porta' : 'portaF', G.p ? clamp(1 - Math.hypot(D.x - G.p.x, D.z - G.p.z) / 30, 0, 1) : 0.5); if (G.p) noise(D.x, D.z, 4); return true; };
+  // ---------- contorno do que dá para usar (como no Oxide): linha branca à volta do saco, carro, porta ou móvel da ação à tua frente.
+  // Desenha só esse objeto numa imagem pequena (metade da resolução) e uma passagem por cima acha a borda. Sem alvo não custa nada.
+  const OL = { scene: new THREE.Scene(), mat: new THREE.MeshBasicMaterial({ color: 0xffffff }), key: null, objs: [], rt: null, wm: null };
+  OL.quad = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), new THREE.ShaderMaterial({ uniforms: { tM: { value: null }, px: { value: new THREE.Vector2() }, a: { value: 0.85 } }, transparent: true, depthTest: false, depthWrite: false,
+    vertexShader: 'varying vec2 vU; void main(){ vU = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }',
+    fragmentShader: 'uniform sampler2D tM; uniform vec2 px; uniform float a; varying vec2 vU; void main(){ float c = texture2D(tM, vU).r, m = 0.0; for (int i = 0; i < 8; i++) { float t = float(i) * 0.7853982; m = max(m, texture2D(tM, vU + vec2(cos(t), sin(t)) * px).r); } float o = smoothstep(0.05, 0.6, m - c); if (o < 0.02) discard; gl_FragColor = vec4(1.0, 1.0, 1.0, o * a); }' }));
+  OL.quad.frustumCulled = false; OL.qs = new THREE.Scene(); OL.qs.add(OL.quad); OL.qc = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+  const _ob = new THREE.Box3(), _ov = new THREE.Vector3(), _occ = new THREE.Color();
+  // móveis e caixas fazem parte da cidade juntada: tiram-se os triângulos inteiros à volta do sítio (uma vez por móvel)
+  const olCut = (c, y0) => { if (c._olg !== undefined) return c._olg; const lv = c.lv || 0; let R = null, rd = 0.9;
+    for (const r of W.rects) { if ((r.lv || 0) !== lv || r.k !== 's' || (r.x1 - r.x0) * (r.z1 - r.z0) > 14) continue; const d = Math.hypot(Math.max(r.x0 - c.x, 0, c.x - r.x1), Math.max(r.z0 - c.z, 0, c.z - r.z1)); if (d < rd) { rd = d; R = r; } }
+    const x0 = R ? R.x0 - 0.25 : c.x - 0.6, x1 = R ? R.x1 + 0.25 : c.x + 0.6, z0 = R ? R.z0 - 0.25 : c.z - 0.6, z1 = R ? R.z1 + 0.25 : c.z + 0.6, ya = y0 - 0.3, yb = y0 + (R ? Math.min(R.h || 2.5, 2.4) + 0.25 : 2.2), out = [];
+    if (!OL.wm) { OL.wm = []; scene.traverse(o => { if (o.isMesh && !o.isInstancedMesh && !o.isSkinnedMesh && o.geometry && o.geometry.attributes.position && o.visible && o.material && !(o.material.depthWrite === false && o.material.transparent && o.material.opacity < 0.2)) OL.wm.push(o); }); }
+    _ob.set(_ov.set(x0, ya, z0), new THREE.Vector3(x1, yb, z1));
+    for (const o of OL.wm) { const g = o.geometry; if (!g.boundingBox) g.computeBoundingBox(); const bb = g.boundingBox.clone().applyMatrix4(o.matrixWorld); if (!bb.intersectsBox(_ob)) continue;
+      const P = g.attributes.position.array, I = g.index ? g.index.array : null, n = I ? I.length : P.length / 3, M = o.matrixWorld.elements, id = M[0] === 1 && M[5] === 1 && M[10] === 1 && !M[12] && !M[13] && !M[14];
+      for (let i = 0; i < n; i += 3) { let ok = true, top = -1e9; const t = [];
+        for (let k = 0; k < 3 && ok; k++) { const q = (I ? I[i + k] : i + k) * 3; let x = P[q], y = P[q + 1], z = P[q + 2]; if (!id) { _ov.set(x, y, z).applyMatrix4(o.matrixWorld); x = _ov.x; y = _ov.y; z = _ov.z; } ok = x > x0 && x < x1 && z > z0 && z < z1 && y > ya && y < yb; if (y > top) top = y; t.push(x, y, z); }
+        if (ok && top > y0 + 0.05) out.push(...t); } } /* o chão e as marcas no chão ficam de fora */
+    if (!out.length) return (c._olg = null); const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(out, 3)); return (c._olg = g); };
+  const olClear = () => { for (const o of OL.objs) OL.scene.remove(o.p); OL.objs = []; };
+  const olProxy = (src, geo, mtx) => { const p = new THREE.Mesh(geo, OL.mat); p.matrixAutoUpdate = false; p.frustumCulled = false; OL.scene.add(p); OL.objs.push({ p, src, mtx }); };
+  const olKey = b => !b ? null : b.car && !b.carExit ? b.car : b.bag && b.mesh ? b : b.door && b.door.leaves ? b.door : b.dep && b.dep.g ? b.dep : b.table !== undefined && b.slots ? b : null;
+  const olSet = best => { const key = olKey(best); if (key === OL.key) return; OL.key = key; olClear(); if (!key) return;
+    const add = g => g.traverse(o => { if (o.isMesh && o.visible && !o.isSkinnedMesh) olProxy(o, o.geometry); });
+    if (key === best.car) add(key.m && key.m.g || key.m || new THREE.Group());
+    else if (key.bag) add(key.mesh);
+    else if (key.leaves) { for (const lf of key.leaves) if (lf.lm) olProxy(null, leafGeo, lf); }
+    else if (key.g && key.k) add(key.g);
+    else { const g = olCut(key, G.p && isFinite(G.p.y) ? G.p.y : 0); if (g) olProxy(null, g); } };
+  const olRender = () => { if ((G.cfg || {}).outline === false || !G.playing) { if (OL.objs.length) olClear(), OL.key = null; return; } olSet(G.prompt || null); if (!OL.objs.length) return;
+    const pr = renderer.getPixelRatio(), sc = Math.min(1, 1100 / (innerWidth * pr)), w = Math.max(2, Math.round(innerWidth * pr * sc)), h = Math.max(2, Math.round(innerHeight * pr * sc));
+    if (!OL.rt) OL.rt = new THREE.WebGLRenderTarget(w, h, { depthBuffer: false }); else if (OL.rt.width !== w || OL.rt.height !== h) OL.rt.setSize(w, h);
+    for (const o of OL.objs) { if (o.src) o.p.matrix.copy(o.src.matrixWorld); else if (o.mtx) o.mtx.lm.getMatrixAt(o.mtx.i, o.p.matrix); o.p.matrixWorld.copy(o.p.matrix); }
+    const cc = renderer.getClearColor(_occ), ca = renderer.getClearAlpha(), bg = OL.scene.background;
+    renderer.setRenderTarget(OL.rt); renderer.setClearColor(0x000000, 1); renderer.clear(true, false, false); renderer.render(OL.scene, cam); renderer.setRenderTarget(null); renderer.setClearColor(cc, ca);
+    OL.quad.material.uniforms.tM.value = OL.rt.texture; OL.quad.material.uniforms.px.value.set(1.5 / w, 1.5 / h); renderer.autoClear = false; renderer.render(OL.qs, OL.qc); renderer.autoClear = true; };
   const updDoors = dt => {
     for (const D of W.doors) {
       if (D.t !== D.target) D.t = D.target > D.t ? Math.min(D.target, D.t + dt / 0.55) : Math.max(D.target, D.t - dt / 0.5);
@@ -428,7 +467,7 @@ async function boot() {
   // aparência do jogador (do perfil): cores e cabelo entram na geometria, por isso muda-se reconstruindo o corpo
   await LP(78, 'a preparar as personagens');
   const silMat = new THREE.MeshBasicMaterial({ color: 0xf2a33a, depthFunc: THREE.GreaterDepth, depthWrite: false, fog: false });
-  const mkBody = L => { const b = new Body(mats, lookCol(L)); b.forceNear = true; b.root.traverse(o => { if (o.isMesh && !o.userData.sil) { o.renderOrder = 2; const s = new THREE.Mesh(o.geometry, o.userData.skinned ? b.skinMat(silMat) : silMat); s.userData.sil = true; s.renderOrder = 1; s.castShadow = false; o.add(s); } }); scene.add(b.root); return b; };
+  const mkBody = L => { const b = new Body(cmats, lookCol(L)); b.forceNear = true; b.root.traverse(o => { if (o.isMesh && !o.userData.sil) { o.renderOrder = 2; const s = new THREE.Mesh(o.geometry, o.userData.skinned ? b.skinMat(silMat) : silMat); s.userData.sil = true; s.renderOrder = 1; s.castShadow = false; o.add(s); } }); scene.add(b.root); return b; };
   let body = mkBody((Conta.ativo() || {}).look); let myLook = lookCol((Conta.ativo() || {}).look);
   const vm = makeVM(); // arma e braços na 1.ª pessoa
   // ---------- comerciantes: 4 pessoas paradas nas zonas de PvP (ver traders.js)
@@ -448,7 +487,7 @@ async function boot() {
       if (G.net.world) G.net.raw({ t: 'tr', id: T.id, k, n });
       G.inv.take('iene', cost); const left = G.inv.give(it); if (left) { G.dropItem(it); G.ui.toast('Mochila cheia: ficou no chão'); } else G.ui.toast('Compraste ' + (n > 1 ? n + ' × ' : '') + ITEMS[k].s.toLowerCase()); audio.play('apanhar'); }
     refresh(); G.ui.refresh(true); };
-  const mkRemote = L => { const b = new Body(mats, lookCol(L && typeof L === 'object' ? L : {})); scene.add(b.root); return b; };
+  const mkRemote = L => { const b = new Body(cmats, lookCol(L && typeof L === 'object' ? L : {})); scene.add(b.root); return b; };
   await LP(84, 'a preparar os animais');
   const fauna = new Fauna(scene, mats.v, 160); // animais (veados, javalis, lobos, cães, galinhas)
   const _vf = new THREE.Frustum(), _vfM = new THREE.Matrix4();
@@ -458,7 +497,7 @@ async function boot() {
   { const TL = new THREE.TextureLoader(); let cm = null, nm = null; const done = () => { if (cm && nm) { zmat.color.set(0xffffff); horde.setMaps(cm, nm); } };
     TL.load('tex/zombie.jpg', t => { t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; cm = t; done(); }, undefined, () => { });
     TL.load('tex/zombie_n.jpg', t => { t.anisotropy = 4; nm = t; done(); }, undefined, () => { }); }
-  const bagM = bagMesh(mats), bodyBagM = bagMesh(mats, true);
+  const bagM = bagMesh(cmats), bodyBagM = bagMesh(cmats, true);
   // sacos no chão: contorno quente que pulsa quando estás perto (casca por trás do saco, sem custo de pós-processamento)
   const haloTex = (() => { const c = document.createElement('canvas'); c.width = c.height = 64; const x = c.getContext('2d'), g = x.createRadialGradient(32, 32, 4, 32, 32, 32); g.addColorStop(0, 'rgba(255,200,110,.9)'); g.addColorStop(0.45, 'rgba(242,170,70,.45)'); g.addColorStop(1, 'rgba(242,160,60,0)'); x.fillStyle = g; x.fillRect(0, 0, 64, 64); return new THREE.CanvasTexture(c); })();
   const haloGeo = new THREE.PlaneGeometry(1, 1), haloMat = new THREE.MeshBasicMaterial({ map: haloTex, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, fog: false, opacity: 0.6 });
@@ -473,6 +512,7 @@ async function boot() {
     p: null, inv: new Inv(), sel: 0, zs: [], bags: [], box: null, prompt: null,
     cam, renderer, scene, camT, YAW,
   };
+  G.dbgW = W; G.dbgOl = () => ({ n: OL.objs.length, key: !!OL.key, lbl: G.prompt && G.prompt.label }); G.olRefresh = () => { OL.wm = null; for (const c of W.containers) c._olg = undefined; OL.key = null; };
   G.dbgNav = { nav, walkLine: (a, b, c, d, lv) => walkLine(a, b, c, d, lv || 0), find: (a, b, c, d, lv) => nav.find(a, b, c, d, lv || 0) };
   // bases construídas pelo jogador
   // mancha de luz no chão por baixo de cada candeeiro (barata: dá para todos os do mapa ao mesmo tempo)
@@ -514,7 +554,7 @@ async function boot() {
   for (const k in ITEMS) { const d = ITEMS[k]; ICONS[k] = I3.iconOf(d.icon, d.w * CELLPX + (d.w - 1) * 2, d.h * CELLPX + (d.h - 1) * 2, d.v || 'side', d.w === 1 && d.h === 1 ? 0.7 : 0.82, d.tint); }
   const ICONS_SQ = {}; for (const k in ITEMS) { const d = ITEMS[k]; if (d.w >= d.h * 2 && d.w >= 3) ICONS_SQ[k] = I3.iconOf(d.icon, 96, 96, 'side', 0.94, d.tint, -0.62); } G.ICONS_SQ = ICONS_SQ;
   G.ICONS = ICONS; G.portrait = eq => I3.portrait({ eq }, 160, 300); I3.setLook((Conta.ativo() || {}).look);
-  G.portraitLook = L => I3.portrait({}, 168, 252, L); G.portraitBig = L => I3.portrait({ gun: 'ak', raise: 1, ry: -0.9 }, 520, 560, L); // a personagem grande no menu G.LOOK_OPTS = LOOK_OPTS;
+  G.portraitLook = L => I3.portrait({}, 168, 252, L); G.dbgPortrait = (o, w, h) => I3.portrait(o, w, h); G.portraitBig = L => I3.portrait({ gun: 'ak', raise: 1, ry: -0.9 }, 520, 560, L); // a personagem grande no menu G.LOOK_OPTS = LOOK_OPTS;
   Object.defineProperty(G, 'body', { get: () => body, configurable: true });
   G.setLook = L => { myLook = lookCol(L); const o = body, nb = mkBody(L); nb.root.position.copy(o.root.position); nb.root.rotation.copy(o.root.rotation); nb.root.visible = o.root.visible; scene.remove(o.root); o.dispose(); body = nb; I3.setLook(L); if (G.p && G.inv) refresh(); G.lookV = (G.lookV || 0) + 1; };
 
@@ -1294,7 +1334,7 @@ async function boot() {
         sc = new THREE.Scene(); pc = new THREE.PerspectiveCamera(28, 1, 0.1, 50);
         sc.add(new THREE.HemisphereLight(0xfff4e6, 0x3a3630, 1.6)); const key = new THREE.DirectionalLight(0xffffff, 2.4); key.position.set(2, 4, 3); sc.add(key); const rim = new THREE.DirectionalLight(0x8ab4ff, 1.2); rim.position.set(-3, 2, -2); sc.add(rim);
         const disc = new THREE.Mesh(new THREE.CircleGeometry(0.9, 40), new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.35 })); disc.rotation.x = -Math.PI / 2; disc.position.y = 0.005; sc.add(disc);
-        b = new Body(mats, lookCol((Conta.ativo() || {}).look)); b.forceNear = true; sc.add(b.root);
+        b = new Body(cmats, lookCol((Conta.ativo() || {}).look)); b.forceNear = true; sc.add(b.root);
         // arrastar o dedo roda a personagem
         canvas.addEventListener('pointerdown', e => { drag = { x: e.clientX, a: ang, t: performance.now() }; canvas.setPointerCapture && canvas.setPointerCapture(e.pointerId); });
         canvas.addEventListener('pointermove', e => { if (!drag) return; ang = drag.a + (e.clientX - drag.x) * 0.012; });
@@ -1303,7 +1343,7 @@ async function boot() {
       team(t) { if (b) b.setTeam(t == null ? null : t | 0); },
       dbgAng(a) { ang = a; spin = 0; drag = { x: 0, a, t: 0 }; }, dbgFree() { drag = null; },
       set(gun, att) { if (!b) return; const d = ITEMS[gun]; mode = d && d.gun ? (d.long ? 'rifle' : 'pistol') : 'none'; b.setWeapon(gun || '', att || {}); spin = 3; },
-      look(L) { if (!sc) return; sc.remove(b.root); b = new Body(mats, lookCol(L)); b.forceNear = true; sc.add(b.root); },
+      look(L) { if (!sc) return; sc.remove(b.root); b = new Body(cmats, lookCol(L)); b.forceNear = true; sc.add(b.root); },
       stop() { if (raf) cancelAnimationFrame(raf); raf = 0; }, start() { if (R && !raf) raf = requestAnimationFrame(loop); },
     };
     return api; })();
@@ -1959,7 +1999,7 @@ async function boot() {
     { thinT -= 1; if (thinT <= 0) { thinT = 8; if (scene.children.length !== thinN) { thinN = scene.children.length; thinL.length = 0; for (const o of scene.children) { if (o.isMesh && o.userData.thin && o.geometry.boundingBox) thinL.push(o); else if (o.isGroup) for (const c of o.children) if (c.isMesh && c.userData.thin && c.geometry.boundingBox) thinL.push(c); } }
         const cp = cam.position, D = G.fpv && G.fpv.on ? THIN_D : THIN_D * 2; for (const m of thinL) { const bb = m.geometry.boundingBox, dx = Math.max(bb.min.x - cp.x, 0, cp.x - bb.max.x), dz = Math.max(bb.min.z - cp.z, 0, cp.z - bb.max.z); m.visible = dx * dx + dz * dz < D * D; } } }
     if (window.__rinfoOn) { renderer.info.autoReset = false; renderer.info.reset(); }
-    fireFrame(G.t, renderer, cam); renderer.render(scene, cam);
+    fireFrame(G.t, renderer, cam); renderer.render(scene, cam); olRender();
     if (G.vmOn) { renderer.autoClear = false; renderer.clearDepth(); renderer.render(vm.scene, vm.cam); renderer.autoClear = true; }
   };
   await LP(96, 'quase pronto');

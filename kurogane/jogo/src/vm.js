@@ -3,6 +3,7 @@
 // Os braços e as mãos são os do próprio corpo (mesma malha e cores), postos por IK em cada frame; as recargas mexem
 // as peças soltas de cada arma (carregador, ferrolho, bomba), e há gestos para a ligadura, comer, beber e lançar granadas.
 import * as THREE from 'three';
+import { wear } from './wear.js';
 import { flashSprite } from './flash.js';
 import { Builder } from './builder.js';
 import { weaponGeos, RDP, WPUSH, LONG, fpArms, partPivot } from './chars.js';
@@ -44,7 +45,7 @@ export function makeVM() {
   const scene = new THREE.Scene(), cam = new THREE.PerspectiveCamera(46, 1, 0.06, 6); // a coronha encostada à cara não entra no ecrã
   const hemi = new THREE.HemisphereLight(0xdfe6ff, 0x3a332c, 1), key = new THREE.DirectionalLight(0xfff0dc, 1); key.position.set(-0.4, 1, 0.5); scene.add(hemi, key);
   // cores da arma um pouco mais claras do que no mundo: vista tão de perto, o preto puro fica um borrão
-  const M = { v: new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.7 }), m: new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.38, metalness: 0.35 }), lit: new THREE.MeshBasicMaterial({ vertexColors: true }),
+  const M = { v: wear(new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.7 }), 'vv', 0), m: wear(new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.36, metalness: 0.42 }), 'vmm', 1), lit: new THREE.MeshBasicMaterial({ vertexColors: true }),
     gl: new THREE.MeshBasicMaterial({ color: 0x9ad0ff, transparent: true, opacity: 0.1, depthWrite: false }) };
   M.v.color.setScalar(1.7); M.m.color.setScalar(2.4);
   M.vf = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.8, flatShading: true }); M.vf.color.setScalar(1.5);
