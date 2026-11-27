@@ -92,7 +92,7 @@ export class Builder {
   // chão horizontal (retângulo em x/z)
   floor(x0, z0, x1, z1, y, hex, mat = 'v') { const g = new THREE.PlaneGeometry(x1 - x0, z1 - z0); g.rotateX(-Math.PI / 2); return this.add(g, hex, mat, mat4((x0 + x1) / 2, y, (z0 + z1) / 2)); }
   // adereço do Blender: devolve false se o ficheiro não chegou (quem chama faz as caixas de antes). Só as peças com tint levam a cor do sítio e o jit
-  model(name, x, y, z, ry, tint = 0xffffff, o = {}) { const L = propParts(name); if (!L) return false; const M = mat4(x, y, z, ry || 0, o.rx || 0, o.rz || 0, (o.s || 1) * (o.sx || 1), o.s || 1, (o.s || 1) * (o.sz || 1)); let jit = o.jit || 0;
+  model(name, x, y, z, ry, tint = 0xffffff, o = {}) { const L = propParts(name); if (!L) return false; const M = mat4(x, y, z, ry || 0, o.rx || 0, o.rz || 0, (o.s || 1) * (o.sx || 1), (o.s || 1) * (o.sy || 1), (o.s || 1) * (o.sz || 1)); let jit = o.jit || 0;
     if (!this.dry) { const e = this.m.elements, wx = e[0] * x + e[4] * y + e[8] * z + e[12], wz = e[2] * x + e[6] * y + e[10] * z + e[14]; const c = PSTAT[name] || (PSTAT[name] = { n: 0, at: [] }); c.n++; if (c.at.length < 6) c.at.push([+wx.toFixed(1), +wz.toFixed(1), +(Math.atan2(e[8], e[10]) + (ry || 0)).toFixed(2)]); }
     for (const P of L) { this.add(P, P.t ? tint : 0xffffff, P.m === 'lit' ? 'lit' : (o.mat && P.m === 'v' ? o.mat : P.m), M, P.t ? jit : 0); if (P.t) jit = 0; }
     if (jit) rr(-jit, jit); return true; }

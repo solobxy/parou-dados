@@ -3,6 +3,7 @@ import { buildArena } from './arena.js';
 import * as THREE from 'three';
 import { buildMonuments } from './monuments.js';
 import { Builder, rnd, rr, ri, pick, shade, mat4, getSeed, setSeed } from './builder.js';
+import { propsReady } from './props.js';
 import { buildTowns } from './towns.js';
 import { buildRegions } from './regions.js';
 
@@ -74,10 +75,10 @@ export function buildWorld(scene, mats, A, opt = {}) {
   // ---------- peças de rua
   const pole = (x, z, h = 8.5) => {
     if (Math.abs(x * 7 + z * 3) % 3 < 1) W.lamps.push([x, h - 2.2, z]);
-    b.cyl(0.13, 0.17, h, 8, x, h / 2, z, 0x8d8a82, { jit: 0.05 });
+    if (!b.model('poste', x, 0, z, 0, 0x8d8a82, { jit: 0.05, sy: h / 8.5 })) { b.cyl(0.13, 0.17, h, 8, x, h / 2, z, 0x8d8a82, { jit: 0.05 });
     for (const y of [h - 0.4, h - 1.1]) b.box(1.6, 0.1, 0.1, x, y, z, 0x5a5650);
     b.cyl(0.17, 0.17, 0.5, 8, x + 0.35, h - 1.9, z, 0x6d6a64); b.cyl(0.14, 0.14, 0.45, 8, x - 0.35, h - 2.6, z, 0x6d6a64);
-    b.box(0.3, 0.42, 0.06, x, 2.4, z + 0.14, 0xe6c84a); // placa amarela
+    b.box(0.3, 0.42, 0.06, x, 2.4, z + 0.14, 0xe6c84a); } // placa amarela
     circ(x, z, 0.25);
     return [x, h - 0.4, z];
   };
@@ -113,7 +114,7 @@ export function buildWorld(scene, mats, A, opt = {}) {
   const barrier = (x, z, ry = 0) => { if (b.model('barreira', x, 0, z, ry)) return; b.push(x, 0, z, ry); for (const sx of [-0.8, 0.8]) b.box(0.08, 0.9, 0.5, sx, 0.45, 0, 0xd8d4c8); b.box(1.9, 0.22, 0.06, 0, 0.75, 0, 0xe8a62a); b.box(1.9, 0.14, 0.06, 0, 0.45, 0, WHITE); b.pop(); };
   const bags = (x, z) => { for (let i = 0; i < 3; i++) b.ico(rr(0.25, 0.4), x + rr(-0.4, 0.4), 0.22, z + rr(-0.3, 0.3), pick([0x2a2b2c, 0x3c4a8a, 0xd8d8cf]), { det: 1, sy: 0.8 }); };
   const blood = (x, z, s = 1) => { for (let i = 0; i < 4; i++) { const g = new THREE.CircleGeometry(rr(0.15, 0.5) * s, 9); g.rotateX(-Math.PI / 2); b.add(g, 0x6e1812, 'decal', mat4(x + rr(-0.6, 0.6) * s, 0.045, z + rr(-0.6, 0.6) * s)); } };
-  const bike = (x, z, ry) => { b.push(x, 0, z, ry); for (const s of [-0.5, 0.5]) b.add(new THREE.TorusGeometry(0.3, 0.03, 5, 14), 0x1b1b1c, 'v', mat4(0, 0.32, s, Math.PI / 2)); b.box(0.04, 0.04, 1.0, 0, 0.55, 0, pick([0x2f6fb3, 0xc23a2e, 0xe9e7e1]), { mat: 'm' }); b.box(0.04, 0.4, 0.04, 0, 0.62, -0.25, 0x333); b.box(0.5, 0.04, 0.04, 0, 0.92, 0.4, 0x333); b.box(0.32, 0.22, 0.3, 0, 0.8, 0.62, 0x333); b.pop(); };
+  const bike = (x, z, ry) => { if (propsReady()) { const fc = pick([0x2f6fb3, 0xc23a2e, 0xe9e7e1]); b.model('bicicleta', x, 0, z, ry, fc); return; } b.push(x, 0, z, ry); for (const s of [-0.5, 0.5]) b.add(new THREE.TorusGeometry(0.3, 0.03, 5, 14), 0x1b1b1c, 'v', mat4(0, 0.32, s, Math.PI / 2)); b.box(0.04, 0.04, 1.0, 0, 0.55, 0, pick([0x2f6fb3, 0xc23a2e, 0xe9e7e1]), { mat: 'm' }); b.box(0.04, 0.4, 0.04, 0, 0.62, -0.25, 0x333); b.box(0.5, 0.04, 0.04, 0, 0.92, 0.4, 0x333); b.box(0.32, 0.22, 0.3, 0, 0.8, 0.62, 0x333); b.pop(); };
   const bench = (x, z, ry) => { if (b.model('banco', x, 0, z, ry)) return; b.push(x, 0, z, ry); b.box(1.6, 0.06, 0.45, 0, 0.45, 0, 0x8a5a32); b.box(1.6, 0.3, 0.05, 0, 0.7, -0.2, 0x8a5a32); for (const s of [-0.7, 0.7]) b.box(0.05, 0.45, 0.4, s, 0.22, 0, 0x3a3b3c, { mat: 'm' }); b.pop(); };
   const lantern = (x, y, z) => { b.cyl(0.18, 0.18, 0.5, 10, x, y, z, new THREE.Color(1.8, 0.35, 0.2), { mat: 'lit' }); b.cyl(0.19, 0.19, 0.05, 10, x, y + 0.27, z, 0x1d1d1d); b.cyl(0.19, 0.19, 0.05, 10, x, y - 0.27, z, 0x1d1d1d); };
 
@@ -194,6 +195,24 @@ export function buildWorld(scene, mats, A, opt = {}) {
   };
   // edifício onde se entra: paredes com portas e janelas, telhado e parte de cima das paredes da frente somem
   let eid = 0;
+  // luzes do teto dentro dos prédios: lâmpadas nuas de fio ou calhas fluorescentes; umas acesas, outras a piscar, outras partidas
+  // (escolha por um sorteio próprio pela posição: não mexe nos sorteios do mapa). O jogo acende as mais perto de ti (main.js)
+  const BULB = new THREE.Color(1.9, 1.45, 0.85), TUBE = new THREE.Color(1.35, 1.6, 1.45);
+  const ceilLamps = (C, L, ax, az, bx, bz, h, yb) => { const W2 = bx - ax, D2 = bz - az; if (W2 < 2 || D2 < 2) return; const big = W2 * D2 > 70;
+    const nx = Math.max(1, Math.round(W2 / 5.5)), nz = Math.max(1, Math.round(D2 / 5.5)); C.lamps = C.lamps || [];
+    for (let i = 0; i < nx; i++) for (let j = 0; j < nz; j++) { const x = ax + (i + 0.5) * W2 / nx, z = az + (j + 0.5) * D2 / nz;
+      const hs = Math.abs(Math.sin(x * 12.9898 + z * 78.233 + L * 37.719) * 43758.5453) % 1, h2 = Math.abs(Math.sin(x * 4.1 + z * 9.7 + L * 3.3) * 9631.17) % 1;
+      const st = hs < 0.2 ? 'off' : hs < 0.48 ? 'flick' : 'on', tube = big ? h2 < 0.8 : h2 < 0.25, on = st !== 'off';
+      if (tube) { const ry = W2 >= D2 ? 0 : Math.PI / 2, drop = 0.42; b.push(x, h - drop, z, ry);
+        for (const sx of [-0.45, 0.45]) b.box(0.008, drop, 0.008, sx, drop / 2, 0, 0x2a2b2c);
+        b.box(1.25, 0.05, 0.18, 0, 0.03, 0, 0xb8bcbc, { mat: 'm' });
+        if (on) b.cyl(0.022, 0.022, 1.15, 6, 0, -0.01, 0, TUBE, { mat: 'lit', rz: Math.PI / 2 });
+        else b.cyl(0.022, 0.022, 1.15, 6, 0.3, -0.32, 0, 0x8a908a, { rz: Math.PI / 2 - 0.55 }); // partida: pendurada de um lado
+        b.pop(); C.lamps.push({ x, y: yb + h - drop - 0.1, z, lv: L, s: st, k: 't' }); }
+      else { const drop = 0.35 + h2 * 0.35; b.push(x, h, z, 0);
+        b.cyl(0.05, 0.05, 0.03, 8, 0, -0.015, 0, 0xd8d4ca); b.box(0.008, drop, 0.008, 0, -drop / 2, 0, 0x1d1d1d); b.cyl(0.02, 0.026, 0.06, 8, 0, -drop - 0.02, 0, 0x2a2b2c);
+        b.sph(0.045, 0, -drop - 0.075, 0, on ? BULB : 0x6a6a60, { mat: on ? 'lit' : 'v', ws: 8, hs: 6 });
+        b.pop(); C.lamps.push({ x, y: yb + h - drop - 0.1, z, lv: L, s: st, k: 'b' }); } } };
   const shell = (x0, z0, x1, z1, o = {}) => {
     const id = 'e' + (eid++), h = o.h ?? 3.4, t = 0.22, wall = o.wall ?? 0xd9d4ca, cutY = 1.1, trim = o.trim ?? 0x6a6e72, doorC = o.doorC ?? 0x6a4a32;
     const n = o.floors ?? 1, fh = h + 0.3;
@@ -211,6 +230,7 @@ export function buildWorld(scene, mats, A, opt = {}) {
         for (const st of stairs) if (st.lv === L - 1) { const np = []; for (const [a0, c0, a1, c1] of parts) { if (st.x1 <= a0 || st.x0 >= a1 || st.z1 <= c0 || st.z0 >= c1) { np.push([a0, c0, a1, c1]); continue; } if (st.z0 > c0) np.push([a0, c0, a1, st.z0]); if (st.z1 < c1) np.push([a0, st.z1, a1, c1]); const zz0 = Math.max(c0, st.z0), zz1 = Math.min(c1, st.z1); if (st.x0 > a0) np.push([a0, zz0, st.x0, zz1]); if (st.x1 < a1) np.push([st.x1, zz0, a1, zz1]); } parts = np; }
         for (const [a0, c0, a1, c1] of parts) { b.box(a1 - a0, 0.3, c1 - c0, (a0 + a1) / 2, -0.15, (c0 + c1) / 2, shade(wall, 0.8)); b.floor(a0, c0, a1, c1, 0.035, o.floorUp ?? o.floor ?? 0xb9b2a4); }
       }
+      ceilLamps(C, L, x0 + t, z0 + t, x1 - t, z1 - t, h, yb);
       const side = (sd) => {
         const horiz = sd === 's' || sd === 'n', a0 = horiz ? x0 : z0, a1 = horiz ? x1 : z1, fixed = sd === 's' ? z1 - t / 2 : sd === 'n' ? z0 + t / 2 : sd === 'e' ? x1 - t / 2 : x0 + t / 2;
         const cut = sd === 's' || sd === 'e';
@@ -480,11 +500,11 @@ export function buildWorld(scene, mats, A, opt = {}) {
   for (const [x, z, r] of [[-24.6, -6.2, 0.3], [-25.6, -6.3, 0.1], [8.6, 5.4, 1.2], [-44, 5.2, 0.5], [44.5, -5.4, 2.8]]) bike(x, z, r);
   for (const [x, z] of [[-30.5, -6.4], [12.8, -6.5], [-7.0, -20], [42, 6.4], [6.8, 27], [-45, -24]]) bags(x, z);
   // --- mobiliário de rua japonês: marcos do correio, armários técnicos, pilaretes, floreiras, cabines, sinais e semáforos
-  { const post = (x, z) => { b.cyl(0.24, 0.24, 1.0, 16, x, 0.6, z, 0xc8281e, { mat: 'm' }); b.sph(0.24, x, 1.1, z, 0xc8281e, { mat: 'm', th: Math.PI / 2, ws: 16, hs: 6 }); b.box(0.3, 0.04, 0.05, x, 0.95, z + 0.23, 0x2a2b2c); b.cyl(0.26, 0.28, 0.1, 16, x, 0.05, z, 0x3a3c40); circ(x, z, 0.26); };
-    const ubox = (x, z, ry = 0) => { b.push(x, 0, z, ry); b.rbox(0.7, 1.3, 0.4, 0.04, 0, 0.65, 0, 0xb8bcbc, { mat: 'm' }); b.box(0.5, 0.05, 0.02, 0, 1.0, 0.21, 0x6a6e72); b.box(0.12, 0.16, 0.02, 0.18, 0.7, 0.21, 0xd8c23a); b.pop(); circ(x, z, 0.36); };
-    const bollard = (x, z) => { b.cyl(0.06, 0.07, 0.9, 10, x, 0.45, z, 0xd8b82a, { mat: 'm' }); b.cyl(0.065, 0.065, 0.12, 10, x, 0.72, z, 0x1d1d1d); };
+  { const post = (x, z) => { if (!b.model('marco', x, 0, z, 0)) { b.cyl(0.24, 0.24, 1.0, 16, x, 0.6, z, 0xc8281e, { mat: 'm' }); b.sph(0.24, x, 1.1, z, 0xc8281e, { mat: 'm', th: Math.PI / 2, ws: 16, hs: 6 }); b.box(0.3, 0.04, 0.05, x, 0.95, z + 0.23, 0x2a2b2c); b.cyl(0.26, 0.28, 0.1, 16, x, 0.05, z, 0x3a3c40); } circ(x, z, 0.26); };
+    const ubox = (x, z, ry = 0) => { b.push(x, 0, z, ry); if (!b.model('armtec', 0, 0, 0, 0)) { b.rbox(0.7, 1.3, 0.4, 0.04, 0, 0.65, 0, 0xb8bcbc, { mat: 'm' }); b.box(0.5, 0.05, 0.02, 0, 1.0, 0.21, 0x6a6e72); b.box(0.12, 0.16, 0.02, 0.18, 0.7, 0.21, 0xd8c23a); } b.pop(); circ(x, z, 0.36); };
+    const bollard = (x, z) => { if (b.model('pilarete', x, 0, z, 0)) return; b.cyl(0.06, 0.07, 0.9, 10, x, 0.45, z, 0xd8b82a, { mat: 'm' }); b.cyl(0.065, 0.065, 0.12, 10, x, 0.72, z, 0x1d1d1d); };
     const planter = (x, z, ry = 0) => { b.push(x, 0, z, ry); b.box(1.6, 0.45, 0.5, 0, 0.22, 0, 0x9a968c); for (let i = -2; i <= 2; i++) b.ico(0.22 + rnd() * 0.06, i * 0.32, 0.55, 0, pick([0x3f6a2a, 0x4a7a32, 0x5a7a3a]), { mat: 'vf', det: 1 }); b.pop(); circ(x, z, 0.45); };
-    const booth = (x, z, ry = 0) => { b.push(x, 0, z, ry); b.box(0.95, 0.12, 0.95, 0, 0.06, 0, 0x3a3c40); for (const sx of [-1, 1]) for (const sz of [-1, 1]) b.box(0.06, 2.2, 0.06, sx * 0.44, 1.16, sz * 0.44, 0x2a8a5a, { mat: 'm' }); for (const [w, d, xx, zz] of [[0.9, 0.03, 0, -0.45], [0.03, 0.9, -0.45, 0], [0.03, 0.9, 0.45, 0]]) b.box(w, 1.7, d, xx, 1.15, zz, 0x9ab8c8, { mat: 'gl' }); b.box(1.0, 0.16, 1.0, 0, 2.32, 0, 0x2a8a5a, { mat: 'm' }); b.box(0.3, 0.45, 0.18, 0, 1.3, -0.33, 0x3aa06a); b.box(0.5, 0.08, 0.5, 0, 2.2, 0, new THREE.Color(1.5, 1.5, 1.4), { mat: 'lit' }); b.pop(); rect(x - 0.5, z - 0.5, x + 0.5, z + 0.5, 's', 2.4); };
+    const booth = (x, z, ry = 0) => { b.push(x, 0, z, ry); const MB = b.model('cabine', 0, 0, 0, 0); if (!MB) { b.box(0.95, 0.12, 0.95, 0, 0.06, 0, 0x3a3c40); for (const sx of [-1, 1]) for (const sz of [-1, 1]) b.box(0.06, 2.2, 0.06, sx * 0.44, 1.16, sz * 0.44, 0x2a8a5a, { mat: 'm' }); } for (const [w, d, xx, zz] of [[0.9, 0.03, 0, -0.45], [0.03, 0.9, -0.45, 0], [0.03, 0.9, 0.45, 0]]) b.box(w, 1.7, d, xx, 1.15, zz, 0x9ab8c8, { mat: 'gl' }); if (!MB) { b.box(1.0, 0.16, 1.0, 0, 2.32, 0, 0x2a8a5a, { mat: 'm' }); b.box(0.3, 0.45, 0.18, 0, 1.3, -0.33, 0x3aa06a); b.box(0.5, 0.08, 0.5, 0, 2.2, 0, new THREE.Color(1.5, 1.5, 1.4), { mat: 'lit' }); } b.pop(); rect(x - 0.5, z - 0.5, x + 0.5, z + 0.5, 's', 2.4); };
     const rack = (x, z) => { for (let i = 0; i < 4; i++) b.add(new THREE.TorusGeometry(0.28, 0.025, 6, 16, Math.PI), 0x8a8e92, 'm', mat4(x + i * 0.45, 0, z)); };
     const stopSign = (x, z, ry) => { b.cyl(0.04, 0.04, 2.4, 8, x, 1.2, z, 0x9a9ea2, { mat: 'm' }); b.push(x, 2.35, z, ry); b.add(new THREE.CircleGeometry(0.32, 3), 0xc8281e, 'v', mat4(0, 0, 0.03, 0, 0, Math.PI)); b.pop(); };
     let k = 0;

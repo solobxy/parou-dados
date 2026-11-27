@@ -1826,6 +1826,7 @@ async function boot() {
       const nt = 1 - D;
       // óculos de visão noturna: ligam sozinhos ao escurecer (mais luz e tudo em verde)
       { const nv = p && p.alive && G.inv && G.inv.eq.eyes ? Math.max(0, Math.min(1, (nt - 0.3) / 0.35)) : 0; G.nv = nv;
+        G.eyeIn = (G.eyeIn || 0) + ((G.inside ? 1 : 0) - (G.eyeIn || 0)) * Math.min(1, dt * 1.2); renderer.toneMappingExposure *= 1 + 0.28 * G.eyeIn; hemi.intensity *= 1 + 0.35 * G.eyeIn; // dentro de casa os olhos habituam-se
         if (nv > 0) { hemi.intensity += 1.3 * nv; scene.environmentIntensity += 0.35 * nv; renderer.toneMappingExposure += 0.75 * nv; _fc.lerp(_rc.setRGB(0.15, 0.19, 0.16), 0.6 * nv); scene.fog.color.copy(_fc); scene.background.copy(_fc); }
         const on = nv > 0.5; if (on !== !!G.nvOn) { G.nvOn = on; renderer.domElement.classList.toggle('nvg', on); if (on && G.playing) G.ui.toast('Visão noturna ligada'); } }
       if (p && G.playing && p.alive) {
@@ -1840,8 +1841,14 @@ async function boot() {
       G.lampT = (G.lampT || 0) - dt;
       if (G.lampT <= 0) { G.lampT = 0.5; const cx = camT.x, cz = camT.z; const bl = G.base.lights().map(l => [l, (l[0] - cx) ** 2 + (l[2] - cz) ** 2]).filter(a => a[1] < 1600).sort((a, b) => a[1] - b[1]);
         baseL.forEach((L, i) => { const q = bl[i]; if (q) { L.position.set(q[0][0], q[0][1], q[0][2]); L.userData.on = 1; L.userData.fire = q[0].fire; } else L.userData.on = 0; });
-        const near3 = W.lamps.concat(bl.slice(baseL.length).map(a => a[0])).map(l => [l, (l[0] - cx) ** 2 + (l[2] - cz) ** 2]).filter(a => a[1] < 1600).sort((a, b) => a[1] - b[1]).slice(0, lampL.length); lampL.forEach((L, i) => { const q = near3[i]; if (q) { L.position.set(q[0][0], q[0][1] - 0.4, q[0][2]); L.userData.on = 1; L.userData.big = q[0][1] > 9; L.userData.base = q[0].base; } else L.userData.on = 0; }); }
-      lampL.forEach(L => { L.intensity = L.userData.on ? nt * (L.userData.big ? 200 : 26) : 0; L.distance = L.userData.big ? 48 : L.userData.base ? 4 : 20; });
+        const IN = G.inside, ilv = p.st && p.st.b === IN ? p.st.lv : (p.lv || 0), il = IN && IN.lamps ? IN.lamps.filter(l => l.lv === ilv && l.s !== 'off').map(l => [l, (l.x - p.x) ** 2 + (l.z - p.z) ** 2]).sort((a, b) => a[1] - b[1]).slice(0, lampL.length) : [];
+        if (il.length) lampL.forEach((L, i) => { const q = il[i]; L.userData.ind = 1; if (q) { L.position.set(q[0].x, q[0].y, q[0].z); L.userData.on = 1; L.userData.lk = q[0]; } else L.userData.on = 0; }); // dentro: as lâmpadas do teto do teu piso
+        else { const near3 = W.lamps.concat(bl.slice(baseL.length).map(a => a[0])).map(l => [l, (l[0] - cx) ** 2 + (l[2] - cz) ** 2]).filter(a => a[1] < 1600).sort((a, b) => a[1] - b[1]).slice(0, lampL.length); lampL.forEach((L, i) => { const q = near3[i]; L.userData.ind = 0; if (q) { L.position.set(q[0][0], q[0][1] - 0.4, q[0][2]); L.userData.on = 1; L.userData.big = q[0][1] > 9; L.userData.base = q[0].base; } else L.userData.on = 0; }); } }
+      lampL.forEach((L, i) => { const u = L.userData;
+        if (u.ind) { const lk = u.lk, tube = lk && lk.k === 't'; let f = 1;
+          if (lk && lk.s === 'flick') { const t = G.t + i * 3.7, gate = Math.sin(t * 1.3) + Math.sin(t * 2.9 + 1.1); f = gate > 1.1 ? (Math.sin(t * 47) > 0.2 ? 0.08 : 1) * (0.75 + 0.25 * Math.sin(t * 23)) : 0.9 + 0.1 * Math.sin(t * 9); } // falhas aos soluços, como numa casa sem manutenção
+          L.color.setHex(tube ? 0xcfe8c8 : 0xffa860); L.intensity = u.on ? (tube ? 7 : 5.5) * f * (0.75 + 0.25 * nt) : 0; L.distance = tube ? 9 : 7.5; L.decay = 1.7; }
+        else { L.color.setHex(0xffc27a); L.decay = 1.6; L.intensity = u.on ? nt * (u.big ? 200 : 26) : 0; L.distance = u.big ? 48 : u.base ? 4 : 20; } });
       { const shOn = renderer.shadowMap.enabled; baseL.forEach((L, i) => { const f = L.userData.fire ? 0.85 + 0.1 * Math.sin(G.t * 11 + i) + 0.06 * Math.sin(G.t * 23.7 + i * 2) : 1; L.intensity = L.userData.on ? (L.userData.fire ? 0.1 + 0.9 * nt : 0.35 + 0.65 * nt) * 16 * f * (L.userData.fire || 1) : 0; L.color.setHex(L.userData.fire ? 0xff8a3a : 0xffc27a); L.distance = shOn ? (L.userData.fire ? 6.5 : 9) : (L.userData.fire ? 2.4 : 3); L.castShadow = shOn; L.shadow.autoUpdate = L.intensity > 0; }); torch.shadow.autoUpdate = torch.intensity > 0; } // sem sombras: alcance curto para não iluminar o lado de fora; as sombras só se calculam com a luz acesa (poupa o telemóvel)
       G.base.night(nt); if (lampPools) lampPools.material.opacity = nt * 0.5;
       G.ambT = (G.ambT || 0) - dt; if (G.ambT <= 0) { G.ambT = 0.5; audio.ambience(G.playing && p && p.alive ? D : 0, !!G.inside || !!G.car, 0.25 + 0.5 * (G.rain || 0)); } // pássaros de dia, grilos à noite, vento
@@ -1918,7 +1925,7 @@ async function boot() {
     // vidros guardam a opacidade própria (o0): o desvanecer multiplica-a em vez de a substituir
     const fade = (c, L, f) => { c.fv[L] = f; for (const m of c.mats[L]) { m.opacity = f * m.userData.o0; const tr = m.userData.t0 || f < 0.995; if (m.transparent !== tr) { m.transparent = tr; m.needsUpdate = true; } } };
     // telhados e andares de cima: somem quando estás lá dentro ou quando te tapam; ao subir as escadas o piso de cima vai aparecendo
-    if (p && G.playing && G.fp) { for (const c of W.cuts) { if (!c.shell) { c.group.visible = true; continue; } for (let L = 0; L < c.n; L++) { c.gt[L].visible = true; if (L) { c.g[L].visible = true; if (c.fv[L] < 1) fade(c, L, 1); } } c.gR.visible = true; } }
+    if (p && G.playing && G.fp) { G.inside = null; for (const c of W.cuts) { if (!c.shell) { c.group.visible = true; continue; } if (!G.inside && inShell(c, p.x, p.z) && (p.lv === 0 || p.bld === c || (p.st && p.st.b === c))) G.inside = c; for (let L = 0; L < c.n; L++) { c.gt[L].visible = true; if (L) { c.g[L].visible = true; if (c.fv[L] < 1) fade(c, L, 1); } } c.gR.visible = true; } } // na 1.ª pessoa também se sabe se estás dentro (luzes do teto, som, olhos)
     else if (p && G.playing) {
       v3a.copy(cam.position);
       const occ = c => { if (!(Math.abs(c.x0 + c.x1 - 2 * p.x) < (c.x1 - c.x0) + 30 && p.z < c.z1 + 2 && p.z > c.z0 - 40)) return false; v3b.set(p.x, p.y + 1.1, p.z); if (box3(v3a, v3b, c)) return true; v3b.set(p.x, p.y + 0.3, p.z); return box3(v3a, v3b, c); };

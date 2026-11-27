@@ -110,7 +110,7 @@ export function retint(geos, base, tint) {
         const v = Math.sin(x * 21 + Math.sin(z * 17) * 1.8) + Math.sin(y * 19 + z * 13) + Math.sin(x * 11 - y * 23 + 1.3);
         _tc.setHex(pal[Math.max(0, Math.min(3, Math.floor((v + 2.4) / 4.8 * 4)))]); }
       else _tc.setHex(tint);
-      for (let j = 0; j < 3; j++) col.setXYZ(i + j, _tc.r * s, _tc.g * s, _tc.b * s);
+      for (let j = 0; j < 3; j++) { const sj = j ? (col.getX(i + j) / _tb.r + col.getY(i + j) / _tb.g + col.getZ(i + j) / _tb.b) / 3 : s; col.setXYZ(i + j, _tc.r * sj, _tc.g * sj, _tc.b * sj); } // cada vértice com a sua sombra cozida
     }
     col.needsUpdate = true; }
   return geos;
@@ -524,7 +524,7 @@ export class Horde {
 
 // saco no chão (loot largado ou de zombie) e saco de corpo
 export function bagMesh(mats, body = false) {
-  const g = geoOf(b => { if (body) { b.rbox(0.7, 0.28, 1.7, 0.12, 0, 0.14, 0, 0x2a2b2c); b.box(0.05, 0.02, 1.5, 0, 0.29, 0, 0x6a6e72); } else { b.sph(0.26, 0, 0.18, 0, 0x5a4a32, { sy: 0.75, ws: 10, hs: 7 }); b.cyl(0.07, 0.1, 0.12, 8, 0, 0.38, 0, 0x4a3a28); } });
+  const g = geoOf(b => { if (b.model(body ? 'sacocorpo' : 'saco', 0, 0, 0, 0)) return; if (body) { b.rbox(0.7, 0.28, 1.7, 0.12, 0, 0.14, 0, 0x2a2b2c); b.box(0.05, 0.02, 1.5, 0, 0.29, 0, 0x6a6e72); } else { b.sph(0.26, 0, 0.18, 0, 0x5a4a32, { sy: 0.75, ws: 10, hs: 7 }); b.cyl(0.07, 0.1, 0.12, 8, 0, 0.38, 0, 0x4a3a28); } });
   return meshOf(g, mats);
 }
 

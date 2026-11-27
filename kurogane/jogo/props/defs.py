@@ -357,3 +357,125 @@ def balcao():
     t.box(1.04, 0.05, 1.04, 0, 0.995, 0, bev=0.012)
 
 PROPS.update({'sofa': sofa, 'fogao': fogao, 'frigo': frigo, 'sanita': sanita, 'lavatorio': lavatorio, 'secretaria': secretaria, 'tv': tv, 'balcao': balcao})
+
+def poste():
+    # poste de eletricidade de betão (8,5 m; o jogo estica na altura): base, poste afunilado, duas travessas com isoladores,
+    # dois transformadores com cintas, degraus de ferro, placa amarela
+    p = Part('v', tint=True, angle=40)
+    p.cyl(0.13, 0.17, 8.5, 10, 0, 4.25, 0)
+    p.cyl(0.2, 0.22, 0.3, 10, 0, 0.15, 0)
+    d = Part('v', 0x5a5650, angle=35)
+    for y in (8.1, 7.4): d.box(1.6, 0.1, 0.1, 0, y, 0, bev=0.015); d.box(0.04, 0.5, 0.04, 0.35, y - 0.22, 0, rz=0.7); d.box(0.04, 0.5, 0.04, -0.35, y - 0.22, 0, rz=-0.7)
+    ins = Part('v', 0x7a7a74, angle=45)
+    for y in (8.1,):
+        for sx in (-0.7, 0, 0.7): ins.lathe([(0.04, 0), (0.05, 0.03), (0.03, 0.06), (0.05, 0.09), (0.03, 0.12), (0.0, 0.13)], n=8, x=sx, y=y + 0.05)
+    t = Part('m', 0x6d6a64, angle=40)
+    t.cyl(0.17, 0.17, 0.5, 12, 0.35, 6.6, 0); t.cyl(0.14, 0.14, 0.45, 12, -0.35, 5.9, 0)
+    t.cyl(0.18, 0.18, 0.03, 12, 0.35, 6.86, 0); t.cyl(0.15, 0.15, 0.03, 12, -0.35, 6.13, 0)
+    for sx, y in ((0.35, 6.6), (-0.35, 5.9)): t.box(0.2, 0.06, 0.08, sx * 0.55, y, 0)
+    s = Part('m', 0x4a4a46, angle=35)
+    for i in range(6): s.box(0.04, 0.03, 0.3, 0, 2.8 + i * 0.45, 0, ry=(i % 2) * math.pi / 2)  # degraus
+    y = Part('v', 0xe6c84a, angle=30); y.box(0.3, 0.42, 0.04, 0, 2.4, 0.15, bev=0.01)
+    k = Part('v', 0x2a2b2c, angle=30); k.box(0.22, 0.04, 0.005, 0, 2.5, 0.172); k.box(0.16, 0.03, 0.005, 0, 2.38, 0.172)
+
+def marco():
+    # marco do correio japonês: corpo redondo com cúpula, duas ranhuras, placa branca, base
+    r = Part('m', 0xc8281e, angle=45)
+    r.lathe([(0.24, 0.1), (0.24, 1.1), (0.22, 1.2), (0.17, 1.28), (0.09, 1.33), (0.0, 1.345)], n=18)
+    d = Part('v', 0x2a2b2c, angle=30)
+    for sx in (-0.07, 0.07): d.box(0.11, 0.035, 0.05, sx, 0.98, 0.225, bev=0.008)
+    d.box(0.1, 0.12, 0.02, 0, 0.55, 0.235)  # fechadura
+    w = Part('v', 0xf2f0ea, angle=30); w.box(0.2, 0.14, 0.02, 0, 0.78, 0.235, bev=0.005)
+    b = Part('v', 0x3a3c40, angle=35); b.cyl(0.26, 0.28, 0.1, 16, 0, 0.05, 0)
+
+def armtec():
+    # armário técnico de rua (0,7 x 1,3 x 0,4): portas, pala, ventilação, fechadura, autocolante
+    m = Part('m', 0xb8bcbc, angle=35)
+    m.box(0.7, 1.26, 0.4, 0, 0.67, 0, bev=0.03)
+    m.box(0.76, 0.04, 0.46, 0, 1.32, 0, bev=0.012)
+    m.box(0.66, 0.06, 0.36, 0, 0.03, 0)
+    g = Part('m', 0x8a8e8e, angle=35)
+    g.box(0.008, 1.1, 0.01, 0, 0.67, 0.203)
+    for i in range(6): g.box(0.22, 0.012, 0.01, -0.18, 1.0 + i * 0.03, 0.204)
+    k = Part('v', 0x3a3c3e, angle=30); k.box(0.03, 0.08, 0.02, 0.06, 0.75, 0.21, bev=0.006)
+    y = Part('v', 0xd8c23a, angle=30); y.box(0.12, 0.16, 0.004, 0.18, 0.7, 0.203)
+
+def pilarete():
+    y = Part('m', 0xd8b82a, angle=45)
+    y.lathe([(0.07, 0), (0.065, 0.02), (0.06, 0.82), (0.05, 0.88), (0.0, 0.9)], n=12)
+    k = Part('v', 0x1d1d1d, angle=45)
+    k.lathe([(0.064, 0.66), (0.064, 0.78)], n=12, close=False)
+    w = Part('v', 0xe8e6e0, angle=45)
+    w.lathe([(0.062, 0.7), (0.062, 0.73)], n=12, close=False)
+
+def cabine():
+    # cabine telefónica verde: base, pilares, telhado com luz, telefone com auscultador, prateleira (vidros ficam no jogo)
+    g = Part('m', 0x2a8a5a, angle=35)
+    for sx in (-1, 1):
+        for sz in (-1, 1): g.box(0.06, 2.2, 0.06, sx * 0.44, 1.16, sz * 0.44, bev=0.012)
+    g.box(1.0, 0.16, 1.0, 0, 2.32, 0, bev=0.03)
+    for y in (0.15, 0.6, 2.2):
+        g.box(0.92, 0.04, 0.04, 0, y, -0.44); g.box(0.04, 0.04, 0.92, -0.44, y, 0); g.box(0.04, 0.04, 0.92, 0.44, y, 0)
+    b = Part('v', 0x3a3c40, angle=35); b.box(0.95, 0.12, 0.95, 0, 0.06, 0, bev=0.02)
+    t = Part('v', 0x3aa06a, angle=35)
+    t.box(0.3, 0.45, 0.16, 0, 1.3, -0.34, bev=0.02)
+    k = Part('v', 0x1d1f22, angle=35)
+    k.box(0.07, 0.22, 0.06, -0.11, 1.32, -0.24, bev=0.02); k.box(0.12, 0.1, 0.01, 0.04, 1.28, -0.259)
+    k.tube([(-0.11, 1.22, -0.24), (-0.12, 1.0, -0.22), (-0.05, 0.98, -0.25), (0.0, 1.1, -0.26)], 0.006, 4)
+    k.box(0.5, 0.03, 0.22, 0, 1.0, -0.33, bev=0.008)
+    w = Part('v', 0xf2f0ea, angle=30); w.box(0.6, 0.12, 0.012, 0, 2.32, 0.505)
+    l = Part('lit', lit=(1.5, 1.5, 1.4)); l.box(0.5, 0.03, 0.5, 0, 2.225, 0)
+
+def bicicleta():
+    # bicicleta: rodas com raios, quadro em diamante (cor do sítio), guiador, selim, pedais, guarda-lamas, cesto
+    t = Part('v', 0x1b1b1c, angle=50)
+    for s in (-0.52, 0.52): t.torus(0.31, 0.022, 20, 5, 0, 0.33, s, ry=math.pi / 2)
+    r = Part('m', 0xa8acb0, angle=40)
+    for s in (-0.52, 0.52):
+        r.torus(0.28, 0.008, 20, 4, 0, 0.33, s, ry=math.pi / 2)
+        for a in range(8): r.box(0.004, 0.56, 0.004, 0, 0.33, s, rx=a * math.pi / 8)
+        r.cyl(0.03, 0.03, 0.08, 8, 0, 0.33, s, rz=math.pi / 2)
+    f = Part('m', tint=True, angle=35)
+    f.tube([(0, 0.33, -0.52), (0, 0.38, -0.05), (0, 0.85, -0.12)], 0.018, 6)  # escora e tubo do selim
+    f.tube([(0, 0.38, -0.05), (0, 0.78, 0.42)], 0.022, 6)  # tubo de baixo
+    f.tube([(0, 0.82, -0.08), (0, 0.84, 0.4)], 0.02, 6)  # tubo de cima
+    f.tube([(0, 0.82, -0.08), (0, 0.33, -0.52)], 0.014, 6)
+    f.tube([(0, 0.92, 0.4), (0, 0.33, 0.52)], 0.018, 6)  # forqueta
+    k = Part('v', 0x2a2b2c, angle=35)
+    k.box(0.08, 0.04, 0.24, 0, 0.92, -0.12, bev=0.015)  # selim
+    k.tube([(-0.25, 0.98, 0.36), (-0.1, 0.96, 0.4), (0.1, 0.96, 0.4), (0.25, 0.98, 0.36)], 0.012, 6)  # guiador
+    k.cyl(0.07, 0.07, 0.02, 10, 0, 0.38, -0.05, rz=math.pi / 2)  # pedaleira
+    k.box(0.08, 0.02, 0.04, 0.09, 0.3, -0.02); k.box(0.08, 0.02, 0.04, -0.09, 0.46, -0.1)
+    c = Part('m', 0x8a8e92, angle=40)
+    for sx in (-0.13, 0.13): c.box(0.012, 0.18, 0.24, sx, 0.98, 0.62)  # cesto de arame (só as paredes)
+    for sz in (0.5, 0.74): c.box(0.26, 0.18, 0.012, 0, 0.98, sz)
+    c.box(0.26, 0.012, 0.24, 0, 0.89, 0.62)
+    for s in (-0.52, 0.52): c.box(0.06, 0.008, 0.4, 0, 0.67, s * 0.95)  # guarda-lamas
+
+PROPS.update({'poste': poste, 'marco': marco, 'armtec': armtec, 'pilarete': pilarete, 'cabine': cabine, 'bicicleta': bicicleta})
+
+def saco():
+    # saco de lona com coisas lá dentro (o que se deixa cair): bojudo e amarrotado, gargalo atado com corda, alça
+    c = Part('v', 0x5a4a32, angle=70, noise=0.018, L=0.12)
+    c.lathe([(0.0, 0.0), (0.16, 0.005), (0.25, 0.05), (0.27, 0.13), (0.25, 0.22), (0.18, 0.29), (0.08, 0.33), (0.05, 0.35), (0.06, 0.38), (0.09, 0.43), (0.0, 0.42)], n=16)
+    r = Part('v', 0x8a7a5a, angle=60)
+    r.torus(0.055, 0.012, 12, 5, 0, 0.345, 0)
+    r.tube([(0.05, 0.345, 0.02), (0.1, 0.3, 0.06), (0.14, 0.25, 0.08)], 0.008, 4)
+    s = Part('v', 0x3a3020, angle=50)
+    s.tube([(-0.2, 0.08, 0.14), (-0.24, 0.2, 0.12), (-0.2, 0.3, 0.06), (0.0, 0.34, -0.05), (0.2, 0.3, -0.06), (0.24, 0.2, -0.12), (0.2, 0.08, -0.14)], 0.015, 5)
+
+def sacocorpo():
+    # saco de cadáver: preto, com a forma do corpo, fecho éclair a todo o comprimento e pegas nas pontas
+    b = Part('v', 0x2a2b2c, angle=60, noise=0.012, L=0.15)
+    b.box(0.68, 0.22, 1.68, 0, 0.12, 0, bev=0.1, seg=2)
+    b.box(0.42, 0.08, 0.5, 0, 0.24, 0.45, bev=0.04, seg=1)  # peito
+    b.box(0.3, 0.1, 0.3, 0, 0.23, 0.68, bev=0.05, seg=1)  # cabeça
+    b.box(0.46, 0.06, 0.7, 0, 0.23, -0.35, bev=0.03, seg=1)  # pernas
+    z = Part('m', 0x6a6e72, angle=40)
+    z.box(0.03, 0.012, 1.5, -0.12, 0.29, 0.05, rz=0.05)
+    z.box(0.04, 0.02, 0.05, -0.12, 0.3, 0.78, bev=0.005)  # puxador
+    h = Part('v', 0x1c1d1e, angle=40)
+    for sz in (-0.86, 0.86): h.tube([(-0.15, 0.12, sz * 0.97), (-0.1, 0.16, sz * 1.02), (0.1, 0.16, sz * 1.02), (0.15, 0.12, sz * 0.97)], 0.012, 5)
+    for sx in (-0.34, 0.34): h.tube([(sx, 0.12, -0.3), (sx * 1.06, 0.16, -0.2), (sx * 1.06, 0.16, 0.2), (sx, 0.12, 0.3)], 0.01, 5)
+
+PROPS.update({'saco': saco, 'sacocorpo': sacocorpo})

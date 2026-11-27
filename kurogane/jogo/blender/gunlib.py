@@ -150,7 +150,7 @@ def export(name, anchors, scale=1.6):
             np.add.at(cv, E[:, 0], (d * VN[E[:, 0]]).sum(1)); np.add.at(cv, E[:, 1], (-d * VN[E[:, 1]]).sum(1)); np.add.at(cnt, E[:, 0], 1); np.add.at(cnt, E[:, 1], 1)
             cv = cv / np.maximum(cnt, 1)
             wear = np.clip((-cv - 0.12) * 2.2, 0, 1)
-            mult = (0.42 + 0.58 * A[TLr]) * (1 + 0.6 * wear[LV[TLr]])
+            mult = (0.42 + 0.58 * A[TLr]) * (1 + float(os.environ.get('GUN_WEAR', '0.6')) * wear[LV[TLr]])
             Am = np.clip(np.round(mult / 2 * 255), 0, 255)
         else: Am = np.full(len(TLr), 128.0)
         g = G.setdefault((P.tag, P.col, P.mat), [[], [], []]); g[0].append(Vm); g[1].append(Nm); g[2].append(Am); ntri += nt

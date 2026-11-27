@@ -25,8 +25,8 @@ def xf(x=0, y=0, z=0, ry=0, rx=0, rz=0, sx=1, sy=1, sz=1):
 
 class Part:
     """uma peça = uma malha com material do jogo ('v', 'm', 'lit'), cor (hex) e se leva a cor do sítio (tint)"""
-    def __init__(s, mat='v', col=0xffffff, tint=False, angle=35, lit=None, L=0, shade=1.0):
-        s.bm = bmesh.new(); s.mat = mat; s.col = col; s.tint = tint; s.angle = angle; s.lit = lit; s.L = L; s.shade = shade
+    def __init__(s, mat='v', col=0xffffff, tint=False, angle=35, lit=None, L=0, shade=1.0, noise=0.0):
+        s.bm = bmesh.new(); s.mat = mat; s.col = col; s.tint = tint; s.angle = angle; s.lit = lit; s.L = L; s.shade = shade; s.noise = noise
         PARTS.append(s)
     def _add(s, bm2, M):
         bmesh.ops.transform(bm2, matrix=M, verts=bm2.verts)
@@ -99,6 +99,12 @@ def finish_parts():
                 if not long: break
                 bmesh.ops.subdivide_edges(bm, edges=long, cuts=1, use_grid_fill=False)
                 bmesh.ops.triangulate(bm, faces=[f for f in bm.faces if len(f.verts) > 3])
+        if P.noise:  # pano amarrotado: empurra cada vértice pela normal com um ruído fixo
+            bm.normal_update()
+            for v in bm.verts:
+                x, y, z = v.co
+                f = math.sin(x * 23.1 + math.sin(z * 17.3) * 2) * math.sin(y * 19.7 + x * 7) + 0.5 * math.sin(z * 41 + y * 29)
+                v.co += v.normal * P.noise * f
         bmesh.ops.transform(bm, matrix=G2B, verts=bm.verts)
         me = bpy.data.meshes.new('p%d' % i); bm.to_mesh(me); bm.free()
         for f in me.polygons: f.use_smooth = True
