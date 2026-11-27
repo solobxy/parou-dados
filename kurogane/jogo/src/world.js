@@ -2,7 +2,7 @@
 import { buildArena } from './arena.js';
 import * as THREE from 'three';
 import { buildMonuments } from './monuments.js';
-import { Builder, rnd, rr, ri, pick, shade, mat4, getSeed, setSeed } from './builder.js';
+import { recBox, Builder, rnd, rr, ri, pick, shade, mat4, getSeed, setSeed } from './builder.js';
 import { propsReady } from './props.js';
 import { buildTowns } from './towns.js';
 import { buildRegions } from './regions.js';
@@ -28,13 +28,15 @@ export function buildWorld(scene, mats, A, opt = {}) {
   const circ = (x, z, r, k = 's', node = null) => { const c = { x, z, r, k, node, on: true, lv: CUR }; W.circles.push(c); return c; };
   const mp = (x0, z0, x1, z1, c) => W.map.push({ x0, z0, x1, z1, c });
   let cid = 0;
-  const container = (x, z, label, table, o = {}) => { const c = { id: 'c' + (cid++), x, z, label, table, slots: o.slots || [6, 4], y: o.y ?? 0.8, grid: null, refill: 0, lv: CUR }; const M = b.lastModel; if (M && Math.hypot(M.x - x, M.z - z) < 0.9) c.recs = M.recs.filter(r => r.mat !== 'lit' && r.mat !== 'decal' && r.mat !== 'gl'); W.containers.push(c); return c; }; // contorno: só quando o móvel é um adereço inteiro posto ali mesmo
+  const olRecs = R => R.filter(r => r.mat !== 'lit' && r.mat !== 'decal' && r.mat !== 'gl' && r.mat !== 'sign');
+  const container = (x, z, label, table, o = {}) => { const c = { id: 'c' + (cid++), x, z, label, table, slots: o.slots || [6, 4], y: o.y ?? 0.8, grid: null, refill: 0, lv: CUR }; const M = b.lastModel; if (M && Math.hypot(Math.max(M.x0 - x, 0, x - M.x1), Math.max(M.z0 - z, 0, z - M.z1)) < 0.6 && (M.x1 - M.x0) < 6 && (M.z1 - M.z0) < 6) c.recs = olRecs(M.recs); W.containers.push(c); return c; }; // contorno: só quando o móvel é um adereço inteiro posto ali mesmo
   // escadas sempre livres: o pé (no piso de baixo) e o topo (no de cima) têm uma zona onde nenhum móvel pode ficar; quem calhar lá não é construído
   const koOf = lv => { const out = []; for (const st of W.stairs) { const C = st.b, ax = st.ax, d = st.dir; for (const [at, l, sgn] of [[st.bot, st.lv, -d], [st.top, st.lv + 1, d]]) { if (l !== lv) continue; const a0 = Math.min(at, at + sgn * 1.25), a1 = Math.max(at, at + sgn * 1.25); let c0 = ax ? st.z0 : st.x0, c1 = ax ? st.z1 : st.x1; const o2 = st.open; if (o2 === (ax ? 's' : 'e')) c1 += 1.3; else if (o2 === (ax ? 'n' : 'w')) c0 -= 1.3; else { c0 -= 0.6; c1 += 0.6; } let r = ax ? { x0: a0, x1: a1, z0: c0, z1: c1 } : { x0: c0, x1: c1, z0: a0, z1: a1 }; if (C) r = { x0: Math.max(r.x0, C.ix0), x1: Math.min(r.x1, C.ix1), z0: Math.max(r.z0, C.iz0), z1: Math.min(r.z1, C.iz1) }; out.push(r); } } return out; };
   // peças de um móvel: as que ficam junto do sítio do loot (sem paredes nem chão grandes)
   const near = (R, c) => R.filter(r => { const q = r.bb; if (!q || r.mat === 'decal' || r.mat === 'lit' || r.mat === 'sign') return false; const dx = q[3] - q[0], dz = q[5] - q[2]; if (dx > 4.5 || dz > 4.5 || q[4] - q[1] > 2.8) return false; return Math.hypot(Math.max(q[0] - c.x, 0, c.x - q[3]), Math.max(q[2] - c.z, 0, c.z - q[5])) < 0.9; });
   const guard = fn => (...a) => {
     const m = b.mark(), r0 = W.rects.length, c0 = W.containers.length, k0 = W.circles.length, res = fn(...a);
+    if (W.containers.length > c0 && !b.dry) { const M = recBox(olRecs(b.recsSince(m))); if (M.n && M.n < 80000 && M.x1 - M.x0 < 6 && M.z1 - M.z0 < 6) for (let i = c0; i < W.containers.length; i++) if (!W.containers[i].recs) W.containers[i].recs = M.recs; b.lastModel = M.n ? M : b.lastModel; } // móvel feito à mão (prateleira, armário): o contorno usa as peças todas dele
     const KO = koOf(CUR); if (!KO.length) return res;
     const hit = (x0, z0, x1, z1) => KO.some(k => x0 < k.x1 && x1 > k.x0 && z0 < k.z1 && z1 > k.z0);
     let bad = false;
@@ -566,8 +568,8 @@ export function buildWorld(scene, mats, A, opt = {}) {
     c.gR = built.cuts.get(c.id + ':R') || new THREE.Group(); };
   // sliced: as peças guardam-se já, mas as malhas fazem-se aos bocados nas imagens seguintes (W.lazyStep), para andar sem soluços
   W.lazyBuild = (L, sliced = false) => { if (L.meshes || L.job) return; const s = getSeed(), C = [cid, tid, eid], lens = {}; for (const k in W) if (Array.isArray(W[k])) lens[k] = W[k].length;
-    const bk = b.buckets, lg = b.log, cur = CUR; b.buckets = new Map(); b.log = []; setSeed(L.s0); [cid, tid, eid] = L.c0; let built = null; b.wet = true; b.defer = sliced; A.rep = (L.atl || []).slice();
-    try { L.fn(); } finally { A.rep = null; const ck = lzck(W.rects.slice(lens.rects), W.containers.slice(lens.containers)); if (ck !== L.ck) { console.warn('zona preguiçosa diferente', L.x0, L.z0); W.lazyBad = (W.lazyBad || 0) + 1; } if (sliced) L.job = b.sliced(scene, mats); else built = b.build(scene, mats); for (const k in lens) W[k].length = lens[k]; setSeed(s); [cid, tid, eid] = C; b.buckets = bk; b.log = lg; CUR = cur; b.cut = null; b.wet = false; b.defer = false; }
+    const bk = b.buckets, lg = b.log, rl0 = b.rl, cur = CUR; b.buckets = new Map(); b.log = []; b.rl = []; setSeed(L.s0); [cid, tid, eid] = L.c0; let built = null; b.wet = true; b.defer = sliced; A.rep = (L.atl || []).slice();
+    try { L.fn(); } finally { A.rep = null; const ck = lzck(W.rects.slice(lens.rects), W.containers.slice(lens.containers)); if (ck !== L.ck) { console.warn('zona preguiçosa diferente', L.x0, L.z0); W.lazyBad = (W.lazyBad || 0) + 1; } { const byId = new Map(); for (let i = 0; i < lens.containers; i++) byId.set(W.containers[i].id, W.containers[i]); for (const c of W.containers.slice(lens.containers)) { const o = byId.get(c.id); if (o && c.recs && c.recs.length) { o.recs = c.recs; o._olg = undefined; } } } /* o contorno dos móveis desta zona (as caixas de loot são as da primeira passagem) */ if (sliced) L.job = b.sliced(scene, mats); else built = b.build(scene, mats); for (const k in lens) W[k].length = lens[k]; setSeed(s); [cid, tid, eid] = C; b.buckets = bk; b.log = lg; b.rl = rl0; CUR = cur; b.cut = null; b.wet = false; b.defer = false; }
     if (built) lazyDone(L, built); };
   const lazyDone = (L, built) => { L.job = null; L.meshes = built.meshes; L.groups = [...built.cuts.values()]; for (const c of L.cuts) linkCut(c, built); W.onLazy && W.onLazy(L, true); };
   // continua a zona que está a meio; devolve true se ainda há trabalho

@@ -40,6 +40,8 @@ const mergeRecs = L => { if (!L.length) return null; let n = 0; for (const r of 
   const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(P, 3)); g.setAttribute('normal', new THREE.BufferAttribute(N, 3)); g.setAttribute('uv', new THREE.BufferAttribute(U, 2)); g.setAttribute('color', new THREE.BufferAttribute(C, 3)); if (T) g.setAttribute('tid', new THREE.BufferAttribute(T, 1)); return g; }; // tid: textura do objeto (0 nenhuma, 1 madeira, 2 ferrugem, 3 metal pintado, 4 betão)
 // textura de cada adereço (a parte com a cor do sítio; as peças de metal levam metal pintado)
 const PTEX_OF = { caixote: 1, banco: 1, mesa: 1, cadeira: 1, secretaria: 1, balcao: 1, bidao: 2, lixo: 3, carro: 3, vend: 3, armario: 3, armtec: 3, poste: 3, pilarete: 3, marco: 3, cabine: 3, candeeiro: 3, ac: 3, barreira: 4 };
+// peças de um objeto e a caixa (no chão) que ocupam
+export const recBox = R => { let x0 = 1e9, z0 = 1e9, x1 = -1e9, z1 = -1e9, n = 0; for (const r of R) { if (!r.bb) continue; x0 = Math.min(x0, r.bb[0]); z0 = Math.min(z0, r.bb[2]); x1 = Math.max(x1, r.bb[3]); z1 = Math.max(z1, r.bb[5]); n += r.count; } return { recs: R, x0, z0, x1, z1, n }; };
 export class Builder {
   constructor(chunk = 40) { this.chunk = chunk; this.buckets = new Map(); this.stack = [new THREE.Matrix4()]; this.cut = null; this.single = chunk === 0; this.log = []; this.rl = []; }
   // desfazer: marca e volta atrás (para tirar mobília que ficou a tapar escadas)
@@ -97,7 +99,7 @@ export class Builder {
   // adereço do Blender: devolve false se o ficheiro não chegou (quem chama faz as caixas de antes). Só as peças com tint levam a cor do sítio e o jit
   model(name, x, y, z, ry, tint = 0xffffff, o = {}) { const L = propParts(name); if (!L) return false; const M = mat4(x, y, z, ry || 0, o.rx || 0, o.rz || 0, (o.s || 1) * (o.sx || 1), (o.s || 1) * (o.sy || 1), (o.s || 1) * (o.sz || 1)); let jit = o.jit || 0;
     if (!this.dry) { const e = this.m.elements, wx = e[0] * x + e[4] * y + e[8] * z + e[12], wz = e[2] * x + e[6] * y + e[10] * z + e[14]; const c = PSTAT[name] || (PSTAT[name] = { n: 0, at: [] }); c.n++; if (c.at.length < 6) c.at.push([+wx.toFixed(1), +wz.toFixed(1), +(Math.atan2(e[8], e[10]) + (ry || 0)).toFixed(2)]); }
-    const r0 = this.rl.length; const main = PTEX_OF[name] || 0; for (const P of L) { this.tid = !main ? 0 : P.m === 'm' ? (main === 1 || main === 4 ? 3 : main) : P.t || main === 1 || main === 4 ? main : 0; this.add(P, P.t ? tint : 0xffffff, P.m === 'lit' ? 'lit' : (o.mat && P.m === 'v' ? o.mat : P.m), M, P.t ? jit : 0); if (P.t) jit = 0; } this.tid = 0; if (!this.dry) { const e = this.m.elements; this.lastModel = { recs: this.rl.slice(r0), x: e[0] * x + e[4] * y + e[8] * z + e[12], z: e[2] * x + e[6] * y + e[10] * z + e[14], n: name }; } // o último adereço posto (o contorno do móvel usa as peças dele)
+    const r0 = this.rl.length; const main = PTEX_OF[name] || 0; for (const P of L) { this.tid = !main ? 0 : P.m === 'm' ? (main === 1 || main === 4 ? 3 : main) : P.t || main === 1 || main === 4 ? main : 0; this.add(P, P.t ? tint : 0xffffff, P.m === 'lit' ? 'lit' : (o.mat && P.m === 'v' ? o.mat : P.m), M, P.t ? jit : 0); if (P.t) jit = 0; } this.tid = 0; if (!this.dry) { const e = this.m.elements; this.lastModel = recBox(this.rl.slice(r0)); this.lastModel.n = name; } // o último adereço posto (o contorno do móvel usa as peças dele)
     if (jit) rr(-jit, jit); return true; }
   plane(w, h, x, y, z, hex, o = {}) { const g = new THREE.PlaneGeometry(w, h); if (o.uv) { const uv = g.attributes.uv; for (let i = 0; i < uv.count; i++) uv.setXY(i, o.uv.u0 + uv.getX(i) * (o.uv.u1 - o.uv.u0), o.uv.v0 + uv.getY(i) * (o.uv.v1 - o.uv.v0)); } return this.add(g, hex, o.mat, mat4(x, y, z, o.ry || 0, o.rx || 0, o.rz || 0), o.jit); }
   tube(points, r, hex, o = {}) { const c = new THREE.CatmullRomCurve3(points); const t0 = this.thin; this.thin = true; try { return this.add(new THREE.TubeGeometry(c, o.seg || 10, r, 4, false), hex, o.mat); } finally { this.thin = t0; } }
@@ -121,16 +123,16 @@ export class Builder {
   }
   // construção aos bocados: devolve uma tarefa; step(até) faz o que couber até à hora dada e diz se acabou
   sliced(parent, mats) {
-    const ents = [...this.buckets]; this.buckets = new Map(); this.log = [];
+    const ents = [...this.buckets]; this.buckets = new Map(); this.log = []; this.rl = [];
     const job = { meshes: [], cuts: new Map(), done: false, cancel() { this.dead = true; } };
-    let bi = 0, ri = 0, P, N, U, C, o = 0;
+    let bi = 0, ri = 0, P, N, U, C, T, o = 0;
     job.step = until => { if (job.dead) return true;
       while (bi < ents.length) {
         const [key, recs] = ents[bi];
-        if (!P) { let n = 0; for (const r of recs) n += r.count; P = new Float32Array(n * 3); N = new Float32Array(n * 3); U = new Float32Array(n * 2); C = new Float32Array(n * 3); o = 0; ri = 0; }
-        while (ri < recs.length) { writeRec(recs[ri], P, N, U, C, o); o += recs[ri].count; ri++; if ((ri & 7) === 0 && performance.now() > until) return false; }
-        const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(P, 3)); g.setAttribute('normal', new THREE.BufferAttribute(N, 3)); g.setAttribute('uv', new THREE.BufferAttribute(U, 2)); g.setAttribute('color', new THREE.BufferAttribute(C, 3)); P = null;
-        this._mesh(key, g, parent, mats, job.cuts, job.meshes); bi++;
+        if (!P) { let n = 0; for (const r of recs) n += r.count; P = new Float32Array(n * 3); N = new Float32Array(n * 3); U = new Float32Array(n * 2); C = new Float32Array(n * 3); T = recs.some(r => r.tid) ? new Uint8Array(n) : null; o = 0; ri = 0; }
+        while (ri < recs.length) { const r = recs[ri]; r.off = o; writeRec(r, P, N, U, C, o); if (T && r.tid) T.fill(r.tid, o, o + r.count); o += r.count; ri++; if ((ri & 7) === 0 && performance.now() > until) return false; }
+        const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(P, 3)); g.setAttribute('normal', new THREE.BufferAttribute(N, 3)); g.setAttribute('uv', new THREE.BufferAttribute(U, 2)); g.setAttribute('color', new THREE.BufferAttribute(C, 3)); if (T) g.setAttribute('tid', new THREE.BufferAttribute(T, 1)); P = null; T = null;
+        const mm = this._mesh(key, g, parent, mats, job.cuts, job.meshes); for (const r of recs) { r.mesh = mm; if (!r.job) r.p = r.n = r.uv = r.c = null; } bi++; // a parte lenta também leva a textura (tid) e diz a cada peça onde ficou
         if (performance.now() > until) return bi >= ents.length ? (job.done = true) : false;
       }
       return (job.done = true); };
