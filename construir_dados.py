@@ -39,6 +39,7 @@ from zoneinfo import ZoneInfo
 from netex_gtfs import netex_para_gtfs
 import barraqueiro_oeste
 import azoresbus
+import flixbus_pt
 import andante
 
 OUT_DB = "gtfs.db"
@@ -164,6 +165,9 @@ SEED_FEEDS = [
     # monta o GTFS dos próximos dias (azoresbus.py). O Cloudflare do operador bloqueia o servidor, não o construtor.
     {"id": "azoresbus", "operator_name": "AzoresBus (São Miguel)", "mode": "Autocarro",
      "formato": "api_azoresbus", "url": azoresbus.PAGINA},
+    # FlixBus: o GTFS europeu oficial (semanal, horas em UTC). O construtor fica com as paragens portuguesas e as viagens
+    # que param em pelo menos duas, já na hora de Portugal (flixbus_pt.py).
+    {"id": "flixbus_pt", "operator_name": "FlixBus", "mode": "Autocarro", "formato": "flixbus_pt", "url": flixbus_pt.URL},
     # Redes intermunicipais publicadas no Ponto de Acesso Nacional (NAP Portugal, nap-portugal.imt-ip.pt), verificadas a
     # 27/11/2026. Em ficheiros com a rede de paragens da região inteira, «agencias» deixa só as paragens que as linhas usam.
     {"id": "sit_coimbra", "operator_name": "SIT Metropolitano (Região de Coimbra)", "mode": "Autocarro",
@@ -1391,6 +1395,8 @@ def process_feed(conn, feed, today_dt, have_prev):
             log_fetch(conn, fid, url, status, len(body), ms, f"Download concluído ({len(body) // 1024} KB)")
             if feed.get("formato") == "netex":
                 body = converter_netex(feed, body)
+            if feed.get("formato") == "flixbus_pt":
+                body = flixbus_pt.converter(body, hoje=today_dt.date(), dias=WINDOW_DAYS + 3, log=log)
             if feed.get("agencias"):
                 # Ficheiro com vários operadores (Rede SIGA): fica só com o que é deste
                 body = filtrar_agencias(body, feed["agencias"], feed.get("juntar_variantes"), feed.get("sufixo_variante"))
