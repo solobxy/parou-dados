@@ -1,7 +1,7 @@
 {
-  "built_at": "2026-11-27T19:25:50.542447+00:00",
+  "built_at": "2026-11-27T20:01:44.031153+00:00",
   "db_bytes": 989491200,
-  "gz_bytes": 249059680,
+  "gz_bytes": 249059364,
   "totals": {
     "lines": 4003,
     "stops": 80505,
@@ -1286,13 +1286,13 @@
           "total": 385
         },
         "servicos_com_data_hoje": [
-          "BU",
-          "DU",
-          "EU",
           "BexpU",
+          "DU",
           "CU",
+          "FU",
+          "EU",
           "AU",
-          "FU"
+          "BU"
         ],
         "viagens_por_servico": [
           {
@@ -1350,12 +1350,12 @@
   "andante": {
     "fonte_zonas": "https://andante.pt/titulos-ocasionais/",
     "fonte_precos": "https://andante.pt/comprar/andante-azul/",
-    "zonas_obtidas": "2026-11-27T19:25:27+00:00",
+    "zonas_obtidas": "2026-11-27T20:01:20+00:00",
     "n_zonas": 154,
     "n_paragens": 13711,
     "precos_em_vigor_desde": "2026-01-01",
-    "precos_obtidos": "2026-11-27T19:25:27+00:00",
+    "precos_obtidos": "2026-11-27T20:01:20+00:00",
     "z2": 1.4
   },
-  "duration_s": 525
+  "duration_s": 493
 }
