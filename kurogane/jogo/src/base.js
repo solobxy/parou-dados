@@ -331,7 +331,7 @@ export function makeBase({ scene, W, G, audio, addRect, removeRect, visDirty, in
       const k = ITEMS[it.k].deploy, D = DEPLOY[k], { x, z, yaw, y } = PL;
       if (NET) { const name = D.bed ? D.n + ' ' + (deps.filter(e => e.k === k && e.u === NET.uid).length + 1) : null; pend.set('bd:' + k, { [it.k]: 1 }); NET.send({ t: 'bd', k, x: +x.toFixed(2), z: +z.toFixed(2), yaw: +yaw.toFixed(3), y, name }); }
       else { const d = placeDep(k, x, z, yaw, { y }); if (D.bed) toast(d.name + ': quando morreres, podes renascer aqui'); G.save && G.save(); }
-      audio.play('construir');
+      audio.play(D.slots || D.lvl ? 'colocar' : D.bed ? 'deitar' : 'construir');
       // gasta o objeto (do cinto, da mochila ou de onde estiver)
       if (it.n > 1) it.n--; else { const w = G.inv.where(it); if (w) { if (w.t === 'bag') G.inv.bag.remove(it); else if (w.t === 'belt') G.inv.belt[w.i] = null; else if (w.t === 'eq') G.inv.eq[w.s] = null; } }
       if (!G.inv.where(it) || it.n <= 0) this.cancelPlace(); PL.pin = null; G.refresh && G.refresh(); return true; },

@@ -13,6 +13,7 @@ import { VT } from './vtypes.js';
 import { Grid, Inv, mkItem, rollLoot, capOf } from './bag.js';
 import { makeIcons } from './items3d.js';
 import { audio } from './audio.js';
+import { itemSnd, itemMat } from './foley.js';
 import { initUI } from './ui.js';
 import { makeBase } from './base.js';
 import { makeNav } from './nav.js';
@@ -537,11 +538,11 @@ float terH(vec2 p) { if (uTerP.w < 0.5) return 0.0; vec2 f = clamp((p + uTerP.x)
       if (ITEMS[k].gun) { const g = [...G.inv.bag.list.map(e => e.it), ...G.inv.belt.filter(Boolean)].find(o => o.k === k); if (g) { const back = []; if (g.mg) { const m = mkItem(g.mg); m.am = g.ammo || 0; m.ak = g.ak; back.push(m); g.mg = null; g.ammo = 0; } else if (g.ammo) { back.push(mkItem(g.ak || ammoOf(ITEMS[k].gun)[0], g.ammo)); g.ammo = 0; } if (g.att) { for (const s in g.att) if (g.att[s]) back.push(mkItem(g.att[s])); g.att = {}; } for (const it of back) { const left = G.inv.give(it); if (left) G.dropItem(it); } } }
       if (ITEMS[k].clip) { const m = [...G.inv.bag.list.map(e => e.it), ...G.inv.belt.filter(Boolean)].find(o => o.k === k); if (m && m.am) { const b = mkItem(m.ak, m.am); m.am = 0; const left = G.inv.give(b); if (left) G.dropItem(b); } }
       if (G.net.world) G.net.raw({ t: 'tr', id: T.id, k, n, s: 1 });
-      G.inv.take(k, n); const got = SELL(k) * n, m = mkItem('iene', got), left = G.inv.give(m); if (left) G.dropItem(m); audio.play('apanhar'); G.ui.toast('Vendeste ' + (n > 1 ? n + ' × ' : '') + ITEMS[k].s.toLowerCase() + ' por ¥ ' + got);
+      G.inv.take(k, n); const got = SELL(k) * n, m = mkItem('iene', got), left = G.inv.give(m); if (left) G.dropItem(m); audio.play('moedas'); G.ui.toast('Vendeste ' + (n > 1 ? n + ' × ' : '') + ITEMS[k].s.toLowerCase() + ' por ¥ ' + got);
     } else { const cost = PRICE[k] * n; if (G.inv.count('iene') < cost) { G.ui.toast('Não tens ienes que cheguem'); return; } if (!T.sells.includes(k)) return;
       const it = mkItem(k, n); if (ITEMS[k].gun) { it.mg = null; it.ammo = 0; } if (ITEMS[k].clip) it.am = 0;
       if (G.net.world) G.net.raw({ t: 'tr', id: T.id, k, n });
-      G.inv.take('iene', cost); const left = G.inv.give(it); if (left) { G.dropItem(it); G.ui.toast('Mochila cheia: ficou no chão'); } else G.ui.toast('Compraste ' + (n > 1 ? n + ' × ' : '') + ITEMS[k].s.toLowerCase()); audio.play('apanhar'); }
+      G.inv.take('iene', cost); const left = G.inv.give(it); if (left) { G.dropItem(it); G.ui.toast('Mochila cheia: ficou no chão'); } else G.ui.toast('Compraste ' + (n > 1 ? n + ' × ' : '') + ITEMS[k].s.toLowerCase()); audio.play('moedas'); itemSnd(k, 0.8); }
     refresh(); G.ui.refresh(true); };
   const mkRemote = L => { const b = new Body(cmats, lookCol(L && typeof L === 'object' ? L : {})); scene.add(b.root); return b; };
   await LP(84, 'a preparar os animais');
@@ -625,7 +626,7 @@ float terH(vec2 p) { if (uTerP.w < 0.5) return 0.0; vec2 f = clamp((p + uTerP.x)
   const vol = (x, z) => clamp(1 - Math.hypot(x - G.p.x, z - G.p.z) / 34, 0, 1);
   const GK = ['head', 'vest', 'suit', 'eyes', 'back']; // equipamento que os outros veem (chaves dos itens, pela mesma ordem do servidor)
   const refresh = () => { body.setTeam(G.ARENA && G.arenaTeam != null ? G.arenaTeam | 0 : null); body.setGear(G.inv.eq); const d = heldDef(); G.stampSkins(); body.setWeapon(held() ? (d.gun || d.melee ? held().k : null) : null, { ...(held() && held().att || {}), skin: held() ? held().sk | 0 : 0 }); G.ui.refresh(); };
-  G.refresh = refresh; G.mkItem = mkItem; G.dbgBody = () => body; G.dbgNodes = () => nodes; /* testes */
+  G.refresh = refresh; G.mkItem = mkItem; G.itemMat = itemMat; G.dbgBody = () => body; G.dbgNodes = () => nodes; /* testes */
   const select = i => { if (G.sel === i) return; G.sel = i; if (G.gch) { G.gch = null; }  if (G.aimEnd) G.aimEnd(); AIM.raise = 0; G.p.reload = 0; G.p.use = null; G.p.swing = -1; G.p.thrT = -1; G.p.thrIt = null; { const it = G.inv.belt[i], d = it && ITEMS[it.k]; audio.play(d && d.melee ? 'faca' : d && d.gun ? 'sacar' : 'ui', 0.9); } refresh(); }; // sacar a arma (ou a faca)
   G.select = select;
   // ---------- treino: o corpo habitua-se ao que fazes. Cada ganho é proporcional ao que falta (sobe depressa no início, devagar perto do máximo); perde-se tudo ao morrer
@@ -906,7 +907,7 @@ float terH(vec2 p) { if (uTerP.w < 0.5) return 0.0; vec2 f = clamp((p + uTerP.x)
     for (let i = 0; i < 90 && n < GTN; i++) { V.y -= 9.8 * dt; _tq.copy(P).addScaledVector(V, dt); if (wallHit(P, _tq) < 1) { V.x *= -0.35; V.z *= -0.35; _tq.copy(P); } const gy = (p.base || 0) + groundY(_tq.x, _tq.z, lv) + 0.07; if (_tq.y < gy) { _tq.y = gy; V.y = Math.abs(V.y) * 0.3; V.x *= 0.55; V.z *= 0.55; if (Math.abs(V.y) < 0.6) V.y = 0; rest++; } P.copy(_tq); if (i % 2 === 1 && n < GTN && P.distanceToSquared(cam.position) > 6.25) { const sc = 1 + n * 0.02; _tm.makeScale(sc, sc, sc).setPosition(P.x, P.y, P.z); trDots.setMatrixAt(n++, _tm); } if (rest > 2 && V.lengthSq() < 0.3) break; }
     trDots.count = n; trDots.instanceMatrix.needsUpdate = true; trDots.visible = n > 0; trEnd.position.set(P.x, P.y + 0.02, P.z); trEnd.visible = true; trEnd.scale.setScalar(0.8 + 0.4 * grenPow()); };
   const throwGrenade = (it, d) => { const p = G.p; if (p.cd > 0 || p.thrT >= 0) return; p.cd = 0.8; p.thrT = 0; p.thrIt = it; p.thrD = d; };
-  G.grenStart = it => { const p = G.p; if (p.cd > 0 || p.thrT >= 0) return; G.gch = { it, t0: G.t }; };
+  G.grenStart = it => { const p = G.p; if (p.cd > 0 || p.thrT >= 0) return; G.gch = { it, t0: G.t }; audio.play('cavilha'); };
   G.grenEnd = () => { const g = G.gch; G.gch = null; trDots.visible = trEnd.visible = false; if (!g || !G.p.alive) return; throwGrenade(g.it, GMIN + (GMAX - GMIN) * Math.min(1, (G.t - g.t0) / GFULL)); };
   G.grenPow = grenPow; G.dbgGrenEnd = () => [trEnd.position.x, trEnd.position.z];
   const releaseGrenade = it => { const p = G.p; const lv = p.lv || 0;
@@ -939,7 +940,7 @@ float terH(vec2 p) { if (uTerP.w < 0.5) return 0.0; vec2 f = clamp((p + uTerP.x)
   };
   const FIREB = [];
   const updBooms = dt => { for (let i = FIREB.length - 1; i >= 0; i--) { const q = FIREB[i]; q.t += dt; q.F.dim(Math.max(0, 1 - q.t / 1.3) ** 0.7); q.F.fade(q.t < 2 ? 1 : Math.max(0, 1 - (q.t - 2) / 2.5)); if (q.t > 4.5) { scene.remove(q.F.g); q.F.dispose(); FIREB.splice(i, 1); } } for (let i = BOOMS.length - 1; i >= 0; i--) { const B0 = BOOMS[i]; B0.t -= dt;
-      if (B0.V) { B0.V.y -= 9.8 * dt; const Q = B0.P.clone().addScaledVector(B0.V, dt); const h = wallHit(B0.P, Q); if (h < 1) { B0.V.x *= -0.35; B0.V.z *= -0.35; Q.copy(B0.P); } const gy = (B0.base || 0) + groundY(Q.x, Q.z, B0.lv) + 0.07; if (Q.y < gy) { Q.y = gy; B0.V.y = Math.abs(B0.V.y) * 0.3; B0.V.x *= 0.55; B0.V.z *= 0.55; if (Math.abs(B0.V.y) < 0.6) B0.V.y = 0; } B0.P.copy(Q); B0.m.position.copy(B0.P); B0.m.rotation.x += dt * 8; }
+      if (B0.V) { B0.V.y -= 9.8 * dt; const Q = B0.P.clone().addScaledVector(B0.V, dt); const h = wallHit(B0.P, Q); if (h < 1) { if (Math.hypot(B0.V.x, B0.V.z) > 1.5) audio.play('ressalto', 0.7 * vol(B0.P.x, B0.P.z)); B0.V.x *= -0.35; B0.V.z *= -0.35; Q.copy(B0.P); } const gy = (B0.base || 0) + groundY(Q.x, Q.z, B0.lv) + 0.07; if (Q.y < gy) { if (B0.V.y < -1.8) audio.play('ressalto', Math.min(1, -B0.V.y / 8) * vol(B0.P.x, B0.P.z)); Q.y = gy; B0.V.y = Math.abs(B0.V.y) * 0.3; B0.V.x *= 0.55; B0.V.z *= 0.55; if (Math.abs(B0.V.y) < 0.6) B0.V.y = 0; } B0.P.copy(Q); B0.m.position.copy(B0.P); B0.m.rotation.x += dt * 8; }
       else if (B0.led) { B0.beep -= dt; const fast = B0.t < 3; if (B0.beep <= 0) { B0.beep = fast ? 0.25 : 1; const p = G.p; audio.play('bip', p ? clamp(1 - Math.hypot(p.x - B0.P.x, p.z - B0.P.z) / 30, 0, 1) : 0.5); B0.led.visible = true; } else if (B0.beep < (fast ? 0.15 : 0.8)) B0.led.visible = false; }
       if (B0.t <= 0) { scene.remove(B0.m); BOOMS.splice(i, 1); if (!B0.ghost) explode(B0); } } };
   // ---------- tempo: céu limpo quase sempre; chuvadas de 3 a 7 min de vez em quando, com trovoada quando é forte
@@ -1002,7 +1003,7 @@ float terH(vec2 p) { if (uTerP.w < 0.5) return 0.0; vec2 f = clamp((p + uTerP.x)
     const p = G.p, d = ITEMS[it.k]; if (!d.use || p.use) return;
     const u = d.use; if (!u.bleed && !u.hp && ((u.food && p.food > 97) || (u.water && !u.food && p.water > 97))) { G.ui.toast('Não precisas agora'); return; }
     if (u.hp && !u.food && p.hp >= 100 && !p.bleed) { G.ui.toast('Estás com a vida cheia'); return; }
-    p.use = { it, t: 0, dur: u.t }; audio.play(u.food || u.water ? 'comer' : 'apanhar');
+    p.use = { it, t: 0, dur: u.t }; audio.play(it.k === 'medkit' ? 'medkit' : it.k === 'ligadura' ? 'ligadura' : u.water && !u.food ? 'beber' : u.food ? 'comer' : 'apanhar');
   };
   G.use = startUse;
   const swapItem = (it, k) => { const w = G.inv.where(it); if (!w) return null; const nw = mkItem(k); if (it.n > 1) { it.n--; const left = G.inv.give(nw); if (left) G.dropItem(nw); return nw; } if (w.t === 'belt') G.inv.belt[w.i] = nw; else { G.inv.bag.remove(it); const left = G.inv.give(nw); if (left) G.dropItem(nw); } return nw; };
@@ -1053,11 +1054,11 @@ float terH(vec2 p) { if (uTerP.w < 0.5) return 0.0; vec2 f = clamp((p + uTerP.x)
   const DOGFOOD = ['carneC', 'carneA', 'lata', 'sardinhas', 'racao', 'onigiri'];
   G.interact = () => { const pr = G.prompt; if (!pr) return;
     if (pr.trader) { G.ui.trOpen(pr.trader); return; }
-    if (pr.pickN) { const n = pr.pickN; if (!n.alive) return; n.alive = false; n.col.on = false; n.respawn = G.t + 180; hideNode(n); if (G.net && G.net.on && n.key) G.net.node(n.key); if (n.kind === 'seixo') { gain('pedra', 1, n.key); G.ui.toast('Apanhaste uma pedra'); } else { const q = 2 + (Math.random() < 0.5 ? 1 : 0); gain('tecido', q, n.key); G.ui.toast('Colheste ' + q + ' de tecido'); } audio.play('apanhar'); return; }
+    if (pr.pickN) { const n = pr.pickN; if (!n.alive) return; n.alive = false; n.col.on = false; n.respawn = G.t + 180; hideNode(n); if (G.net && G.net.on && n.key) G.net.node(n.key); if (n.kind === 'seixo') { gain('pedra', 1, n.key); G.ui.toast('Apanhaste uma pedra'); } else { const q = 2 + (Math.random() < 0.5 ? 1 : 0); gain('tecido', q, n.key); G.ui.toast('Colheste ' + q + ' de tecido'); } audio.play(n.kind === 'seixo' ? 'it-pedra' : 'colher'); return; }
     if (pr.dog) { const z = pr.dog; if (z.pet) { z.stay = !z.stay; z.prey = null; G.ui.toast(z.stay ? 'O cão fica aqui à tua espera' : 'O cão vem contigo'); audio.play('ladrar', 0.5); return; }
       if (!pr.food) { G.ui.toast('Precisas de comida (carne, latas, ração) para o adotar'); return; }
       G.inv.take(pr.food, 1); G.ui.refresh(true); if (G.net.world && z.nid != null) G.net.raw({ t: 'adopt', i: z.nid }); z.pet = G.net.world ? G.net.uid : 'local'; z.state = 'wander'; z.prey = null; z.stay = false;
-      audio.play('ladrar', 0.8); G.ui.toast('O cão confia em ti: segue-te, ladra quando vem alguém e ataca zombies'); return; } if (pr.drink) { G.p.water = Math.min(100, G.p.water + 20); audio.play('comer'); G.ui.toast('Bebeste água'); G.ui.refresh && G.ui.refresh(true); return; } if (pr.lockPut && G.lockT) { G.ui.lockMenu(G.lockT); return; } if (pr.pumpFill) { const h = held(); if (h && h.k === 'galaoV') { swapItem(h, 'gasolina'); if (G.net.world) G.net.raw({ t: 'gf' }); audio.play('apanhar'); G.ui.toast('Galão cheio: 20 L'); refresh(); G.ui.refresh(true); } return; }
+      audio.play('ladrar', 0.8); G.ui.toast('O cão confia em ti: segue-te, ladra quando vem alguém e ataca zombies'); return; } if (pr.drink) { G.p.water = Math.min(100, G.p.water + 20); audio.play('chapinhar', 0.5); audio.play('beber'); G.ui.toast('Bebeste água'); G.ui.refresh && G.ui.refresh(true); return; } if (pr.lockPut && G.lockT) { G.ui.lockMenu(G.lockT); return; } if (pr.pumpFill) { const h = held(); if (h && h.k === 'galaoV') { swapItem(h, 'gasolina'); if (G.net.world) G.net.raw({ t: 'gf' }); audio.play('apanhar'); G.ui.toast('Galão cheio: 20 L'); refresh(); G.ui.refresh(true); } return; }
       if (pr.carPump) { const c = G.car, T = VT[c.k]; c.fuel = T.tank; if (G.net.world) G.net.raw({ t: 'cfp', id: c.id }); audio.play('apanhar'); G.ui.toast('Depósito cheio: ' + T.tank + ' L'); return; } if (pr.carExit) { G.cars.exit(); return; } if (pr.car) { if (pr.full) return; if (pr.fuel) { const h = held(); if (h && h.k === 'gasolina' && G.cars.refuel(pr.car, h)) { swapItem(h, 'galaoV'); refresh(); G.ui.refresh(true); } return; } G.cars.enter(pr.car); return; } if (pr.own && pr.bed) { G.base.use(pr); return; } if (pr.own && pr.bench) { G.box = null; G.ui.openInv(null, 'craft'); return; } if (pr.door) { const D = pr.door; if (D.lock && D.lock.hp > 0) { G.ui.toast('Trancada. Só abre com explosivos (' + Math.round(D.lock.hp / D.lock.max * 100) + '%)'); audio.play('vazio'); return; } if (!setDoor(D, D.target ? 0 : 1)) G.ui.toast('Está alguém na porta'); return; } openBox(pr); };
 
   // ---------- zombies
@@ -1683,7 +1684,7 @@ float terH(vec2 p) { if (uTerP.w < 0.5) return 0.0; vec2 f = clamp((p + uTerP.x)
     if (R.f + R.b < PR_F + PR_B) return false; const m = R.f < PR_F ? -(PR_F - R.f) : (PR_B - R.b); if (apply) { p.x += R.fx * m; p.z += R.fz * m; } return true; };
   G.stanceSet = k => { const p = G.p; if (!p || !p.alive || p.swim || p.climb || G.car) k = 0; k = clamp(k | 0, 0, 2); if (k === (p.stance | 0)) return;
     if (k === 2 && !proneFit(p, true)) { G.ui.toast('Sem espaço para te deitares aqui'); return; }
-    if (k > 0 && p.sprint) p.sprint = false; p.stance = k; audio.play('pano', 0.5); G.ui.refresh && G.ui.refresh(); };
+    if (k > 0 && p.sprint) p.sprint = false; p.stance = k; audio.play(k === 2 ? 'deitar' : 'pano', 0.6); G.ui.refresh && G.ui.refresh(); };
   G.proneRoom = () => { const p = G.p; return proneRoom(p.x, p.z, p.root, p.lv || 0); };
   G.stanceToggle = k => { const p = G.p; if (!p) return; G.stanceSet((p.stance | 0) === k ? 0 : k); };
   const stanceTick = (p, dt) => { if (!p.alive || p.swim || p.climb || G.car) p.stance = 0;
@@ -1831,7 +1832,7 @@ float terH(vec2 p) { if (uTerP.w < 0.5) return 0.0; vec2 f = clamp((p + uTerP.x)
       const fwdOk = !moving || Math.abs(angDiff(moveYaw, p.root)) < 0.9;
       const over = 0; // sem pesos: anda-se e corre-se sempre à mesma velocidade, leves o que levares
       // na água: nadas devagar, não corres nem usas a arma, e cansas-te; sem fôlego vais perdendo vida
-      { const was = p.swim; p.swim = p.alive && !p.climb && !G.car && (p.lv || 0) === 0 && W.wet(p.x, p.z); if (p.swim && !was) { if (AIM.on) aimEnd(); G.ui.toast('A nadar · sem armas e devagar'); } if (p.swim && moving) { p.stam = Math.max(0, p.stam - dt * 3.2); if (p.stam <= 0 && !(G.admF && G.admF.god)) { p.hp -= dt * 2.5; p.hurtT = 0.3; if (p.hp <= 0) die('afogado'); } } }
+      { const was = p.swim; p.swim = p.alive && !p.climb && !G.car && (p.lv || 0) === 0 && W.wet(p.x, p.z); if (p.swim && !was) { audio.play('chapinhar', 0.9); if (AIM.on) aimEnd(); G.ui.toast('A nadar · sem armas e devagar'); } if (!p.swim && was && p.alive) audio.play('chapinhar', 0.5); if (p.swim && moving && (G.t - (p.swT || 0)) > 0.95) { p.swT = G.t; audio.play('chapinhar', 0.32); } /* cansaço e pouca vida: respiração ofegante e o coração a bater */ if (p.alive && !p.swim && p.stam < 12 && (G.t - (p.brT || 0)) > 1.6) { p.brT = G.t; audio.play('respirar', 0.7); } if (p.alive && p.hp < 25 && (G.t - (p.hbT || 0)) > (p.hp < 12 ? 0.75 : 1.05)) { p.hbT = G.t; audio.play('coracao', p.hp < 12 ? 1 : 0.7); } if (p.swim && moving) { p.stam = Math.max(0, p.stam - dt * 3.2); if (p.stam <= 0 && !(G.admF && G.admF.god)) { p.hp -= dt * 2.5; p.hurtT = 0.3; if (p.hp <= 0) die('afogado'); } } }
       const wantSprint = !p.swim && over <= 18 && (keys.has('ShiftLeft') || keys.has('ShiftRight') || (cfg.sprintPush && (!AIM.on || FPF.on) && sticks.L && sticks.L.m > 0.93) || G.autoRun) && il > 0.3 && !p.use && !back && fwdOk && !AIM.scope && !(G.t - (p.fireT ?? -9) < 0.45) && !(G.fireHeld && FPF.on);
       if (wantSprint && AIM.on && !FPF.on) aimEnd(); // na 1.ª pessoa a arma fica na mão a correr (baixa-se sozinha no ecrã)
       if (wantSprint && p.stance === 1 && p.onGround) G.stanceSet(0); // correr levanta quem está agachado (deitado não corre)

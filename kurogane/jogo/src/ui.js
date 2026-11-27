@@ -8,6 +8,7 @@ import { VT } from './vtypes.js';
 import { initArenaUI } from './arenaui.js';
 import { pager, fitDrop } from './pager.js';
 import { audio } from './audio.js';
+import { itemSnd, boxOpen, boxClose } from './foley.js';
 import { SKINS } from './skins.js';
 import { makeMusic } from './music.js';
 import * as THREE from 'three';
@@ -181,7 +182,7 @@ export function initUI(G) {
     const add = (label, fn, pri, cls, html) => { const b = document.createElement('button'); b.className = 'btn sm' + (pri ? ' pri' : '') + (cls ? ' ' + cls : ''); if (html) { b.innerHTML = html; b.setAttribute('aria-label', label); } else b.textContent = label; b.onclick = () => { audio.play('ui'); fn(); G.refresh(); }; ac.appendChild(b); };
     // tirar só as balas (de uma arma ou de um carregador), direto para a mochila; a arma ou o carregador ficam onde estão
     const unload = () => { const q = d.gun ? it.ammo | 0 : it.am | 0, k = it.ak || (d.gun ? ammoOf(d.gun)[0] : d.clip && d.clip.ammo[0]); if (!q || !k) return; const a = mkItem(k, q); const left = G.inv.give(a); const got = q - (left || 0); if (!got) return toast('Mochila cheia');
-      if (d.gun) it.ammo = q - got; else it.am = q - got; feed(k, got); audio.play('recarregar', 0.5); if (left) toast('Mochila cheia: ficaram ' + left + ' balas'); };
+      if (d.gun) it.ammo = q - got; else it.am = q - got; feed(k, got); audio.play('rec-bala', 0.8); itemSnd(k, 0.7); if (left) toast('Mochila cheia: ficaram ' + left + ' balas'); };
     const loaded = (d.gun && (it.ammo | 0) > 0) || (d.clip && (it.am | 0) > 0);
     // acessórios: montar numa arma compatível (também direto da caixa ou do chão, mesmo com a mochila cheia)
     const attActs = () => {
@@ -189,7 +190,7 @@ export function initUI(G) {
         if (!guns.length) add('Sem arma compatível', () => toast(d.att === 'sup' ? 'Este silenciador não serve nas armas que tens' : d.att === 'light' ? 'Não tens arma onde a montar' : 'Esta mira não serve nas armas que tens'));
         // se a arma já tem uma peça nesse encaixe, troca e a antiga vai para a mochila
         const SLOT = { scope: 'mira', sup: 'cano', light: 'calha' };
-        for (const g of guns.slice(0, 3)) { const old = g.att && g.att[d.att], lab = (old ? 'Trocar na ' : 'Pôr na ') + ITEMS[g.k].s + ' (' + SLOT[d.att] + ')'; /* a arma com os encaixes: o que recebe a peça acende */ add(lab + (old ? ' · substitui ' + ITEMS[old].s : ''), () => { removeAt(it, loc); g.att = g.att || {}; if (old) { const o = mkItem(old); const left = G.inv.give(o); if (left) { G.dropItem(o); toast('Sem espaço: ' + ITEMS[old].s + ' ficou no chão'); } } g.att[d.att] = it.k; audio.play('recarregar', 0.6); sel = null; }, !old, 'att', `<span class="ag"><img src="${G.ICONS[g.k]}" alt="">${slotsHTML(g, d.att)}</span><span class="at"><b>${lab}</b>${old ? `<small>Substitui: ${ITEMS[old].s}</small>` : ''}</span>`); } }
+        for (const g of guns.slice(0, 3)) { const old = g.att && g.att[d.att], lab = (old ? 'Trocar na ' : 'Pôr na ') + ITEMS[g.k].s + ' (' + SLOT[d.att] + ')'; /* a arma com os encaixes: o que recebe a peça acende */ add(lab + (old ? ' · substitui ' + ITEMS[old].s : ''), () => { removeAt(it, loc); g.att = g.att || {}; if (old) { const o = mkItem(old); const left = G.inv.give(o); if (left) { G.dropItem(o); toast('Sem espaço: ' + ITEMS[old].s + ' ficou no chão'); } } g.att[d.att] = it.k; audio.play('encaixe'); sel = null; }, !old, 'att', `<span class="ag"><img src="${G.ICONS[g.k]}" alt="">${slotsHTML(g, d.att)}</span><span class="at"><b>${lab}</b>${old ? `<small>Substitui: ${ITEMS[old].s}</small>` : ''}</span>`); } }
     };
     if (loc.t === 'box') { add('Tirar', () => takeToMe(it, loc), true); attActs(); if (loaded) add('Descarregar (' + (d.gun ? it.ammo : it.am) + ' balas)', unload); }
     else {
@@ -201,21 +202,21 @@ export function initUI(G) {
       if (loc.t === 'belt') add('Para a mochila', () => toBag(it, loc));
       if (G.box) add('Pôr na caixa', () => toBox(it, loc));
       attActs();
-      if (d.gun && it.att) for (const slot of ['scope', 'sup', 'light']) if (it.att[slot]) add('Tirar ' + ITEMS[it.att[slot]].s, () => { const a = mkItem(it.att[slot]); const left = G.inv.give(a); if (left) { G.dropItem(a); toast('Sem espaço: ficou no chão'); } it.att[slot] = null; });
+      if (d.gun && it.att) for (const slot of ['scope', 'sup', 'light']) if (it.att[slot]) add('Tirar ' + ITEMS[it.att[slot]].s, () => { const a = mkItem(it.att[slot]); const left = G.inv.give(a); if (left) { G.dropItem(a); toast('Sem espaço: ficou no chão'); } it.att[slot] = null; audio.play('encaixe', 0.8); });
       // carregadores: encher, esvaziar, meter numa arma; e tirar o carregador da arma
       if (d.clip) {
         const cap = d.clip.cap, loose = d.clip.ammo.filter(k => G.inv.count(k) > 0);
-        if ((it.am || 0) < cap && loose.length) add('Encher', () => { let k = it.am ? it.ak : (loose.includes(it.ak) ? it.ak : loose[0]); if (it.am && !loose.includes(k)) return toast('Sem balas de ' + ITEMS[k].s); it.ak = k; it.am = (it.am || 0) + G.inv.take(k, cap - (it.am || 0)); audio.play('recarregar', 0.5); }, true);
-        if (it.am) add('Esvaziar', () => { const a = mkItem(it.ak, it.am); it.am = 0; const left = G.inv.give(a); if (left) { G.dropItem(a); toast('Sem espaço: as balas ficaram no chão'); } });
+        if ((it.am || 0) < cap && loose.length) add('Encher', () => { let k = it.am ? it.ak : (loose.includes(it.ak) ? it.ak : loose[0]); if (it.am && !loose.includes(k)) return toast('Sem balas de ' + ITEMS[k].s); it.ak = k; it.am = (it.am || 0) + G.inv.take(k, cap - (it.am || 0)); audio.play('rec-bala'); }, true);
+        if (it.am) add('Esvaziar', () => { const a = mkItem(it.ak, it.am); it.am = 0; const left = G.inv.give(a); if (left) { G.dropItem(a); toast('Sem espaço: as balas ficaram no chão'); } itemSnd(a.k); });
         const gs = G.inv.belt.filter(g => g && ITEMS[g.k].gun && ITEMS[g.k].gun.clip === it.k);
-        for (const g of gs.slice(0, 2)) add('Meter na ' + ITEMS[g.k].s, () => { removeAt(it, loc); if (g.mg) { const old = mkItem(g.mg); old.am = g.ammo; old.ak = g.ak; const left = G.inv.give(old); if (left) { G.dropItem(old); toast('Sem espaço: o outro ficou no chão'); } } g.mg = it.k; g.ammo = it.am || 0; g.ak = it.ak; audio.play('recarregar', 0.6); sel = null; });
+        for (const g of gs.slice(0, 2)) add('Meter na ' + ITEMS[g.k].s, () => { removeAt(it, loc); if (g.mg) { const old = mkItem(g.mg); old.am = g.ammo; old.ak = g.ak; const left = G.inv.give(old); if (left) { G.dropItem(old); toast('Sem espaço: o outro ficou no chão'); } } g.mg = it.k; g.ammo = it.am || 0; g.ak = it.ak; audio.play(g.k === 'ak' ? 'rec-mete-ak' : g.k === 'pistola' ? 'rec-mete-p' : 'rec-mete'); sel = null; });
       }
       if (d.gun && !d.gun.clip && (it.ammo | 0) > 0) add('Descarregar', unload);
-      if (d.gun && d.gun.clip && it.mg) add('Tirar carregador', () => { const m = mkItem(it.mg); m.am = it.ammo; m.ak = it.ak; it.mg = null; it.ammo = 0; const left = G.inv.give(m); if (left) { G.dropItem(m); toast('Sem espaço: ficou no chão'); } });
+      if (d.gun && d.gun.clip && it.mg) add('Tirar carregador', () => { const m = mkItem(it.mg); m.am = it.ammo; m.ak = it.ak; it.mg = null; it.ammo = 0; const left = G.inv.give(m); if (left) { G.dropItem(m); toast('Sem espaço: ficou no chão'); } audio.play(it.k === 'ak' ? 'rec-tira-ak' : 'rec-tira'); });
       if (d.gun) for (const k of ammoOf(d.gun)) if (k !== (it.pref || it.ak) && ammoOf(d.gun).length > 1) add('Usar ' + ITEMS[k].s, () => { it.pref = k; toast('Na próxima recarga usa ' + ITEMS[k].s); });
-      if (it.n > 1) add('Dividir', () => split(it));
-      if (loc.t === 'bag' && d.w !== d.h) add('Rodar', () => rotateAt(it, loc));
-      add('Largar no chão', () => { removeAt(it, loc); G.dropItem(it); sel = null; }, false, 'end');
+      if (it.n > 1) add('Dividir', () => { split(it); itemSnd(it.k, 0.7); });
+      if (loc.t === 'bag' && d.w !== d.h) add('Rodar', () => { rotateAt(it, loc); itemSnd(it.k, 0.6); });
+      add('Largar no chão', () => { removeAt(it, loc); G.dropItem(it); audio.play('largar'); sel = null; }, false, 'end');
     }
     // a ação principal vai primeiro, a toda a largura; largar fica no fim
     [...ac.querySelectorAll('.btn.pri')].reverse().forEach(b => ac.prepend(b));
@@ -253,7 +254,7 @@ export function initUI(G) {
       const row = document.createElement('div'); row.className = 'recipe' + (near ? '' : ' lock');
       row.innerHTML = `<img src="${G.ICONS[r.k]}" alt=""><div class="rn"><b>${d.n}${r.n > 1 ? ' × ' + r.n : ''}</b><div class="need">${Object.entries(r.need).map(([k, n]) => { const h = G.inv.count(k); return `<span class="${h >= n ? 'ok' : 'no'}">${ITEMS[k].s} ${Math.min(h, n)}/${n}</span>`; }).join('')}</div></div>`;
       const b = document.createElement('button'); b.className = 'btn sm' + (ok ? ' pri' : ''); b.textContent = near ? 'Fabricar' : 'Bancada ' + lv; b.disabled = !ok;
-      b.onclick = () => { if (!Object.entries(r.need).every(([k, n]) => G.inv.count(k) >= n) || (G.base ? G.base.benchNear() : 0) < lv) return; for (const [k, n] of Object.entries(r.need)) G.inv.take(k, n); G.gain(r.k, r.n); if (G.net && G.net.world) G.net.raw({ t: 'cr', i: RECIPES.indexOf(r) }); audio.play('apanhar'); render(); };
+      b.onclick = () => { if (!Object.entries(r.need).every(([k, n]) => G.inv.count(k) >= n) || (G.base ? G.base.benchNear() : 0) < lv) return; for (const [k, n] of Object.entries(r.need)) G.inv.take(k, n); G.gain(r.k, r.n); if (G.net && G.net.world) G.net.raw({ t: 'cr', i: RECIPES.indexOf(r) }); audio.play('fabricar'); render(); };
       row.appendChild(b); el.appendChild(row);
     }
   };
@@ -280,16 +281,16 @@ export function initUI(G) {
     if (to.t === 'eq') { if (ITEMS[it.k].eq !== to.s) return false; const occ = G.inv.eq[to.s]; if (occ === it) return true; removeAt(it, from); G.inv.eq[to.s] = it; if (occ && !placeAt(occ, from) && G.inv.bag.insert(occ, G.inv.rows())) return false; return true; }
     return false;
   };
-  const move = (it, from, to) => { const s = snap(); let ok = false; try { ok = doMove(it, from, to) && valid(); } catch (e) { console.error(e); ok = false; } if (!ok) { unsnap(s); toast(from.t === 'eq' && from.s === 'back' ? 'Tira primeiro o que está nas duas filas de baixo da mochila' : to.t === 'eq' ? 'Não dá para pôr aí' : 'Não cabe aí'); } else audio.play('apanhar', 0.6); G.refresh(); return ok; };
-  const toBag = (it, loc) => { const s = snap(); removeAt(it, loc); const left = G.inv.bag.insert(it, G.inv.rows()); if (left || !valid()) { unsnap(s); toast(left ? 'Mochila cheia' : 'Tira primeiro o que está nas duas filas de baixo da mochila'); return false; } return true; };
-  const toBox = (it, loc) => { const s = snap(); removeAt(it, loc); const left = G.box.grid.insert(it); if (left) { unsnap(s); toast('A caixa está cheia'); } };
-  const takeToMe = (it, loc) => { const n0 = it.n; G.box.grid.remove(it); const left = G.inv.give(it); if (left) { it.n = left; G.box.grid.insert(it); toast('Mochila cheia'); } if (n0 - left > 0) { feed(it.k, n0 - left); audio.play('apanhar'); } };
+  const move = (it, from, to) => { const s = snap(); let ok = false; try { ok = doMove(it, from, to) && valid(); } catch (e) { console.error(e); ok = false; } if (!ok) { unsnap(s); toast(from.t === 'eq' && from.s === 'back' ? 'Tira primeiro o que está nas duas filas de baixo da mochila' : to.t === 'eq' ? 'Não dá para pôr aí' : 'Não cabe aí'); } else if (to.t === 'ground') audio.play('largar'); else if (to.t === 'eq' || from.t === 'eq') audio.play('vestir'); else itemSnd(it.k, 0.9); G.refresh(); return ok; };
+  const toBag = (it, loc) => { const s = snap(); removeAt(it, loc); const left = G.inv.bag.insert(it, G.inv.rows()); if (left || !valid()) { unsnap(s); toast(left ? 'Mochila cheia' : 'Tira primeiro o que está nas duas filas de baixo da mochila'); return false; } if (loc.t === 'eq') audio.play('vestir'); else itemSnd(it.k); return true; };
+  const toBox = (it, loc) => { const s = snap(); removeAt(it, loc); const left = G.box.grid.insert(it); if (left) { unsnap(s); toast('A caixa está cheia'); } else itemSnd(it.k); };
+  const takeToMe = (it, loc) => { const n0 = it.n; G.box.grid.remove(it); const left = G.inv.give(it); if (left) { it.n = left; G.box.grid.insert(it); toast('Mochila cheia'); } if (n0 - left > 0) { feed(it.k, n0 - left); itemSnd(it.k); } };
   // rodar no sítio; se não couber, procura outro espaço já rodado
   const rotateAt = (it, loc) => { const g = gridOf(loc.t), rows = rowsOf(loc.t); it.r = !it.r; if (g.fits(it, loc.x, loc.y, rows)) { const e = g.list.find(e => e.it === it); if (e) { e.x = loc.x; e.y = loc.y; } return; }
     for (let y = 0; y < rows; y++) for (let x = 0; x < g.cols; x++) if (g.fits(it, x, y, rows)) { const e = g.list.find(e => e.it === it); e.x = x; e.y = y; return; }
     it.r = !it.r; toast('Não cabe rodado'); };
   const split = it => { const h = Math.floor(it.n / 2); const n = mkItem(it.k, h); const p = G.inv.bag.firstFit(n, G.inv.rows()); if (!p) return toast('Sem espaço para dividir'); it.n -= h; G.inv.bag.add(n, p[0], p[1]); };
-  $('takeAll').onclick = () => { if (!G.box) return; const list = [...G.box.grid.list].sort((a, b) => ITEMS[b.it.k].w * ITEMS[b.it.k].h - ITEMS[a.it.k].w * ITEMS[a.it.k].h); let full = false; for (const e of list) { const n0 = e.it.n; G.box.grid.remove(e.it); const left = G.inv.give(e.it); if (left) { e.it.n = left; G.box.grid.add(e.it, e.x, e.y); full = true; } if (n0 - left > 0) feed(e.it.k, n0 - left); } audio.play('apanhar'); if (full) toast('Mochila cheia: ficou alguma coisa'); G.refresh(); };
+  $('takeAll').onclick = () => { if (!G.box) return; const list = [...G.box.grid.list].sort((a, b) => ITEMS[b.it.k].w * ITEMS[b.it.k].h - ITEMS[a.it.k].w * ITEMS[a.it.k].h); let full = false; for (const e of list) { const n0 = e.it.n; G.box.grid.remove(e.it); const left = G.inv.give(e.it); if (left) { e.it.n = left; G.box.grid.add(e.it, e.x, e.y); full = true; } if (n0 - left > 0) feed(e.it.k, n0 - left); } audio.play('it-pegar'); if (list[0]) itemSnd(list[0].it.k, 0.8); if (full) toast('Mochila cheia: ficou alguma coisa'); G.refresh(); };
 
   // ---------- arrastar e tocar
   let drag = null;
@@ -307,7 +308,7 @@ export function initUI(G) {
   const ghostDraw = () => { const r = !!drag.it.r; ghost.className = r ? 'rot' : ''; ghost.style.width = drag.w + 'px'; ghost.style.height = drag.h + 'px'; ghost.style.setProperty('--bw', drag.w + 'px'); ghost.style.setProperty('--bh', drag.h + 'px'); };
   const dragRotate = () => { if (!drag || !drag.moved || drag.none) return; const d = ITEMS[drag.it.k]; if (d.w === d.h) return;
     drag.it.r = !drag.it.r; [drag.w, drag.h] = [drag.h, drag.w]; drag.grab = [Math.min(IW(drag.it) - 1, Math.floor(IW(drag.it) / 2)), Math.min(IH(drag.it) - 1, Math.floor(IH(drag.it) / 2))]; drag.ox = drag.w / 2; drag.oy = drag.h / 2;
-    ghostDraw(); audio.play('ui', 0.5); dragMove(drag.lx, drag.ly); };
+    ghostDraw(); itemSnd(drag.it.k, 0.5); dragMove(drag.lx, drag.ly); };
   addEventListener('keydown', e => { if ((e.key === 'r' || e.key === 'R') && drag && drag.moved) { e.preventDefault(); e.stopPropagation(); dragRotate(); } }, true);
   inv.addEventListener('pointerdown', e => {
     if (e.target.closest('#iBar')) return;
@@ -327,7 +328,7 @@ export function initUI(G) {
   };
   inv.addEventListener('pointermove', e => {
     if (!drag || drag.none || e.pointerId !== drag.pid) return;
-    if (!drag.moved && Math.hypot(e.clientX - drag.x, e.clientY - drag.y) > 7) { drag.moved = true; ghost.innerHTML = `<img src="${G.itemIcon ? G.itemIcon(drag.it) : G.ICONS[drag.it.k]}" alt="">`; ghostDraw(); ghost.hidden = false; drag.el.classList.add('drag'); bar.hidden = true; if (!drag.el.classList.contains('item')) { drag.ox = drag.w / 2; drag.oy = drag.h / 2; } }
+    if (!drag.moved && Math.hypot(e.clientX - drag.x, e.clientY - drag.y) > 7) { drag.moved = true; ghost.innerHTML = `<img src="${G.itemIcon ? G.itemIcon(drag.it) : G.ICONS[drag.it.k]}" alt="">`; ghostDraw(); ghost.hidden = false; drag.el.classList.add('drag'); bar.hidden = true; audio.play('it-pegar'); if (!drag.el.classList.contains('item')) { drag.ox = drag.w / 2; drag.oy = drag.h / 2; } }
     if (!drag.moved) return;
     drag.lx = e.clientX; drag.ly = e.clientY; dragMove(e.clientX, e.clientY);
   });
@@ -349,8 +350,8 @@ export function initUI(G) {
   inv.addEventListener('pointerup', endDrag); inv.addEventListener('pointercancel', e => { if (drag && drag.pid !== undefined && e.pointerId !== drag.pid) return; if (drag && drag.el) drag.el.classList.remove('drag'); if (drag && drag.it && !drag.none) drag.it.r = drag.r0; drag = null; ghost.hidden = true; prev.remove(); render(); });
   const quick = (it, loc) => { if (!loc) return; const d = ITEMS[it.k]; if (d.use && loc.t !== 'box') G.use(it); /* dois toques num consumível: come, bebe ou trata */ else if (loc.t === 'box') takeToMe(it, loc); else if (loc.t === 'eq' || loc.t === 'belt') toBag(it, loc); else if (G.box) toBox(it, loc); else if (d.eq) move(it, loc, { t: 'eq', s: d.eq }); else if (d.use) G.use(it); else { const i = G.inv.belt.indexOf(null); if (i >= 0) move(it, loc, { t: 'belt', i }); } sel = null; G.refresh(); };
 
-  const openInv = (box, t) => { if (!G.invOpen) audio.play('mochila', 0.9); G.invOpen = true; G.sticks.L = G.sticks.R = null; G.box = box || null; if (G.box) tab = 'inv'; if (t) tab = t; if (G.ARENA) tab = 'inv'; /* na arena não há fabrico nem treino */ inv.classList.toggle('arena', !!G.ARENA); { const b0 = inv.querySelector('.tabs [data-tab="inv"]'); if (b0) b0.textContent = G.ARENA ? 'Inventário' : 'Perto de ti'; } inv.querySelectorAll('.tabs button').forEach(x => x.classList.toggle('on', x.dataset.tab === tab)); inv.dataset.tab = tab; inv.hidden = false; inv.classList.toggle('has-box', !!G.box); layout(); sel = null; render(); audio.play('ui'); };
-  const closeInv = () => { if (G.invOpen) audio.play('mochila', 0.7); G.invOpen = false; inv.hidden = true; G.box = null; sel = null; drag = null; ghost.hidden = true; };
+  const openInv = (box, t) => { if (!G.invOpen) { if (!(box && boxOpen(box))) audio.play('mochila', 0.9); } G.invOpen = true; G.sticks.L = G.sticks.R = null; G.box = box || null; if (G.box) tab = 'inv'; if (t) tab = t; if (G.ARENA) tab = 'inv'; /* na arena não há fabrico nem treino */ inv.classList.toggle('arena', !!G.ARENA); { const b0 = inv.querySelector('.tabs [data-tab="inv"]'); if (b0) b0.textContent = G.ARENA ? 'Inventário' : 'Perto de ti'; } inv.querySelectorAll('.tabs button').forEach(x => x.classList.toggle('on', x.dataset.tab === tab)); inv.dataset.tab = tab; inv.hidden = false; inv.classList.toggle('has-box', !!G.box); layout(); sel = null; render(); audio.play('ui'); };
+  const closeInv = () => { if (G.invOpen) { if (!(G.box && boxClose(G.box))) audio.play('mochila', 0.7); } G.invOpen = false; inv.hidden = true; G.box = null; sel = null; drag = null; ghost.hidden = true; };
 
 
   // ---------- definições (guardadas neste browser)
@@ -426,14 +427,14 @@ export function initUI(G) {
     let code = ''; const dots = pfB.querySelector('.kp-dots'), okB = pfB.querySelector('.kp-ok');
     const draw = () => { dots.querySelectorAll('i').forEach((e, i) => e.classList.toggle('on', i < code.length)); okB.disabled = code.length !== 4; };
     const press = n => { if (n === 'x') code = code.slice(0, -1); else if (n === 'ok') { if (code.length === 4) onCode(code); return; } else if (code.length < 4) code += n; $('kpM').textContent = ''; draw(); };
-    pfB.onclick = e => { const b = e.target.closest('.kp-k'); if (!b) return; e.stopPropagation(); audio.play('ui'); G.buzz && G.buzz(8); press(b.dataset.n); };
+    pfB.onclick = e => { const b = e.target.closest('.kp-k'); if (!b) return; e.stopPropagation(); audio.play('bip', 0.45); G.buzz && G.buzz(8); press(b.dataset.n); };
     KP = { press, err: t => { code = ''; draw(); $('kpM').textContent = t; dots.classList.remove('shake'); void dots.offsetWidth; dots.classList.add('shake'); G.buzz && G.buzz(40); } };
     draw(); pfm.hidden = false; return KP;
   };
   document.addEventListener('keydown', e => { if (!KP || pfm.hidden || !pfB.querySelector('.kp')) return; if (/^[0-9]$/.test(e.key)) KP.press(e.key); else if (e.key === 'Backspace') KP.press('x'); else if (e.key === 'Enter') KP.press('ok'); else return; e.preventDefault(); e.stopPropagation(); }, true);
   const codeAsk = T => keypad({ title: 'Fechadura', lead: T.door ? 'Esta porta tem fechadura. Escreve o código de 4 números.' : 'Este baú tem fechadura. Escreve o código de 4 números.', ok: 'Abrir', onCode: c => G.base.lockSend(T, { t: 'lkc', code: c }) });
-  const codeErr = t => { if (KP && !pfm.hidden && pfB.querySelector('.kp')) KP.err(t || 'Código errado'); else toast(t || 'Código errado'); };
-  const codeDone = m => { if (KP && !pfm.hidden && pfB.querySelector('.kp')) { KP = null; pfClose(); }
+  const codeErr = t => { audio.play('erro'); if (KP && !pfm.hidden && pfB.querySelector('.kp')) KP.err(t || 'Código errado'); else toast(t || 'Código errado'); };
+  const codeDone = m => { audio.play('destrancar'); if (KP && !pfm.hidden && pfB.querySelector('.kp')) { KP = null; pfClose(); }
     if (m.k[0] === 'd' && !m.set && !m.rm) { const d = G.base.deps.find(q => 'd' + q.nid === m.k); if (d && d.c) G.net.open(d.c); } };
   const lockMenu = T => {
     const cl = G.base.lockOf(T), what = T.door ? 'porta' : 'baú', set = (title, ok) => keypad({ title, lead: cl ? 'Escolhe o novo código. Quem já sabia o antigo deixa de entrar (o teu clã continua a entrar).' : `Escolhe um código de 4 números para esta ${what}. Quem o souber entra; tu e o teu clã entram sempre.`, ok, onCode: c => { G.base.lockSend(T, { t: 'lkset', code: c }); KP = null; pfClose(); } });
@@ -486,6 +487,7 @@ export function initUI(G) {
   $('sHow').onclick = () => { audio.play('ui'); $('pfT').textContent = 'Como se joga'; pfm.classList.remove('wide', 'kpw'); pfB.innerHTML = `<div class="keys howk">${$('sKeys').innerHTML}</div><p class="note">Revista tudo, come e bebe, treina o corpo (perde-se ao morrer) e evita a cidade de noite. O melhor loot está no centro, onde há PvP.</p>`; pfm.hidden = false; };
   // ---------- novidades (as mais recentes primeiro; o ponto vermelho some depois de as abrires)
   const NEWS = [
+    { id: '0.89', d: '27/11/2026', t: 'Sons em tudo o que mexes', img: 'menu/n-inter.jpg', b: '<p>Agora quase tudo o que fazes tem o seu som.</p><ul><li>Cada sítio abre e fecha à sua maneira: frigorífico, gavetas e móveis, cacifos e armários de metal, caixas, sacos e corpos, mala do carro</li><li>Arrastar e pousar objetos no inventário soa ao material: armas, balas e carregadores, latas, garrafas, madeira, pedra, papel, roupa</li><li>Comer, beber, pôr uma ligadura e abrir o kit médico têm sons diferentes</li><li>Vestir e despir, largar no chão, rodar, fabricar, montar miras e silenciadores, meter e tirar carregadores, encher com balas soltas</li><li>Comprar e vender (moedas), abrir o mapa, portas de carro, nadar, deitar-te, tirar a cavilha da granada e ela a ressaltar</li><li>Código certo ou errado na fechadura, esfolar um animal, colher plantas</li><li>Com pouco fôlego ouves-te a respirar; com pouca vida, o coração a bater</li></ul>' },
     { id: '0.88', d: '27/11/2026', t: 'Sons a sério', img: 'menu/n-sons.jpg', b: '<p>Mais sons gravados de armas e objetos reais.</p><ul><li>Recarga por partes, ao ritmo da animação: tirar o carregador, meter o outro e puxar a culatra quando estava vazia. Cada tipo de arma soa diferente (M4, AK, pistola, de ferrolho, revólver, caçadeira cartucho a cartucho)</li><li>Ouve-se a recarga dos outros jogadores perto de ti</li><li>Levantar a arma e encostá-la à cara, sacar a arma e a faca, cápsulas a cair</li><li>Clique da lanterna, visão noturna a ligar e a desligar, abrir a mochila</li><li>Passos na neve, nas folhas da floresta e na terra; cair no chão depois de saltar</li></ul>' },
     { id: '0.87', d: '27/11/2026', t: 'Deslizar nos menus e música', img: 'menu/n-scroll.jpg', b: '<p>Já dá para deslizar com o dedo nas Novidades, nas Skins, no Perfil e em todos os menus com mais conteúdo do que cabe. Com o telemóvel de pé, a lista das novidades desliza para baixo.</p><ul><li>A música do menu começa ao primeiro toque no ecrã (o browser não deixa antes disso); antes só começava depois de entrar no jogo</li></ul>' },
     { id: '0.86', d: '27/11/2026', t: 'Colinas a sério', img: 'menu/n-colinas.jpg', b: '<p>O campo e as florestas passam a ter colinas onde se anda de verdade, mais altas no norte com neve. As cidades, as estradas, a água e as casas ficam planas, com rampas suaves à volta.</p><ul><li>Árvores, pedras, arbustos, zombies, animais, carros e mochilas ficam assentes no chão (os carros inclinam-se na encosta)</li><li>As balas param nas colinas: não se acerta em ninguém atrás de uma (o servidor confirma)</li><li>As bases numa encosta ficam niveladas, com a fundação a descer até ao chão</li><li>O mapa mostra o relevo</li></ul>' },
@@ -940,7 +942,7 @@ export function initUI(G) {
   // mapa grande: o mundo todo ou perto de ti (2 km)
   const SPANS = [MAP * 2, 4000, 2000, 1000, 500]; let mapLv = 0; // mundo todo → 500 m
   const toggleMap = force => {
-    G.mapOpen = force ?? !G.mapOpen; $('map').hidden = !G.mapOpen; if (!G.mapOpen) { mEdit = null; edRender(); return; } drawBig();
+    { const was = !!G.mapOpen; G.mapOpen = force ?? !G.mapOpen; if (was !== G.mapOpen) audio.play('mapa', G.mapOpen ? 0.9 : 0.6); } $('map').hidden = !G.mapOpen; if (!G.mapOpen) { mEdit = null; edRender(); return; } drawBig();
   };
   const drawBig = () => {
     const cv = $('mapc'), c = cv.getContext('2d'), p = G.p, AR = !!G.ARENA, span = AR ? AS : SPANS[mapLv], mapNear = AR || mapLv > 0, cx = AR ? AX : mapNear ? clamp(p.x, -MAP + span / 2, MAP - span / 2) : 0, cz = AR ? AZ : mapNear ? clamp(p.z, -MAP + span / 2, MAP - span / 2) : 0, S = cv.width / span, u = cv.width / Math.max(240, cv.getBoundingClientRect().width || cv.width); // u: píxeis do desenho por píxel do ecrã

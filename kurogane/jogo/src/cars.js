@@ -12,6 +12,8 @@ const angDiff = (a, b) => { let d = a - b; while (d > Math.PI) d -= 2 * Math.PI;
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 
 export function makeCars({ scene, G, W, collide, solidAt, tallAt = () => 0, groundY, addRect, removeRect, audio, hurtZombie, sameLevel, roofAt = () => null }) {
+  // porta do carro: abre e bate; bicicletas e motas não têm porta (só o roçar da roupa a subir)
+  const carDoor = c => { const T = VT[c.k] || {}; if (T.two || c.k === 'bike' || c.k === 'moto') { audio.play('pano', 0.6); return; } audio.play('ab-carro', 0.8); setTimeout(() => audio.play('fe-carro', 0.8), 380); };
   const list = [], byId = new Map();
   const M = (hex, o = {}) => new THREE.MeshStandardMaterial({ color: hex, roughness: o.r ?? 0.55, metalness: o.m ?? 0.25, emissive: o.e ?? 0x000000, emissiveIntensity: o.ei ?? 0 });
   /* vidro a sério: transparente, vê-se de fora para dentro e de dentro para fora (as duas faces) */
@@ -178,13 +180,13 @@ export function makeCars({ scene, G, W, collide, solidAt, tallAt = () => 0, grou
     seatFree(c) { return c.seats.findIndex(s => !s); },
     // entrar: o primeiro lugar livre (o do condutor primeiro)
     enter(c) { const i = this.seatFree(c); if (i < 0) { G.ui.toast(VT[c.k].two ? 'Já não cabe mais ninguém' : 'O carro está cheio'); return; } if (G.net && G.net.world) { G.net.raw({ t: 'cin', id: c.id, seat: i }); return; } this.seated(c, i); },
-    seated(c, i) { c.seats[i] = me(); G.car = c; G.carSeat = i; if (i === 0) c.idle = 99; /* o helicóptero só levanta quando mexes o polegar */ G.aimEnd && G.aimEnd(); G.setAuto && G.setAuto(false); audio.play('porta', 0.7); if (i === 0) { const T = VT[c.k]; G.ui.toast(T.fuel === false ? T.n + ' · a pedalar' : c.fuel > 0.5 ? T.n + ' · gasolina ' + Math.round(c.fuel) + ' L' : 'Sem gasolina: precisas de um galão'); if (c.rc) { removeRect(c.rc); c.rc = null; } } else G.ui.toast(VT[c.k].two ? 'Vais à pendura · aponta para disparar' : 'Vais de passageiro · aponta para disparar da janela'); },
+    seated(c, i) { c.seats[i] = me(); G.car = c; G.carSeat = i; if (i === 0) c.idle = 99; /* o helicóptero só levanta quando mexes o polegar */ G.aimEnd && G.aimEnd(); G.setAuto && G.setAuto(false); carDoor(c); if (i === 0) { const T = VT[c.k]; G.ui.toast(T.fuel === false ? T.n + ' · a pedalar' : c.fuel > 0.5 ? T.n + ' · gasolina ' + Math.round(c.fuel) + ' L' : 'Sem gasolina: precisas de um galão'); if (c.rc) { removeRect(c.rc); c.rc = null; } } else G.ui.toast(VT[c.k].two ? 'Vais à pendura · aponta para disparar' : 'Vais de passageiro · aponta para disparar da janela'); },
     exit(net = true) { const c = G.car; if (!c) return; if (net && (c.alt || 0) - padOf(c) > 0.8) { G.ui.toast('Aterra primeiro'); return; } G.leanOut = false; G.aimEnd && G.aimEnd(); const p = G.p, s = G.carSeat; c.seats[s] = 0; G.car = null; if (net && G.net && G.net.world) G.net.raw({ t: 'cout', id: c.id });
       const fx = Math.sin(c.yaw), fz = Math.cos(c.yaw), lx = Math.cos(c.yaw), lz = -Math.sin(c.yaw); // lado esquerdo do carro
       const RF = padOf(c) > 0 ? roofAt(c.x, c.z, 2.0) : null; // aterrado num telhado: sais para cima do telhado
       for (const [a, b] of [[1.5, 0], [-1.5, 0], [0, -2.8], [0, 2.8], [2.4, 1], [-2.4, 1], [1.2, -1.5], [-1.2, -1.5]]) { const x = c.x + lx * a * (s % 2 ? -1 : 1) + fx * b, z = c.z + lz * a * (s % 2 ? -1 : 1) + fz * b; if (RF ? roofAt(x, z, 0.35) === RF && !solidAt(x, z, 0.4, RF.n) : !solidAt(x, z, 0.4)) { p.x = x; p.z = z; break; } }
       if (RF) { p.lv = RF.n; p.bld = RF; p.base = RF.roofY - 0.05; p.h = 0; p.vy = 0; p.y = RF.roofY; } else { p.lv = 0; p.base = 0; p.bld = null; p.h = 0; p.y = groundY(p.x, p.z, 0); }
-      p.vx = p.vz = 0; audio.play('portaF', 0.7); if (!c.seats[0] && Math.abs(c.v) < 0.5) { c.v = 0; setRect(c); } },
+      p.vx = p.vz = 0; carDoor(c); if (!c.seats[0] && Math.abs(c.v) < 0.5) { c.v = 0; setRect(c); } },
     refuel(c, it) { const T = VT[c.k]; if (T.fuel === false) { G.ui.toast('As bicicletas não levam gasolina'); return false; } const add = Math.min(T.tank - c.fuel, 20); if (add < 0.5) { G.ui.toast('O depósito está cheio'); return false; } c.fuel += add; if (G.net && G.net.world) G.net.raw({ t: 'cf', id: c.id, add }); G.ui.toast('Gasolina: ' + Math.round(c.fuel) + ' L'); audio.play('apanhar'); return true; },
     // conduzir: polegar = para onde queres ir no ecrã (para trás faz marcha-atrás); no PC, W/S acelera e trava, A/D vira
     drive(dt, inp) {
