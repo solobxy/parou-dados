@@ -1,14 +1,14 @@
 {
-  "built_at": "2026-11-27T17:06:28.582841+00:00",
-  "db_bytes": 962113536,
-  "gz_bytes": 244397643,
+  "built_at": "2026-11-27T18:07:45.763919+00:00",
+  "db_bytes": 990285824,
+  "gz_bytes": 249193198,
   "totals": {
-    "lines": 3908,
-    "stops": 80415,
-    "trips": 157165,
-    "stop_times": 4956964,
-    "operators": 44,
-    "operators_ok": 43,
+    "lines": 4004,
+    "stops": 80519,
+    "trips": 161395,
+    "stop_times": 5120368,
+    "operators": 45,
+    "operators_ok": 44,
     "operators_desatualizados": 2
   },
   "feeds": [
@@ -469,6 +469,25 @@
       "dias_uteis_sem_servico": 0
     },
     {
+      "id": "flixbus_pt",
+      "operator_name": "FlixBus",
+      "status": "OK",
+      "lines": 96,
+      "stops": 104,
+      "trips": 1023,
+      "valid_until": "2026-12-13",
+      "validade": "ok",
+      "dias_validade": 16,
+      "horario_prolongado": false,
+      "url": "https://gtfs.gis.flix.tech/gtfs_generic_eu.zip",
+      "last_error": null,
+      "servicos_associados": null,
+      "servicos_sem_calendario": null,
+      "viagens_hoje": 477,
+      "viagens_amanha": 463,
+      "dias_uteis_sem_servico": 0
+    },
+    {
       "id": "sit_coimbra",
       "operator_name": "SIT Metropolitano (Região de Coimbra)",
       "status": "OK",
@@ -850,7 +869,7 @@
     }
   ],
   "desenhos": {
-    "bytes": 20070590,
+    "bytes": 20272196,
     "por_operador": {
       "ave_mobilidade": {
         "viagens": 1779,
@@ -906,6 +925,10 @@
         "viagens": 381,
         "com_desenho": 381,
         "desenhos": 135
+      },
+      "flixbus_pt": {
+        "viagens": 1023,
+        "com_desenho": 0
       },
       "giro": {
         "viagens": 541,
@@ -1058,9 +1081,9 @@
         "desenhos": 262
       },
       "unirh": {
-        "viagens": 12577,
-        "com_desenho": 12577,
-        "desenhos": 983
+        "viagens": 15784,
+        "com_desenho": 15784,
+        "desenhos": 1149
       },
       "vamus": {
         "viagens": 1048,
@@ -1258,13 +1281,13 @@
           "total": 385
         },
         "servicos_com_data_hoje": [
-          "FU",
-          "CU",
-          "AU",
-          "DU",
           "EU",
           "BexpU",
-          "BU"
+          "FU",
+          "DU",
+          "BU",
+          "CU",
+          "AU"
         ],
         "viagens_por_servico": [
           {
@@ -1322,12 +1345,12 @@
   "andante": {
     "fonte_zonas": "https://andante.pt/titulos-ocasionais/",
     "fonte_precos": "https://andante.pt/comprar/andante-azul/",
-    "zonas_obtidas": "2026-11-27T17:06:05+00:00",
+    "zonas_obtidas": "2026-11-27T18:07:25+00:00",
     "n_zonas": 154,
     "n_paragens": 13711,
     "precos_em_vigor_desde": "2026-01-01",
-    "precos_obtidos": "2026-11-27T17:06:05+00:00",
+    "precos_obtidos": "2026-11-27T18:07:25+00:00",
     "z2": 1.4
   },
-  "duration_s": 471
+  "duration_s": 485
 }
