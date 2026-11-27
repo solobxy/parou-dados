@@ -60,7 +60,7 @@ server.listen(0, async () => {
     console.log('itens do A antes/depois:', before, after[0], '· mochilas:', after[1]); ok(after[0] > before, 'levou o que o Bruno tinha (o que não coube fica no corpo: ' + after[1] + ')');
     // clã: A cria, B renasce e entra com o código; tiros entre os dois não magoam
     await B.ev(() => G.respawn(false)); await W(500);
-    await A.ev(() => G.net.clanCmd('create', 'Ronin')); await W(600);
+    await A.ev(() => G.net.clanCmd('create', 'Ronin')); for (let i = 0; i < 16 && !(await A.ev(() => G.net.clanInfo && G.net.clanInfo.codigo)); i++) await W(400);
     const code = await A.ev(() => G.net.clanInfo && G.net.clanInfo.codigo); console.log('código do clã:', code); ok(!!code, 'clã criado com código');
     await B.ev(c => G.net.clanCmd('join', c), code); for (let i = 0; i < 10 && !(await B.ev(() => G.net.clanInfo && G.net.clanInfo.membros.length > 1)); i++) await W(500);
     const cb = await B.ev(() => G.net.clanInfo && G.net.clanInfo.membros.join(',')); ok(cb === 'Ana,Bruno', 'o Bruno entrou no clã (' + cb + ')');

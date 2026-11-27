@@ -445,7 +445,7 @@ export function initUI(G) {
     $('sAccT').textContent = c ? 'Conta' : 'Criar conta';
     const L = (a && a.look) || null, k = JSON.stringify(L || {}) + (a ? a.id : '');
     if (k !== lookKey && G.portraitBig) { lookKey = k; const u = G.portraitBig(L || undefined); $('lbChar').src = u; $('lbAv').src = u; }
-    newsDot(); startLabels();
+    newsDot(); startLabels(); try { lvPaint(); pfFetch(); } catch (e) { }
   };
   const showMenu = () => { const a = Conta.ativo(); $('modes').hidden = true; $('news').hidden = true;
     if (a && a.nome) { $('gate').hidden = true; $('start').hidden = false; pfRender(); if (G.ui_count) G.ui_count(); }
@@ -470,13 +470,14 @@ export function initUI(G) {
       else { await Conta.entrar(n, pw); const r = await Conta.sincronizar(); audio.play('apanhar'); showMenu(); mnote(r === 'nuvem' ? 'Bem-vindo de volta. Trouxemos o teu jogo da nuvem.' : 'Bem-vindo de volta, ' + n + '.'); } }
     catch (err) { msg(Conta.MSG[err.message] || Conta.MSG.rede, 'err'); } finally { $('gOk').disabled = false; } };
   // botões do lobby
-  $('prof').onclick = () => { audio.play('ui'); showAccount(); };
+  $('prof').onclick = () => { audio.play('ui'); showPerfil(); };
   $('sLook').onclick = () => { audio.play('ui'); showLook(); }; $('sProf').onclick = () => { audio.play('ui'); showList(); }; $('sAcc').onclick = () => { audio.play('ui'); showAccount(); };
   $('sGo').onclick = () => { audio.play('ui'); $('modes').hidden = false; if (G.ui_count) G.ui_count(); };
   $('mdX').onclick = () => { audio.play('ui'); $('modes').hidden = true; };
   $('sHow').onclick = () => { audio.play('ui'); $('pfT').textContent = 'Como se joga'; pfm.classList.remove('wide', 'kpw'); pfB.innerHTML = `<div class="keys howk">${$('sKeys').innerHTML}</div><p class="note">Revista tudo, come e bebe, treina o corpo (perde-se ao morrer) e evita a cidade de noite. O melhor loot está no centro, onde há PvP.</p>`; pfm.hidden = false; };
   // ---------- novidades (as mais recentes primeiro; o ponto vermelho some depois de as abrires)
   const NEWS = [
+    { id: '0.81', d: '27/11/2026', t: 'Nível e amigos', img: 'menu/n-perfil.jpg', b: '<p>Toca no teu nome, no menu, para veres o perfil: nível, zombies e jogadores que mataste, e os teus amigos.</p><ul><li>Ganhas experiência a jogar online: zombies, jogadores, objetos feitos e tempo vivo</li><li>Adiciona amigos pelo nome e vê quem está a jogar agora</li><li>Recebes aviso quando alguém te pede amizade</li></ul>' },
     { id: '0.80', d: '27/11/2026', t: 'Armas e equipamento com textura', img: 'menu/n-armas.jpg', b: '<p>As coronhas e os guarda-mãos de madeira ganham veios e nós, e as roupas, coletes e mochilas têm grão de tecido. O metal mantém os riscos e o brilho.</p>' },
     { id: '0.79', d: '27/11/2026', t: 'Neve no norte e chão misturado', img: 'menu/n-neve.jpg', b: '<p>O norte do mapa tem neve misturada com terra, e nos campos aparecem manchas de terra no meio da erva. Ao longe veem-se colinas e montanhas recortadas no horizonte.</p>' },
     { id: '0.78', d: '27/11/2026', t: 'Contorno nas prateleiras e cozinhas', img: 'menu/n-contorno.jpg', b: '<p>Prateleiras das lojas e farmácias, armários e cozinhas também ganham o contorno branco quando os podes revistar.</p><ul><li>As texturas de madeira, metal e betão passam a aparecer também nas zonas da cidade que se constroem enquanto andas</li></ul>' },
@@ -573,6 +574,37 @@ export function initUI(G) {
       catch (e) { msg(Conta.MSG[e.message] || Conta.MSG.rede, 'err'); } finally { const b = $('pfOk'); if (b) b.disabled = false; } };
     $('pfOk').onclick = ok; $('pfP').onkeydown = e => { if (e.key === 'Enter') ok(); };
   }
+  // ---------- perfil: nível (experiência ganha online, contada pelo servidor) e amigos
+  let PF = null, pfT0 = 0;
+  const lvPaint = () => { const me = PF && PF.me, b = $('lbLv'), d = $('lbRq'); if (b) { b.hidden = !me; if (me) b.textContent = me.lv; } if (d) d.hidden = !(PF && PF.rq && PF.rq.length); };
+  const pfFetch = async (o, force) => { if (!G.net || !G.net.pf) return null; if (!o && !force && Date.now() - pfT0 < 45000) return PF; pfT0 = Date.now(); const m = await G.net.pf(o || {}); if (m && m.me) PF = m; lvPaint(); return m; };
+  const frRowH = (r, kind) => `<div class="fr-row"><i class="fr-on${r[3] ? ' on' : ''}" aria-label="${r[3] ? 'A jogar agora' : 'Fora do jogo'}"></i><span class="fr-n"><b>${esc(r[1])}</b><em>Nível ${r[2]}${r[3] ? ' · a jogar agora' : ''}</em></span>${kind === 'rq' ? `<button class="fr-b pri" data-a="ok" data-u="${r[0]}">Aceitar</button><button class="fr-b" data-a="no" data-u="${r[0]}">Recusar</button>` : kind === 'out' ? `<button class="fr-b" data-a="undo" data-u="${r[0]}">Cancelar</button>` : `<button class="fr-b" data-a="del" data-u="${r[0]}" aria-label="Remover ${esc(r[1])}">Remover</button>`}</div>`;
+  const pfPaint = (m, note) => { if (pfm.hidden || $('pfT').textContent !== 'Perfil') return;
+    if (!m || m.none || m.e === 'rede' && !m.me) { pfB.innerHTML = `<p>${m && m.none ? 'Ainda não jogaste online com este perfil. O nível e os amigos começam no primeiro jogo.' : 'Sem ligação ao servidor. Tenta outra vez daqui a pouco.'}</p><button class="btn big" id="pfAcc">Conta e nuvem</button>`; $('pfAcc').onclick = () => { audio.play('ui'); showAccount(); }; return; }
+    const me = m.me, pc = Math.round(me.at / me.need * 100);
+    pfB.innerHTML = `<div class="pf-g"><div class="pf-c"><div class="pf-top"><span class="pf-badge" aria-hidden="true">${me.lv}</span><span class="pf-id"><b>${esc(me.n)}</b><em>Nível ${me.lv} · faltam ${me.need - me.at} XP para o ${me.lv + 1}</em><span class="pf-bar" role="progressbar" aria-label="Experiência" aria-valuenow="${pc}" aria-valuemin="0" aria-valuemax="100"><i style="width:${pc}%"></i></span></span></div>
+      <div class="pf-st"><span><b>${me.z}</b><em>Zombies</em></span><span><b>${me.k}</b><em>Jogadores</em></span><span><b>${me.d}</b><em>Mortes</em></span></div>
+      <p class="note">Ganhas experiência a jogar online: +10 por zombie, +50 por jogador, +2 por objeto feito e +3 a cada 2 minutos vivo.</p>
+      <button class="btn big" id="pfAcc">Conta e nuvem</button></div><div class="pf-c">
+      ${m.rq.length ? `<h4 class="pf-h">Pedidos de amizade</h4><div class="fr-l">${m.rq.map(r => frRowH(r, 'rq')).join('')}</div>` : ''}
+      <h4 class="pf-h">Amigos <em>${m.f.length}</em></h4>
+      <div class="pf-add">${field('frN', 'Adicionar pelo nome', 'text', '', 'off')}<button class="btn pri" id="frGo">Pedir</button></div><div class="pmsg${m.e ? ' err' : m.ok ? ' ok' : ''}" id="frM" role="status">${esc(m.e && m.e !== 'rede' ? m.e : m.ok || note || '')}</div>
+      <div class="fr-l">${m.f.length ? m.f.map(r => frRowH(r, 'f')).join('') : '<p class="note">Ainda sem amigos. Escreve o nome de quem joga contigo.</p>'}${m.out.map(r => frRowH(r, 'out')).join('')}</div>
+      </div></div>`;
+    $('pfAcc').onclick = () => { audio.play('ui'); showAccount(); };
+    const go = async () => { const n = $('frN').value.trim(); if (!n) return; $('frGo').disabled = true; $('frM').className = 'pmsg'; $('frM').textContent = 'A enviar…'; pfPaint(await pfFetch({ a: 'add', n }, true)); };
+    $('frGo').onclick = e => { e.stopPropagation(); audio.play('ui'); go(); };
+    pfB.onclick = async e => { const b = e.target.closest('.fr-b'); if (!b) return; e.stopPropagation(); audio.play('ui');
+      if (b.dataset.a === 'del' && !b.classList.contains('sure')) { b.classList.add('sure'); b.textContent = 'Tens a certeza?'; return; }
+      b.disabled = true; pfPaint(await pfFetch({ a: b.dataset.a, u: b.dataset.u }, true)); }; };
+  const showPerfil = async () => { $('pfT').textContent = 'Perfil'; pfm.classList.remove('kpw'); pfm.classList.add('wide'); pfB.onclick = null; pfB.innerHTML = '<p class="note">A carregar…</p>'; pfm.hidden = false; pfPaint(await pfFetch(null, true)); };
+  G.ui_perfil = showPerfil;
+  // experiência ganha no jogo: «+10» discreto; ao subir de nível, aviso grande
+  let xpEl = null, xpT = 0, xpSum = 0;
+  const xpGain = m => { if (!xpEl) { xpEl = document.createElement('div'); xpEl.id = 'xpF'; xpEl.setAttribute('aria-hidden', 'true'); document.body.appendChild(xpEl); }
+    xpSum = performance.now() - xpT < 1800 ? xpSum + m.g : m.g; xpT = performance.now(); xpEl.innerHTML = `<b>+${xpSum} XP</b><span class="xb"><i style="width:${Math.round(m.at / m.need * 100)}%"></i></span>`; xpEl.classList.remove('on'); void xpEl.offsetWidth; xpEl.classList.add('on');
+    if (PF && PF.me) Object.assign(PF.me, { x: m.x, lv: m.lv, at: m.at, need: m.need });
+    if (m.up) { toast('Subiste para o nível ' + m.lv); audio.play('apanhar'); G.buzz && G.buzz(60); } };
   pfRender();
   const hudEls = () => [...document.querySelectorAll('#hud [data-h]')];
   // posição e tamanho guardados à parte para a horizontal (L) e a vertical (P)
@@ -1142,7 +1174,7 @@ export function initUI(G) {
   pager($('recipes'), ':scope > *'); pager($('skl'), ':scope > *'); pager(trB, ':scope > *'); pager(lbB, ':scope > p, .lbt > div:not(.h)');
   return {
     cfgCloud: () => { try { const c = JSON.parse(localStorage.getItem("kurogane-cfg-v1") || "null"); if (c && c.v === cfg.v) { Object.assign(cfg, c); applyAll(); } } catch (e) { } }, // definições que vieram da nuvem
-    refresh, openInv, closeInv, toast, note: t => mnote(t), saveCfg, feed, hit, damage, death, toggleMap, frame, resize, safe, scopeR, scopeC,
+    xp: m => xpGain(m), refresh, openInv, closeInv, toast, note: t => mnote(t), saveCfg, feed, hit, damage, death, toggleMap, frame, resize, safe, scopeR, scopeC,
     arenaAtt: k => AUI.attOf(k), arenaDeath: o => AUI.death(o), arenaFeed: m => AUI.feed(m), arenaScore: m => AUI.score(m), arenaHide: () => AUI.hide(), arenaMenu: () => AUI.menu(), arenaShow: m => AUI.show(m),
     closeDeath: () => { $('dead').hidden = true; clearInterval(dTick); }, sound, bedMenu, codeAsk, codeErr, codeDone, lockMenu, admRole, admList, admOpen, lbShow, lbOpen, trOpen, trRender, trOpenNow: () => !!trT, trWho: () => trT, trClose: () => { trEl.hidden = true; trT = null; },
     showHUD: msg => { $('hud').hidden = false; refresh(); toast(msg); },

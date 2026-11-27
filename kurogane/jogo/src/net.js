@@ -36,7 +36,7 @@ export function makeNet({ G, scene, mkRemote, audio, Conta, enc, dec, hurt, die,
   const onMsg = m => {
     switch (m.t) {
       case 'ok': {
-        N.id = m.id; if (!G.ARENA && typeof m.tok === 'string' && m.tok.length === 32) { tok = m.tok; try { localStorage.setItem(tokKey(), tok); } catch (e) { } } /* a arena não tem código: nunca apaga o do mundo */ N.on = true; retry = 0; found();
+        N.id = m.id; if (!G.ARENA && typeof m.tok === 'string' && m.tok.length === 32) { tok = m.tok; try { localStorage.setItem(tokKey(), tok); } catch (e) { } } /* a arena não tem código: nunca apaga o do mundo */ N.on = true; if (m.xp) N.xp = m.xp; retry = 0; found();
         clearAll(); for (const [id, name, look, clan] of m.players) addRemote(id, name, look, clan); setSleepers(m.sleep); N.clan = m.clan ? m.clan.id : null; N.clanInfo = m.clan; if (G.ARENA && m.clan && /^arena-/.test(m.clan.id)) { const t = m.clan.id === 'arena-b' ? 1 : 0; if (t !== G.arenaTeam) { G.arenaTeam = t; if (G.arenaRespawn && G.p && G.p.alive) G.arenaRespawn(); G.ui.toast('Equipas equilibradas: ficaste na ' + (t ? 'Azul' : 'Vermelha')); } }
         if (G.airdrop) G.airdrop({ ph: 9, ...(m.drop || {}) });
         N.role = m.role || null; G.admF = { r: N.role, inv: 0, god: 0, spec: 0 }; G.frozen = false; G.ui.admRole && G.ui.admRole(N.role);
@@ -61,6 +61,9 @@ export function makeNet({ G, scene, mkRemote, audio, Conta, enc, dec, hurt, die,
       case 'akill': if (G.p && G.p.alive) die('admin'); return;
       case 'adgive': G.gain(m.k, m.n); G.ui.toast('Recebeste ' + m.n + ' × ' + m.k); return;
       case 'lb': G.ui.lbShow && G.ui.lbShow(m); return;
+      case 'pf': if (pfWait) { const f = pfWait; pfWait = null; f(m); } return;
+      case 'xp': N.xp = m; G.ui.xp && G.ui.xp(m); return;
+      case 'frq': G.ui.toast(m.n + ' quer ser teu amigo. Aceita no menu, em Perfil.'); audio.play && audio.play('ui'); return;
       case 's': {
         const now = performance.now(), seen = new Set();
         for (const a of m.ps) { const r = R.get(a[0]); if (!r) continue; seen.add(r.id); if (r.s1 && (Math.hypot(a[1] - r.s1[1], a[2] - r.s1[2]) > 25 || a[4] !== r.s1[4])) r.T = track(); r.s1 = a; push(r.T, a[13] || now, now, { x: a[1], z: a[2], y: a[3], yaw: a[5], a });
@@ -138,6 +141,16 @@ export function makeNet({ G, scene, mkRemote, audio, Conta, enc, dec, hurt, die,
   // mundo partilhado
   N.cyc = () => (((Date.now() + off - cyc0) / 1000) % 1920 + 1920) % 1920;
   N.raw = o => send(o);
+  // perfil e amigos: dentro do jogo vai pela ligação que já existe; no menu abre uma ligação curta só para isto
+  let pfWait = null;
+  N.pf = (o = {}) => new Promise(res => {
+    const done = m => { clearTimeout(to); res(m); }, to = setTimeout(() => { pfWait = null; res({ t: 'pf', e: 'rede' }); }, 7000);
+    if (ws && ws.readyState === 1 && N.on && !G.ARENA) { pfWait = done; send({ ...o, t: 'pf' }); return; }
+    let k = null; try { k = localStorage.getItem(tokKey()); } catch (e) { } if (!k) { done({ t: 'pf', none: true }); return; }
+    let w; try { w = new WebSocket(url0()); } catch (e) { done({ t: 'pf', e: 'rede' }); return; }
+    w.onopen = () => w.send(JSON.stringify({ ...o, t: 'pf', tok: k }));
+    w.onmessage = ev => { let m = null; try { m = JSON.parse(ev.data); } catch (e) { } if (m && m.t === 'pf') { try { w.close(); } catch (e) { } done(m); } };
+    w.onerror = () => done({ t: 'pf', e: 'rede' }); });
   N.door = (i, o) => send({ t: 'dr', i, o: o ? 1 : 0 });
   // zombies: lista inicial (mundo novo), dano (junto num só envio por imagem) e ataques a outros jogadores
   N.zseed = L => send({ t: 'zs', L });

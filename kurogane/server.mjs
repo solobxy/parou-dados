@@ -34,6 +34,7 @@ for (const b of Object.values(S.bags)) if (b.items && !b.it) { b.it = b.items; d
 S.led = S.led || {}; if (!S.ledSince) { S.ledSince = Date.now(); for (const t of Object.values(S.tokens)) t.g = 1; }
 let dirty = false; const save = () => { if (!dirty) return; dirty = false; try { fs.mkdirSync(DIR, { recursive: true }); fs.writeFileSync(FILE + '.tmp', JSON.stringify(S)); fs.renameSync(FILE + '.tmp', FILE); } catch (e) { console.error('gravar', e.message); } };
 setInterval(save, 15000);
+const now0 = () => Date.now();
 const rid = n => crypto.randomBytes(n).toString('base64url');
 
 // ---------- WebSocket mínimo
@@ -126,7 +127,7 @@ const gather = (c, p, m) => { const k = String(m.k || ''), n = num(m.n, 0, 200) 
 const craft = (c, p, m) => { const r = RECIPES[m.i | 0]; if (!r) return; const L = ledOf(p);
   if (r.b) { let lv = 0; for (const d of Object.values(S.w.base.d)) { const b = /^bancada([123])$/.exec(d.k); if (b && Math.hypot(d.x - p.x, d.z - p.z) < 5) lv = Math.max(lv, +b[1]); } if (lv < r.b) { strike(c, p, 'bancada ' + r.k); send(c, { t: 'fix', T: L.T }); return; } }
   if (!fits(r.need, L.T)) { strike(c, p, 'material ' + r.k); send(c, { t: 'fix', T: L.T }); return; }
-  addT(L.T, r.need, -1); addT(L.T, { [r.k]: r.n || 1 }); dirty = true; };
+  addT(L.T, r.need, -1); addT(L.T, { [r.k]: r.n || 1 }); dirty = true; if (now0() - (p.cxT || 0) > 1500) { p.cxT = now0(); addXP(p, 2); } };
 // caixas: o que sai vai para quem a tem aberta; o que entra tem de ser dele. Na fornalha, a madeira vira carvão e o minério metal.
 const boxDelta = (c, p, k, oldIt, newIt) => { const O = tally(oldIt), N = tally(newIt); const out = diffT(O, N), inn = diffT(N, O);
   if (k[0] === 'd') { const d = S.w.base.d[k.slice(1)]; if (d && (d.k === 'fornalha' || d.k === 'fogueira')) for (const [a, b] of d.k === 'fornalha' ? [['carvao', 'madeira'], ['metalR', 'metal'], ['carneA', 'carneC']] : [['carneA', 'carneC']]) { const q = Math.min(inn[a] || 0, out[b] || 0); if (q) { inn[a] -= q; out[b] -= q; if (!inn[a]) delete inn[a]; if (!out[b]) delete out[b]; } } }
@@ -354,6 +355,8 @@ const zHit = (c, p, m, now) => { const z = S.w.zs[m.i | 0]; if (!z || z.st === 3
 // ---------- mensagens
 const onMsg = (c, m) => {
   if (!m || typeof m.t !== 'string') return;
+  // perfil e amigos, também a partir do menu (sem personagem no mundo): o código da personagem prova quem é
+  if (m.t === 'pf') { const tok = typeof m.tok === 'string' && m.tok.length === 32 && S.tokens[m.tok] ? m.tok : (c.p ? c.p.tok : null); if (!tok) return send(c, { t: 'pf', none: true }); friends(c, uidOf(tok), S.tokens[tok].name, m); return; }
   if (m.t === 'hi') {
     if (c.p) return; const name = String(m.name || ''); if (!NAME.test(name)) return send(c, { t: 'erro', e: 'nome' });
     // jogo antigo (antes da 0.15, sem o servidor a contar o inventário): tem de recarregar, senão apagava o inventário guardado
@@ -391,7 +394,7 @@ const onMsg = (c, m) => {
     if (Array.isArray(m.cars) && S.w.carv !== CARV && !Object.values(S.w.cars).some(o => o.s.some(Boolean))) { for (const id of Object.keys(S.w.cars)) if (!S.w.cars[id].adm) delete S.w.cars[id]; for (const o of players.values()) if (o.cc) o.cc.clear(); m.cars.slice(0, 160).forEach((a, i) => { const x = num(a[0], -4100, 4100), z = num(a[1], -4100, 4100), yaw = num(a[2], -10, 10), k = VT[a[3]] ? a[3] : 'sedan', T = VT[k]; S.w.cars['c' + i] = { k, x, z, yaw, v: 0, fuel: T.tank ? +(T.tank * (0.2 + Math.random() * 0.45)).toFixed(1) : 0, hp: T.hp, sx: x, sz: z, syaw: yaw, s: T.seats.map(() => 0), dead: 0 }; }); S.w.carv = CARV; dirty = true; }
     const zseed = !S.w.zs.length && ![...players.values()].some(o => o !== c && o.zseed && now - (o.zseedT || 0) < 15000); if (zseed) { c.zseed = true; c.zseedT = now; }
     send(c, { t: 'ok', id: c.id, tok, killed, resume, drop: dropInfo(), role: S.roles[c.p.uid] || null, players: [...players.values()].filter(o => o.p && o !== c).map(o => [o.id, o.p.name, o.p.look, o.p.clan]), sleep: sleepList(), clan: clanInfo(clan),
-      uid: c.p.uid, vapid: b64u(VPUB), inv: (contin || !m.fresh) && !killed && S.led[tok] && !S.led[tok].g ? (S.led[tok].inv || (sl && sl.inv) || null) : null, cont: contin, w: { cyc0: S.w.cyc0, now, wx: S.w.wx.r, base: baseRows(), locks: Object.entries(S.w.locks).map(([i, L]) => [+i, L.hp, L.broke || 0]), doors: Object.entries(S.w.doors).map(([i, o]) => [+i, o]), nodes: Object.entries(S.w.nodes).map(([k, u]) => [k, u - now]).filter(a => a[1] > 0), bags: bagRows(), zseed } });
+      uid: c.p.uid, xp: { x: (S.stats[c.p.uid] || {}).x || 0, ...lvOf((S.stats[c.p.uid] || {}).x) }, vapid: b64u(VPUB), inv: (contin || !m.fresh) && !killed && S.led[tok] && !S.led[tok].g ? (S.led[tok].inv || (sl && sl.inv) || null) : null, cont: contin, w: { cyc0: S.w.cyc0, now, wx: S.w.wx.r, base: baseRows(), locks: Object.entries(S.w.locks).map(([i, L]) => [+i, L.hp, L.broke || 0]), doors: Object.entries(S.w.doors).map(([i, o]) => [+i, o]), nodes: Object.entries(S.w.nodes).map(([k, u]) => [k, u - now]).filter(a => a[1] > 0), bags: bagRows(), zseed } });
     bcast({ t: 'join', id: c.id, name, look, clan }, o => o !== c);
     return;
   }
@@ -419,6 +422,7 @@ const onMsg = (c, m) => {
   if (m.t === 'clan') { clan(c, m); return; }
   if (m.t === 'adm' || m.t === 'admclaim') { adm(c, m); return; }
   if (m.t === 'lb') { lboard(c); return; }
+  if (m.t === 'txp' && process.env.KG_TEST) { p.test = false; addXP(p, num(m.g, 0, 5000) | 0); return; } // só nos testes: dar experiência
   if (m.t === 'tgod' && process.env.KG_TEST) { p.god = !!m.on; return; } // só nos testes: não morre (para medir as hitboxes tiro a tiro)
   if (m.t === 'ping') { send(c, { t: 'pong', k: m.k }); return; }
   // portas do mundo
@@ -560,7 +564,32 @@ const clan = (c, m) => {
   send(c, { t: 'clan', info: clanInfo(p.clan) }); bcast({ t: 'pclan', id: c.id, clan: p.clan });
 };
 // ---------- estatísticas (classificações)
-const stat = (p, k) => { if (!p || !p.uid) return; const s = S.stats[p.uid] || (S.stats[p.uid] = { n: p.name, k: 0, d: 0, z: 0 }); s.n = p.name; s[k] = (s[k] || 0) + 1; dirty = true; };
+const stat = (p, k) => { if (!p || !p.uid) return; const s = S.stats[p.uid] || (S.stats[p.uid] = { n: p.name, k: 0, d: 0, z: 0 }); s.n = p.name; s[k] = (s[k] || 0) + 1; dirty = true; if (XPG[k]) addXP(p, XPG[k]); };
+// ---------- nível: experiência ganha a jogar online (contada aqui, não no aparelho). Do nível L para o L+1 são precisos 100·L
+const XPG = { z: 10, k: 50 }; // zombie morto, jogador morto (a fazer coisas: +2 por objeto feito, +3 por cada 2 minutos vivo)
+const lvOf = x => { let L = 1, need = 100; x = x || 0; while (x >= need && L < 99) { x -= need; L++; need = 100 * L; } return { lv: L, at: x, need }; };
+const connOf = p => { for (const o of players.values()) if (o.p === p) return o; return null; };
+const addXP = (p, g) => { if (!p || !p.uid || p.test) return; const s = S.stats[p.uid] || (S.stats[p.uid] = { n: p.name, k: 0, d: 0, z: 0 }); const a = lvOf(s.x).lv; s.x = (s.x || 0) + g; dirty = true; const b = lvOf(s.x), c = connOf(p); if (c) send(c, { t: 'xp', g, x: s.x, ...b, up: b.lv > a }); };
+setInterval(() => { for (const c of players.values()) if (c.p && c.p.alive && Date.now() - (c.p.lastSt || 0) < 30e3) addXP(c.p, 3); }, 120e3);
+// ---------- amigos: pedido pelo nome, o outro aceita. Ver o nível e quem está online. Funciona também no menu (antes de entrar)
+const FR = () => S.fr || (S.fr = {}); const frOf = u => FR()[u] || (FR()[u] = { f: {}, rq: {} });
+const tokByName = n => { const lo = n.toLowerCase(); let best = null; for (const [k, t] of Object.entries(S.tokens)) if ((t.name || '').toLowerCase() === lo && (!best || t.t > S.tokens[best].t)) best = k; return best; };
+const nameOfU = u => { const s = S.stats[u]; if (s && s.n) return s.n; for (const [k, t] of Object.entries(S.tokens)) if (uidOf(k) === u) return t.name; return '?'; };
+const onlineU = () => { const o = new Set(); for (const c of players.values()) if (c.p) o.add(c.p.uid); return o; };
+const frRow = (u, on) => { const s = S.stats[u] || {}; return [u, s.n || nameOfU(u), lvOf(s.x).lv, on.has(u) ? 1 : 0]; };
+const pfInfo = u => { const s = S.stats[u] || { k: 0, d: 0, z: 0 }, F = frOf(u), on = onlineU(); const out = Object.entries(FR()).filter(([v, G]) => G.rq[u]).map(([v]) => frRow(v, on));
+  return { t: 'pf', me: { n: nameOfU(u), x: s.x || 0, ...lvOf(s.x), k: s.k || 0, d: s.d || 0, z: s.z || 0 }, f: Object.keys(F.f).map(v => frRow(v, on)).sort((a, b) => b[3] - a[3] || b[2] - a[2]), rq: Object.keys(F.rq).map(v => frRow(v, on)), out }; };
+const friends = (c, u, name, m) => { const now = Date.now(); if (now - (c.frT || 0) < 400) return; c.frT = now; const F = frOf(u), v = typeof m.u === 'string' ? m.u.slice(0, 16) : '';
+  const err = e => send(c, { ...pfInfo(u), e });
+  if (m.a === 'add') { const n = String(m.n || '').trim(); if (!NAME.test(n)) return err('Escreve o nome do jogador (3 a 16 letras).'); const tk = tokByName(n); if (!tk) return err('Não há nenhum jogador com esse nome.'); const w = uidOf(tk);
+    if (w === u) return err('Esse és tu.'); if (F.f[w]) return err('Já são amigos.'); if (Object.keys(F.f).length >= 100) return err('Chegaste ao limite de 100 amigos.');
+    const W = frOf(w); if (F.rq[w]) { delete F.rq[w]; F.f[w] = now; W.f[u] = now; delete W.rq[u]; } else { if (Object.keys(W.rq).length >= 50) return err('Esse jogador tem pedidos a mais.'); W.rq[u] = now; const o = [...players.values()].find(q => q.p && q.p.uid === w); if (o) send(o, { t: 'frq', n: name }); else if (now - (W.pt || 0) > 600e3) { W.pt = now; pushTo(w, { title: 'Pedido de amizade', body: name + ' quer ser teu amigo no Kurogane.', tag: 'amigo' }); } }
+    dirty = true; return send(c, { ...pfInfo(u), ok: F.f[w] ? 'Agora são amigos.' : 'Pedido enviado a ' + nameOfU(w) + '.' }); }
+  if (m.a === 'ok' && F.rq[v]) { delete F.rq[v]; F.f[v] = now; const W = frOf(v); W.f[u] = now; delete W.rq[u]; dirty = true; }
+  if (m.a === 'no' && F.rq[v]) { delete F.rq[v]; dirty = true; }
+  if (m.a === 'del') { delete F.f[v]; if (FR()[v]) { delete FR()[v].f[u]; delete FR()[v].rq[u]; } dirty = true; }
+  if (m.a === 'undo' && FR()[v]) { delete FR()[v].rq[u]; dirty = true; }
+  send(c, pfInfo(u)); };
 const lboard = c => { const now = Date.now(); if (now - (c.lbT || 0) < 1500) return; c.lbT = now; const L = Object.entries(S.stats), me = S.stats[c.p.uid] || { k: 0, d: 0, z: 0 };
   const byName = new Map(L.map(([, s]) => [s.n.toLowerCase(), s]));
   const clans = Object.values(S.clans).map(C => { let k = 0, d = 0; for (const n of C.membros) { const s = byName.get(n.toLowerCase()); if (s) { k += s.k || 0; d += s.d || 0; } } return [C.nome, k, d, C.membros.length]; }).filter(x => x[1] + x[2] > 0).sort((a, b) => b[1] / Math.max(1, b[2]) - a[1] / Math.max(1, a[2]) || b[1] - a[1]).slice(0, 20);
