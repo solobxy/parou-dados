@@ -477,6 +477,7 @@ export function initUI(G) {
   $('sHow').onclick = () => { audio.play('ui'); $('pfT').textContent = 'Como se joga'; pfm.classList.remove('wide', 'kpw'); pfB.innerHTML = `<div class="keys howk">${$('sKeys').innerHTML}</div><p class="note">Revista tudo, come e bebe, treina o corpo (perde-se ao morrer) e evita a cidade de noite. O melhor loot está no centro, onde há PvP.</p>`; pfm.hidden = false; };
   // ---------- novidades (as mais recentes primeiro; o ponto vermelho some depois de as abrires)
   const NEWS = [
+    { id: '0.76', d: '27/11/2026', t: 'Correções nas casas', img: 'menu/n-luzes.jpg', b: '<p>As luzes das casas acendem-se já de fora: quem está na rua vê para dentro. Entrar numa casa deixa de prender o jogo.</p><ul><li>Já não há uma frincha para fora junto às escadas</li><li>O contorno só aparece em objetos que segue bem (sacos, carros, portas e móveis inteiros)</li><li>No menu de administração já dá para escrever a quantidade</li></ul>' },
     { id: '0.75', d: '27/11/2026', t: 'Desligar a visão noturna', img: 'menu/push-sono.jpg', b: '<p>Com os óculos de visão noturna postos aparece o botão Visão, ao lado da Luz: toca para desligar o verde e ver a noite como ela é; toca outra vez para voltar a ligar.</p>' },
     { id: '0.74', d: '27/11/2026', t: 'Avisos com imagem', img: 'menu/push-sono.jpg', b: '<p>Os avisos no telemóvel passam a trazer uma imagem grande. Novo aviso quando atacam a tua personagem enquanto dormes, e outro se a matarem.</p><ul><li>O aviso de raide também tem imagem nova</li><li>Para ligar: Definições › Telemóvel › Avisos no telemóvel</li></ul>' },
     { id: '0.73', d: '27/11/2026', t: 'Árvores e erva novas', img: 'menu/n-arvores.jpg', b: '<p>As árvores agora têm folhas e ramos a sério, com casca no tronco e sombras recortadas no chão. Os pinheiros têm ramos em camadas e a erva tem lâminas.</p><ul><li>Ao longe as copas continuam com folhas, sem virar blocos</li></ul>' },
@@ -679,7 +680,7 @@ export function initUI(G) {
   const ago = t => { const s = (Date.now() - t) / 1000; return s < 3600 ? 'há ' + Math.max(1, Math.round(s / 60)) + ' min' : s < 86400 ? 'há ' + Math.round(s / 3600) + ' h' : 'há ' + Math.round(s / 86400) + ' dias'; };
   const admRole = (r, flags) => { $('bAdm').hidden = !r; if (!r && !admEl.hidden) admEl.hidden = true; if (flags && !setEl.hidden && r) { closeSet(); admOpen(); } if (!admEl.hidden) admRender(); };
   const admOpen = () => { if (!G.net.role) return; admEl.hidden = false; $('admR').textContent = G.net.role === 'admin' ? 'Admin' : 'Moderador'; $('admR').className = 'admr' + (G.net.role === 'mod' ? ' mod' : ''); $('admTabs').querySelector('[data-t=c]').hidden = G.net.role !== 'admin'; admRender(); G.net.adm('list'); };
-  const admList = L => { admData = L; if (!admEl.hidden) admRender(); };
+  const admList = L => { admData = L; if (!admEl.hidden && !(admTab === 'e' && admB.contains(document.activeElement) && document.activeElement.tagName === 'INPUT')) admRender(); }; // a escrever a quantidade: não refazer o painel (fechava o teclado)
   const A = (a, o) => { audio.play('ui'); G.net.adm(a, o); };
   const admRender = () => {
     const r = G.net.role, isA = r === 'admin'; admEl.querySelectorAll('#admTabs button').forEach(b => b.classList.toggle('on', b.dataset.t === admTab));

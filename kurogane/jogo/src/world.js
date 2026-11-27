@@ -28,14 +28,13 @@ export function buildWorld(scene, mats, A, opt = {}) {
   const circ = (x, z, r, k = 's', node = null) => { const c = { x, z, r, k, node, on: true, lv: CUR }; W.circles.push(c); return c; };
   const mp = (x0, z0, x1, z1, c) => W.map.push({ x0, z0, x1, z1, c });
   let cid = 0;
-  const container = (x, z, label, table, o = {}) => { const c = { id: 'c' + (cid++), x, z, label, table, slots: o.slots || [6, 4], y: o.y ?? 0.8, grid: null, refill: 0, lv: CUR }; W.containers.push(c); return c; };
+  const container = (x, z, label, table, o = {}) => { const c = { id: 'c' + (cid++), x, z, label, table, slots: o.slots || [6, 4], y: o.y ?? 0.8, grid: null, refill: 0, lv: CUR }; const M = b.lastModel; if (M && Math.hypot(M.x - x, M.z - z) < 0.9) c.recs = M.recs.filter(r => r.mat !== 'lit' && r.mat !== 'decal' && r.mat !== 'gl'); W.containers.push(c); return c; }; // contorno: só quando o móvel é um adereço inteiro posto ali mesmo
   // escadas sempre livres: o pé (no piso de baixo) e o topo (no de cima) têm uma zona onde nenhum móvel pode ficar; quem calhar lá não é construído
   const koOf = lv => { const out = []; for (const st of W.stairs) { const C = st.b, ax = st.ax, d = st.dir; for (const [at, l, sgn] of [[st.bot, st.lv, -d], [st.top, st.lv + 1, d]]) { if (l !== lv) continue; const a0 = Math.min(at, at + sgn * 1.25), a1 = Math.max(at, at + sgn * 1.25); let c0 = ax ? st.z0 : st.x0, c1 = ax ? st.z1 : st.x1; const o2 = st.open; if (o2 === (ax ? 's' : 'e')) c1 += 1.3; else if (o2 === (ax ? 'n' : 'w')) c0 -= 1.3; else { c0 -= 0.6; c1 += 0.6; } let r = ax ? { x0: a0, x1: a1, z0: c0, z1: c1 } : { x0: c0, x1: c1, z0: a0, z1: a1 }; if (C) r = { x0: Math.max(r.x0, C.ix0), x1: Math.min(r.x1, C.ix1), z0: Math.max(r.z0, C.iz0), z1: Math.min(r.z1, C.iz1) }; out.push(r); } } return out; };
   // peças de um móvel: as que ficam junto do sítio do loot (sem paredes nem chão grandes)
   const near = (R, c) => R.filter(r => { const q = r.bb; if (!q || r.mat === 'decal' || r.mat === 'lit' || r.mat === 'sign') return false; const dx = q[3] - q[0], dz = q[5] - q[2]; if (dx > 4.5 || dz > 4.5 || q[4] - q[1] > 2.8) return false; return Math.hypot(Math.max(q[0] - c.x, 0, c.x - q[3]), Math.max(q[2] - c.z, 0, c.z - q[5])) < 0.9; });
   const guard = fn => (...a) => {
     const m = b.mark(), r0 = W.rects.length, c0 = W.containers.length, k0 = W.circles.length, res = fn(...a);
-    if (W.containers.length > c0) { const R = b.recsSince(m); for (let i = c0; i < W.containers.length; i++) { const c = W.containers[i]; if (!c.recs) c.recs = near(R, c); } } // o contorno usa as peças deste móvel
     const KO = koOf(CUR); if (!KO.length) return res;
     const hit = (x0, z0, x1, z1) => KO.some(k => x0 < k.x1 && x1 > k.x0 && z0 < k.z1 && z1 > k.z0);
     let bad = false;
@@ -232,6 +231,7 @@ export function buildWorld(scene, mats, A, opt = {}) {
         let parts = [[x0 + t, z0 + t, x1 - t, z1 - t]];
         for (const st of stairs) if (st.lv === L - 1) { const np = []; for (const [a0, c0, a1, c1] of parts) { if (st.x1 <= a0 || st.x0 >= a1 || st.z1 <= c0 || st.z0 >= c1) { np.push([a0, c0, a1, c1]); continue; } if (st.z0 > c0) np.push([a0, c0, a1, st.z0]); if (st.z1 < c1) np.push([a0, st.z1, a1, c1]); const zz0 = Math.max(c0, st.z0), zz1 = Math.min(c1, st.z1); if (st.x0 > a0) np.push([a0, zz0, st.x0, zz1]); if (st.x1 < a1) np.push([st.x1, zz0, a1, zz1]); } parts = np; }
         for (const [a0, c0, a1, c1] of parts) { b.box(a1 - a0, 0.3, c1 - c0, (a0 + a1) / 2, -0.15, (c0 + c1) / 2, shade(wall, 0.8)); b.floor(a0, c0, a1, c1, 0.035, o.floorUp ?? o.floor ?? 0xb9b2a4); }
+        b.tid = 4; for (const [w, d, cx, cz] of [[x1 - x0, t, (x0 + x1) / 2, z0 + t / 2], [x1 - x0, t, (x0 + x1) / 2, z1 - t / 2], [t, z1 - z0 - 2 * t, x0 + t / 2, (z0 + z1) / 2], [t, z1 - z0 - 2 * t, x1 - t / 2, (z0 + z1) / 2]]) b.box(w, 0.3, d, cx, -0.15, cz, wall); b.tid = 0; // faixa da parede entre pisos (sem ela via-se para fora junto às escadas)
       }
       ceilLamps(C, L, x0 + t, z0 + t, x1 - t, z1 - t, h, yb);
       const side = (sd) => {

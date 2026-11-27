@@ -86,7 +86,7 @@ async function boot() {
   // noite: lanterna (com sombras, por isso as paredes tapam), luz fraca à volta de ti e candeeiros por perto
   const torch = new THREE.SpotLight(0xfff0d8, 0, 28, 0.5, 0.55, 1.3); torch.castShadow = true; torch.shadow.camera.layers.enable(1); torch.shadow.mapSize.set(512, 512); torch.shadow.bias = -0.0008; torch.shadow.camera.near = 0.04; scene.add(torch, torch.target); // near pequeno: encostado a uma parede, a parede ainda entra no mapa de sombras (senão a luz passava para o outro lado)
   const glow = new THREE.PointLight(0xa8b8d8, 0, 4.5, 1.6); scene.add(glow); // luz fraca à volta do boneco de noite (curta, para não se notar através de paredes)
-  const lampL = [0, 1, 2, 3].map(() => { const l = new THREE.PointLight(0xffc27a, 0, 20, 1.6); scene.add(l); return l; }); // os candeeiros mais perto da câmara acendem a sério
+  const lampL = [0, 1, 2].map(() => { const l = new THREE.PointLight(0xffc27a, 0, 20, 1.6); scene.add(l); return l; }); // os candeeiros mais perto da câmara acendem a sério
   // o lume e os candeeiros da base mais perto: luz com sombra (as paredes da base, mesmo baixas, tapam-na; camada 1 = cópias inteiras das paredes)
   const baseL = [0].map(() => { const l = new THREE.PointLight(0xff9a4a, 0, 9, 1.7); l.castShadow = true; l.shadow.mapSize.set(256, 256); l.shadow.camera.near = 0.08; l.shadow.camera.far = 9; l.shadow.bias = -0.004; l.shadow.camera.layers.enable(1); scene.add(l); return l; });
   const FOGD = new THREE.Color(0xc3c7c2), FOGS = new THREE.Color(0xc27a66), FOGN = new THREE.Color(0x0c1018), SUNC = new THREE.Color(0xffc896), MOONC = new THREE.Color(0x8aa2d8), _fc = new THREE.Color(), _rc = new THREE.Color();
@@ -369,22 +369,12 @@ async function boot() {
   const olCut = (c, y0) => { if (c._olg !== undefined) return c._olg; if (c.recs && c.recs.length) { const out = []; for (const r of c.recs) { const m = r.mesh, A = m && m.geometry && m.geometry.attributes.position; if (!A || r.off === undefined || (r.off + r.count) > A.count) continue; m.updateMatrixWorld(); const P = A.array, M = m.matrixWorld;
       for (let i = r.off * 3, e = (r.off + r.count) * 3; i < e; i += 3) { _ov.set(P[i], P[i + 1], P[i + 2]).applyMatrix4(M); out.push(_ov.x, _ov.y, _ov.z); } }
     if (out.length) { const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(out, 3)); return (c._olg = g); } }
-    const lv = c.lv || 0; let R = null, rd = 0.9;
-    for (const r of W.rects) { if ((r.lv || 0) !== lv || r.k !== 's' || (r.x1 - r.x0) * (r.z1 - r.z0) > 14) continue; const d = Math.hypot(Math.max(r.x0 - c.x, 0, c.x - r.x1), Math.max(r.z0 - c.z, 0, c.z - r.z1)); if (d < rd) { rd = d; R = r; } }
-    const x0 = R ? R.x0 - 0.25 : c.x - 0.6, x1 = R ? R.x1 + 0.25 : c.x + 0.6, z0 = R ? R.z0 - 0.25 : c.z - 0.6, z1 = R ? R.z1 + 0.25 : c.z + 0.6, ya = y0 - 0.3, yb = y0 + (R ? Math.min(R.h || 2.5, 2.4) + 0.25 : 2.2), out = [];
-    if (!OL.wm) { OL.wm = []; scene.traverse(o => { if (o.isMesh && !o.isInstancedMesh && !o.isSkinnedMesh && o.geometry && o.geometry.attributes.position && o.visible && o.material && !(o.material.depthWrite === false && o.material.transparent && o.material.opacity < 0.2)) OL.wm.push(o); }); }
-    _ob.set(_ov.set(x0, ya, z0), new THREE.Vector3(x1, yb, z1));
-    for (const o of OL.wm) { const g = o.geometry; if (!g.boundingBox) g.computeBoundingBox(); const bb = g.boundingBox.clone().applyMatrix4(o.matrixWorld); if (!bb.intersectsBox(_ob)) continue;
-      const P = g.attributes.position.array, I = g.index ? g.index.array : null, n = I ? I.length : P.length / 3, M = o.matrixWorld.elements, id = M[0] === 1 && M[5] === 1 && M[10] === 1 && !M[12] && !M[13] && !M[14];
-      for (let i = 0; i < n; i += 3) { let ok = true, top = -1e9; const t = [];
-        for (let k = 0; k < 3 && ok; k++) { const q = (I ? I[i + k] : i + k) * 3; let x = P[q], y = P[q + 1], z = P[q + 2]; if (!id) { _ov.set(x, y, z).applyMatrix4(o.matrixWorld); x = _ov.x; y = _ov.y; z = _ov.z; } ok = x > x0 && x < x1 && z > z0 && z < z1 && y > ya && y < yb; if (y > top) top = y; t.push(x, y, z); }
-        if (ok && top > y0 + 0.05) out.push(...t); } } /* o chão e as marcas no chão ficam de fora */
-    if (!out.length) return (c._olg = null); const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(out, 3)); return (c._olg = g); };
+    return (c._olg = null); }; // sem as peças certas, sem contorno (melhor nada do que uma linha à volta da coisa errada)
   const olClear = () => { for (const o of OL.objs) OL.scene.remove(o.p); OL.objs = []; };
   const olProxy = (src, geo, mtx) => { const p = new THREE.Mesh(geo, OL.mat); p.matrixAutoUpdate = false; p.frustumCulled = false; OL.scene.add(p); OL.objs.push({ p, src, mtx }); };
   const olKey = b => !b ? null : b.car && !b.carExit ? b.car : b.bag && b.mesh ? b : b.door && b.door.leaves ? b.door : b.dep && b.dep.g ? b.dep : b.table !== undefined && b.slots ? b : null;
   const olSet = best => { const key = olKey(best); if (key === OL.key) return; OL.key = key; olClear(); if (!key) return;
-    const add = g => g.traverse(o => { if (o.isMesh && o.visible && !o.isSkinnedMesh) olProxy(o, o.geometry); });
+    const add = g => g.traverse(o => { if (o.isMesh && o.visible && !o.isSkinnedMesh && o.material && o.material.isMeshStandardMaterial && !o.material.transparent && o.geometry.attributes.position.count > 3) olProxy(o, o.geometry); }); // sem brilhos nem planos transparentes à volta do objeto
     if (key === best.car) add(key.m && key.m.g || key.m || new THREE.Group());
     else if (key.bag) add(key.mesh);
     else if (key.leaves) { for (const lf of key.leaves) if (lf.lm) olProxy(null, leafGeo, lf); }
@@ -1915,8 +1905,10 @@ async function boot() {
       if (G.lampT <= 0) { G.lampT = 0.5; const cx = camT.x, cz = camT.z; const bl = G.base.lights().map(l => [l, (l[0] - cx) ** 2 + (l[2] - cz) ** 2]).filter(a => a[1] < 1600).sort((a, b) => a[1] - b[1]);
         baseL.forEach((L, i) => { const q = bl[i]; if (q) { L.position.set(q[0][0], q[0][1], q[0][2]); L.userData.on = 1; L.userData.fire = q[0].fire; } else L.userData.on = 0; });
         const IN = G.inside, ilv = p.st && p.st.b === IN ? p.st.lv : (p.lv || 0), il = IN && IN.lamps ? IN.lamps.filter(l => l.lv === ilv && l.s !== 'off').map(l => [l, (l.x - p.x) ** 2 + (l.z - p.z) ** 2]).sort((a, b) => a[1] - b[1]).slice(0, lampL.length) : [];
-        if (il.length) lampL.forEach((L, i) => { const q = il[i]; L.userData.ind = 1; if (q) { L.position.set(q[0].x, q[0].y, q[0].z); L.userData.on = 1; L.userData.lk = q[0]; } else L.userData.on = 0; }); // dentro: as lâmpadas do teto do teu piso
-        else { const near3 = W.lamps.concat(bl.slice(baseL.length).map(a => a[0])).map(l => [l, (l[0] - cx) ** 2 + (l[2] - cz) ** 2]).filter(a => a[1] < 1600).sort((a, b) => a[1] - b[1]).slice(0, lampL.length); lampL.forEach((L, i) => { const q = near3[i]; L.userData.ind = 0; if (q) { L.position.set(q[0][0], q[0][1] - 0.4, q[0][2]); L.userData.on = 1; L.userData.big = q[0][1] > 9; L.userData.base = q[0].base; } else L.userData.on = 0; }); } }
+        if (!IN && p.alive) { for (const c of W.cuts) { if (!c.shell || !c.lamps || !c.lamps.length || p.x < c.x0 - 14 || p.x > c.x1 + 14 || p.z < c.z0 - 14 || p.z > c.z1 + 14) continue; for (const l of c.lamps) if (l.s !== 'off' && l.lv === (p.lv || 0)) { const d = (l.x - p.x) ** 2 + (l.z - p.z) ** 2; if (d < 196) il.push([l, d]); } } il.sort((a, b) => a[1] - b[1]); il.length = Math.min(il.length, 2); } // de fora também se veem as casas por dentro (as 2 lâmpadas mais perto)
+        { const nS = IN ? 0 : lampL.length - il.length, near3 = nS > 0 ? W.lamps.concat(bl.slice(baseL.length).map(a => a[0])).map(l => [l, (l[0] - cx) ** 2 + (l[2] - cz) ** 2]).filter(a => a[1] < 1600).sort((a, b) => a[1] - b[1]).slice(0, nS) : [];
+          lampL.forEach((L, i) => { if (i < il.length) { const q = il[i]; L.userData.ind = 1; L.position.set(q[0].x, q[0].y, q[0].z); L.userData.on = 1; L.userData.lk = q[0]; return; } // lâmpadas do teto (dentro: as do teu piso; fora: as das casas mesmo ao lado)
+            const q = IN ? null : near3[i - il.length]; L.userData.ind = 0; if (q) { L.position.set(q[0][0], q[0][1] - 0.4, q[0][2]); L.userData.on = 1; L.userData.big = q[0][1] > 9; L.userData.base = q[0].base; } else L.userData.on = 0; }); } }
       lampL.forEach((L, i) => { const u = L.userData;
         if (u.ind) { const lk = u.lk, tube = lk && lk.k === 't'; let f = 1;
           if (lk && lk.s === 'flick') { const t = G.t + i * 3.7, gate = Math.sin(t * 1.3) + Math.sin(t * 2.9 + 1.1); f = gate > 1.1 ? (Math.sin(t * 47) > 0.2 ? 0.08 : 1) * (0.75 + 0.25 * Math.sin(t * 23)) : 0.9 + 0.1 * Math.sin(t * 9); } // falhas aos soluços, como numa casa sem manutenção
@@ -2042,7 +2034,8 @@ async function boot() {
   body.root.visible = false;
   G.p = newPlayer(0, -2); G.p.alive = false;
   await LP(98, 'a preparar os gráficos'); // compila os shaders antes de mostrar o menu (senão o 1.º desenho prendia o ecrã)
-  for (const [n, sp] of [[true, true], [true, false], [false, true], [false, false]]) { lgSet('N', n); lgSet('S', sp); try { if (renderer.compileAsync) await wait(renderer.compileAsync(scene, cam), 20000); } catch (e) { } } // os 4 jogos de luzes, para não prender ao anoitecer nem ao ligar a lanterna
+  const hidC = []; scene.traverse(o => { if (!o.visible) { hidC.push(o); o.visible = true; } }); // compilar também o que agora está escondido (interiores, pisos de cima): senão prendia ao entrar numa casa
+  for (const [n, sp] of [[true, true], [true, false], [false, true], [false, false]]) { lgSet('N', n); lgSet('S', sp); try { if (renderer.compileAsync) await wait(renderer.compileAsync(scene, cam), 20000); } catch (e) { } } for (const o of hidC) o.visible = false; // os 4 jogos de luzes, para não prender ao anoitecer nem ao ligar a lanterna
   loop(); await new Promise(r => requestAnimationFrame(() => setTimeout(r, 0))); // 1.º desenho ainda atrás do ecrã de carregamento
   G.ui.ready();
   window.__ready = true;

@@ -44,7 +44,10 @@ export function pager(box, sel, o = {}) {
   box.addEventListener('pointerup', e => { if (!st) return; st = 0; const dx = e.clientX - sx, dy = e.clientY - sy; if (Math.abs(dx) > 48 && Math.abs(dx) > Math.abs(dy) * 1.4) go(dx < 0 ? 1 : -1); }, { passive: true });
   box.addEventListener('wheel', e => { if (pages.length < 2) return; e.preventDefault(); const t = performance.now(); if (t - (box._wt || 0) < 260) return; box._wt = t; go(e.deltaY > 0 || e.deltaX > 0 ? 1 : -1); }, { passive: false });
   // volta a repartir quando o conteúdo ou o tamanho mudam
-  let raf = 0; const later = () => { if (busy) return; cancelAnimationFrame(raf); raf = requestAnimationFrame(layout); };
+  // a escrever num campo, o teclado do telemóvel encolhe o ecrã: não repartir (senão o campo mudava de página, perdia o foco e o teclado fechava)
+  const typing = () => { const a = document.activeElement; return !!(a && box.contains(a) && (a.tagName === 'INPUT' || a.tagName === 'TEXTAREA') && a.type !== 'checkbox' && a.type !== 'range'); };
+  let raf = 0; const later = () => { if (busy || typing()) return; cancelAnimationFrame(raf); raf = requestAnimationFrame(layout); };
+  box.addEventListener('focusout', () => setTimeout(later, 250));
   new MutationObserver(m => { if (m.some(r => r.type === 'childList' || r.attributeName === 'hidden')) later(); }).observe(box, { childList: true, subtree: true, attributes: true, attributeFilter: ['hidden'] });
   { const ro = new ResizeObserver(later); ro.observe(box.parentNode); ro.observe(box); } later(); // reparte logo ao abrir (antes ficava à espera de uma mudança de tamanho que às vezes não vinha)
   box._pg = { layout, go, first: () => { p = 0; later(); }, get page() { return p; }, get pages() { return pages.length; } };
