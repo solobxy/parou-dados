@@ -4,7 +4,7 @@ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { loadProps } from './props.js';
 import { Builder, Atlas, ctex, mat4, FONT_JP, PSTAT } from './builder.js';
 import { buildWorld, MAP, CORE, CITY, inCity } from './world.js';
-import { makeSectors } from './sectors.js';
+import { makeSectors, forestDens } from './sectors.js';
 import { Body, ZHorde, ZHEAD, bagMesh, HIP, zombiePose, newPose, LOOK_OPTS, RDP, PCOL, lookCol } from './chars.js';
 import * as Conta from './conta.js';
 import { makeFire, fireFrame } from './fire.js';
@@ -626,7 +626,7 @@ float terH(vec2 p) { if (uTerP.w < 0.5) return 0.0; vec2 f = clamp((p + uTerP.x)
   const GK = ['head', 'vest', 'suit', 'eyes', 'back']; // equipamento que os outros veem (chaves dos itens, pela mesma ordem do servidor)
   const refresh = () => { body.setTeam(G.ARENA && G.arenaTeam != null ? G.arenaTeam | 0 : null); body.setGear(G.inv.eq); const d = heldDef(); G.stampSkins(); body.setWeapon(held() ? (d.gun || d.melee ? held().k : null) : null, { ...(held() && held().att || {}), skin: held() ? held().sk | 0 : 0 }); G.ui.refresh(); };
   G.refresh = refresh; G.mkItem = mkItem; G.dbgBody = () => body; G.dbgNodes = () => nodes; /* testes */
-  const select = i => { if (G.sel === i) return; G.sel = i; if (G.gch) { G.gch = null; }  if (G.aimEnd) G.aimEnd(); AIM.raise = 0; G.p.reload = 0; G.p.use = null; G.p.swing = -1; G.p.thrT = -1; G.p.thrIt = null; audio.play('ui'); refresh(); };
+  const select = i => { if (G.sel === i) return; G.sel = i; if (G.gch) { G.gch = null; }  if (G.aimEnd) G.aimEnd(); AIM.raise = 0; G.p.reload = 0; G.p.use = null; G.p.swing = -1; G.p.thrT = -1; G.p.thrIt = null; { const it = G.inv.belt[i], d = it && ITEMS[it.k]; audio.play(d && d.melee ? 'faca' : d && d.gun ? 'sacar' : 'ui', 0.9); } refresh(); }; // sacar a arma (ou a faca)
   G.select = select;
   // ---------- treino: o corpo habitua-se ao que fazes. Cada ganho é proporcional ao que falta (sobe depressa no início, devagar perto do máximo); perde-se tudo ao morrer
   // resistência (a correr): ~20 min de corrida para metade; pontaria (disparos e acertos): ~120 acertos para metade; recolha (golpes em árvores e rochas): ~90 golpes para metade
@@ -805,6 +805,23 @@ float terH(vec2 p) { if (uTerP.w < 0.5) return 0.0; vec2 f = clamp((p + uTerP.x)
     hs.sort((a, b) => a.s - b.s); for (const r of hs) { const c = PENC[r.zone] || 0.9; if (left > c + 0.05) left -= c; else { s = r.s; break; } } return s * 420; };
   // som de cada arma (gravações reais) e o som da recarga
   const GSND = { pistola: 'pistola', revolver: 'revolver', smg: 'smg', m4: 'm4', ak: 'ak', cacadeira: 'cacadeira', caca: 'caca', cheytac: 'pesado', barrett: 'pesado', m249: 'm4', pkm: 'ak' };
+  // recarga por partes, ao ritmo da animação: tirar o carregador, meter o outro e puxar a culatra (só se estava vazia); revólver: abrir o tambor,
+  // tirar as cápsulas, meter as balas e fechar; caçadeira: um cartucho de cada vez e a bomba no fim. Se a recarga parar (trocar de arma), param os sons
+  const RCLS = k => k === 'pistola' ? 'p' : k === 'revolver' ? 'r' : k === 'cacadeira' ? 'c' : k === 'caca' || k === 'cheytac' ? 'f' : k === 'ak' || k === 'pkm' ? 'ak' : 'm';
+  // chão por baixo dos pés (para os passos): neve no norte, folhas na floresta, terra nas manchas e nas estradas de terra, relva no resto
+  const surfAt = (x, z) => { for (const r of W.roads) if (r.dirt && x > r.x0 && x < r.x1 && z > r.z0 && z < r.z1) return 'terra'; const sn = Math.max(0, Math.min(1, (-1500 - z) / 700)); if (sn > 0.5) return 'neve'; if (forestDens(x, z) > 0.45) return Math.random() < 0.6 ? 'folhas' : 'relva'; return 'relva'; };
+  G.surfAt = surfAt;
+  let rlTok = 0;
+  const reloadSfx = (it, mode, dur) => { const tok = ++rlTok, c = RCLS(it.k), g = ITEMS[it.k].gun, empty = !(it.ammo > 0), sf = c === 'm' ? '' : '-' + c;
+    const at = (n, f, v = 1) => setTimeout(() => { const p = G.p; if (tok !== rlTok || !p || !(p.reload > 0)) return; audio.play(n, v); }, Math.max(0, f * dur * 1000));
+    if (c === 'r') { at('rec-abre-r', 0.04); at('rec-tira-r', 0.16); at('rec-mete-r', 0.5); at('rec-mete-r', 0.66, 0.7); at('rec-fecha-r', 0.86); return; }
+    if (c === 'c') { const n = Math.max(1, Math.min(6, capOf(it) - (it.ammo || 0))); for (let i = 0; i < n; i++) at('rec-cartucho', 0.06 + 0.74 * i / n); if (empty) at('rec-arma-c', 0.9); return; }
+    if (mode === 'swap') { at('rec-tira' + sf, 0.06); at('rec-mete' + sf, 0.5); if (empty || c === 'f') at('rec-arma' + sf, 0.78); return; }
+    // encher à mão (sem carregador cheio, ou arma de carregador fixo): bala a bala
+    const n = Math.max(1, Math.min(8, capOf(it) - (it.ammo || 0)));
+    if (g.clip) at('rec-tira' + sf, 0.03); else if (c === 'f') at('rec-arma-f', 0.03, 0.8);
+    for (let i = 0; i < n; i++) at('rec-bala', 0.14 + 0.58 * i / n, 0.9);
+    if (g.clip) at('rec-mete' + sf, 0.76); if (empty || c === 'f') at('rec-arma' + sf, 0.9); };
   const reloadSnd = k => k === 'pistola' || k === 'revolver' ? 'recarregar-pistola' : k === 'cacadeira' ? 'recarregar-caca' : k === 'caca' || k === 'cheytac' ? 'ferrolho' : 'recarregar';
   let thinT = 0, thinN = -1; const thinL = [], THIN_D = 85; // pormenores: até 85 m na 1.ª pessoa (a neblina já os esconde a meio)
   const _mz2 = new THREE.Vector2(), _mz3 = new THREE.Vector3();
@@ -830,6 +847,7 @@ float terH(vec2 p) { if (uTerP.w < 0.5) return 0.0; vec2 f = clamp((p + uTerP.x)
     vm.fire(sup); flash.position.set(mx, my, mz); flash.intensity = sup ? 0 : 6 + 14 * (1 - (G.day ?? 1)); G.flashT = 0.06; G.buzz(n > 1 ? 30 : 10);
     if (sup) audio.play('abafado', ss ? 0.85 : 0.5); else if (!audio.shot(GSND[it.k] || 'pistola', 1, 0, { vary: 0.04 })) audio.play(ITEMS[it.k].heavy ? 'grosso' : g.auto ? 'm4' : 'pistola', it.k === 'cacadeira' || it.k === 'caca' ? 1.3 : 1);
     noise(p.x, p.z, nr);
+    if (it.k !== 'revolver' && it.k !== 'cacadeira' && (!g.auto || Math.random() < 0.45)) audio.sample('capsula', 0.8, { at: 0.35 + Math.random() * 0.25, vary: 0.2 }); // cápsula a cair no chão
     if (G.net && G.net.on) { const far = G.net.near(O.x, O.z, 420), Ls = ds.map(di => far ? stopAt(O, di, B.bp ?? B.pen) : 420); G.net.shot(O, dir, it.ak, n, Math.max(...Ls), sup, ds, Ls); }
     G.ui.refresh(true); return true;
   };
@@ -842,9 +860,9 @@ float terH(vec2 p) { if (uTerP.w < 0.5) return 0.0; vec2 f = clamp((p + uTerP.x)
     const pickAmmo = () => it.pref && AM.includes(it.pref) && G.inv.count(it.pref) > 0 ? it.pref : (G.inv.count(it.ak) > 0 ? it.ak : AM.find(k => G.inv.count(k) > 0));
     if (g.clip) {
       const cur = it.mg ? it.ammo : -1, best = clipsOf(g.clip).sort((a, b) => (b.am || 0) - (a.am || 0))[0];
-      if (best && ((best.am || 0) > Math.max(0, cur) || !it.mg)) { p.reload = g.reload; p.reloadDur = g.reload; p.reloadMode = 'swap'; p.reloadMag = best; audio.play(reloadSnd(it.k)); return; }
+      if (best && ((best.am || 0) > Math.max(0, cur) || !it.mg)) { p.reload = g.reload; p.reloadDur = g.reload; p.reloadMode = 'swap'; p.reloadMag = best; reloadSfx(it, 'swap', g.reload); return; }
       const want = pickAmmo();
-      if (it.mg && want && (it.ammo < capOf(it) || want !== it.ak)) { const t = g.reload * 1.8; p.reload = t; p.reloadDur = t; p.reloadMode = 'fill'; p.reloadK = want; audio.play(reloadSnd(it.k)); if (!quiet) G.ui.toast('Sem carregador cheio: a encher este à mão'); return; }
+      if (it.mg && want && (it.ammo < capOf(it) || want !== it.ak)) { const t = g.reload * 1.8; p.reload = t; p.reloadDur = t; p.reloadMode = 'fill'; p.reloadK = want; reloadSfx(it, 'fill', t); if (!quiet) G.ui.toast('Sem carregador cheio: a encher este à mão'); return; }
       if (!it.mg) { G.ui.toast('Sem carregador para a ' + ITEMS[it.k].s); return; }
       if (it.ammo >= capOf(it)) return;
       G.ui.toast('Sem balas: ' + AM.map(k => ITEMS[k].s).join(' ou ')); return;
@@ -852,7 +870,7 @@ float terH(vec2 p) { if (uTerP.w < 0.5) return 0.0; vec2 f = clamp((p + uTerP.x)
     const want = pickAmmo();
     if (!want) { G.ui.toast('Sem balas: ' + AM.map(k => ITEMS[k].s).join(' ou ')); return; }
     if (it.ammo >= g.mag && want === it.ak) return;
-    p.reload = g.reload; p.reloadDur = g.reload; p.reloadMode = 'fill'; p.reloadK = want; audio.play(reloadSnd(it.k));
+    p.reload = g.reload; p.reloadDur = g.reload; p.reloadMode = 'fill'; p.reloadK = want; reloadSfx(it, 'fill', g.reload);
   };
   // fim da recarga
   const doReload = () => { const p = G.p, it = held(); const g = it && ITEMS[it.k].gun; if (!g) return;
@@ -1655,7 +1673,7 @@ float terH(vec2 p) { if (uTerP.w < 0.5) return 0.0; vec2 f = clamp((p + uTerP.x)
   // corpo a corpo no telemóvel: toque rápido vira-se para o mais perto e ataca
   const faceTo = yaw => { const p = G.p; p.aim = yaw; p.yaw = yaw; if (Math.abs(angDiff(yaw, p.root)) > 1.2) p.root = yaw - Math.sign(angDiff(yaw, p.root)) * 1.2; G.aimHold = 0.5; };
   G.tapAttack = () => { const p = G.p; if (!p.alive || p.climb) return; if (G.car && !heldDef().gun) return; if (heldDef().gun) { G.fireDown(); G.fireUp(); return; } if (G.fp) { attack(); return; } /* na 1.ª pessoa bate para onde estás a olhar */ const best = bestTarget(); if (best && Math.hypot(best.x - p.x, best.z - p.z) < 3.2) faceTo(Math.atan2(best.x - p.x, best.z - p.z)); else if (!p.lv) { let nb = null, nd = 2.2; for (const n of nodes) { if (!n.alive || Math.abs(n.x - p.x) > 6 || Math.abs(n.z - p.z) > 6) continue; const d = Math.hypot(n.x - p.x, n.z - p.z) - n.r; if (d < nd) { nd = d; nb = n; } } if (nb) faceTo(Math.atan2(nb.x - p.x, nb.z - p.z)); } /* sem zombie perto, vira-se para a árvore ou rocha ao lado */ attack(); };
-  G.toggleLight = () => { if (!G.playing || !G.p.alive) return; if (G.car && G.carSeat === 0 && !VT[G.car.k].fly) { G.cars.lights(G.car); G.ui.refresh(true); return; } /* a conduzir: o botão Luz liga e desliga os faróis */ if (!G.lightOn && !hasLight()) { G.ui.toast('Precisas de uma lanterna'); return; } G.lightOn = !G.lightOn; audio.play('ui'); G.ui.refresh(true); };
+  G.toggleLight = () => { if (!G.playing || !G.p.alive) return; if (G.car && G.carSeat === 0 && !VT[G.car.k].fly) { G.cars.lights(G.car); G.ui.refresh(true); return; } /* a conduzir: o botão Luz liga e desliga os faróis */ if (!G.lightOn && !hasLight()) { G.ui.toast('Precisas de uma lanterna'); return; } G.lightOn = !G.lightOn; audio.play('luz', 0.9); G.ui.refresh(true); }; // clique da lanterna
   // saltar; se houver algo trepável à frente, trepa
   // ---------- postura: 0 de pé, 1 agachado, 2 deitado. Deitado o corpo vai 0,95 m para trás da anca e a cabeça 0,8 m à frente:
   // nunca entra nas paredes (se não couber, desliza para onde há espaço; se nem assim, fica agachado)
@@ -1749,7 +1767,7 @@ float terH(vec2 p) { if (uTerP.w < 0.5) return 0.0; vec2 f = clamp((p + uTerP.x)
       // só 1.ª pessoa: a arma está sempre pronta (dispara-se à anca logo; o botão Mira aponta pela mira, mesmo a de ferro)
       if (G.FP_ONLY && gunH && !AIM.on && p.alive && !p.climb && !p.use && !G.invOpen && !p.swim && !(G.car && !G.carSeat)) aimStart();
       if (AIM.scope && !scopeItem()) AIM.scope = false;
-      AIM.raise = clamp(AIM.raise + (AIM.on ? dt / 0.25 : -dt / 0.2), 0, 1);
+      AIM.raise = clamp(AIM.raise + (AIM.on ? dt / 0.25 : -dt / 0.2), 0, 1); if (AIM.on && !AIM.rSnd && held() && heldDef().gun) { AIM.rSnd = 1; audio.play('mirar', 0.8); } else if (!AIM.on && AIM.raise <= 0) AIM.rSnd = 0; // levantar a arma: roupa e correia
       AIM.idle += dt; if (!G.FP_ONLY && AIM.on && !AIM.scope && !AIM.rmb && !G.fireHeld && AIM.idle > (FPF.on ? 4 : 6)) aimEnd();
       const still = Math.hypot(p.vx, p.vz) < 0.35;
       AIM.steady = clamp(AIM.steady + (AIM.on && still ? dt * 1.3 : -dt * 2.2), 0, 1);
@@ -1765,7 +1783,7 @@ float terH(vec2 p) { if (uTerP.w < 0.5) return 0.0; vec2 f = clamp((p + uTerP.x)
         FPF.t = Math.min(1, FPF.t + dt / 0.34); }
       if (FPF.on) AIM.fpT = 1; else AIM.fpT = clamp(AIM.fpT + (AIM.scope && AIM.raise > 0.5 ? dt / 0.42 : -dt / 0.3), 0, 1);
       // a apontar na 1.ª pessoa (mira de ferro, ponto vermelho ou luneta): 0 à anca, 1 com a mira no olho
-      AIM.adsT = clamp(AIM.adsT + (AIM.scope && AIM.raise > 0.5 && (G.fp || FPF.on) ? dt / sightOf().ads : -dt / 0.18), 0, 1);
+      { const a0 = AIM.adsT; AIM.adsT = clamp(AIM.adsT + (AIM.scope && AIM.raise > 0.5 && (G.fp || FPF.on) ? dt / sightOf().ads : -dt / 0.18), 0, 1); if (a0 === 0 && AIM.adsT > 0) { audio.play('mirar', 0.6); audio.play('seletor', 0.5); } } // encostar à cara: roupa e o clique da arma
       { const fpNow = (FPF.on ? FPF.t >= 0.5 : AIM.fpT > 0.55) && p.alive; if (fpNow !== !!G.fp) { G.fp = fpNow; PROJ.dirty = true; } }
       const scI = scopeItem(), swayA = (AIM.scope ? (scI && scI.mag >= 8 ? 0.0062 : scI && scI.rd ? 0.0017 : 0.004) * sightOf().sway : 0.0012) * (1 - 0.55 * AIM.steady) * (1 - 0.85 * AIM.breath) * (still ? 1 : 2.4) * (1 + (AIM.gasp || 0)) * (1 - 0.3 * sk('mira')) * (G.dbgSway ?? 1) * (p.stance === 2 ? 0.45 : p.stance === 1 ? 0.75 : 1); // agachado e deitado a mira treme menos
       const swY = swayA * (Math.sin(G.t * 1.1) + 0.45 * Math.sin(G.t * 2.9 + 1)), swP = swayA * (0.8 * Math.sin(G.t * 0.83 + 2) + 0.35 * Math.sin(G.t * 3.7));
@@ -1841,7 +1859,7 @@ float terH(vec2 p) { if (uTerP.w < 0.5) return 0.0; vec2 f = clamp((p + uTerP.x)
         p.x += p.vx * dt; p.z += p.vz * dt; collide(p, 0.3); if (!G.car && (p.lv || 0) === 0) G.cars.pushCars(p, 0.3, null); // os carros (também os que andam) não se atravessam
         // gravidade e o que está por baixo dos pés
         const sup = support(p);
-        if (p.h > sup + 0.001 || p.vy > 0) { p.vy -= 13 * dt; p.h += p.vy * dt; if (p.h <= sup) { if (p.vy < -9) hurtPlayer(Math.min(60, (-p.vy - 9) * 9), 'queda'); p.h = sup; p.vy = 0; } }
+        if (p.h > sup + 0.001 || p.vy > 0) { p.vy -= 13 * dt; p.h += p.vy * dt; if (p.h <= sup) { if (p.vy < -9) hurtPlayer(Math.min(60, (-p.vy - 9) * 9), 'queda'); if (p.vy < -2.5) audio.play('aterrar', Math.min(1, -p.vy / 9)); p.h = sup; p.vy = 0; } }
         else { p.h = sup; p.vy = 0; }
         p.onGround = p.h <= sup + 0.02;
       }
@@ -1878,7 +1896,7 @@ float terH(vec2 p) { if (uTerP.w < 0.5) return 0.0; vec2 f = clamp((p + uTerP.x)
         const wf = d.gun ? ray(p.x, p.z, Math.sin(p.yaw), Math.cos(p.yaw), 1.0, null, 's', p.lv || 0, 1.2) : 1; p.wallK = (p.wallK || 0) + (clamp((0.85 - wf) / 0.35, 0, 1) - (p.wallK || 0)) * Math.min(1, dt * 12);
         body.stance = p.sc || 0; body.pose(dt, p.mv, mode, p.swing, p.recoil, twist, p.climb ? p.climb.t : -1, p.step, d.gun ? AIM.raise * (1 - 0.85 * p.wallK) : 1, ukind ? { kind: ukind, t: Math.min(1, p.use.t / p.use.dur) } : null, { rel: p.reload > 0 && p.reloadDur ? 1 - p.reload / p.reloadDur : -1, thr: p.thrT >= 0 ? p.thrT : -1 });
         // passos: um som em cada pé que assenta (relva, betão ou madeira dentro de casa), mais forte a correr
-        { const ph = Math.floor(body.phase / Math.PI); if (ph !== G.stepPh) { if (G.stepPh != null && p.onGround && !p.swim && p.mv > 0.15 && !G.car) { const inside = (p.lv || 0) > 0 || !!G.inside; audio.step(inside ? 'madeira' : W.paved(p.x, p.z) ? 'betao' : 'relva', Math.min(1, 0.35 + p.mv * 0.45)); } G.stepPh = ph; } }
+        { const ph = Math.floor(body.phase / Math.PI); if (ph !== G.stepPh) { if (G.stepPh != null && p.onGround && !p.swim && p.mv > 0.15 && !G.car) { const inside = (p.lv || 0) > 0 || !!G.inside; audio.step(inside ? 'madeira' : W.paved(p.x, p.z) ? 'betao' : surfAt(p.x, p.z), Math.min(1, 0.35 + p.mv * 0.45)); } G.stepPh = ph; } }
         p.swimY = (p.swimY || 0) + ((p.swim ? 0.95 : 0) - (p.swimY || 0)) * Math.min(1, dt * 5);
         { const l = AIM.lean || 0; body.root.position.set(p.x + Math.cos(p.root) * l * 0.14, p.y - p.swimY, p.z - Math.sin(p.root) * l * 0.14); body.root.rotation.set(0, p.root, -l * 0.2, 'YXZ'); }
       }
@@ -1943,7 +1961,7 @@ float terH(vec2 p) { if (uTerP.w < 0.5) return 0.0; vec2 f = clamp((p + uTerP.x)
       mats.sign.emissiveIntensity = 1.05 + 1.0 * (1 - D); mats.nwin.emissiveIntensity = 1.5 * (1 - D); mats.nwin2.emissiveIntensity = 1.1 * (1 - D); renderer.toneMappingExposure = 1.02 + 0.2 * (1 - D);
       const nt = 1 - D;
       // óculos de visão noturna: ligam sozinhos ao escurecer (mais luz e tudo em verde)
-      { const nv = p && p.alive && G.inv && G.inv.eq.eyes && !G.nvOff ? Math.max(0, Math.min(1, (nt - 0.3) / 0.35)) : 0; G.nv = nv;
+      { const nv = p && p.alive && G.inv && G.inv.eq.eyes && !G.nvOff ? Math.max(0, Math.min(1, (nt - 0.3) / 0.35)) : 0; if ((nv > 0) !== ((G.nv || 0) > 0) && G.playing) audio.play(nv > 0 ? 'nv-liga' : 'nv-desliga', 0.85); G.nv = nv; /* óculos de visão noturna: clique e assobio a ligar/desligar */
         G.eyeIn = (G.eyeIn || 0) + ((G.inside ? 1 : 0) - (G.eyeIn || 0)) * Math.min(1, dt * 1.2); renderer.toneMappingExposure *= 1 + 0.28 * G.eyeIn; hemi.intensity *= 1 + 0.35 * G.eyeIn; // dentro de casa os olhos habituam-se
         if (nv > 0) { hemi.intensity += 1.3 * nv; scene.environmentIntensity += 0.35 * nv; renderer.toneMappingExposure += 0.75 * nv; _fc.lerp(_rc.setRGB(0.15, 0.19, 0.16), 0.6 * nv); scene.fog.color.copy(_fc); scene.background.copy(_fc); }
         const on = nv > 0.5; if (on !== !!G.nvOn) { G.nvOn = on; renderer.domElement.classList.toggle('nvg', on); if (on && G.playing) G.ui.toast('Visão noturna ligada'); } }
