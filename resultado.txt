@@ -1,0 +1,32 @@
+--- https://tapmoss.com/version.json -> 200 0.474495s 21B
+HTTP/2 200 
+content-security-policy: default-src 'self'; script-src 'self' 'unsafe-inline' https:; style-src 'self' 'unsafe-inline' https:; img-src 'self' data: https:; font-src 'self' data: https:; connect-src 'self' https:; frame-src https:; worker-src 'self'; manifest-src 'self'; object-src 'none'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'
+content-type: application/json
+permissions-policy: geolocation=(self), camera=(), microphone=(), payment=(), usb=(), interest-cohort=()
+referrer-policy: strict-origin-when-cross-origin
+strict-transport-security: max-age=31536000
+x-content-type-options: nosniff
+{"v": "a89486864472"}
+--- https://tapmoss.com/sw.js -> 200 0.439734s 5716B
+HTTP/2 200 
+cache-control: no-cache
+content-security-policy: default-src 'self'; script-src 'self' 'unsafe-inline' https:; style-src 'self' 'unsafe-inline' https:; img-src 'self' data: https:; font-src 'self' data: https:; connect-src 'self' https:; frame-src https:; worker-src 'self'; manifest-src 'self'; object-src 'none'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'
+content-type: text/javascript; charset=utf-8
+permissions-policy: geolocation=(self), camera=(), microphone=(), payment=(), usb=(), interest-cohort=()
+referrer-policy: strict-origin-when-cross-origin
+strict-transport-security: max-age=31536000
+x-content-type-options: nosniff
+// tapmoss: funciona sem rede. As páginas vêm da rede quando há (para apanhar versões novas), senão da cache.
+// version.json fica sempre fora da cache: é por ele que o jogo sabe que há versão nova.
+// Cada página (o jogo em cada língua, os guias) guarda-se com o seu próprio endereço.
+// A versão nova descarrega-se enquanto se joga e fica em NEXT; ao recarregar, sai daí sem esperar pela rede.
+const V='tapmoss-156',NEXT='tapmoss-next';
+const CORE=['/','/manifest.json','/tapmoss-192.png','/tapmoss-512.png','/tapmoss-maskable.png','/tapmoss-180.png','/tapmoss-64.png','/badge-96.png'];
+// the pages already kept by the previous version come along, so an update does not download the whole game again just to have it offline
+self.addEventListener('install',e=>{e.waitUntil((async()=>{const c=await caches.open(V);let pages=0;
+  for(const k of await caches.keys()){if(k===V||k===NEXT||!k.startsWith('tapmoss-'))continue;const o=await caches.open(k);
+    for(const q of await o.keys()){const u=new URL(q.url);if(u.search||!u.pathname.endsWith('/'))continue;const m=await o.match(q);if(m){await c.put(q,m);pages++}}}
+  await c.addAll(pages?CORE.filter(x=>x!=='/'):CORE);await self.skipWaiting()})())});
+self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==V&&k!==NEXT).map(k=>caches.delete(k)))).then(()=>self.clients.claim()))});
+const pageKey=u=>{let p=u.pathname.replace(/index\.html$/,'');if(!p.endsWith('/'))p+='/';return p};
+self.add
