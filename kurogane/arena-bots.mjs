@@ -266,7 +266,7 @@ export function makeBots(A) {
   };
 
   let lastBal = 0, lastT = Date.now();
-  const ON = process.env.KG_BOTS === '1'; // ligado só depois de testado no jogo
+  const ON = process.env.KG_BOTS !== '0'; // desligado só nos testes que precisam da arena vazia
   const tick = () => {
     if (!ON) return;
     const now = Date.now(), dt = Math.min(0.1, (now - lastT) / 1000); lastT = now;

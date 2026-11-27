@@ -142,6 +142,7 @@ export function gearGeos() {
   const _gc = {}, real = k => geoOf(b => { for (const T of dataTpl(GEARDATA, k, _gc)) b.add(T.g, T.c, T.m); });
   if (GEARDATA.capacete) { G.head = real('capacete'); for (const t in TINTS) G['head_' + t] = retint(real('capacete'), OLV, TINTS[t][1]); }
   if (GEARDATA.colete) { G.vest = real('colete'); for (const t in TINTS) G['vest_' + t] = retint(real('colete'), TAN, TINTS[t][1]); }
+  { const src = GEARDATA.colete ? real('colete') : geoOf(gearVest); G.vest_tr = retint(src, TAN, 0xb8342a); G.vest_tb = retint(GEARDATA.colete ? real('colete') : geoOf(gearVest), TAN, 0x2a5ac8); } // arena: colete da cor da equipa
   if (GEARDATA.mochila) G.back = real('mochila'); if (GEARDATA.mochilaC) G.back_C = real('mochilaC'); if (GEARDATA.nvg) G.eyes = real('nvg');
   if (GEARDATA.ghillie_torso) { G.suit = real('ghillie_torso'); for (const s of ['head', 'armL', 'armR', 'foreL', 'foreR', 'legL', 'legR', 'shinL', 'shinR']) G['gh_' + s] = real('ghillie_' + s); }
   G.real = !!GEARDATA.capacete;
@@ -390,7 +391,8 @@ export class Body {
     let near = this.lodNear; if (Body.cam && !this.forceNear) { const p = this.root.position, q = Body.cam; near = (p.x - q.x) ** 2 + (p.y - q.y) ** 2 + (p.z - q.z) ** 2 < (Body.nearD || 16) ** 2; }
     this.skin[0].visible = near; this.skin[1].visible = !near;
   }
-  setGear(eq) { const on = gearKeys(eq); for (const k in this.gear) this.gear[k].visible = on.has(k); for (const g of this.suitX) g.visible = on.has('suit'); }
+  setTeam(t) { const v = t == null ? null : t ? 'vest_tb' : 'vest_tr'; if (v !== this.teamV) { this.teamV = v; this.setGear(this._eq || {}); } } // arena: todos com o colete da equipa
+  setGear(eq) { this._eq = eq; const on = gearKeys(eq); if (this.teamV) { for (const k of [...on]) if (k.startsWith('vest')) on.delete(k); on.add(this.teamV); } for (const k in this.gear) this.gear[k].visible = on.has(k); for (const g of this.suitX) g.visible = on.has('suit'); }
   setWeapon(k, att = {}) { const sc = att.scope ? (att.scope === 'mira8' ? 'sc8_' : att.scope === 'reddot' ? 'rd_' : 'sc_') + k : null, sp = att.sup ? 'sup_' + k : null, lt = att.light ? 'lt_' + k : null; const vis = [sc, sp, lt, 'mag_' + k, 'bolt_' + k, 'pump_' + k].filter(w => w && this.weps[w]); this.wkMag = this.weps['mag_' + k] || null; this.wkPiv = this.wkMag ? partPivot('mag_' + k) : null; for (const w in this.weps) this.weps[w].visible = w === k || vis.includes(w); this.wk = k; this.wkAtt = vis; }
   // um membro: coxa/braço (rotação x = para a frente/trás, z = abrir) e a dobra do joelho/cotovelo
   limb(g, rx, rz, bend, ry = 0) { g.quaternion.setFromEuler(_pe.set(rx, ry, rz, 'XYZ')); const k = g.userData.knee || g.userData.fore; k.rotation.set(bend, 0, 0); if (g.userData.hand) g.userData.hand.rotation.set(0, 0, 0); }

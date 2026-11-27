@@ -519,7 +519,7 @@ async function boot() {
   const noise = (x, z, r) => { r *= 1 - 0.35 * (G.rain || 0); G.lastNoise = { x, z, r: r * 1.3, t: G.t }; for (const zb of G.zs) if (!zb.an && zb.state !== 'dead' && zb.state !== 'chase' && Math.hypot(zb.x - x, zb.z - z) < r) { zb.state = 'alert'; zb.tx = x + (Math.random() - 0.5) * 4; zb.tz = z + (Math.random() - 0.5) * 4; } };
   const vol = (x, z) => clamp(1 - Math.hypot(x - G.p.x, z - G.p.z) / 34, 0, 1);
   const GK = ['head', 'vest', 'suit', 'eyes', 'back']; // equipamento que os outros veem (chaves dos itens, pela mesma ordem do servidor)
-  const refresh = () => { body.setGear(G.inv.eq); const d = heldDef(); body.setWeapon(held() ? (d.gun || d.melee ? held().k : null) : null, held() && held().att || {}); G.ui.refresh(); };
+  const refresh = () => { body.setTeam(G.ARENA && G.arenaTeam != null ? G.arenaTeam | 0 : null); body.setGear(G.inv.eq); const d = heldDef(); body.setWeapon(held() ? (d.gun || d.melee ? held().k : null) : null, held() && held().att || {}); G.ui.refresh(); };
   G.refresh = refresh; G.mkItem = mkItem; G.dbgBody = () => body; G.dbgNodes = () => nodes; /* testes */
   const select = i => { if (G.sel === i) return; G.sel = i; if (G.aimEnd) G.aimEnd(); AIM.raise = 0; G.p.reload = 0; G.p.use = null; G.p.swing = -1; G.p.thrT = -1; G.p.thrIt = null; audio.play('ui'); refresh(); };
   G.select = select;
@@ -1267,6 +1267,7 @@ async function boot() {
         canvas.addEventListener('pointermove', e => { if (!drag) return; ang = drag.a + (e.clientX - drag.x) * 0.012; });
         const up = e => { if (!drag) return; const dx = e.clientX - drag.x, dtm = Math.max(16, performance.now() - drag.t); spin = Math.max(-6, Math.min(6, dx / dtm * 6)); drag = null; }; canvas.addEventListener('pointerup', up); canvas.addEventListener('pointercancel', up);
         if (!raf) raf = requestAnimationFrame(loop); },
+      team(t) { if (b) b.setTeam(t == null ? null : t | 0); },
       set(gun, att) { if (!b) return; const d = ITEMS[gun]; mode = d && d.gun ? (d.long ? 'rifle' : 'pistol') : 'none'; b.setWeapon(gun || '', att || {}); spin = 3; },
       look(L) { if (!sc) return; sc.remove(b.root); b = new Body(mats, lookCol(L)); b.forceNear = true; sc.add(b.root); },
       stop() { if (raf) cancelAnimationFrame(raf); raf = 0; }, start() { if (R && !raf) raf = requestAnimationFrame(loop); },

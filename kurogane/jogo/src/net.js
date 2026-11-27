@@ -63,6 +63,7 @@ export function makeNet({ G, scene, mkRemote, audio, Conta, enc, dec, hurt, die,
       case 's': {
         const now = performance.now(), seen = new Set();
         for (const a of m.ps) { const r = R.get(a[0]); if (!r) continue; seen.add(r.id); if (r.s1 && (Math.hypot(a[1] - r.s1[1], a[2] - r.s1[2]) > 25 || a[4] !== r.s1[4])) r.T = track(); r.s1 = a; push(r.T, a[13] || now, now, { x: a[1], z: a[2], y: a[3], yaw: a[5], a });
+          if (G.ARENA) r.b.setTeam(r.clan === 'arena-b' ? 1 : r.clan === 'arena-r' ? 0 : null);
           const ar = a[12] || [0, 0], gk = typeof a[14] === 'string' ? a[14] : null, ak = gk ?? ar.join(); if (ak !== r.ar) { r.ar = ak; if (gk != null) { const q = gk.split(','), e = {}; ['head', 'vest', 'suit', 'eyes', 'back'].forEach((s, i) => { if (q[i] && ITEMS[q[i]]) e[s] = { k: q[i] }; }); r.b.setGear(e); r.gh = !!e.suit; } else r.b.setGear({ head: ar[0] ? { k: 'capacete' } : null, vest: ar[1] ? { k: 'colete' } : null }); }
           if (r.w !== a[8]) { r.w = a[8]; r.b.setWeapon(a[8] || null, {}); } }
         for (const r of R.values()) if (!seen.has(r.id)) { r.s1 = null; r.T = track(); r.b.root.visible = false; r.el.style.display = 'none'; }

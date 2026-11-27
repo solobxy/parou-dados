@@ -66,7 +66,7 @@ export function initArenaUI(G, { $, audio, toast }) {
     const bk = $('arBack'), bl = step === 1 ? 'Sair da arena' : step === 2 ? 'Equipa' : 'Kit'; bk.innerHTML = '<svg class="abk" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg><span>' + bl + '</span>'; bk.setAttribute('aria-label', bl);
     let ab = el.querySelector('#arAtt'); if (step === 2 && hasAtt(kit)) { if (!ab) { ab = document.createElement('button'); ab.className = 'btn'; ab.id = 'arAtt'; ab.textContent = 'Acessórios'; $('arGo').before(ab); } } else if (ab) ab.remove();
     const go = $('arGo'); go.textContent = goLabel(); go.disabled = (step === 1 && team == null) || dead; go.classList.toggle('cdb', dead);
-    if (step >= 2) { G.arenaPrev.mount(cv); G.arenaPrev.start(); const [g, a] = prevGun();
+    if (step >= 2) { G.arenaPrev.mount(cv); G.arenaPrev.start(); G.arenaPrev.team(mode === "lobby" ? team : (G.arenaTeam ?? team)); const [g, a] = prevGun();
       if (anim) { stage.classList.remove('in', 'fwd', 'bwd'); stage.classList.add('out', dir > 0 ? 'fwd' : 'bwd'); setTimeout(() => { G.arenaPrev.set(g, a); stage.classList.remove('out'); void stage.offsetWidth; stage.classList.add('in'); }, 170); info.classList.remove('swap'); void info.offsetWidth; info.classList.add('swap'); }
       else G.arenaPrev.set(g, a); }
     else G.arenaPrev.stop();
