@@ -37,7 +37,7 @@ export function initUI(G) {
     const a = Conta.ativo(); if (!a || !a.nome) { askName(false, () => go(cont, kit)); return; }
     audio.start(); MUS.prime(['fundo', ...PER]); audio.play('ui');
     if (G.TOUCH) { try { const r = document.documentElement.requestFullscreen && document.documentElement.requestFullscreen({ navigationUI: 'hide' }); if (r && r.catch) r.catch(() => { }); } catch (e) { } }
-    $('start').hidden = true; G.start(cont, kit);
+    $('start').hidden = true; $('modes').hidden = true; $('gate').hidden = true; G.start(cont, kit);
   };
   // o Kurogane só se joga online: antes de entrar confirma que o servidor responde; sem servidor não se joga
   const SITE = 'https://kurogane.2-31-13-85.sslip.io';
@@ -56,7 +56,7 @@ export function initUI(G) {
   if (!canOnline) { $('sOnl').hidden = true; const f = document.querySelector('#start .foot'); if (f) f.textContent = ((f.textContent.match(/Protótipo [\d.]+/) || ['Protótipo'])[0]) + ' · aqui jogas sozinho · o jogo online está no site do Kurogane'; }
   else { const b = $('sOnl'), t = $('sOnT');
     const count = () => { let u = window.KG_ONLINE ? '/srv/saude' : 'https://kurogane.2-31-13-85.sslip.io/srv/saude'; try { const o = localStorage.getItem('kg.srv'); if (o) u = o.replace(/^ws/, 'http').replace(/\/ws$/, '/saude'); } catch (e) { }
-      fetch(u, { cache: 'no-store' }).then(r => r.ok ? r.json() : null).then(j => { const up = !!(j && j.ok); b.classList.toggle('up', up); b.classList.toggle('down', !up); t.textContent = up ? (j.jogadores ? `${j.jogadores} a jogar agora · PvP e clãs` : 'Ninguém a jogar agora · PvP e clãs') : 'Servidor em baixo: volta a tentar daqui a pouco'; if (up && j.arena != null) $('sArena').querySelector('em').textContent = 'PvP em Tóquio · Vermelha contra Azul · ' + (j.arena ? j.arena + ' na arena' : '5 kits'); }).catch(() => { b.classList.add('down'); t.textContent = 'Servidor em baixo: volta a tentar daqui a pouco'; }); };
+      fetch(u, { cache: 'no-store' }).then(r => r.ok ? r.json() : null).then(j => { const up = !!(j && j.ok); b.classList.toggle('up', up); b.classList.toggle('down', !up); t.textContent = up ? (j.jogadores ? `${j.jogadores} a jogar agora` : 'Servidor ligado') : 'Servidor em baixo'; $('mdNS').textContent = up && j.jogadores != null ? `${j.jogadores} a jogar` : ''; $('mdNA').textContent = up && j.arena != null ? `${j.arena} na arena` : ''; }).catch(() => { b.classList.add('down'); t.textContent = 'Servidor em baixo'; }); };
     count(); G.ui_count = count; }
   // os toques no jogo não contam como cliques nas estatísticas (só os botões dos menus)
   for (const id of ['touch', 'c']) $(id).addEventListener('click', e => e.stopPropagation());
@@ -376,7 +376,7 @@ export function initUI(G) {
   let musGo = false, perK = null, perOn = false;
   const musState = () => {
     if (!musGo) return [];
-    if (!$('start').hidden) return ['menu'];
+    if (!$('start').hidden || !$('gate').hidden || !$('modes').hidden || !$('news').hidden) return ['menu'];
     const p = G.p; if (!G.playing || !p || !p.alive || !$('dead').hidden) return [];
     if (G.danger && G.danger()) {
       if (!perOn) { perOn = true; if (!(perK && MUS.playing(perK))) { const o = PER.filter(k => MUS.ok(k) && k !== perK); if (o.length) perK = o[Math.random() * o.length | 0]; if (perK) MUS.rewindIfStale(perK, 90); } }
@@ -436,13 +436,62 @@ export function initUI(G) {
     pfm.hidden = false;
   };
   $('tLock').addEventListener('pointerdown', e => { e.stopPropagation(); if (G.lockT) { audio.play('ui'); lockMenu(G.lockT); } });
-  const startLabels = () => { $('sCont').hidden = true; const b = $('sPlay'); b.hidden = false; b.classList.add('pri'); }; // só online: a personagem fica no servidor
+  const startLabels = () => { $('sCont').hidden = true; $('sPlay').hidden = false; }; // só online: a personagem fica no servidor
+  // ---------- lobby: perfil, personagem ao centro, atalhos, JOGAR. Quem já entrou neste aparelho vem direto para aqui
+  let lookKey = '';
   const pfRender = () => {
-    const a = Conta.ativo(), c = Conta.conta(), P = Conta.perfis();
-    $('prof').innerHTML = (a && a.nome ? `<span class="pn">${c ? '{{cloud-check}}' : '{{user-round}}'}${esc(a.nome)}</span><span>${c ? 'na nuvem e neste aparelho' : 'guardado neste aparelho'}</span>` : `<span>Ainda sem perfil</span>`) + (a && a.nome ? `<button class="lnk" id="pfA">Aparência</button>` : '') + (P.lista.length > 1 || (a && a.nome) ? `<button class="lnk" id="pfL">Perfis</button>` : '') + `<button class="lnk" id="pfC">${c ? 'Conta' : 'Criar conta ou entrar'}</button>`;
-    const L = $('pfL'); if (L) L.onclick = () => { audio.play('ui'); showList(); }; $('pfC').onclick = () => { audio.play('ui'); showAccount(); }; const A = $('pfA'); if (A) A.onclick = () => { audio.play('ui'); showLook(); };
-    startLabels();
+    const a = Conta.ativo(), c = Conta.conta();
+    $('lbName').textContent = a && a.nome ? a.nome : '—'; $('lbSub').textContent = c ? 'Conta ligada · na nuvem' : 'Só neste aparelho';
+    $('sAccT').textContent = c ? 'Conta' : 'Criar conta';
+    const L = (a && a.look) || null, k = JSON.stringify(L || {}) + (a ? a.id : '');
+    if (k !== lookKey && G.portraitBig) { lookKey = k; const u = G.portraitBig(L || undefined); $('lbChar').src = u; $('lbAv').src = u; }
+    newsDot(); startLabels();
   };
+  const showMenu = () => { const a = Conta.ativo(); $('modes').hidden = true; $('news').hidden = true;
+    if (a && a.nome) { $('gate').hidden = true; $('start').hidden = false; pfRender(); if (G.ui_count) G.ui_count(); }
+    else { $('start').hidden = true; gateShow(); } };
+  G.showMenu = showMenu;
+  // ---------- entrada: entrar, criar conta ou jogar sem conta. A sessão fica guardada neste aparelho (não se volta a pedir)
+  let gMode = 'ent';
+  const gateShow = () => { $('gate').hidden = false; $('gForm').hidden = true; $('gBtns').hidden = false; $('gVer').textContent = (document.querySelector('#start .foot') || {}).textContent || ''; };
+  const gateForm = m => { gMode = m; audio.play('ui'); $('gBtns').hidden = true; $('gForm').hidden = false; $('gM').textContent = ''; $('gM').className = 'pmsg';
+    $('gfT').textContent = m === 'ent' ? 'Entrar' : m === 'reg' ? 'Criar conta' : 'Jogar sem conta'; $('gOk').querySelector('span').textContent = m === 'ent' ? 'Entrar' : m === 'reg' ? 'Criar conta' : 'Começar';
+    $('gPw').hidden = m === 'guest'; $('gP').autocomplete = m === 'reg' ? 'new-password' : 'current-password';
+    $('gfN').textContent = m === 'ent' ? 'Com o nome e a palavra-passe da tua conta. Trazemos o teu jogo da nuvem.' : m === 'reg' ? 'A personagem, o loot e o mundo ficam guardados na nuvem e continuam noutro aparelho.' : 'Fica tudo só neste aparelho. Podes criar conta depois, em Definições › Conta.';
+    setTimeout(() => $('gN').focus(), 60); };
+  $('gIn').onclick = () => gateForm('ent'); $('gReg').onclick = () => gateForm('reg'); $('gGuest').onclick = () => gateForm('guest');
+  $('gfX').onclick = () => { audio.play('ui'); gateShow(); };
+  $('gForm').onsubmit = async e => { e.preventDefault(); const n = $('gN').value.trim(), pw = $('gP').value, msg = (t, k) => { $('gM').textContent = t; $('gM').className = 'pmsg ' + (k || ''); };
+    if (!Conta.NOME_OK.test(n)) return msg(Conta.MSG.nome_invalido, 'err');
+    if (gMode === 'guest') { const a = Conta.ativo(); if (a && !a.nome) Conta.renomear(n); else if (!Conta.localPorNome(n)) Conta.criar(n); audio.play('apanhar'); showMenu(); mnote('Olá, ' + n + '. Fica tudo guardado neste aparelho.'); return; }
+    if (pw.length < 6) return msg(Conta.MSG.pass_invalida, 'err');
+    $('gOk').disabled = true; msg(gMode === 'reg' ? 'A criar a conta…' : 'A entrar…');
+    try { if (gMode === 'reg') { const a = Conta.ativo(); if (a && !a.nome) Conta.renomear(n); else if (!a || a.conta) Conta.criar(n); await Conta.registar(n, pw); await Conta.enviar(true); audio.play('apanhar'); showMenu(); mnote('Conta criada. O teu jogo fica guardado na nuvem.'); }
+      else { await Conta.entrar(n, pw); const r = await Conta.sincronizar(); audio.play('apanhar'); showMenu(); mnote(r === 'nuvem' ? 'Bem-vindo de volta. Trouxemos o teu jogo da nuvem.' : 'Bem-vindo de volta, ' + n + '.'); } }
+    catch (err) { msg(Conta.MSG[err.message] || Conta.MSG.rede, 'err'); } finally { $('gOk').disabled = false; } };
+  // botões do lobby
+  $('prof').onclick = () => { audio.play('ui'); showAccount(); };
+  $('sLook').onclick = () => { audio.play('ui'); showLook(); }; $('sProf').onclick = () => { audio.play('ui'); showList(); }; $('sAcc').onclick = () => { audio.play('ui'); showAccount(); };
+  $('sGo').onclick = () => { audio.play('ui'); $('modes').hidden = false; if (G.ui_count) G.ui_count(); };
+  $('mdX').onclick = () => { audio.play('ui'); $('modes').hidden = true; };
+  $('sHow').onclick = () => { audio.play('ui'); $('pfT').textContent = 'Como se joga'; pfm.classList.remove('wide', 'kpw'); pfB.innerHTML = `<div class="keys howk">${$('sKeys').innerHTML}</div><p class="note">Revista tudo, come e bebe, treina o corpo (perde-se ao morrer) e evita a cidade de noite. O melhor loot está no centro, onde há PvP.</p>`; pfm.hidden = false; };
+  // ---------- novidades (as mais recentes primeiro; o ponto vermelho some depois de as abrires)
+  const NEWS = [
+    { id: '0.67', d: '27/11/2026', t: 'Menus novos e sessão guardada', img: 'menu/n-menus.jpg', b: '<p>Entrada nova antes de jogar: entras com a tua conta, crias uma ou jogas sem conta. A sessão fica guardada neste aparelho e da próxima vez vens direto para o menu.</p><ul><li>Menu com a tua personagem ao centro, novidades e atalhos</li><li>Escolha do modo com Survival e Arena lado a lado, com quantos estão a jogar</li><li>Definições arrumadas por categorias, com Não/Sim e os valores à vista</li></ul>' },
+    { id: '0.66', d: '27/11/2026', t: 'Luz dentro das casas', img: 'menu/n-luzes.jpg', b: '<p>Os prédios têm lâmpadas no teto: umas acesas, outras a piscar e outras partidas. As mais perto de ti iluminam a divisão, e os olhos habituam-se ao escuro lá dentro.</p><ul><li>Postes, marcos do correio, cabines, pilaretes e bicicletas novos</li><li>Sacos no chão e saco de cadáver com forma a sério</li><li>Capacete, colete e mochila com sombras</li></ul>' },
+    { id: '0.63', d: '27/11/2026', t: 'Objetos com pormenor', img: 'menu/n-objetos.jpg', b: '<p>Caixotes do lixo, máquinas de bebidas, bancos, caixotes, bidões, cones, candeeiros, ar condicionado, móveis, cozinhas e casas de banho foram refeitos com forma e sombras a sério. Os carros parados têm vidros transparentes e bancos lá dentro.</p><p>Se o telemóvel pesar, desliga em Definições › Gráficos › Objetos com pormenor.</p>' },
+    { id: '0.61', d: '27/11/2026', t: 'Granadas, clarões e dano', img: 'menu/n-granada.jpg', b: '<p>Segura o botão para atirar a granada mais longe e vês por onde vai cair. Todas as armas fazem clarão ao disparar, levar um tiro mostra de onde veio e a câmara estremece.</p><ul><li>Armas com metal que reflete a luz</li><li>Bots da arena sem saltos nem desaparecimentos</li></ul>' },
+  ];
+  const seenNews = () => { try { return localStorage.getItem('kg.news') || ''; } catch (e) { return ''; } };
+  const newsDot = () => { const d = $('sNews').querySelector('.dot'); if (d) d.hidden = seenNews() === NEWS[0].id; const n = NEWS[0]; $('lbNewsT').textContent = n.t; $('lbNewsImg').src = n.img; };
+  const newsOpen = (id) => { const N = NEWS.find(n => n.id === id) || NEWS[0], seen = seenNews();
+    $('nwList').innerHTML = NEWS.map(n => `<button class="nw-it${n.id === N.id ? ' on' : ''}" data-n="${n.id}" role="tab" aria-selected="${n.id === N.id}"><b>${esc(n.t)}</b><span>${n.d} · versão ${n.id}</span></button>`).join('');
+    $('nwD').innerHTML = `<h2>${esc(N.t)}</h2><time>${N.d} · versão ${N.id}</time><img src="${N.img}" alt="">${N.b}`;
+    $('news').hidden = false; try { localStorage.setItem('kg.news', NEWS[0].id); } catch (e) { } newsDot(); };
+  $('nwList').onclick = e => { const b = e.target.closest('[data-n]'); if (!b) return; audio.play('ui'); newsOpen(b.dataset.n); };
+  $('sNews').onclick = () => { audio.play('ui'); newsOpen(); }; $('sNewsCard').onclick = () => { audio.play('ui'); newsOpen(); };
+  $('nwX').onclick = () => { audio.play('ui'); $('news').hidden = true; };
+
   // aparência: cor da pele, cabelo, barba, roupa; pré-visualização ao vivo
   const LDEF = { skin: 0xd9a882, hair: 0x2a211b, top: 0x5c6846, legs: 0x3a3f33, hairS: 0, beardS: 1 }, LLBL = { skin: 'Pele', hair: 'Cabelo', hairS: 'Corte', beardS: 'Barba', top: 'Camisola', legs: 'Calças' };
   const showLook = () => {
@@ -560,10 +609,10 @@ export function initUI(G) {
   const setEl = $('set'), body = $('setBody');
   const row = (title, sub, ctl) => { const r = document.createElement('div'); r.className = 'srow'; r.innerHTML = `<div class="lab"><b>${title}</b>${sub ? `<span>${sub}</span>` : ''}</div>`; r.appendChild(ctl); return r; };
   const tog = (get, set) => { const b = document.createElement('button'); b.className = 'tog' + (get() ? ' on' : ''); b.setAttribute('role', 'switch'); b.onclick = () => { set(!get()); b.classList.toggle('on', get()); audio.play('ui'); applyAll(); }; return b; };
-  const range = (min, max, step, get, set) => { const i = document.createElement('input'); i.type = 'range'; i.min = min; i.max = max; i.step = step; i.value = get(); i.oninput = () => { set(+i.value); applyAll(); }; return i; };
+  const range = (min, max, step, get, set) => { const w = document.createElement('div'); w.className = 'rng'; const o = document.createElement('output'), i = document.createElement('input'); i.type = 'range'; i.min = min; i.max = max; i.step = step; i.value = get(); const show = () => { o.textContent = Math.round(+i.value * 100) + '%'; }; show(); i.oninput = () => { set(+i.value); show(); applyAll(); }; w.append(o, i); return w; }; // valor à vista (em %)
   const renderSet = () => {
     body.innerHTML = ''; setTabsR();
-    const TABOF = { 'Controlos': 'ctl', 'Ecrã': 'ecra', 'Ecrã inteiro': 'ecra', 'Gráficos': 'img', 'Som': 'img' };
+    const TABOF = { 'Controlos': 'ctl', 'Ecrã': 'ecra', 'Ecrã inteiro': 'ecra', 'Gráficos': 'img', 'Som': 'img', 'Conta': 'conta', 'Sessão': 'conta' };
     const grp = (t, rows, cls = '') => { if ((TABOF[t] || 'mais') !== setTab) return; const g = document.createElement('div'); g.className = 'sgrp ' + cls; g.innerHTML = `<h3>${t}</h3>`; rows.forEach(r => g.appendChild(r)); body.appendChild(g); };
     const doors = row('Portas automáticas', 'Abrem quando vais contra elas e fecham-se atrás de ti. Desligado, abres e fechas com o botão.', tog(() => cfg.autoDoor, v => cfg.autoDoor = v));
     const iron = row('Mira de ferro', 'Na 1.ª pessoa, nas espingardas sem mira (M4, AK, SMG, caça, metralhadoras), o botão «Mira» aponta pela mira de ferro da arma.', tog(() => cfg.fpIron !== false, v => cfg.fpIron = v));
@@ -608,6 +657,10 @@ export function initUI(G) {
         grp('Equipa do jogo', [row('Código de administrador', 'Só para quem gere o servidor.', w)]); } }
     grp('Gráficos', [row('Sombras', 'Desligar ajuda telemóveis mais fracos.', tog(() => cfg.shadows, v => cfg.shadows = v)), row('Objetos com pormenor', 'Caixotes, máquinas, bancos, carros e móveis detalhados. Desligar alivia telemóveis fracos (vale ao voltar a entrar).', tog(() => cfg.props !== false, v => cfg.props = v)), row('Modo poupança', 'Menos resolução, mais fluidez e menos bateria.', tog(() => cfg.lowres, v => cfg.lowres = v)), row('Mostrar FPS', '', tog(() => cfg.fps, v => cfg.fps = v))]);
     grp('Som', [row('Volume geral', '', range(0, 1, 0.05, () => cfg.vol, v => cfg.vol = v)), row('Música do menu', '', range(0, 1, 0.05, () => cfg.musMenu, v => { cfg.musMenu = v; if (v > 0 && cfg.music === false) { cfg.music = true; musBtn(); } })), row('Música em jogo', 'Baixa no dia a dia; sobe quando há perigo.', range(0, 1, 0.05, () => cfg.musGame, v => { cfg.musGame = v; if (v > 0 && cfg.music === false) { cfg.music = true; musBtn(); } })), row('Ver os sons à volta do ecrã', 'Setas na borda mostram de onde vêm grunhidos, passos e tiros.', tog(() => cfg.soundViz, v => cfg.soundViz = v))]);
+    { const a = Conta.ativo(), c = Conta.conta(), bt = (t, f, pri) => { const b = document.createElement('button'); b.className = 'btn sm' + (pri ? ' pri' : ''); b.textContent = t; b.onclick = () => { audio.play('ui'); f(); }; return b; };
+      grp('Conta', [row(a && a.nome ? a.nome : 'Sem perfil', c ? 'Conta ligada: o jogo vai para a nuvem sozinho enquanto jogas e continua noutro aparelho.' : 'Só neste aparelho. Com conta, a personagem e o mundo ficam na nuvem.', bt(c ? 'Conta' : 'Criar conta ou entrar', () => { closeSet(); showAccount(); }, !c)),
+        row('Perfis neste aparelho', 'Cada perfil tem a sua personagem e o seu mundo.', bt('Ver', () => { closeSet(); showList(); }))]);
+      if (!G.playing) grp('Sessão', [row('Terminar sessão', 'Volta ao ecrã de entrada. O perfil fica guardado neste aparelho.', bt('Terminar', async () => { if (Conta.conta()) await Conta.sair(); Conta.semPerfil(); closeSet(); showMenu(); }))]); }
     grp('Créditos', [row('Sons de animais', 'Freesound: newagesoup (rosnar), yottasounds (javali) e bonson.ca (galinha), licença CC BY 3.0; os outros em domínio público (CC0).', document.createElement('span'))]);
   };
   // ---------- painel da equipa (administrador e moderador): tudo é pedido ao servidor, que confirma o cargo
@@ -691,7 +744,14 @@ export function initUI(G) {
   const EYE = `{{eye}}`, EYEOFF = `{{eye-off}}`;
   for (const ev of ['fullscreenchange', 'webkitfullscreenchange']) document.addEventListener(ev, () => { if (!setEl.hidden) renderSet(); });
   let setTab = 'ctl';
-  const setTabsEl = $('setTabs'), setTabsR = () => { for (const b of setTabsEl.children) b.classList.toggle('on', b.dataset.t === setTab); };
+  const setTabsEl = $('setTabs');
+  { const cb = document.createElement('button'); cb.dataset.t = 'conta'; cb.textContent = 'Conta'; setTabsEl.appendChild(cb); }
+  // deitado e largo: as categorias passam para uma coluna à esquerda, com ícone (como nos jogos de telemóvel)
+  const sside = document.createElement('nav'); sside.className = 'sside'; sside.setAttribute('aria-label', 'Categorias');
+  sside.innerHTML = [['ctl', 'Controlos', `{{gamepad-2}}`], ['ecra', 'Ecrã', `{{layout-dashboard}}`], ['img', 'Imagem e som', `{{monitor}}`], ['mais', 'Mais', `{{settings-2}}`], ['conta', 'Conta', `{{user-round}}`]].map(([t, n, ic]) => `<button data-t="${t}">${ic}<span>${n}</span></button>`).join('');
+  setEl.querySelector('.sp2').insertBefore(sside, body);
+  const setTabsR = () => { for (const b of [...setTabsEl.children, ...sside.children]) b.classList.toggle('on', b.dataset.t === setTab); };
+  sside.onclick = e => { const b = e.target.closest('button'); if (!b || b.dataset.t === setTab) return; setTab = b.dataset.t; audio.play('ui'); renderSet(); body._pg && body._pg.first(); };
   setTabsEl.onclick = e => { const b = e.target.closest('button'); if (!b || b.dataset.t === setTab) return; setTab = b.dataset.t; audio.play('ui'); renderSet(); body._pg && body._pg.first(); };
   const openSet = () => { G.paused = G.playing; renderSet(); setEl.hidden = false; audio.play('ui'); body._pg && body._pg.first(); };
   const closeSet = () => { setEl.hidden = true; G.paused = false; saveCfg(); };
@@ -1061,7 +1121,6 @@ export function initUI(G) {
   // sem scroll em lado nenhum: listas compridas passam a páginas
   pager(body, '.sgrp > *:not(.vis), .sgrp .vis > *');
   pager($('dList'), ':scope > *'); pager($('admB'), ':scope > *');
-  fitDrop($('start'), ['#sKeys', '#start .lead', '#start .foot', '#start .logo .sub', '#start .menu .mi em', '#sOnl em']);
   fitDrop(pfm, ['.pfb > p', '.pfb .note', '.pfb label small'], () => pfm.querySelector('.pfbox'));
   pager($('recipes'), ':scope > *'); pager($('skl'), ':scope > *'); pager(trB, ':scope > *'); pager(lbB, ':scope > p, .lbt > div:not(.h)');
   return {
@@ -1071,9 +1130,9 @@ export function initUI(G) {
     closeDeath: () => { $('dead').hidden = true; clearInterval(dTick); }, sound, bedMenu, codeAsk, codeErr, codeDone, lockMenu, admRole, admList, admOpen, lbShow, lbOpen, trOpen, trRender, trOpenNow: () => !!trT, trWho: () => trT, trClose: () => { trEl.hidden = true; trT = null; },
     showHUD: msg => { $('hud').hidden = false; refresh(); toast(msg); },
     // sair para o menu (com 5 s parado se estiveres em combate)
-    toMenu: () => { setTimeout(() => { pfRender(); if (G.ui_count) G.ui_count(); }, 50); if (!pfm.hidden && $('pfT').textContent === 'Clã') pfClose(); $('quit').hidden = true; $('hud').hidden = true; setEl.hidden = true; G.paused = false; closeInv(); $('map').hidden = true; if (G.ARENA) { $('dead').hidden = true; AUI.lobby(); } else $('start').hidden = false; },
+    toMenu: () => { setTimeout(() => { pfRender(); if (G.ui_count) G.ui_count(); }, 50); if (!pfm.hidden && $('pfT').textContent === 'Clã') pfClose(); $('quit').hidden = true; $('hud').hidden = true; setEl.hidden = true; G.paused = false; closeInv(); $('map').hidden = true; if (G.ARENA) { $('dead').hidden = true; AUI.lobby(); } else showMenu(); },
     quitTick: t => { const q = $('quit'); if (t < 0) { q.hidden = true; return; } q.hidden = false; $('qN').textContent = Math.max(1, Math.ceil(t)); q.style.setProperty('--qp', (1 - t / 5).toFixed(3)); },
-    ready: () => { drawOff(); { const t = $('ldP'), b = document.querySelector('#load .bar b'); if (t) t.textContent = '100%'; if (b) b.style.width = '100%'; } $('load').hidden = true; if (G.ARENA) { const a = Conta.ativo(); if (a && a.nome) AUI.lobby(); else askName(false, () => AUI.lobby()); $('bAr').hidden = false; $('mClan').style.display = $('mLb').style.display = 'none'; { const ml = document.querySelector('#map .ml'); if (ml) ml.innerHTML = '<span><i style="background:#F4F1EA"></i>Tu</span><span><i style="background:#6FA8FF"></i>Equipa</span><span><i style="background:#F0594A"></i>Inimigo visto</span><span><i style="background:#b8544a"></i>Partida vermelha</span><span><i style="background:#4a6ab8"></i>Partida azul</span><span><i style="background:#9a7a52"></i>Plataformas</span>'; } for (const id of ['mIn', 'mOut']) if ($(id)) $(id).style.visibility = 'hidden'; } else $('start').hidden = false; pfRender(); Conta.conta() && Conta.sincronizar().then(r => { if (r === 'nuvem') { pfRender(); mnote('Trouxemos o teu jogo mais recente da nuvem.'); } }).catch(() => { }); 
+    ready: () => { drawOff(); { const t = $('ldP'), b = document.querySelector('#load .bar b'); if (t) t.textContent = '100%'; if (b) b.style.width = '100%'; } $('load').hidden = true; if (G.ARENA) { const a = Conta.ativo(); if (a && a.nome) AUI.lobby(); else askName(false, () => AUI.lobby()); $('bAr').hidden = false; $('mClan').style.display = $('mLb').style.display = 'none'; { const ml = document.querySelector('#map .ml'); if (ml) ml.innerHTML = '<span><i style="background:#F4F1EA"></i>Tu</span><span><i style="background:#6FA8FF"></i>Equipa</span><span><i style="background:#F0594A"></i>Inimigo visto</span><span><i style="background:#b8544a"></i>Partida vermelha</span><span><i style="background:#4a6ab8"></i>Partida azul</span><span><i style="background:#9a7a52"></i>Plataformas</span>'; } for (const id of ['mIn', 'mOut']) if ($(id)) $(id).style.visibility = 'hidden'; } else showMenu(); pfRender(); Conta.conta() && Conta.sincronizar().then(r => { if (r === 'nuvem') { pfRender(); mnote('Trouxemos o teu jogo mais recente da nuvem.'); } }).catch(() => { }); 
       // intro curta (uma vez por sessão; toca para saltar; sem animação se o sistema pedir menos movimento)
       let seen = false; try { seen = sessionStorage.getItem('kgIntro') === '1'; sessionStorage.setItem('kgIntro', '1'); } catch (e) { } if (!seen && !matchMedia('(prefers-reduced-motion: reduce)').matches) { const it = $('intro'); it.hidden = false; const end = () => { it.hidden = true; }; it.onclick = end; setTimeout(end, 2700); } },
   };

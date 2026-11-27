@@ -23,6 +23,10 @@ export function perfis() {
 const guardaP = P => LS.set('kg.perfis', P);
 export const ativo = () => { const P = perfis(); return P.lista.find(p => p.id === P.ativo) || null; };
 export function criar(nome) { const P = perfis(), id = novoId(); P.lista.push({ id, nome, criado: Date.now() }); P.ativo = id; guardaP(P); return id; }
+// terminar sessão neste aparelho: o perfil fica guardado (volta-se a ele em «Jogar sem conta» com o mesmo nome, ou em Perfis), mas o jogo abre na entrada
+export function semPerfil() { const P = perfis(); P.ativo = null; guardaP(P); }
+// jogar sem conta com um nome que já existe neste aparelho (sem conta ligada): volta a esse perfil em vez de criar outro
+export function localPorNome(nome) { const P = perfis(), a = P.lista.find(p => !p.conta && p.nome && p.nome.toLowerCase() === nome.toLowerCase()); if (a) { P.ativo = a.id; guardaP(P); } return !!a; }
 export function escolher(id) { const P = perfis(); if (P.lista.some(p => p.id === id)) { P.ativo = id; guardaP(P); } }
 export function setLook(look) { const P = perfis(), a = P.lista.find(p => p.id === P.ativo); if (a) { a.look = look; guardaP(P); } }
 export function renomear(nome) { const P = perfis(), a = P.lista.find(p => p.id === P.ativo); if (a) { a.nome = nome; guardaP(P); } }

@@ -194,7 +194,7 @@ export function makeIcons(DPR = 2) {
   const portrait = (o, W, H, look) => { const L = look || LOOK;
     ir.setSize(W, H, false);
     const sc = new THREE.Scene(); sc.environment = env; sc.environmentIntensity = 0.4; lights().forEach(l => { l.intensity *= 0.6; sc.add(l); }); // luz mais suave que nos ícones: as cores ficam como no jogo
-    const b = new Body(pmats, lookCol(L)); b.forceNear = true; b.setGear(o.eq || {}); b.pose(0.016, 0, 'none'); b.root.rotation.y = -0.45; b.root.updateMatrixWorld(true); sc.add(b.root);
+    const b = new Body(pmats, lookCol(L)); b.forceNear = true; b.setGear(o.eq || {}); if (o.gun) { b.setWeapon(o.gun, {}); for (let i = 0; i < 3; i++) b.pose(0.016, 0, 'rifle', -1, 0, 0, -1, 0, o.raise ?? 0); } else b.pose(0.016, 0, 'none'); b.root.rotation.y = o.ry ?? -0.45; /* no menu, de arma na mão */ b.root.updateMatrixWorld(true); sc.add(b.root);
     const cam = new THREE.PerspectiveCamera(22, W / H, 0.1, 20); cam.position.set(0, 1.25, 5.4); cam.lookAt(0, 0.99, 0); // corpo inteiro, dos pés à cabeça
     ir.render(sc, cam); const url = ir.domElement.toDataURL('image/png'); b.dispose(); return url;
   };

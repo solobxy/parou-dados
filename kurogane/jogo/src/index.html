@@ -870,6 +870,118 @@ body.driving #dHov{right:calc(40px + var(--sr));bottom:calc(158px + var(--sb))}
 @media (orientation:landscape) and (max-height:520px){.pfb:has(input)>.ptabs{grid-column:1/-1}} @media (orientation:landscape) and (max-height:360px){.pfb .fld input{height:40px}.ptabs button{height:34px}.pfbox{gap:6px}.pfb:has(input){row-gap:6px}} /* conta ao deitado: separadores em cima, nome e palavra-passe lado a lado, aviso e botão por baixo */
 @media (orientation:landscape) and (max-width:720px){#adm .adh,#set .sett{display:none}} /* administração estreita: o selo ADMIN já diz onde estás */
 #hud.hop .tb,#hud.hop .dv,#hud.hop #tr,#hud.hop #tl,#hud.hop #cmp,#hud.hop #belt,#hud.hop #ammo,#hud.hop .pad,#hud.hop .ghost{filter:opacity(var(--hop,1))}
+
+/* ===================== menus 0.67: entrada, lobby, modos, novidades, definições ===================== */
+:root{--verm:#C4361F;--vermh:#D8452C;--pan:rgba(17,16,15,.8);--pan2:rgba(28,27,24,.86)}
+/* entrada (antes de jogar): logótipo ao centro, entrar ou criar conta; a sessão fica neste aparelho */
+#gate{z-index:40;flex-direction:column;justify-content:space-between;padding:calc(14px + var(--st)) calc(18px + var(--sr)) calc(12px + var(--sb)) calc(18px + var(--sl));background:radial-gradient(ellipse at 50% 46%,rgba(10,9,8,.28) 0%,rgba(10,9,8,.72) 62%,rgba(10,9,8,.92) 100%)}
+.gt-top{align-self:flex-end;min-height:20px}.gt-help{font:600 12px "Roboto Condensed",sans-serif;letter-spacing:.06em;color:rgba(238,233,224,.62);text-decoration:none}
+.gt-mid{display:flex;flex-direction:column;align-items:center;gap:14px;width:min(560px,100%)}
+#gate .logo{display:flex;align-items:center;gap:16px}#gate .logo .seal{width:clamp(64px,13vh,104px);height:clamp(64px,13vh,104px)}
+#gate .wm h1{font-size:clamp(40px,min(12vw,11vh + 8px),84px)}
+.gt-tag{margin:0;font:500 15px/1.35 "Roboto",sans-serif;color:var(--tx2);text-align:center}
+.gt-btns{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;margin-top:6px}
+.gb{display:inline-flex;align-items:center;justify-content:center;gap:10px;min-width:170px;height:52px;padding:0 22px;background:var(--pan2);border:1px solid rgba(255,250,240,.14);color:var(--tx);font:700 17px "Roboto Condensed",sans-serif;letter-spacing:.08em;text-transform:uppercase;transition:background .15s,transform .15s}
+.gb svg{width:20px;height:20px}.gb:hover{background:rgba(48,46,42,.9)}.gb:active{transform:scale(.98)}
+.gb.pri{background:var(--verm);border-color:var(--verm);color:#fff}.gb.pri:hover{background:var(--vermh)}
+.gb.gho{background:none;border-color:transparent;min-width:0;color:var(--tx2);text-decoration:underline;text-underline-offset:4px;font-weight:600}
+.gb.wide{width:100%}.gb:disabled{opacity:.6}
+.gt-form{width:min(380px,100%);display:flex;flex-direction:column;gap:10px;padding:14px 16px 16px;background:rgba(14,13,12,.92);border:1px solid rgba(255,250,240,.12)}
+.gf-h{display:flex;align-items:center;justify-content:space-between}.gf-h b{font:700 20px "Roboto Condensed",sans-serif;letter-spacing:.06em;text-transform:uppercase}
+.gf-n{margin:0;font-size:12.5px;color:var(--tx2);line-height:1.35}
+.gt-foot{display:flex;justify-content:space-between;gap:12px;width:100%;font:500 12px "Roboto Condensed",sans-serif;letter-spacing:.04em;color:rgba(238,233,224,.5)}
+#gate:not([hidden]){animation:ovIn .3s ease-out}
+/* lobby: perfil em cima à esquerda, novidades à esquerda, a tua personagem ao centro, atalhos à direita e JOGAR em baixo à direita */
+#start:not([hidden]){display:grid}
+#start{grid-template-columns:minmax(210px,290px) 1fr minmax(200px,270px);grid-template-rows:auto 1fr auto;gap:10px 16px;align-items:stretch;justify-content:stretch;overflow:hidden;padding:calc(10px + var(--st)) calc(14px + var(--sr)) calc(10px + var(--sb)) calc(14px + var(--sl));background:linear-gradient(90deg,rgba(10,9,8,.84) 0%,rgba(10,9,8,.3) 30%,rgba(10,9,8,0) 46%,rgba(10,9,8,0) 58%,rgba(10,9,8,.42) 74%,rgba(10,9,8,.86) 100%),linear-gradient(0deg,rgba(10,9,8,.8) 0%,rgba(10,9,8,0) 34%)}
+.lb-top{grid-column:1/-1;grid-row:1;display:flex;justify-content:space-between;align-items:center;gap:10px;min-width:0}
+.lb-me{display:flex;align-items:center;gap:10px;height:56px;padding:0 16px 0 6px;background:var(--pan);border:1px solid rgba(255,250,240,.1);min-width:0;max-width:340px;text-align:left}
+.lb-me:hover{background:var(--pan2)}
+.lb-av{width:44px;height:44px;flex:none;overflow:hidden;background:#2a2723;position:relative}
+.lb-av img{position:absolute;left:58%;top:0;width:640%;transform:translate(-50%,-6.5%);max-width:none}
+.lb-mt{display:flex;flex-direction:column;min-width:0}.lb-mt b{font:700 18px/1.1 "Roboto Condensed",sans-serif;letter-spacing:.03em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lb-mt em{font:500 12px/1.3 "Roboto",sans-serif;font-style:normal;color:var(--tx2);white-space:nowrap}
+.lb-ic{display:flex;gap:8px}
+.ib{width:48px;height:48px;display:grid;place-items:center;background:var(--pan);border:1px solid rgba(255,250,240,.1);color:var(--tx);position:relative}
+.ib:hover{background:var(--pan2)}.ib svg{width:22px;height:22px}.ib .dot{position:absolute;top:7px;right:7px;width:9px;height:9px;border-radius:50%;background:var(--verm);box-shadow:0 0 0 2px #151412}
+#start #sMus{position:relative;inset:auto;width:48px;height:48px;z-index:auto;border-radius:0;background:var(--pan)}
+.lb-left{grid-column:1;grid-row:2;display:flex;flex-direction:column;gap:10px;align-self:center;min-width:0;min-height:0;overflow:hidden}
+.lb-card{display:flex;align-items:center;gap:10px;width:100%;padding:10px 12px;background:var(--pan);border:1px solid rgba(255,250,240,.1);text-align:left;color:var(--tx)}
+.lb-card:hover{background:var(--pan2)}.lb-card>svg{width:18px;height:18px;margin-left:auto;color:var(--tx2);flex:none}
+.lb-card.news{flex-direction:column;align-items:stretch;padding:0;overflow:hidden}
+.lb-ci{display:block;aspect-ratio:16/7;overflow:hidden;background:#24211e}.lb-ci img{width:100%;height:100%;object-fit:cover;display:block}
+.lb-card.news .lb-ct{padding:8px 12px 10px}
+.lb-ct{display:flex;flex-direction:column;gap:2px;min-width:0}.lb-ct em{font:700 11px "Roboto Condensed",sans-serif;font-style:normal;letter-spacing:.12em;text-transform:uppercase;color:#E8A08F}
+.lb-ct b{font:700 16px/1.2 "Roboto Condensed",sans-serif;letter-spacing:.02em}
+.lb-char{grid-column:2;grid-row:2/4;position:relative;min-height:0;pointer-events:none}
+.lb-char img{position:absolute;left:50%;bottom:-2%;height:104%;width:auto;transform:translateX(-50%);filter:drop-shadow(0 18px 24px rgba(0,0,0,.5))}
+.lb-right{grid-column:3;grid-row:2;display:flex;flex-direction:column;gap:8px;align-self:center}
+.lb-row{display:flex;align-items:center;justify-content:space-between;gap:12px;height:54px;padding:0 16px;background:var(--pan);border:1px solid rgba(255,250,240,.1);color:var(--tx)}
+.lb-row:hover{background:var(--pan2)}.lb-row b{font:700 18px "Roboto Condensed",sans-serif;letter-spacing:.08em;text-transform:uppercase}.lb-row svg{width:22px;height:22px;color:var(--tx2)}
+.lb-go{grid-column:3;grid-row:3;display:flex;flex-direction:column;align-items:stretch;gap:6px;justify-self:stretch}
+#start .onl{white-space:nowrap;overflow:hidden;display:flex;align-items:center;justify-content:flex-end;gap:8px;padding:0;background:none;font:600 13px "Roboto Condensed",sans-serif;letter-spacing:.04em;text-transform:uppercase;color:var(--tx2)}
+#start .onl em{font-style:normal;font-variant-numeric:tabular-nums}#start .onl.up em{color:var(--tx)}
+.lb-play{height:62px;background:var(--verm);color:#fff;font:700 28px "Roboto Condensed",sans-serif;letter-spacing:.14em;text-transform:uppercase;border:0;box-shadow:inset 0 -4px 0 rgba(0,0,0,.22),0 10px 24px rgba(196,54,31,.28);transition:background .15s,transform .15s}
+.lb-play:hover{background:var(--vermh)}.lb-play:active{transform:translateY(2px);box-shadow:inset 0 -2px 0 rgba(0,0,0,.22)}
+.lb-foot{grid-column:1;grid-row:3;align-self:end;display:flex;gap:14px;align-items:center;font:500 12px "Roboto Condensed",sans-serif;letter-spacing:.04em;color:rgba(238,233,224,.5)}
+#start .credit{position:static;padding:0;font-size:12px}#start .foot{margin:0;padding:0;font-size:12px;color:rgba(238,233,224,.5);text-align:left}
+#start .mnote{position:fixed;left:50%;top:calc(76px + var(--st));transform:translateX(-50%);z-index:3;max-width:min(520px,90vw)}
+#start:not([hidden]) .lb-char img{animation:lbIn .5s cubic-bezier(.2,.8,.2,1)}
+@keyframes lbIn{from{opacity:0;transform:translate(-50%,12px)}to{opacity:1;transform:translate(-50%,0)}}
+@media (orientation:landscape) and (max-height:430px){.lb-ci{aspect-ratio:16/5.5}.lb-row{height:46px}.lb-row b{font-size:16px}.lb-play{height:54px;font-size:24px}.lb-me{height:50px}.ib,#start #sMus{width:44px;height:44px}.lb-card{padding:8px 10px}.lb-card.news .lb-ct{padding:6px 10px 8px}.lb-ct b{font-size:14.5px}}
+@media (orientation:landscape) and (max-height:360px){.lb-ci{display:none}}
+/* ao alto: perfil e ícones em cima, personagem ao centro, atalhos e JOGAR em baixo */
+@media (orientation:portrait){#start{grid-template-columns:1fr 1fr;grid-template-rows:auto 1fr auto auto auto;gap:8px 10px;background:linear-gradient(0deg,rgba(10,9,8,.9) 0%,rgba(10,9,8,.5) 42%,rgba(10,9,8,.1) 70%,rgba(10,9,8,.5) 100%)}
+  .lb-char{grid-column:1/-1;grid-row:2}.lb-left{grid-column:1;grid-row:3;align-self:stretch}.lb-right{grid-column:2;grid-row:3;align-self:stretch;justify-content:flex-end}
+  .lb-left .news .lb-ci{display:none}.lb-card{flex:1}.lb-row{height:46px}.lb-go{grid-column:1/-1;grid-row:4}.lb-foot{grid-column:1/-1;grid-row:5;justify-content:space-between}
+  .lb-me{max-width:none;flex:1}.lb-row b{font-size:15px;letter-spacing:.05em}.lb-row{padding:0 12px}}
+@media (prefers-reduced-motion:reduce){#start:not([hidden]) .lb-char img,#gate:not([hidden]){animation:none}}
+/* modos: cartões grandes com imagem do próprio jogo */
+#modes{z-index:46;flex-direction:column;justify-content:flex-start;gap:12px;padding:calc(10px + var(--st)) calc(16px + var(--sr)) calc(14px + var(--sb)) calc(16px + var(--sl));background:rgba(10,9,8,.94)}
+.md-h,.nw-h{width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:48px}.md-h b,.nw-h b{font-size:26px;letter-spacing:.08em;text-transform:uppercase}
+.md-cards{flex:1;min-height:0;width:100%;display:flex;gap:16px;justify-content:center;align-items:stretch}
+.md-card{position:relative;flex:1 1 0;max-width:420px;min-height:0;overflow:hidden;background:#1d1b19;border:2px solid rgba(255,250,240,.12);text-align:left;color:var(--tx);padding:0;transition:border-color .15s,transform .2s cubic-bezier(.2,.8,.2,1)}
+.md-card:hover,.md-card:focus-visible{border-color:rgba(255,250,240,.55);transform:translateY(-3px)}
+.md-card img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.md-card::after{content:"";position:absolute;inset:0;background:linear-gradient(0deg,rgba(10,9,8,.96) 0%,rgba(10,9,8,.55) 38%,rgba(10,9,8,0) 62%)}
+.md-t{position:absolute;left:0;right:0;bottom:0;z-index:1;display:flex;flex-direction:column;gap:3px;padding:14px 16px 16px}
+.md-t b{font:700 34px/1 "Roboto Condensed",sans-serif;letter-spacing:.08em;text-transform:uppercase}.md-t span{font:600 14px "Roboto Condensed",sans-serif;letter-spacing:.03em;color:#E8DFD2}
+.md-t em{font:500 12.5px "Roboto",sans-serif;font-style:normal;color:var(--tx2)}
+.md-n{position:absolute;top:10px;right:10px;z-index:1;padding:5px 10px;background:rgba(14,13,12,.82);font:700 13px "Roboto Condensed",sans-serif;letter-spacing:.04em;font-variant-numeric:tabular-nums}.md-n:empty{display:none}
+.md-card.busy{pointer-events:none}.md-card.busy .md-t em{color:#fff}
+@media (orientation:portrait){.md-cards{flex-direction:column}.md-card{max-width:none}}
+/* novidades: lista à esquerda, notícia à direita */
+#news{z-index:47;flex-direction:column;justify-content:flex-start;padding:calc(10px + var(--st)) calc(16px + var(--sr)) calc(12px + var(--sb)) calc(16px + var(--sl));background:rgba(10,9,8,.95)}
+.nw-h{justify-content:flex-start}.nw-ic svg{width:26px;height:26px}.nw-h .close{margin-left:auto}
+.nw-b{flex:1;min-height:0;width:100%;display:grid;grid-template-columns:minmax(220px,36%) 1fr;gap:18px}
+.nw-list{display:flex;flex-direction:column;gap:8px;overflow:auto;padding-right:4px}
+.nw-it{display:flex;flex-direction:column;gap:3px;padding:11px 14px;background:var(--pan);border:1px solid rgba(255,250,240,.08);text-align:left;color:var(--tx);position:relative}
+.nw-it b{font:700 15px/1.2 "Roboto Condensed",sans-serif;letter-spacing:.03em;text-transform:uppercase}.nw-it span{font:500 12px "Roboto Condensed",sans-serif;color:var(--tx2);font-variant-numeric:tabular-nums}
+.nw-it.on{background:rgba(58,55,50,.9);border-color:rgba(255,250,240,.4)}.nw-it .dot{position:absolute;top:10px;right:10px;width:8px;height:8px;border-radius:50%;background:var(--verm)}
+.nw-d{overflow:auto;padding-right:6px}.nw-d h2{margin:0;font:700 24px/1.15 "Roboto Condensed",sans-serif;letter-spacing:.03em;text-transform:uppercase}
+.nw-d time{display:block;margin:4px 0 10px;font:500 13px "Roboto Condensed",sans-serif;color:var(--tx2)}
+.nw-d img{width:100%;max-height:46vh;object-fit:cover;display:block;margin-bottom:12px;background:#24211e}
+.nw-d p{margin:0 0 9px;font-size:14.5px;line-height:1.5;color:#D9D4CA}.nw-d ul{margin:0 0 10px;padding-left:18px;font-size:14.5px;line-height:1.5;color:#D9D4CA}
+@media (orientation:portrait){.nw-b{grid-template-columns:1fr;grid-template-rows:auto 1fr}.nw-list{flex-direction:row;overflow-x:auto;padding:0 0 4px}.nw-it{flex:none;width:68%}}
+/* definições: categorias numa coluna à esquerda (deitado), linhas largas, Não/Sim, valores à vista */
+@media (orientation:landscape) and (min-width:640px){
+  #set .sp2{width:min(1060px,100%);display:grid;grid-template-columns:minmax(190px,230px) 1fr;grid-template-rows:auto 1fr;column-gap:18px}
+  #set .ihead{grid-column:1/-1}#set .ihead .tabs{display:none}
+  #set .sside{grid-column:1;grid-row:2;display:flex;flex-direction:column;gap:2px;min-height:0;overflow:auto}
+  #set .sbody{grid-column:2;grid-row:2}}
+#set .sside{display:none}
+@media (orientation:landscape) and (min-width:640px){#set .sside{display:flex}}
+.sside button{display:flex;align-items:center;gap:12px;height:50px;padding:0 14px;background:rgba(17,16,15,.6);color:var(--tx);font:700 15px "Roboto Condensed",sans-serif;letter-spacing:.06em;text-transform:uppercase;text-align:left;border-left:3px solid transparent}
+.sside button svg{width:20px;height:20px;color:var(--tx2)}.sside button.on{background:rgba(64,61,56,.85);border-left-color:var(--tx)}.sside button.on svg{color:var(--tx)}
+#set .sgrp h3{font:700 14px "Roboto Condensed",sans-serif;letter-spacing:.1em;text-transform:uppercase;color:var(--tx2)}
+#set .srow{min-height:58px;padding:9px 14px;background:rgba(27,26,24,.92);border:1px solid rgba(255,250,240,.05)}
+#set .srow .lab b{font:700 16px "Roboto Condensed",sans-serif;letter-spacing:.04em;text-transform:uppercase}
+#set .tog{width:136px;height:40px;background:#262421;border-radius:0;display:grid;grid-template-columns:1fr 1fr;padding:0;flex:none}
+#set .tog::before,#set .tog::after{content:"Não";position:static;width:auto;height:auto;display:grid;place-items:center;font:700 14px "Roboto Condensed",sans-serif;letter-spacing:.08em;text-transform:uppercase;color:var(--tx2);background:none;transform:none;transition:background .15s,color .15s;border-radius:0}
+#set .tog::after{content:"Sim"}
+#set .tog:not(.on)::before{background:#E6E2DA;color:#151412}#set .tog.on{background:#262421}#set .tog.on::after{background:#E6E2DA;color:#151412;transform:none}
+.rng{display:flex;align-items:center;gap:12px;flex:none}.rng output{min-width:46px;text-align:right;font:700 16px "Roboto Condensed",sans-serif;font-variant-numeric:tabular-nums}
+#set input[type=range]{width:clamp(130px,24vw,240px)}
 </style>
 </head>
 <body>
@@ -935,16 +1047,43 @@ body.driving #dHov{right:calc(40px + var(--sr));bottom:calc(158px + var(--sb))}
 <div id="map" class="ov" hidden><div class="mh"><span id="mScale"></span><span class="mz"><button class="btn sm" id="mOut" aria-label="Afastar">−</button><button class="btn sm" id="mIn" aria-label="Aproximar">+</button></span><button class="btn sm" id="mClan">Clã</button><button class="btn sm" id="mLb" aria-label="Classificações">{{trophy}}<span>Classificações</span></button><button class="close" id="mClose" aria-label="Fechar">{{x}}</button></div><canvas id="mapc" width="1024" height="1024"></canvas><div class="med" id="mEd" hidden><b id="mEdT"></b><div class="sws" id="mEdC"></div><div class="sys" id="mEdS"></div><div class="mbt"><button class="btn sm" id="mEdDel">Apagar</button><button class="btn sm pri" id="mEdOk">Feito</button></div></div><div class="ml"><span class="mhint">Toca no mapa para marcar</span><span><i style="background:#F4F1EA"></i>Tu</span><span><i style="background:#6FA8FF"></i>Clã</span><span><i style="background:#8e8a82"></i>Bairro · PvP</span><span><i style="background:#c8402e"></i>Loot militar</span><span><i style="background:#7fd38a"></i>Cama</span></div></div>
 <div id="quit" hidden><div class="qr"><b id="qN">5</b></div><div class="qt"><span>A sair do jogo</span><em>Estás em combate. Fica parado: mexer-te ou levar dano cancela.</em></div><button class="btn sm" id="qX">Cancelar</button></div>
 <div id="dead" class="ov" hidden><div class="dp" id="dp"><h2>Morreste</h2><p id="dCause"></p><div class="stat" id="dStat"></div><div class="dbeds" id="dBeds" hidden><canvas id="dMap" width="400" height="400" aria-label="Mapa: onde morreste e as tuas camas"></canvas><div class="dlist" id="dList" role="list"></div></div><button class="btn pri big" id="dGo">Acordar noutro sítio</button><div class="note" id="dNote">As tuas coisas ficaram num saco onde caíste.</div></div></div>
-<div id="start" class="ov" hidden><div class="sp">
-  <div class="logo"><svg class="seal" viewBox="0 0 100 100" aria-hidden="true"><defs><filter id="ink" x="-5%" y="-5%" width="110%" height="110%"><feTurbulence type="fractalNoise" baseFrequency="1.6" numOctaves="2" seed="7" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="2.6"/></filter></defs><g filter="url(#ink)"><rect x="4" y="4" width="92" height="92" rx="9" fill="#b42418"/><rect x="11" y="11" width="78" height="78" rx="5" fill="none" stroke="#f3e6d2" stroke-width="2.6"/><text x="50" y="46" text-anchor="middle" font-family="KJP" font-weight="900" font-size="33" fill="#f3e6d2">黒</text><text x="50" y="80" text-anchor="middle" font-family="KJP" font-weight="900" font-size="33" fill="#f3e6d2">鉄</text></g></svg><div class="wm"><h1>KUROGANE</h1><div class="sub"><span>新黒鉄区</span><i></i><span>Sobrevivência</span></div></div></div>
-  <div class="prof" id="prof"></div>
+<div id="gate" class="ov" hidden>
+  <div class="gt-top"><a class="gt-help" href="https://dinissousa.pt" target="_blank" rel="noopener">feito por dinissousa.pt</a></div>
+  <div class="gt-mid"><div class="logo"><svg class="seal" viewBox="0 0 100 100" aria-hidden="true"><defs><filter id="ink4" x="-5%" y="-5%" width="110%" height="110%"><feTurbulence type="fractalNoise" baseFrequency="1.6" numOctaves="2" seed="7" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="2.6"/></filter></defs><g filter="url(#ink4)"><rect x="4" y="4" width="92" height="92" rx="9" fill="#b42418"/><rect x="11" y="11" width="78" height="78" rx="5" fill="none" stroke="#f3e6d2" stroke-width="2.6"/><text x="50" y="46" text-anchor="middle" font-family="KJP" font-weight="900" font-size="33" fill="#f3e6d2">黒</text><text x="50" y="80" text-anchor="middle" font-family="KJP" font-weight="900" font-size="33" fill="#f3e6d2">鉄</text></g></svg><div class="wm"><h1>KUROGANE</h1><div class="sub"><span>新黒鉄区</span><i></i><span>Sobrevivência</span></div></div></div>
+    <p class="gt-tag">Tóquio caiu. Revista, treina, sobrevive.</p>
+    <div class="gt-btns" id="gBtns"><button class="gb pri" id="gIn">{{log-in}}<span>Entrar</span></button><button class="gb" id="gReg">{{user-plus}}<span>Criar conta</span></button><button class="gb gho" id="gGuest"><span>Jogar sem conta</span></button></div>
+    <form class="gt-form" id="gForm" hidden novalidate><div class="gf-h"><b id="gfT">Entrar</b><button type="button" class="close" id="gfX" aria-label="Voltar">{{x}}</button></div>
+      <div class="fld"><label for="gN">Nome</label><input id="gN" type="text" maxlength="16" autocomplete="username" autocapitalize="off" spellcheck="false"></div>
+      <div class="fld" id="gPw"><label for="gP">Palavra-passe</label><input id="gP" type="password" maxlength="72" autocomplete="current-password"></div>
+      <div class="pmsg" id="gM"></div><button class="gb pri wide" id="gOk" type="submit"><span>Entrar</span></button><p class="gf-n" id="gfN"></p></form>
+  </div>
+  <div class="gt-foot"><span id="gVer">Protótipo 0.67</span><span>A sessão fica guardada neste aparelho</span></div>
+</div>
+<div id="start" class="ov" hidden>
+  <header class="lb-top">
+    <button class="lb-me" id="prof" aria-label="A tua conta"><span class="lb-av"><img id="lbAv" alt=""></span><span class="lb-mt"><b id="lbName">—</b><em id="lbSub"></em></span></button>
+    <div class="lb-ic"><button class="ib" id="sNews" aria-label="Novidades">{{mail}}<i class="dot" hidden></i></button><button class="ib" id="sMus" aria-label="Música do menu"><span class="on">{{volume-2}}</span><span class="off">{{volume-x}}</span></button><button class="ib" id="sSet" aria-label="Definições">{{settings}}</button></div>
+  </header>
+  <aside class="lb-left">
+    <button class="lb-card news" id="sNewsCard"><span class="lb-ci"><img id="lbNewsImg" alt=""></span><span class="lb-ct"><em>Novidades</em><b id="lbNewsT"></b></span></button>
+    <button class="lb-card" id="sHow"><span class="lb-ct"><em>Como se joga</em><b>Controlos e dicas</b></span>{{chevron-right}}</button>
+  </aside>
+  <div class="lb-char" aria-hidden="true"><img id="lbChar" alt=""></div>
+  <nav class="lb-right"><button class="lb-row" id="sLook"><b>Aparência</b>{{shirt}}</button><button class="lb-row" id="sProf"><b>Perfis</b>{{users}}</button><button class="lb-row" id="sAcc"><b id="sAccT">Conta</b>{{cloud}}</button></nav>
   <div class="mnote" id="mnote" hidden></div>
-  <p class="lead">Um bairro de Tóquio tomado por zombies, rodeado de floresta, vilas e um templo nas montanhas. Revista, treina o corpo, foge ou luta. O melhor loot está no centro.</p>
-  <nav class="menu"><button class="mi pri" id="sCont" hidden><b>Continuar</b><em>Voltas onde ficaste</em></button><button class="mi pri" id="sPlay"><b>Survival</b><em>Continuas onde ficaste, ou começas perto de uma vila</em></button><button class="mi" id="sArena"><b>Arena</b><em>PvP em Tóquio · Vermelha contra Azul · 5 kits</em></button><button class="mi" id="sSet"><b>Definições</b><em>Controlos, imagem e som</em></button></nav>
-  <div class="onl" id="sOnl" role="status"><i class="dot" aria-hidden="true"></i><span><b>Servidor</b><em id="sOnT">A ver quem está a jogar…</em></span></div>
-  <div class="keys" id="sKeys"></div>
-  <div class="foot">Protótipo 0.66 · um servidor para todos · quem sai fica a dormir no mundo</div>
-</div><button id="sMus" aria-label="Música do menu"><span class="on">{{volume-2}}</span><span class="off">{{volume-x}}</span></button><a class="credit" href="https://dinissousa.pt" target="_blank" rel="noopener">feito por dinissousa.pt</a></div>
+  <div class="lb-go"><div class="onl" id="sOnl" role="status"><i class="dot" aria-hidden="true"></i><span><em id="sOnT">A ver quem está a jogar…</em></span></div><button class="lb-play" id="sGo"><span>Jogar</span></button></div>
+  <div class="lb-foot"><span class="foot">Protótipo 0.67</span><a class="credit" href="https://dinissousa.pt" target="_blank" rel="noopener">feito por dinissousa.pt</a></div>
+  <div id="sKeys" hidden></div><button id="sCont" hidden></button>
+</div>
+<div id="modes" class="ov" hidden><div class="md-h"><b class="cond">Escolhe o modo</b><button class="close" id="mdX" aria-label="Fechar">{{x}}</button></div>
+  <div class="md-cards">
+    <button class="md-card" id="sPlay"><img src="menu/survival.jpg" alt=""><span class="md-t"><b>Survival</b><span>Mundo aberto · um servidor para todos</span><em>Continuas onde ficaste, ou começas perto de uma vila</em></span><span class="md-n" id="mdNS"></span></button>
+    <button class="md-card" id="sArena"><img src="menu/arena.jpg" alt=""><span class="md-t"><b>Arena</b><span>PvP em Tóquio · Vermelha contra Azul</span><em>5 kits · renasces em 5 s</em></span><span class="md-n" id="mdNA"></span></button>
+  </div>
+</div>
+<div id="news" class="ov" hidden><div class="nw-h"><span class="nw-ic">{{mail}}</span><b class="cond">Novidades</b><button class="close" id="nwX" aria-label="Fechar">{{x}}</button></div>
+  <div class="nw-b"><div class="nw-list" id="nwList" role="tablist"></div><article class="nw-d" id="nwD"></article></div>
+</div>
 <div id="arw" class="ov" hidden></div>
 <div id="pfm" class="ov" hidden><div class="pfbox"><div class="pfh"><b id="pfT"></b><button class="close" id="pfX" aria-label="Fechar">{{x}}</button></div><div id="pfB" class="pfb"></div></div></div>
 <div id="adm" class="ov" hidden><div class="sp2"><div class="ihead"><b class="cond adh">Administração</b><span class="admr" id="admR"></span><div class="tabs" id="admTabs"><button data-t="p" class="on">Jogadores</button><button data-t="e">Eu</button><button data-t="b">Banidos</button><button data-t="c">Clãs</button></div><button class="close" id="admX" aria-label="Fechar">{{x}}</button></div><div class="sbody" id="admB"></div></div></div>

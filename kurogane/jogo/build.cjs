@@ -36,6 +36,8 @@ console.log('index.html', (fs.statSync(path.join(OUT, 'index.html')).size / 1024
 // música do menu: ficheiro ao lado do index.html (no site e nos testes)
 const findA = f => [path.join(__dirname, 'assets', f), path.join(__dirname, '../../sites/kurogane', f), path.join(__dirname, '../../parou-dados/sites/kurogane', f)].find(fs.existsSync);
 for (const f of ['menu.mp3', 'fundo.mp3', 'perigo1.mp3', 'perigo2.mp3', 'perigo3.mp3']) { const a = findA(f); if (a) { fs.copyFileSync(a, path.join(OUT, f)); fs.copyFileSync(a, path.join(OUT, 'web', f)); } }
+// imagens dos menus (cartões dos modos e das novidades)
+{ const md = findA('menu'); if (md) for (const d of [path.join(OUT, 'menu'), path.join(OUT, 'web', 'menu')]) { fs.mkdirSync(d, { recursive: true }); for (const f of fs.readdirSync(md)) if (/\.(jpg|png|webp)$/.test(f)) fs.copyFileSync(path.join(md, f), path.join(d, f)); } }
 // adereços do Blender (props/gen.py): ficheiro ao lado da página
 { const pb = path.join(__dirname, 'props', 'props.json'); if (fs.existsSync(pb)) { fs.copyFileSync(pb, path.join(OUT, 'props.json')); fs.copyFileSync(pb, path.join(OUT, 'web', 'props.json')); } }
 // texturas do chão (ficheiros ao lado: a página carrega-as depois de arrancar)
