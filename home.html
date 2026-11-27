@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mobilidade de Barcelos | TUBA</title>
+  <meta name="description" content="O Tuba é o novo sistema integrado de mobilidade de Barcelos. Consulte horários urbanos e municipais, troca de títulos, postos de venda e contactos.">
+  <meta name="theme-color" content="#00B6EF">
+
+  <link rel="icon" type="image/svg+xml" href="./assets/img/favicon.svg">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="./assets/css/styles.css">
+  <script src="./assets/js/main.js" defer></script>
+</head>
+<body id="topo">
+  <a class="skip-link" href="#conteudo-principal">Saltar para o conteúdo principal</a>
+
+  <header class="site-header" id="site-header">
+    <div class="container header-inner">
+      <a href="#topo" class="brand-logo" aria-label="TUBA — Mobilidade de Barcelos (Início)">
+        <img
+          src="./assets/img/logo-tuba.png"
+          width="1284"
+          height="236"
+          fetchpriority="high"
+          decoding="async"
+          alt="TUBA — Mobilidade de Barcelos"
+        >
+      </a>
+
+      <button
+        type="button"
+        class="menu-toggle"
+        id="menu-toggle"
+        aria-expanded="false"
+        aria-controls="nav-principal"
+        aria-label="Menu"
+      >
+        <svg class="icon-menu" viewBox="0 0 24 24" width="26" height="26" aria-hidden="true">
+          <path d="M3 6h18M3 12h18M3 18h18" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+        </svg>
+        <svg class="icon-close" viewBox="0 0 24 24" width="26" height="26" aria-hidden="true">
+          <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+        </svg>
+      </button>
+
+      <nav class="site-nav" id="nav-principal" aria-label="Navegação principal">
+        <ul class="nav-list">
+          <li><a href="#topo" class="nav-link is-active" aria-current="page">HOME</a></li>
+          <li><a href="#otuba" class="nav-link">O TUBA</a></li>
+          <li><a href="#arede" class="nav-link">A REDE</a></li>
+          <li><a href="#trocadetitulo" class="nav-link">TROCA DE TÍTULOS</a></li>
+          <li><a href="#tuba1" class="nav-link nav-link--highlight">HORÁRIOS</a></li>
+          <li><a href="./assets/docs/RegulamentoTerminalBarcelos.pdf" class="nav-link" target="_blank" rel="noopener">CENTRO COORDENADOR</a></li>
+          <li><a href="#contacto" class="nav-link">CONTACTO</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main id="conteudo-principal">
+    <!-- Hero Banner -->
+    <section class="hero-section" aria-label="Destaque Mobilidade de Barcelos">
+      <h1 class="sr-only">Mobilidade de Barcelos</h1>
+      <div class="container hero-container">
+        <img
+          src="./assets/img/hero-banner.png"
+          width="1024"
+          height="491"
+          fetchpriority="high"
+          decoding="async"
+          class="hero-image"
+          alt="Toca a trocar! Um novo ritmo está a chegar: mais autocarros e mais cobertura"
+        >
+      </div>
+    </section>
+
+    <!-- O TUBA -->
+    <section class="section section--otuba" id="otuba">
+      <div class="container">
+        <div class="intro-notice" hidden>
+          <p>
+            Adquira o seu novo título até ao fim do ano e, em <strong>janeiro,</strong> para viajar,
+            <strong>só precisa de apresentar o cartão de estudante ou o recibo de pagamento do seu passe social.</strong>
+          </p>
+          <p>
+            Os novos cartões estarão disponíveis a partir de fevereiro mas o novo ritmo começa agora!
+          </p>
+        </div>
+
+        <div class="section-heading section-heading--center" data-reveal>
+          <span class="section-watermark" aria-hidden="true">o tuba</span>
+          <h2 class="section-title">O QUE É?</h2>
+        </div>
+
+        <div class="editorial-copy editorial-copy--center" data-reveal>
+          <p>
+            O Tuba é o <strong>novo sistema integrado de mobilidade de Barcelos</strong> que torna a viagem na cidade simples, segura e sempre flexível!
+          </p>
+          <p>
+            Este novo sistema projecta a mobilidade de uma forma integrada, <strong>conjugando uma rede alargada de transportes públicos com vias e modos de mobilidade suave</strong>, como as bicicletas e uma rede de parques de estacionamento. Carro, autocarro, bicicleta, ou até mesmo andar a pé, conjugam-se e complementam-se, trazendo um novo ritmo para Barcelos.
+          </p>
+          <p>
+            Aumenta-se a eficácia das deslocações e, ao mesmo tempo, diminui-se a pegada ecológica das mesmas.<br>
+            <strong>A sustentabilidade</strong> é uma exigência presente para um futuro que se pretende melhor.
+          </p>
+          <p>
+            O Tuba está próximo de todos. É Teu e de Barcelos. Inspirado na cultura local, nomeadamente nos símbolos aguerridos e provocadores do Figurado, ele marca a entrada num ciclo de maior ligação entre a cidade e quem nela vive, trabalha, estuda ou passeia.
+          </p>
+          <p>
+            <strong>Um ritmo que não pára e é para todos.</strong>
+          </p>
+        </div>
+
+        <figure class="feature-banner" data-reveal>
+          <img
+            src="./assets/img/figurado-cores.png"
+            width="1024"
+            height="576"
+            loading="lazy"
+            decoding="async"
+            alt="Figurado tradicional de Barcelos acompanhado pelas cores do sistema TUBA"
+          >
+        </figure>
+      </div>
+    </section>
+
+    <!-- A REDE -->
+    <section class="section section--alt" id="arede">
+      <div class="container split-grid split-grid--text-first">
+        <div class="split-content" data-reveal>
+          <div class="section-heading">
+            <span class="section-watermark" aria-hidden="true">a rede</span>
+            <h2 class="section-title">O QUE MUDA?</h2>
+          </div>
+
+          <div class="editorial-copy">
+            <p>
+              A nova era da mobilidade de Barcelos traz uma rede com uma cobertura alargada, oferecendo <strong>mais opções de viagem e mais veículos ao serviço de todos.</strong>
+            </p>
+            <p>
+              Numa primeira fase, o serviço de autocarros apresentará <strong>5 linhas urbanas e 38 municipais.</strong> Em breve, outras opções de transporte, como as bicicletas, juntam-se para expandir este sistema intermodal que oferece, a todos os utilizadores, possibilidades eficazes de movimento.
+            </p>
+            <p>Todos são convidados a entrar neste ritmo.</p>
+            <p>
+              Como? É muito fácil.<br>
+              Basta <strong>adquirir um novo título</strong> e começar a viajar!
+            </p>
+          </div>
+        </div>
+
+        <figure class="split-media" data-reveal>
+          <img
+            src="./assets/img/icones-mobilidade.png"
+            width="891"
+            height="1024"
+            loading="lazy"
+            decoding="async"
+            alt="Mosaico com ícones de transporte intermodal e mobilidade suave"
+          >
+        </figure>
+      </div>
+    </section>
+
+    <!-- TROCA DE TÍTULOS (COMO FAZER) & HORÁRIOS -->
+    <section class="section" id="trocadetitulo">
+      <div class="container split-grid split-grid--media-first">
+        <figure class="split-media" data-reveal>
+          <img
+            src="./assets/img/entrar-no-ritmo.png"
+            width="882"
+            height="1024"
+            loading="lazy"
+            decoding="async"
+            alt="Já pode entrar no ritmo!"
+          >
+        </figure>
+
+        <div class="split-content">
+          <div class="content-block" data-reveal>
+            <div class="section-heading">
+              <span class="section-watermark" aria-hidden="true">troca de títulos</span>
+              <h2 class="section-title">COMO FAZER?</h2>
+            </div>
+
+            <ul class="info-list">
+              <li>Dirija-se a um dos postos de venda;</li>
+              <li>Leve o cartão de cidadão ou outro documento de identificação válido, e uma fotografia tipo passe;</li>
+              <li>Apresente o título de transporte Barcelos Bus ou Transdev atual;</li>
+              <li>Adquira o novo título.</li>
+            </ul>
+          </div>
+
+          <div class="content-block horarios-anchor" id="tuba1" data-reveal>
+            <div class="section-heading">
+              <span class="section-watermark" aria-hidden="true">consulte</span>
+              <h2 class="section-title">HORÁRIOS?</h2>
+            </div>
+
+            <ul class="schedule-list">
+              <li>
+                <a href="./assets/docs/horarios-urbanos-14092026.pdf" class="schedule-card" target="_blank" rel="noopener">
+                  <svg class="schedule-icon" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+                    <path d="M14 2v6h6M12 18v-6M9.5 15.5L12 18l2.5-2.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                  <span>Urbanos</span>
+                </a>
+              </li>
+              <li>
+                <a href="./assets/docs/horarios-municipais-14092026.pdf" class="schedule-card" target="_blank" rel="noopener">
+                  <svg class="schedule-icon" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+                    <path d="M14 2v6h6M12 18v-6M9.5 15.5L12 18l2.5-2.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                  <span>Municipais</span>
+                </a>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TROCA DE TÍTULOS (COMO VALIDAR & ONDE FAZER) -->
+    <section class="section section--alt" id="validacao">
+      <div class="container split-grid split-grid--media-first">
+        <figure class="split-media" data-reveal>
+          <img
+            src="./assets/img/cartoes-tuba.png"
+            width="1024"
+            height="819"
+            loading="lazy"
+            decoding="async"
+            alt="Cartões de transporte TUBA Pré-comprado e TUBA Passe"
+          >
+        </figure>
+
+        <div class="split-content">
+          <div class="content-block" data-reveal>
+            <div class="section-heading">
+              <span class="section-watermark" aria-hidden="true">troca de títulos</span>
+              <h2 class="section-title">COMO VALIDAR?</h2>
+            </div>
+
+            <ul class="info-list">
+              <li>Os novos cartões estarão disponíveis a partir de fevereiro;</li>
+              <li>Em janeiro, para validar a sua viagem junto do condutor, deve apresentar o cartão de estudante ou, no caso de passes sociais, o recibo de pagamento;</li>
+            </ul>
+          </div>
+
+          <div class="content-block" data-reveal>
+            <h3 class="section-title">ONDE FAZER?</h3>
+
+            <div class="locations-stack">
+              <address class="location-card">
+                <strong>Agente Transdev</strong><br>
+                Avenida Doutor Sidónio Pais<br>
+                4750-423 Barcelos
+              </address>
+
+              <address class="location-card">
+                <strong>Bilheteira Transdev</strong><br>
+                Central de Camionagem de Barcelos
+              </address>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CONTACTO -->
+    <section class="section section--center" id="contacto">
+      <div class="container narrow-container" data-reveal>
+        <div class="section-heading section-heading--center">
+          <span class="section-watermark" aria-hidden="true">contacto</span>
+          <h2 class="section-title">CONTACTO</h2>
+        </div>
+
+        <p class="contact-lead">
+          Tem alguma dúvida?<br>
+          Contacte-nos!
+        </p>
+        <p class="contact-label">Através do número:</p>
+        <p class="contact-phone-wrap">
+          <a href="tel:+351253809600" class="contact-phone">253 809 600</a>
+        </p>
+        <p class="contact-note">(Chamada para a rede fixa nacional)</p>
+      </div>
+    </section>
+
+    <!-- FORMULÁRIO -->
+    <section class="section section--alt section--center" id="formulario">
+      <div class="container narrow-container" data-reveal>
+        <div class="section-heading section-heading--center">
+          <span class="section-watermark" aria-hidden="true">Formulário</span>
+          <h2 class="section-title section-title--pipes">Reclamações | Elogios | Sugestões |Opiniões | Informações</h2>
+        </div>
+
+        <p class="form-cta-wrap">
+          <a href="./assets/docs/FormulariodeReclamacao21042023.pdf" class="form-cta-link" target="_blank" rel="noopener">
+            Preencher Formulário
+          </a>
+        </p>
+
+        <p class="form-helper">Poder ser enviado por email para:</p>
+        <p class="form-email-wrap">
+          <a href="mailto:geral@cm-barcelos.pt" class="email-link">geral@cm-barcelos.pt</a>
+        </p>
+        <p class="form-helper">ou entregue em:</p>
+
+        <div class="delivery-grid">
+          <address class="delivery-card">
+            <h3>Balcão único</h3>
+            <h4>Município de Barcelos</h4>
+            <p>Largo do Município 4750-323 Barcelos</p>
+          </address>
+
+          <address class="delivery-card">
+            <h3>Departamento de Planeamento e Gestão Urbanística</h3>
+            <h4>Casa do Rio</h4>
+            <p>Rua Fernando Magalhães – 4750-290</p>
+          </address>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <a href="#topo" class="footer-logo" aria-label="Voltar ao topo — TUBA Mobilidade de Barcelos">
+        <img
+          src="./assets/img/logo-rodape.png"
+          width="150"
+          height="64"
+          loading="lazy"
+          decoding="async"
+          alt="TUBA — Mobilidade de Barcelos"
+        >
+      </a>
+    </div>
+  </footer>
+</body>
+</html>
