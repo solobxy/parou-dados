@@ -1,14 +1,14 @@
 {
-  "built_at": "2026-11-26T23:57:32.878934+00:00",
-  "db_bytes": 873504768,
-  "gz_bytes": 226016862,
+  "built_at": "2026-11-27T12:56:42.715281+00:00",
+  "db_bytes": 941707264,
+  "gz_bytes": 240539985,
   "totals": {
-    "lines": 2838,
-    "stops": 50690,
-    "trips": 147232,
-    "stop_times": 4617507,
-    "operators": 34,
-    "operators_ok": 31,
+    "lines": 3692,
+    "stops": 73918,
+    "trips": 155135,
+    "stop_times": 4880584,
+    "operators": 42,
+    "operators_ok": 39,
     "operators_desatualizados": 2
   },
   "feeds": [
@@ -21,14 +21,14 @@
       "trips": 2553,
       "valid_until": "2026-12-31",
       "validade": "ok",
-      "dias_validade": 35,
+      "dias_validade": 34,
       "horario_prolongado": false,
       "url": "https://www.metrolisboa.pt/google_transit/googleTransit.zip",
       "last_error": null,
       "servicos_associados": null,
       "servicos_sem_calendario": null,
       "viagens_hoje": 1443,
-      "viagens_amanha": 1443,
+      "viagens_amanha": 1110,
       "dias_uteis_sem_servico": 0
     },
     {
@@ -37,17 +37,17 @@
       "status": "OK",
       "lines": 177,
       "stops": 2346,
-      "trips": 30844,
+      "trips": 30896,
       "valid_until": "2026-12-31",
       "validade": "ok",
-      "dias_validade": 35,
+      "dias_validade": 34,
       "horario_prolongado": false,
       "url": "https://gateway.carris.pt/gateway/gtfs/api/v2.11/GTFS",
       "last_error": null,
       "servicos_associados": null,
       "servicos_sem_calendario": null,
       "viagens_hoje": 11413,
-      "viagens_amanha": 11413,
+      "viagens_amanha": 7215,
       "dias_uteis_sem_servico": 0
     },
     {
@@ -59,14 +59,14 @@
       "trips": 1658,
       "valid_until": "2027-12-11",
       "validade": "ok",
-      "dias_validade": 380,
+      "dias_validade": 379,
       "horario_prolongado": false,
       "url": "https://publico.cp.pt/gtfs/gtfs.zip",
       "last_error": null,
       "servicos_associados": null,
       "servicos_sem_calendario": null,
-      "viagens_hoje": 1355,
-      "viagens_amanha": 1357,
+      "viagens_hoje": 1357,
+      "viagens_amanha": 873,
       "dias_uteis_sem_servico": 0
     },
     {
@@ -78,14 +78,14 @@
       "trips": 260,
       "valid_until": "2027-03-14",
       "validade": "ok",
-      "dias_validade": 108,
+      "dias_validade": 107,
       "horario_prolongado": false,
       "url": "https://www.fertagus.pt/GTFSTMLzip/Fertagus_GTFS.zip",
       "last_error": null,
       "servicos_associados": null,
       "servicos_sem_calendario": null,
       "viagens_hoje": 156,
-      "viagens_amanha": 156,
+      "viagens_amanha": 104,
       "dias_uteis_sem_servico": 0
     },
     {
@@ -97,14 +97,14 @@
       "trips": 937,
       "valid_until": "2028-12-31",
       "validade": "ok",
-      "dias_validade": 766,
+      "dias_validade": 765,
       "horario_prolongado": false,
       "url": "https://api.ttsl.pt/files/GTFS.ZIP",
       "last_error": null,
       "servicos_associados": null,
       "servicos_sem_calendario": null,
       "viagens_hoje": 446,
-      "viagens_amanha": 446,
+      "viagens_amanha": 257,
       "dias_uteis_sem_servico": 0
     },
     {
@@ -116,14 +116,14 @@
       "trips": 1492,
       "valid_until": "2032-12-31",
       "validade": "ok",
-      "dias_validade": 2227,
+      "dias_validade": 2226,
       "horario_prolongado": false,
       "url": "https://mts.pt/imt/MTS-20240129.zip",
       "last_error": null,
       "servicos_associados": null,
       "servicos_sem_calendario": null,
       "viagens_hoje": 676,
-      "viagens_amanha": 676,
+      "viagens_amanha": 468,
       "dias_uteis_sem_servico": 0
     },
     {
@@ -135,14 +135,14 @@
       "trips": 1601,
       "valid_until": "2026-12-31",
       "validade": "ok",
-      "dias_validade": 35,
+      "dias_validade": 34,
       "horario_prolongado": false,
       "url": "https://files.mobilitydatabase.org/mdb-3186/latest.zip",
       "last_error": null,
       "servicos_associados": null,
       "servicos_sem_calendario": null,
       "viagens_hoje": 965,
-      "viagens_amanha": 965,
+      "viagens_amanha": 339,
       "dias_uteis_sem_servico": 0
     },
     {
@@ -154,14 +154,14 @@
       "trips": 12711,
       "valid_until": "2026-12-16",
       "validade": "ok",
-      "dias_validade": 20,
+      "dias_validade": 19,
       "horario_prolongado": false,
       "url": "https://api.stcp.pt:8443/v1/ficheiros/estatico/ficheirozip",
       "last_error": null,
       "servicos_associados": null,
       "servicos_sem_calendario": null,
       "viagens_hoje": 5632,
-      "viagens_amanha": 5632,
+      "viagens_amanha": 3847,
       "dias_uteis_sem_servico": 0
     },
     {
@@ -173,14 +173,14 @@
       "trips": 2941,
       "valid_until": "2026-12-25",
       "validade": "ok",
-      "dias_validade": 29,
+      "dias_validade": 28,
       "horario_prolongado": true,
       "url": "https://dadosabertos.cm-porto.pt/dataset/713a680c-9e19-11f1-84ed-6abdb6d5cf34/resource/28a13723-2af1-4bbb-a2b1-f8b08df8c7e4/download/___",
       "last_error": "O operador não atualizou as datas do calendário para alguns dias (14 dias sem horário publicado); a usar o horário semanal mais recente.",
       "servicos_associados": null,
       "servicos_sem_calendario": null,
       "viagens_hoje": 1153,
-      "viagens_amanha": 1153,
+      "viagens_amanha": 918,
       "dias_uteis_sem_servico": 0
     },
     {
@@ -192,15 +192,15 @@
       "trips": 3794,
       "valid_until": "2027-03-31",
       "validade": "ok",
-      "dias_validade": 125,
+      "dias_validade": 124,
       "horario_prolongado": false,
       "url": "https://www.tub.pt/developer/gtfs/feed/tub.zip",
       "last_error": null,
       "servicos_associados": null,
       "servicos_sem_calendario": null,
-      "viagens_hoje": 0,
-      "viagens_amanha": 2103,
-      "dias_uteis_sem_servico": 1
+      "viagens_hoje": 2103,
+      "viagens_amanha": 895,
+      "dias_uteis_sem_servico": 0
     },
     {
       "id": "guimabus",
@@ -211,14 +211,14 @@
       "trips": 2012,
       "valid_until": "2026-12-31",
       "validade": "ok",
-      "dias_validade": 35,
+      "dias_validade": 34,
       "horario_prolongado": false,
       "url": "https://map.mobility.ubiwhere.com/dataset/ee6d46e4-9f19-4f4a-ab93-1a3cd69df349/resource/08f1ee6c-2d3f-4fb3-a861-5d6fb347a6d4/download/gtfs_gui.zip",
       "last_error": null,
       "servicos_associados": null,
       "servicos_sem_calendario": null,
-      "viagens_hoje": 982,
-      "viagens_amanha": 979,
+      "viagens_hoje": 979,
+      "viagens_amanha": 523,
       "dias_uteis_sem_servico": 0
     },
     {
@@ -230,14 +230,14 @@
       "trips": 644,
       "valid_until": "2024-12-31",
       "validade": "caducado",
-      "dias_validade": -695,
+      "dias_validade": -696,
       "horario_prolongado": true,
       "url": "https://map.mobility.ubiwhere.com/dataset/1842a15c-1aec-4f65-8e29-e57c8b4cbd74/resource/a595ee4b-bf86-4323-b1f4-7e3b3eb00e5e/download/gtfs_bar.zip",
       "last_error": "O operador não atualizou as datas do calendário (terminam em 2024-12-31); a usar o horário semanal em vigor.",
       "servicos_associados": null,
       "servicos_sem_calendario": null,
-      "viagens_hoje": 488,
-      "viagens_amanha": 487,
+      "viagens_hoje": 487,
+      "viagens_amanha": 94,
       "dias_uteis_sem_servico": 0
     },
     {
@@ -249,14 +249,14 @@
       "trips": 2690,
       "valid_until": "2025-12-31",
       "validade": "caducado",
-      "dias_validade": -330,
+      "dias_validade": -331,
       "horario_prolongado": true,
       "url": "https://map.mobility.ubiwhere.com/dataset/fe6015e4-86c7-437a-8d31-10759fe21a1d/resource/7ac67ef8-015c-42e8-9546-f6f0be956270/download/gtfs_vnf.zip",
       "last_error": "O operador não atualizou as datas do calendário (terminam em 2025-12-31); a usar o horário semanal em vigor.",
       "servicos_associados": null,
       "servicos_sem_calendario": null,
       "viagens_hoje": 1637,
-      "viagens_amanha": 1637,
+      "viagens_amanha": 626,
       "dias_uteis_sem_servico": 0
     },
     {
@@ -268,14 +268,14 @@
       "trips": 4490,
       "valid_until": "2026-12-30",
       "validade": "ok",
-      "dias_validade": 34,
+      "dias_validade": 33,
       "horario_prolongado": false,
       "url": "https://gtfs-api.smtuc.pt/api/static/",
       "last_error": null,
       "servicos_associados": null,
       "servicos_sem_calendario": null,
       "viagens_hoje": 2407,
-      "viagens_amanha": 2407,
+      "viagens_amanha": 1293,
       "dias_uteis_sem_servico": 0
     },
     {
@@ -287,14 +287,14 @@
       "trips": 979,
       "valid_until": "2026-12-31",
       "validade": "ok",
-      "dias_validade": 35,
+      "dias_validade": 34,
       "horario_prolongado": false,
       "url": "https://api.planner.agit.pt/v1/datasets/metro-mondego/distributions/netex/download",
       "last_error": null,
       "servicos_associados": null,
       "servicos_sem_calendario": null,
       "viagens_hoje": 452,
-      "viagens_amanha": 452,
+      "viagens_amanha": 302,
       "dias_uteis_sem_servico": 0
     },
     {
@@ -306,14 +306,14 @@
       "trips": 1048,
       "valid_until": "2027-12-31",
       "validade": "ok",
-      "dias_validade": 400,
+      "dias_validade": 399,
       "horario_prolongado": false,
       "url": "https://drive.google.com/uc?export=download&id=1CM8O4ndsfSJhka42SxFUZ9eB-wE10NqX",
       "last_error": null,
       "servicos_associados": null,
       "servicos_sem_calendario": null,
-      "viagens_hoje": 683,
-      "viagens_amanha": 685,
+      "viagens_hoje": 685,
+      "viagens_amanha": 179,
       "dias_uteis_sem_servico": 0
     },
     {
@@ -325,14 +325,14 @@
       "trips": 593,
       "valid_until": "2027-12-31",
       "validade": "ok",
-      "dias_validade": 400,
+      "dias_validade": 399,
       "horario_prolongado": false,
       "url": "https://drive.google.com/uc?export=download&id=1xNHjM7yl-SS1jCkGrvIBBlOhUkFfNBjY",
       "last_error": null,
       "servicos_associados": null,
       "servicos_sem_calendario": null,
       "viagens_hoje": 387,
-      "viagens_amanha": 387,
+      "viagens_amanha": 124,
       "dias_uteis_sem_servico": 0
     },
     {
@@ -344,14 +344,14 @@
       "trips": 541,
       "valid_until": "2027-12-31",
       "validade": "ok",
-      "dias_validade": 400,
+      "dias_validade": 399,
       "horario_prolongado": false,
       "url": "https://drive.google.com/uc?export=download&id=1tkKV40lQlFcLiJhq8SwZQdxNVjFclRCA",
       "last_error": null,
       "servicos_associados": null,
       "servicos_sem_calendario": null,
       "viagens_hoje": 289,
-      "viagens_amanha": 289,
+      "viagens_amanha": 239,
       "dias_uteis_sem_servico": 0
     },
     {
@@ -363,14 +363,14 @@
       "trips": 27,
       "valid_until": "2027-12-31",
       "validade": "ok",
-      "dias_validade": 400,
+      "dias_validade": 399,
       "horario_prolongado": false,
       "url": "https://drive.google.com/uc?export=download&id=1C2KBOVsbm__ymWDgU1bXGbP0Gv3D2yo5",
       "last_error": null,
       "servicos_associados": null,
       "servicos_sem_calendario": null,
       "viagens_hoje": 20,
-      "viagens_amanha": 20,
+      "viagens_amanha": 5,
       "dias_uteis_sem_servico": 0
     },
     {
@@ -382,14 +382,14 @@
       "trips": 5329,
       "valid_until": "2027-08-31",
       "validade": "ok",
-      "dias_validade": 278,
+      "dias_validade": 277,
       "horario_prolongado": false,
       "url": "https://www.horariosdofunchal.pt/googletransit.zip",
       "last_error": null,
       "servicos_associados": null,
       "servicos_sem_calendario": null,
       "viagens_hoje": 2441,
-      "viagens_amanha": 2441,
+      "viagens_amanha": 1556,
       "dias_uteis_sem_servico": 0
     },
     {
@@ -401,14 +401,14 @@
       "trips": 791,
       "valid_until": "2027-08-31",
       "validade": "ok",
-      "dias_validade": 278,
+      "dias_validade": 277,
       "horario_prolongado": false,
       "url": "https://gtfs.tiim.pt/rede-siga/rede-siga-gtfs.zip",
       "last_error": null,
       "servicos_associados": null,
       "servicos_sem_calendario": null,
       "viagens_hoje": 488,
-      "viagens_amanha": 488,
+      "viagens_amanha": 153,
       "dias_uteis_sem_servico": 0
     },
     {
@@ -420,14 +420,14 @@
       "trips": 1514,
       "valid_until": "2027-08-31",
       "validade": "ok",
-      "dias_validade": 278,
+      "dias_validade": 277,
       "horario_prolongado": false,
       "url": "https://gtfs.tiim.pt/rede-siga/rede-siga-gtfs.zip",
       "last_error": null,
       "servicos_associados": null,
       "servicos_sem_calendario": null,
       "viagens_hoje": 757,
-      "viagens_amanha": 757,
+      "viagens_amanha": 409,
       "dias_uteis_sem_servico": 0
     },
     {
@@ -437,7 +437,7 @@
       "lines": 5,
       "stops": 132,
       "trips": 119,
-      "valid_until": "2027-11-26",
+      "valid_until": "2027-11-27",
       "validade": "ok",
       "dias_validade": 365,
       "horario_prolongado": false,
@@ -446,7 +446,159 @@
       "servicos_associados": null,
       "servicos_sem_calendario": null,
       "viagens_hoje": 87,
-      "viagens_amanha": 87,
+      "viagens_amanha": 32,
+      "dias_uteis_sem_servico": 0
+    },
+    {
+      "id": "sit_coimbra",
+      "operator_name": "SIT Metropolitano (Região de Coimbra)",
+      "status": "OK",
+      "lines": 206,
+      "stops": 6415,
+      "trips": 1641,
+      "valid_until": "2027-07-31",
+      "validade": "ok",
+      "dias_validade": 246,
+      "horario_prolongado": false,
+      "url": "https://gtfs.itbusway.eu/GTFS_SIT_Metropolitano.zip",
+      "last_error": null,
+      "servicos_associados": null,
+      "servicos_sem_calendario": null,
+      "viagens_hoje": 1340,
+      "viagens_amanha": 121,
+      "dias_uteis_sem_servico": 0
+    },
+    {
+      "id": "busway_aveiro",
+      "operator_name": "Busway (Região de Aveiro)",
+      "status": "OK",
+      "lines": 107,
+      "stops": 2424,
+      "trips": 963,
+      "valid_until": "2027-09-30",
+      "validade": "ok",
+      "dias_validade": 307,
+      "horario_prolongado": false,
+      "url": "https://gtfs.itbusway.eu/GTFS_CIRA.zip",
+      "last_error": null,
+      "servicos_associados": null,
+      "servicos_sem_calendario": null,
+      "viagens_hoje": 677,
+      "viagens_amanha": 128,
+      "dias_uteis_sem_servico": 0
+    },
+    {
+      "id": "ave_mobilidade",
+      "operator_name": "Ave Mobilidade (CIM do Ave)",
+      "status": "OK",
+      "lines": 96,
+      "stops": 3794,
+      "trips": 1779,
+      "valid_until": "2026-12-31",
+      "validade": "ok",
+      "dias_validade": 34,
+      "horario_prolongado": false,
+      "url": "https://minhoaccesspoint.eu/dataset/d4d6e951-1fb5-45f7-a36f-5484cc79a95d/resource/6c0214b5-cd48-40dd-b62e-47fcacce2af9/download/gtfs_ave_v9.13_20261103-2.zip",
+      "last_error": null,
+      "servicos_associados": null,
+      "servicos_sem_calendario": null,
+      "viagens_hoje": 1197,
+      "viagens_amanha": 279,
+      "dias_uteis_sem_servico": 0
+    },
+    {
+      "id": "mov_cavado",
+      "operator_name": "Mov Cávado (CIM do Cávado)",
+      "status": "OK",
+      "lines": 28,
+      "stops": 1266,
+      "trips": 479,
+      "valid_until": "2026-12-31",
+      "validade": "ok",
+      "dias_validade": 34,
+      "horario_prolongado": false,
+      "url": "https://minhoaccesspoint.eu/dataset/332cc43a-5567-4521-88aa-6a0fc8d11eaa/resource/b42515d8-f6c6-44dd-bba4-1756d675340a/download/gtfs_cav_9.4.2_20251120_l1.zip",
+      "last_error": null,
+      "servicos_associados": null,
+      "servicos_sem_calendario": null,
+      "viagens_hoje": 405,
+      "viagens_amanha": 46,
+      "dias_uteis_sem_servico": 0
+    },
+    {
+      "id": "transdev_cavado",
+      "operator_name": "Transdev & Avic Cávado (CIM do Cávado)",
+      "status": "OK",
+      "lines": 49,
+      "stops": 1563,
+      "trips": 608,
+      "valid_until": "2026-12-31",
+      "validade": "ok",
+      "dias_validade": 34,
+      "horario_prolongado": false,
+      "url": "https://minhoaccesspoint.eu/dataset/332cc43a-5567-4521-88aa-6a0fc8d11eaa/resource/655b4bec-3a0b-45ee-9805-89c0d9cacaab/download/gtfs_cav_v9.4.1_20251120_l2.zip",
+      "last_error": null,
+      "servicos_associados": null,
+      "servicos_sem_calendario": null,
+      "viagens_hoje": 487,
+      "viagens_amanha": 68,
+      "dias_uteis_sem_servico": 0
+    },
+    {
+      "id": "flaviamobil",
+      "operator_name": "Flaviamobil (Alto Tâmega e Barroso)",
+      "status": "OK",
+      "lines": 70,
+      "stops": 635,
+      "trips": 381,
+      "valid_until": "2026-12-31",
+      "validade": "ok",
+      "dias_validade": 34,
+      "horario_prolongado": false,
+      "url": "https://go.tmlmobilidade.pt/hub/api/v1/QCY2N/plans/gtfs",
+      "last_error": null,
+      "servicos_associados": null,
+      "servicos_sem_calendario": null,
+      "viagens_hoje": 362,
+      "viagens_amanha": 0,
+      "dias_uteis_sem_servico": 0
+    },
+    {
+      "id": "cim_ttm",
+      "operator_name": "Terras de Trás-os-Montes (rede regular)",
+      "status": "OK",
+      "lines": 86,
+      "stops": 663,
+      "trips": 380,
+      "valid_until": "2027-08-31",
+      "validade": "ok",
+      "dias_validade": 277,
+      "horario_prolongado": false,
+      "url": "https://transporte-regular.cim-ttm.pt/MobilityHub.Api/api/Gtfs",
+      "last_error": null,
+      "servicos_associados": null,
+      "servicos_sem_calendario": null,
+      "viagens_hoje": 279,
+      "viagens_amanha": 0,
+      "dias_uteis_sem_servico": 0
+    },
+    {
+      "id": "tamega_sousa",
+      "operator_name": "Tâmega e Sousa (Transdev e outros)",
+      "status": "OK",
+      "lines": 212,
+      "stops": 6468,
+      "trips": 1615,
+      "valid_until": "2026-12-31",
+      "validade": "ok",
+      "dias_validade": 34,
+      "horario_prolongado": false,
+      "url": "https://transportes.cimtamegaesousa.pt/Servico/services/consultas.svc/Feed/OpenGTFS",
+      "last_error": null,
+      "servicos_associados": null,
+      "servicos_sem_calendario": null,
+      "viagens_hoje": 1415,
+      "viagens_amanha": 117,
       "dias_uteis_sem_servico": 0
     },
     {
@@ -458,14 +610,14 @@
       "trips": 3782,
       "valid_until": "2027-12-31",
       "validade": "ok",
-      "dias_validade": 400,
+      "dias_validade": 399,
       "horario_prolongado": false,
       "url": "https://files.mobilitydatabase.org/mdb-1272/latest.zip",
       "last_error": null,
       "servicos_associados": null,
       "servicos_sem_calendario": null,
       "viagens_hoje": 2075,
-      "viagens_amanha": 2075,
+      "viagens_amanha": 1278,
       "dias_uteis_sem_servico": 0
     },
     {
@@ -477,14 +629,14 @@
       "trips": 16,
       "valid_until": "2026-12-31",
       "validade": "ok",
-      "dias_validade": 35,
+      "dias_validade": 34,
       "horario_prolongado": false,
       "url": "https://files.mobilitydatabase.org/tld-4257/latest.zip",
       "last_error": null,
       "servicos_associados": null,
       "servicos_sem_calendario": null,
       "viagens_hoje": 8,
-      "viagens_amanha": 8,
+      "viagens_amanha": 4,
       "dias_uteis_sem_servico": 0
     },
     {
@@ -496,14 +648,14 @@
       "trips": 347,
       "valid_until": "2027-12-31",
       "validade": "ok",
-      "dias_validade": 400,
+      "dias_validade": 399,
       "horario_prolongado": false,
       "url": "https://files.mobilitydatabase.org/tld-4316/latest.zip",
       "last_error": null,
       "servicos_associados": null,
       "servicos_sem_calendario": null,
       "viagens_hoje": 212,
-      "viagens_amanha": 212,
+      "viagens_amanha": 96,
       "dias_uteis_sem_servico": 0
     },
     {
@@ -515,14 +667,14 @@
       "trips": 552,
       "valid_until": "2027-12-31",
       "validade": "ok",
-      "dias_validade": 400,
+      "dias_validade": 399,
       "horario_prolongado": false,
       "url": "https://files.mobilitydatabase.org/tld-4317/latest.zip",
       "last_error": null,
       "servicos_associados": null,
       "servicos_sem_calendario": null,
       "viagens_hoje": 423,
-      "viagens_amanha": 423,
+      "viagens_amanha": 129,
       "dias_uteis_sem_servico": 0
     },
     {
@@ -534,14 +686,14 @@
       "trips": 139,
       "valid_until": "2027-12-31",
       "validade": "ok",
-      "dias_validade": 400,
+      "dias_validade": 399,
       "horario_prolongado": false,
       "url": "https://files.mobilitydatabase.org/tld-4318/latest.zip",
       "last_error": null,
       "servicos_associados": null,
       "servicos_sem_calendario": null,
       "viagens_hoje": 80,
-      "viagens_amanha": 80,
+      "viagens_amanha": 47,
       "dias_uteis_sem_servico": 0
     },
     {
@@ -553,14 +705,14 @@
       "trips": 129,
       "valid_until": "2027-12-31",
       "validade": "ok",
-      "dias_validade": 400,
+      "dias_validade": 399,
       "horario_prolongado": false,
       "url": "https://files.mobilitydatabase.org/tld-4319/latest.zip",
       "last_error": null,
       "servicos_associados": null,
       "servicos_sem_calendario": null,
       "viagens_hoje": 75,
-      "viagens_amanha": 75,
+      "viagens_amanha": 54,
       "dias_uteis_sem_servico": 0
     },
     {
@@ -660,12 +812,22 @@
     }
   ],
   "desenhos": {
-    "bytes": 11242737,
+    "bytes": 17846077,
     "por_operador": {
+      "ave_mobilidade": {
+        "viagens": 1779,
+        "com_desenho": 1779,
+        "desenhos": 495
+      },
       "barraqueiro_oeste": {
         "viagens": 119,
         "com_desenho": 119,
         "desenhos": 6
+      },
+      "busway_aveiro": {
+        "viagens": 963,
+        "com_desenho": 963,
+        "desenhos": 410
       },
       "cam_madeira": {
         "viagens": 1514,
@@ -673,13 +835,18 @@
         "desenhos": 342
       },
       "carris": {
-        "viagens": 30844,
-        "com_desenho": 30844,
-        "desenhos": 310
+        "viagens": 30896,
+        "com_desenho": 30042,
+        "desenhos": 295
+      },
+      "cim_ttm": {
+        "viagens": 380,
+        "com_desenho": 380,
+        "desenhos": 380
       },
       "cmh": {
-        "viagens": 50122,
-        "com_desenho": 50122,
+        "viagens": 50127,
+        "com_desenho": 50127,
         "desenhos": 1586
       },
       "cp": {
@@ -691,6 +858,11 @@
         "viagens": 260,
         "com_desenho": 260,
         "desenhos": 4
+      },
+      "flaviamobil": {
+        "viagens": 381,
+        "com_desenho": 381,
+        "desenhos": 135
       },
       "giro": {
         "viagens": 541,
@@ -732,6 +904,11 @@
         "com_desenho": 2690,
         "desenhos": 195
       },
+      "mov_cavado": {
+        "viagens": 479,
+        "com_desenho": 479,
+        "desenhos": 148
+      },
       "mts": {
         "viagens": 1492,
         "com_desenho": 1492,
@@ -747,6 +924,11 @@
         "com_desenho": 791,
         "desenhos": 373
       },
+      "sit_coimbra": {
+        "viagens": 1641,
+        "com_desenho": 1641,
+        "desenhos": 1004
+      },
       "smtuc": {
         "viagens": 4490,
         "com_desenho": 4490,
@@ -761,6 +943,11 @@
         "viagens": 12711,
         "com_desenho": 12711,
         "desenhos": 221
+      },
+      "tamega_sousa": {
+        "viagens": 1615,
+        "com_desenho": 1615,
+        "desenhos": 984
       },
       "tcb_barreiro": {
         "viagens": 1601,
@@ -791,6 +978,11 @@
         "viagens": 129,
         "com_desenho": 129,
         "desenhos": 9
+      },
+      "transdev_cavado": {
+        "viagens": 608,
+        "com_desenho": 608,
+        "desenhos": 308
       },
       "transtejo_soflusa": {
         "viagens": 937,
@@ -826,8 +1018,8 @@
     "unir_linhas_com_desenho": 788
   },
   "verificacao": {
-    "data_hoje": "2026-11-26",
-    "data_amanha": "2026-11-27",
+    "data_hoje": "2026-11-27",
+    "data_amanha": "2026-11-28",
     "dias_uteis_verificados": 4,
     "porto": {
       "stcp": {
@@ -1008,13 +1200,13 @@
           "total": 385
         },
         "servicos_com_data_hoje": [
-          "EU",
-          "FU",
-          "BexpU",
-          "BU",
-          "DU",
+          "CU",
           "AU",
-          "CU"
+          "FU",
+          "BU",
+          "BexpU",
+          "DU",
+          "EU"
         ],
         "viagens_por_servico": [
           {
@@ -1072,12 +1264,12 @@
   "andante": {
     "fonte_zonas": "https://andante.pt/titulos-ocasionais/",
     "fonte_precos": "https://andante.pt/comprar/andante-azul/",
-    "zonas_obtidas": "2026-11-26T23:57:14+00:00",
+    "zonas_obtidas": "2026-11-27T12:56:25+00:00",
     "n_zonas": 154,
     "n_paragens": 13711,
     "precos_em_vigor_desde": "2026-01-01",
-    "precos_obtidos": "2026-11-26T23:57:14+00:00",
+    "precos_obtidos": "2026-11-27T12:56:25+00:00",
     "z2": 1.4
   },
-  "duration_s": 292
+  "duration_s": 493
 }
