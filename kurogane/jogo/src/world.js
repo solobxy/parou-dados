@@ -243,9 +243,9 @@ export function buildWorld(scene, mats, A, opt = {}) {
         segs.push([cur, a1, null]);
         const piece = (s0, s1, y0, y1, hex, m = 'v', inCut = false) => {
           if (s1 - s0 < 0.01 || y1 - y0 < 0.01) return; const Ln = s1 - s0, c = (s0 + s1) / 2;
-          b.cut = inCut ? gt : gk;
+          b.cut = inCut ? gt : gk; b.tid = hex === wall && m === 'v' ? 4 : 0; // paredes com textura de betão (poros, manchas, fissuras)
           if (horiz) b.box(Ln, y1 - y0, t, c, (y0 + y1) / 2, fixed, hex, { mat: m }); else b.box(t, y1 - y0, Ln, fixed, (y0 + y1) / 2, c, hex, { mat: m });
-          b.cut = gk;
+          b.cut = gk; b.tid = 0;
         };
         const col = (s0, s1, k, hh = h) => { if (horiz) rect(s0, fixed - t / 2, s1, fixed + t / 2, k, hh); else rect(fixed - t / 2, s0, fixed + t / 2, s1, k, hh); };
         const pl = shade(wall, 0.7), jt = t + 0.08;
@@ -538,7 +538,8 @@ export function buildWorld(scene, mats, A, opt = {}) {
   }
 
   // ============ FLORESTA, VILAS E MONUMENTOS ============
-  const woodFence = (x0, z0, x1, z1) => { const L = Math.hypot(x1 - x0, z1 - z0), n = Math.ceil(L / 2); const ry = Math.atan2(x1 - x0, z1 - z0); for (let i = 0; i <= n; i++) b.box(0.12, 1.1, 0.12, x0 + (x1 - x0) * i / n, 0.55, z0 + (z1 - z0) * i / n, 0x6a4a2e); for (const y of [0.4, 0.85]) b.box(0.06, 0.12, L, (x0 + x1) / 2, y, (z0 + z1) / 2, 0x7a5a3a, { ry }); };
+  const woodFence = (x0, z0, x1, z1) => { b.tid = 1; try { woodFence0(x0, z0, x1, z1); } finally { b.tid = 0; } }; // vedações com textura de madeira
+  const woodFence0 = (x0, z0, x1, z1) => { const L = Math.hypot(x1 - x0, z1 - z0), n = Math.ceil(L / 2); const ry = Math.atan2(x1 - x0, z1 - z0); for (let i = 0; i <= n; i++) b.box(0.12, 1.1, 0.12, x0 + (x1 - x0) * i / n, 0.55, z0 + (z1 - z0) * i / n, 0x6a4a2e); for (const y of [0.4, 0.85]) b.box(0.06, 0.12, L, (x0 + x1) / 2, y, (z0 + z1) / 2, 0x7a5a3a, { ry }); };
   const cabin = (cx, cz, name = 'Cabana') => {
     const x0 = cx - 4, x1 = cx + 4, z0 = cz - 3.5, z1 = cz + 3.5, doorAt = cx;
     shell(x0, z0, x1, z1, { name, wall: 0x7a5a3a, inner: 0x8a6a4a, floor: 0x6a4a2e, h: 2.9, roof: 'kawara', mapc: '#5a4632', trim: 0x3a2a1c,

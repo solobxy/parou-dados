@@ -146,9 +146,14 @@ async function boot() {
       const streak = vn(u, v * 0.06 + 0.3, 32, 7) * 0.7 + vn(u, v, 8, 8) * 0.3; // escorridos (verticais)
       im.data[o] = big * 255; im.data[o + 1] = fine * 255; im.data[o + 2] = streak * 255; im.data[o + 3] = 255; }
     x.putImageData(im, 0, 0); const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.generateMipmaps = true; t.minFilter = THREE.LinearMipmapLinearFilter; t.anisotropy = 2; return t; })();
-  const detail = (m, amt, key) => { m.onBeforeCompile = sh => { sh.uniforms.uDet = { value: DET };
-      sh.vertexShader = 'varying vec3 vDetP; varying vec3 vDetN;\n' + sh.vertexShader.replace('#include <project_vertex>', '#include <project_vertex>\n vec4 dwp = vec4( transformed, 1.0 );\n#ifdef USE_INSTANCING\n dwp = instanceMatrix * dwp;\n#endif\n vDetP = ( modelMatrix * dwp ).xyz; vDetN = normalize( mat3( modelMatrix ) * objectNormal );');
-      sh.fragmentShader = 'uniform sampler2D uDet; varying vec3 vDetP; varying vec3 vDetN;\n' + sh.fragmentShader.replace('#include <color_fragment>', `#include <color_fragment>
+  // texturas dos objetos (madeira, ferrugem, metal pintado, betão): 4 camadas numa imagem pequena; até chegar, cinzento neutro
+  const PTEX = { value: (() => { const t = new THREE.DataArrayTexture(new Uint8Array([128, 128, 128, 255]), 1, 1, 1); t.needsUpdate = true; return t; })() };
+  { const im = new Image(); im.onload = () => { try { const c = document.createElement('canvas'); c.width = im.width; c.height = im.height; const x = c.getContext('2d', { willReadFrequently: true }); x.drawImage(im, 0, 0); const d = x.getImageData(0, 0, c.width, c.height).data;
+      const S = c.width, t = new THREE.DataArrayTexture(new Uint8Array(d.buffer), S, S, c.height / S); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.generateMipmaps = true; t.minFilter = THREE.LinearMipmapLinearFilter; t.magFilter = THREE.LinearFilter; t.anisotropy = 4; t.needsUpdate = true; PTEX.value = t; } catch (e) { } }; im.src = 'tex/props.webp'; }
+  const detail = (m, amt, key) => { m.onBeforeCompile = sh => { sh.uniforms.uDet = { value: DET }; sh.uniforms.uPTex = PTEX;
+      sh.vertexShader = 'attribute float tid; varying float vTid; varying vec3 vDetP; varying vec3 vDetN;\n' + sh.vertexShader.replace('#include <project_vertex>', '#include <project_vertex>\n vTid = tid; vec4 dwp = vec4( transformed, 1.0 );\n#ifdef USE_INSTANCING\n dwp = instanceMatrix * dwp;\n#endif\n vDetP = ( modelMatrix * dwp ).xyz; vDetN = normalize( mat3( modelMatrix ) * objectNormal );');
+      sh.fragmentShader = 'uniform sampler2D uDet; uniform highp sampler2DArray uPTex; varying float vTid; varying vec3 vDetP; varying vec3 vDetN;\n' + sh.fragmentShader.replace('#include <color_fragment>', `#include <color_fragment>
+      float wTexR = 0.0;
       { vec3 an = abs( vDetN ); bool up = an.y > 0.6; vec2 du = up ? vDetP.xz : ( an.x > an.z ? vDetP.zy : vDetP.xy );
         vec4 d1 = texture2D( uDet, du * 0.21 ), d2 = texture2D( uDet, du * 1.37 );
         float k = ( d1.r - 0.5 ) * 0.34 + ( d2.g - 0.5 ) * 0.22;
@@ -159,8 +164,10 @@ async function boot() {
             if ( lum > 0.45 && sat < 0.12 ) { vec2 g = abs( fract( vDetP.xz / 0.6 ) - 0.5 ); float ln = smoothstep( 0.485, 0.497, max( g.x, g.y ) ); k -= ln * 0.22; k += ( texture2D( uDet, floor( vDetP.xz / 0.6 ) * 0.137 ).g - 0.5 ) * 0.08; }
             else if ( c0.r > c0.g && c0.g > c0.b && sat > 0.08 ) { float row = floor( vDetP.z / 0.19 ), off = fract( row * 0.618 ) * 1.7; float seam = abs( fract( vDetP.z / 0.19 ) - 0.5 ), joint = abs( fract( ( vDetP.x + off ) / 1.7 ) - 0.5 );
               k -= smoothstep( 0.46, 0.5, seam ) * 0.2 + smoothstep( 0.485, 0.5, joint ) * 0.16; k += ( texture2D( uDet, vec2( row * 0.173, vDetP.x * 0.05 ) ).g - 0.5 ) * 0.16 + ( texture2D( uDet, vec2( vDetP.x * 0.9, vDetP.z * 6.0 ) ).g - 0.5 ) * 0.08; } } }
-        diffuseColor.rgb *= 1.0 + k * ${amt.toFixed(2)}; }`).replace('#include <roughnessmap_fragment>', `#include <roughnessmap_fragment>
-      roughnessFactor = clamp( roughnessFactor + ( texture2D( uDet, ( abs( vDetN.y ) > 0.6 ? vDetP.xz : vDetP.xy + vDetP.zy ) * 0.9 ).g - 0.5 ) * 0.18, 0.04, 1.0 );`); };
+        diffuseColor.rgb *= 1.0 + k * ${amt.toFixed(2)};
+        if ( vTid > 0.5 ) { vec4 tx = texture( uPTex, vec3( du, floor( vTid + 0.5 ) - 1.0 ) ); float rs = clamp( ( 1.0 - tx.a ) * 1.275, 0.0, 1.0 ); // textura do objeto: madeira, ferrugem, metal pintado, betão
+          diffuseColor.rgb *= tx.rgb * 2.0; diffuseColor.rgb = mix( diffuseColor.rgb, vec3( 0.26, 0.11, 0.045 ) * ( 0.55 + 0.9 * tx.r ), rs ); wTexR = rs * 0.35 - ( tx.r - 0.5 ) * 0.3; } }`).replace('#include <roughnessmap_fragment>', `#include <roughnessmap_fragment>
+      roughnessFactor = clamp( roughnessFactor + wTexR + ( texture2D( uDet, ( abs( vDetN.y ) > 0.6 ? vDetP.xz : vDetP.xy + vDetP.zy ) * 0.9 ).g - 0.5 ) * 0.18, 0.04, 1.0 );`).replace('#include <metalnessmap_fragment>', '#include <metalnessmap_fragment>\n      metalnessFactor *= 1.0 - clamp( wTexR * 2.0, 0.0, 0.8 );'); };
     m.customProgramCacheKey = () => 'det-' + key; return m; };
   const wmats = { ...mats, v: detail(S(), 1, 'v'), vf: detail(S({ flatShading: true }), 1, 'vf'), m: detail(S({ roughness: 0.38, metalness: 0.55 }), 0.55, 'm') }; // só o que está construído no mapa (personagens e armas ficam sem isto)
   const cmats = { ...mats, v: wear(S(), 'cv', 0, 2.6), vf: wear(S({ flatShading: true }), 'cvf', 0, 2.6), m: wear(S({ roughness: 0.32, metalness: 0.62, envMapIntensity: 1.35 }), 'cm', 1, 2) }; // personagens, proteções, armas e sacos: desgaste e brilho no metal
