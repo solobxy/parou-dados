@@ -69,6 +69,7 @@ jobs:
           python auditoria/test_caminhos_a_pe.py
           python auditoria/test_metro_mondego.py
           python auditoria/test_barraqueiro_oeste.py
+          python auditoria/test_azoresbus.py
           python auditoria/test_inventario.py
           python auditoria/test_desenhos_autocarros.py
           python auditoria/test_unir_horarios.py

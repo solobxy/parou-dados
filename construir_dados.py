@@ -38,6 +38,7 @@ from zoneinfo import ZoneInfo
 
 from netex_gtfs import netex_para_gtfs
 import barraqueiro_oeste
+import azoresbus
 import andante
 
 OUT_DB = "gtfs.db"
@@ -158,6 +159,11 @@ SEED_FEEDS = [
     # Pedido de GTFS feito ao operador a 24/11/2026; quando houver ficheiro oficial, passa a ser esse.
     {"id": "barraqueiro_oeste", "operator_name": "Barraqueiro Oeste (TUT Torres Vedras)", "mode": "Autocarro",
      "formato": "pdf_barraqueiro", "url": barraqueiro_oeste.PAGINA},
+    # AzoresBus (Vale do Ave Açores): todas as carreiras de São Miguel desde 1/9/2026. Sem GTFS publicado; o construtor
+    # lê a API pública do mapa do operador (paragens com coordenadas, viagens de cada dia e horas em cada paragem) e
+    # monta o GTFS dos próximos dias (azoresbus.py). O Cloudflare do operador bloqueia o servidor, não o construtor.
+    {"id": "azoresbus", "operator_name": "AzoresBus (São Miguel)", "mode": "Autocarro",
+     "formato": "api_azoresbus", "url": azoresbus.PAGINA},
     # Redes intermunicipais publicadas no Ponto de Acesso Nacional (NAP Portugal, nap-portugal.imt-ip.pt), verificadas a
     # 27/11/2026. Em ficheiros com a rede de paragens da região inteira, «agencias» deixa só as paragens que as linhas usam.
     {"id": "sit_coimbra", "operator_name": "SIT Metropolitano (Região de Coimbra)", "mode": "Autocarro",
@@ -202,7 +208,7 @@ DISCOVERY_SKIP = [
     "guimabus", "tuba", "mobiave", "smtuc", "transportes urbanos de coimbra", "vamus",
     "proximo", "giro", "sobe e desce", "horarios do funchal", "flixbus",
     "metropolitanos de lisboa", "metro mondego", "rodoeste", "rede siga", "companhia de autocarros da madeira",
-    "barraqueiro", "busway", "sit metropolitano", "ave mobilidade", "cavado", "flaviamobil", "tras-os-montes", "tamega", "rodoviaria do lis", "mobilis", "pombus",
+    "barraqueiro", "busway", "sit metropolitano", "ave mobilidade", "cavado", "flaviamobil", "tras-os-montes", "tamega", "rodoviaria do lis", "mobilis", "pombus", "azoresbus", "vale do ave acores",
 ]
 
 # Só se guardam viagens que funcionam entre ontem e daqui a WINDOW_DAYS dias
@@ -1334,6 +1340,16 @@ def process_feed(conn, feed, today_dt, have_prev):
 
     def attempts():
         """Devolve (url, bytes, status, ms, fim_do_calendario) pela ordem a tentar."""
+        if feed.get("formato") == "api_azoresbus":
+            # Horários da API do operador, dia a dia: devolve já o GTFS montado
+            t0 = time.time()
+            try:
+                body = azoresbus.descarregar_e_converter(log=log, hoje=today_dt.date(), dias=WINDOW_DAYS)
+                yield feed["url"], body, 200, int((time.time() - t0) * 1000), None
+            except Exception as err:  # noqa: BLE001
+                errors.append(f"{feed['url']} -> {err}")
+                log_fetch(conn, fid, feed["url"], 0, 0, 0, "Falha", str(err))
+            return
         if feed.get("formato") == "pdf_barraqueiro":
             # Horários em PDF: descarrega a página e os PDFs e devolve já o GTFS convertido
             t0 = time.time()
