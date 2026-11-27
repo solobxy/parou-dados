@@ -14,17 +14,17 @@ const cloudTex = () => {
 };
 export function makeSky() {
   const U = { uZen: { value: new THREE.Vector3() }, uHor: { value: new THREE.Vector3() }, uSun: { value: new THREE.Vector3() }, uSunDir: { value: new THREE.Vector3(0, 1, 0) },
-    uDay: { value: 1 }, uNight: { value: 0 }, uDusk: { value: 0 }, uCloud: { value: 0.35 }, uT: { value: 0 }, uTex: { value: cloudTex() } };
+    uMoon: { value: 0.99905 }, uDay: { value: 1 }, uNight: { value: 0 }, uDusk: { value: 0 }, uCloud: { value: 0.35 }, uT: { value: 0 }, uTex: { value: cloudTex() } };
   const mat = new THREE.ShaderMaterial({ uniforms: U, depthWrite: false, fog: false, toneMapped: false, side: THREE.BackSide,
     vertexShader: 'varying vec3 vDir; void main(){ vDir = position; vec4 p = projectionMatrix * viewMatrix * modelMatrix * vec4(position, 1.0); gl_Position = p; gl_Position.z = p.w * 0.99999; }',
-    fragmentShader: `uniform vec3 uZen, uHor, uSun, uSunDir; uniform float uDay, uNight, uDusk, uCloud, uT; uniform sampler2D uTex; varying vec3 vDir;
+    fragmentShader: `uniform vec3 uZen, uHor, uSun, uSunDir; uniform float uMoon, uDay, uNight, uDusk, uCloud, uT; uniform sampler2D uTex; varying vec3 vDir;
       void main(){ vec3 d = normalize(vDir); float h = d.y, hp = max(h, 0.0);
         vec3 col = mix(uHor, uZen, pow(hp, 0.5));
         float sd = max(dot(d, uSunDir), 0.0), up = smoothstep(-0.08, 0.04, uSunDir.y);
         col += uSun * (pow(sd, 5.0) * (0.12 + 0.5 * uDusk) * (1.0 - 0.6 * hp) + pow(sd, 90.0) * 0.55) * up;
         float disc = smoothstep(0.99935, 0.99965, sd) * up;
         vec3 md = -uSunDir; float mm = max(dot(d, md), 0.0);
-        col += vec3(0.80, 0.84, 0.95) * smoothstep(0.99905, 0.99935, mm) * uNight + vec3(0.16, 0.2, 0.32) * pow(mm, 40.0) * uNight;
+        float mk = (1.0 - uMoon) / 0.00095; col += vec3(0.80, 0.84, 0.95) * smoothstep(uMoon, uMoon + 0.0003 * mk, mm) * uNight * (0.85 + 0.15 * texture2D(uTex, d.xy * 9.0).g) + vec3(0.16, 0.2, 0.32) * pow(mm, 40.0 / mk) * uNight;
         if (uNight > 0.02 && h > 0.0) { vec3 q = floor(d * 320.0); float s = fract(sin(dot(q, vec3(12.9898, 78.233, 37.719))) * 43758.5453); col += vec3(0.9) * step(0.9972, s) * uNight * smoothstep(0.0, 0.25, h); }
         float cv = 0.0;
         if (h > -0.02) { vec2 uv = d.xz / (hp + 0.11);
