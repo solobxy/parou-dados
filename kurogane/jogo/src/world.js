@@ -50,7 +50,7 @@ export function buildWorld(scene, mats, A, opt = {}) {
   const ASPH = 0x8a8b8e, CONC = 0xb9b4aa, TILE = 0xd6cfc0, CURB = 0x9d9a93, WHITE = 0xe9e7e1, YEL = 0xe0b23a;
 
   // ---------- chão
-  b.floor(-MAP - 30, -MAP - 30, MAP + 30, MAP + 30, -0.02, 0xffffff, 'grass');
+  if (opt.arena || opt.flat) b.floor(-MAP - 30, -MAP - 30, MAP + 30, MAP + 30, -0.02, 0xffffff, 'grass'); // fora da arena o chão é o relevo (main.js)
   b.floor(CITY.x0, CITY.z0, CITY.x1, CITY.z1, 0.0, CONC, 'conc');
   mp(-MAP, -MAP, MAP, MAP, '#3f5531'); mp(CITY.x0, CITY.z0, CITY.x1, CITY.z1, '#8e8a82');
 

@@ -37,6 +37,7 @@ server.listen(0, async () => {
     // A dispara 3 tiros de pistola ao peito do Bruno (sem colete): morre ao 3.º
     await B.ev(() => { G.inv.eq.vest = null; G.inv.eq.head = null; G.p.hp = 100; });
     await W(400);
+    console.log('DBG', await A.ev(() => { const r = [...G.net.R.values()][0], T = G.TER; return JSON.stringify({ a: [G.p.x, G.p.y, G.p.z, T.at(G.p.x, G.p.z)], b: r && [r.x, r.y, r.z, T.at(r.x, r.z)], mid: r && T.at((r.x + G.p.x) / 2, (r.z + G.p.z) / 2) }); }));
     const gun = await A.ev(() => { for (let i = 0; i < 6; i++) if (G.inv.belt[i] && /pistola/.test(G.inv.belt[i].k)) { G.sel = i; return G.inv.belt[i].k + ' ' + G.inv.belt[i].ak; } return null; });
     console.log('arma do A:', gun);
     const hps = [];
@@ -77,7 +78,7 @@ server.listen(0, async () => {
     const sl = await A.ev(() => [...document.querySelectorAll('.ntag.sleep')].map(e => e.textContent + (e.style.display === 'none' ? ' (escondido)' : '')).join(','));
     console.log('a dormir:', sl); ok(/Bruno · a dormir/.test(sl), 'o Bruno ficou a dormir no mundo');
     await A.page.screenshot({ path: path.join(outDir, 'net-dormir.png') });
-    const nb0 = await A.ev(() => G.bags.length); let k = 0; for (; k < 8; k++) { const b = await A.ev(() => G.bags.length); if (b > nb0) break; await A.ev(s => { G.fp = false; const t = G.net.targets().find(q => q.lie) || { x: s[0] + 6, z: s[1], yaw: 0 }; G.aimS.Aw = new G.V3(t.x - Math.sin(t.yaw) * 1.3, 0.22, t.z - Math.cos(t.yaw) * 1.3); /* peito de quem dorme (de costas, a cabeça para trás dos pés) */ G.p.reload = 0; G.p.cd = 0; G.inv.belt[G.sel].ammo = 5; return G.dbg.fire(); }, spot); await W(600); }
+    const nb0 = await A.ev(() => G.bags.length); let k = 0; for (; k < 8; k++) { const b = await A.ev(() => G.bags.length); if (b > nb0) break; await A.ev(s => { G.fp = false; const t = G.net.targets().find(q => q.lie) || { x: s[0] + 6, z: s[1], y: G.groundY(s[0] + 6, s[1]) + 0.13, yaw: 0 }; G.aimS.Aw = new G.V3(t.x - Math.sin(t.yaw) * 1.3, (t.y || 0) + 0.22, t.z - Math.cos(t.yaw) * 1.3); /* peito de quem dorme (de costas, a cabeça para trás dos pés) */ G.p.reload = 0; G.p.cd = 0; G.inv.belt[G.sel].ammo = 5; return G.dbg.fire(); }, spot); await W(600); }
     const bl = await A.ev(n0 => G.bags.length > n0 ? G.bags[G.bags.length - 1].label : '', nb0);
     ok(/Bruno/.test(bl), `matou quem dormia em ${k} tiros e ficou a mochila (${bl})`);
     // o Bruno volta: sabe que o mataram a dormir

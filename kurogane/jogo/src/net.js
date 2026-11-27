@@ -28,7 +28,7 @@ export function makeNet({ G, scene, mkRemote, audio, Conta, enc, dec, hurt, die,
   const delRemote = id => { const r = R.get(id); if (!r) return; scene.remove(r.b.root); r.el.remove(); R.delete(id); };
   const setSleepers = list => {
     for (const s of sleepers.values()) { scene.remove(s.b.root); s.el.remove(); } sleepers.clear();
-    for (const [k, x, z, lv, yaw, name, look, clan] of list) { const b = mkRemote(look); b.pose(0, 0, 'none'); b.root.position.set(x, 0.16, z); b.root.rotation.set(-Math.PI / 2, yaw, 0, 'YXZ'); b.root.visible = false; sleepers.set(k, { x, z, lv, yaw, b, name, el: tag(name + ' · a dormir', 'sleep') }); }
+    for (const [k, x, z, lv, yaw, name, look, clan] of list) { const b = mkRemote(look); b.pose(0, 0, 'none'); const gy = lv ? 0 : (G.groundY ? G.groundY(x, z, 0) - 0.03 : 0); b.root.position.set(x, gy + 0.16, z); b.root.rotation.set(-Math.PI / 2, yaw, 0, 'YXZ'); b.root.visible = false; sleepers.set(k, { x, z, lv, yaw, b, gy, name, el: tag(name + ' · a dormir', 'sleep') }); }
   };
   const clearAll = () => { for (const id of [...R.keys()]) delRemote(id); setSleepers([]); };
   // deixa de estar ligado: os sacos do servidor saem e as caixas voltam a ser deste aparelho
@@ -134,7 +134,7 @@ export function makeNet({ G, scene, mkRemote, audio, Conta, enc, dec, hurt, die,
   // vt: a hora (do relógio de cada alvo) a que o estavas a ver quando disparaste: o servidor põe-no onde o viste
   N.shot = (O, D, k, n, L, sup, ds, Ls) => { const vt = []; for (const r of R.values()) if (r.b.root.visible && r.rt > 0 && vt.length < 12) vt.push([r.id, Math.round(r.rt)]); send({ t: 'shot', o: [+O.x.toFixed(2), +O.y.toFixed(2), +O.z.toFixed(2)], d: v4(D), k, n, L: Math.round(L), sup: !!sup, ds: ds ? ds.map(v4) : undefined, Ls: Ls ? Ls.map(v => Math.round(v * 10) / 10) : undefined, vt }); };
   // quem está à vista para levar um tiro (para a mira e para o rasto pararem neles)
-  N.targets = () => { const out = []; for (const r of R.values()) if (r.b.root.visible && r.al !== false) out.push({ x: r.x, y: r.y || 0, z: r.z, sc: r.sc || 0, yaw: r.b.root.rotation.y - (r.lr || 0), lr: r.lr || 0, an: r.an | 0, mv: r.mvS || 0 }); for (const s of sleepers.values()) if (s.b.root.visible) out.push({ x: s.x, y: 0.16, z: s.z, yaw: s.yaw || 0, lie: 1, lying: true }); return out; };
+  N.targets = () => { const out = []; for (const r of R.values()) if (r.b.root.visible && r.al !== false) out.push({ x: r.x, y: r.y || 0, z: r.z, sc: r.sc || 0, yaw: r.b.root.rotation.y - (r.lr || 0), lr: r.lr || 0, an: r.an | 0, mv: r.mvS || 0 }); for (const s of sleepers.values()) if (s.b.root.visible) out.push({ x: s.x, y: (s.gy || 0) + 0.16, z: s.z, yaw: s.yaw || 0, lie: 1, lying: true }); return out; };
   N.died = by => send(G.ARENA ? { t: 'died', by: by || null } : { t: 'died', it: G.inv.all().map(enc), force: 1 });
   // mundo partilhado
   N.cyc = () => (((Date.now() + off - cyc0) / 1000) % 1920 + 1920) % 1920;

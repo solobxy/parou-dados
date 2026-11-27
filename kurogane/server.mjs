@@ -12,6 +12,7 @@ import { VT, vt } from './jogo/src/vtypes.js';
 import { TRADERS, PRICE, SELL, TRADE_R } from './jogo/src/traders.js';
 import { makeArena } from './arena.mjs';
 import { capsules, hitCapsules, rewind, histPush } from './jogo/src/hitbox.js';
+import { makeTerrain, terrainInput } from './jogo/src/terrain.js';
 
 const PORT = +process.env.PORT || 3190, DIR = process.env.STATE_DIRECTORY || path.join(process.cwd(), 'dados');
 const FILE = path.join(DIR, 'estado.json'), SLEEP_MS = 72 * 3600e3, BAG_MS = 45 * 60e3, MAXP = 60;
@@ -190,6 +191,9 @@ const depNearOther = (x, z, tok) => { for (const [i, j, F] of fundsNear(x, z, GA
 // onde se pode construir: o mapa vem de mapa.json (exportado do jogo); só vale se for da mesma versão do mundo
 let MAPA = null; try { MAPA = JSON.parse(fs.readFileSync(new URL('./mapa.json', import.meta.url), 'utf8')); MAPA.grid = new Map(); for (const r of [...MAPA.rects, ...MAPA.pads]) for (let ix = Math.floor((r[0] - 2) / 16); ix <= Math.floor((r[2] + 2) / 16); ix++) for (let iz = Math.floor((r[1] - 2) / 16); iz <= Math.floor((r[3] + 2) / 16); iz++) { const k = ix * 1000 + iz; if (!MAPA.grid.has(k)) MAPA.grid.set(k, []); MAPA.grid.get(k).push(r); } } catch (e) { console.log('mapa.json:', e.message); }
 const mapOk = () => !!MAPA && S.w.wv === MAPA.wv;
+// relevo (igual ao do jogo, feito a partir do mapa): para as balas não passarem através das colinas
+let TER = null; try { if (MAPA) { const t0 = Date.now(); TER = makeTerrain(terrainInput(MAPA.zones, MAPA.roads, MAPA.water, MAPA.rects, MAPA.pads)); console.log('kurogane: relevo em', Date.now() - t0, 'ms, soma', TER.sum); } } catch (e) { console.error('relevo', e && e.message); }
+const terStop = (O, d, L) => { if (!TER || !mapOk()) return L; let f0 = O[1] - TER.at(O[0], O[2]); if (f0 < -0.5) return L; for (let t = 2; t <= L; t += 2) { const f = O[1] + d[1] * t - TER.at(O[0] + d[0] * t, O[2] + d[2] * t); if (f < -0.05) return t; } return L; };
 // água (lagos e rios), igual à do jogo: lagos com margem ondulada, rios como linhas com largura
 const lakeRS = (L, a) => 1 + 0.1 * Math.sin(3 * a + L[4]) + 0.06 * Math.sin(5 * a + L[5]) + 0.03 * Math.sin(9 * a + L[4] * 2);
 const wetS = (x, z, m = 0) => { const Wt = MAPA && MAPA.water; if (!Wt) return false;
@@ -537,7 +541,7 @@ const shot = (c, m) => {
   for (let i = 0; i < n; i++) {
     let d = D; if (ds && Array.isArray(ds[i]) && ds[i].length === 3) { const q = ds[i].map(v => num(v, -1, 1)), ql = Math.hypot(q[0], q[1], q[2]) || 1; q[0] /= ql; q[1] /= ql; q[2] /= ql; if (q[0] * D[0] + q[1] * D[1] + q[2] * D[2] > Math.cos(0.3)) d = q; }
     else if (n > 1) { const sp = 0.02; d = [D[0] + (Math.random() - 0.5) * sp * 2, D[1] + (Math.random() - 0.5) * sp * 2, D[2] + (Math.random() - 0.5) * sp * 2]; }
-    const Li = Ls ? Math.min(L, num(Ls[i], 0, 900, L)) : L;
+    const Li = Math.min(Ls ? Math.min(L, num(Ls[i], 0, 900, L)) : L, terStop(O, d, L)); // o relevo também para a bala (não se acerta através de uma colina)
     const h = hitTest(O, d, k, Li, tgt, cars); if (!h) continue; const T = h.T;
     if (h.car) carShot(c, h.car, h.dmg * Math.max(0.3, h.v) * 0.55 * (CARX[k] || 1));
     if (!T) continue;

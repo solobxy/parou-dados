@@ -77,7 +77,10 @@ export function makeCars({ scene, G, W, collide, solidAt, tallAt = () => 0, grou
     c.m = mkMesh(k, c.col); list.push(c); byId.set(id, c); setRect(c); place(c); return c;
   };
   const del = c => { if (c.rc) removeRect(c.rc); scene.remove(c.m.g); const i = list.indexOf(c); if (i >= 0) list.splice(i, 1); byId.delete(c.id); };
-  const place = c => { c.m.g.position.set(c.x, groundY(c.x, c.z, 0) + (c.alt || 0), c.z); c.m.g.rotation.set(VT[c.k].fly ? -(c.pt || 0) : 0, c.yaw, VT[c.k].two ? (c.seats[0] ? (c.lean || 0) : 0.28) : VT[c.k].fly ? c.rl || 0 : 0, 'YXZ'); }; // motas e bicicletas paradas ficam no descanso
+  // no relevo, o carro inclina-se com o chão (frente/trás e lados); no ar (helicóptero) não
+  const tilt = c => { const T = G.TER; if (!T || !T.H || VT[c.k].fly && (c.alt || 0) > 0.5) return [0, 0]; const L = (VT[c.k].len || 4) * 0.42, Wd = 0.85, s = Math.sin(c.yaw), co = Math.cos(c.yaw);
+    const f = T.at(c.x + s * L, c.z + co * L), b = T.at(c.x - s * L, c.z - co * L), r = T.at(c.x + co * Wd, c.z - s * Wd), l = T.at(c.x - co * Wd, c.z + s * Wd); return [-Math.atan2(f - b, 2 * L), Math.atan2(r - l, 2 * Wd) * 0.85]; };
+  const place = c => { const [tp, tr] = tilt(c); c.m.g.position.set(c.x, groundY(c.x, c.z, 0) + (c.alt || 0), c.z); c.m.g.rotation.set((VT[c.k].fly ? -(c.pt || 0) : 0) + tp, c.yaw, (VT[c.k].two ? (c.seats[0] ? (c.lean || 0) : 0.28) : VT[c.k].fly ? c.rl || 0 : 0) + tr, 'YXZ'); }; // motas e bicicletas paradas ficam no descanso
   const burnt = M(0x2a2624, { r: 0.95, m: 0.1 });
   const wreck = c => { if (c.dead) return; c.dead = true; c.v = 0; c.m.g.traverse(o => { if (o.isMesh && o.material !== glass && o.material !== tyre) o.material = burnt; }); };
   const HL = [0].map(i => /* um só farol a sério (cada luz a mais pesa em cada píxel do ecrã) */ { const L = new THREE.SpotLight(0xfff2d6, 0, 42, 0.62, 0.6, 1.1); if (!i) { L.castShadow = true; L.shadow.mapSize.set(512, 512); L.shadow.bias = -0.0008; L.shadow.camera.near = 0.5; L.shadow.camera.layers.enable(1); } scene.add(L, L.target); return L; });

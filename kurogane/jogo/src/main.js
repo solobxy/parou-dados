@@ -28,6 +28,7 @@ import { initPWA } from './pwa.js';
 import { wear } from './wear.js';
 import { SKIN_LV, loadSkins, saveSkins } from './skins.js';
 import { makeSky } from './sky.js';
+import { makeTerrain, terrainInput } from './terrain.js';
 import { broadTree, pineTree, grassTuft, whiteUV, bushTuft, rockGeo as rockShape } from './trees.js';
 import { ANK, ANBYK, ANLOOT, spawnAnimals, anHit, anPart, animalAI, Fauna } from './animals.js';
 
@@ -122,7 +123,14 @@ async function boot() {
   // texturas realistas do chão (ficheiros ao lado da página; até chegarem, ficam as desenhadas aqui) e duas amostras misturadas
   // com uma mancha larga, para não se ver a repetição dos quadrados
   { const AT = new Set(['grass', 'dirt', 'asph']), BR = new Set(['grass', 'dirt', 'asph', 'conc', 'tile']);
-    for (const k of BR) { const m = mats[k]; m.onBeforeCompile = sh => { if (k === 'grass') { sh.uniforms.uDet = { value: DET }; sh.uniforms.uDirt = { get value() { return mats.dirt.map; } }; sh.fragmentShader = 'uniform sampler2D uDet, uDirt;\n' + sh.fragmentShader; } sh.fragmentShader = sh.fragmentShader.replace('#include <map_fragment>', `#ifdef USE_MAP
+    for (const k of BR) { const m = mats[k]; m.onBeforeCompile = sh => { if (k === 'grass') { sh.uniforms.uDet = { value: DET }; sh.uniforms.uDirt = { get value() { return mats.dirt.map; } }; sh.fragmentShader = 'uniform sampler2D uDet, uDirt;\n' + sh.fragmentShader;
+        // relevo: a altura vem da grelha do terreno (a mesma que o jogo usa para andar); a normal sai da inclinação
+        sh.uniforms.uTer = { get value() { return TERU.tex; } }; sh.uniforms.uTerP = { get value() { return TERU.p; } };
+        sh.vertexShader = `uniform highp sampler2D uTer; uniform vec4 uTerP; attribute float aSk;
+float terH(vec2 p) { if (uTerP.w < 0.5) return 0.0; vec2 f = clamp((p + uTerP.x) / uTerP.y, vec2(0.0), vec2(uTerP.z - 1.001)); ivec2 i = ivec2(floor(f)); vec2 u = f - vec2(i);
+  float a = texelFetch(uTer, i, 0).r, b = texelFetch(uTer, i + ivec2(1, 0), 0).r, c = texelFetch(uTer, i + ivec2(0, 1), 0).r, d = texelFetch(uTer, i + ivec2(1, 1), 0).r; return mix(mix(a, b, u.x), mix(c, d, u.x), u.y); }
+` + sh.vertexShader.replace('#include <beginnormal_vertex>', `vec4 tw0 = modelMatrix * vec4(position, 1.0); float tH = terH(tw0.xz), tHx = terH(tw0.xz + vec2(1.6, 0.0)) - terH(tw0.xz - vec2(1.6, 0.0)), tHz = terH(tw0.xz + vec2(0.0, 1.6)) - terH(tw0.xz - vec2(0.0, 1.6));
+  vec3 objectNormal = normalize(vec3(-tHx / 3.2, 1.0, -tHz / 3.2));`).replace('#include <begin_vertex>', '#include <begin_vertex>\n transformed.y += tH - aSk * 2.5;').replace('#include <worldpos_vertex>', '#include <worldpos_vertex>\n#ifdef USE_MAP\n vMapUv = vec2(tw0.x, -tw0.z) / 9.0;\n#endif'); } sh.fragmentShader = sh.fragmentShader.replace('#include <map_fragment>', `#ifdef USE_MAP
       vec2 uA = vMapUv; float n1 = 0.5 + 0.5 * sin(uA.x * 1.31 + sin(uA.y * 0.83) * 2.1) * sin(uA.y * 1.17 + sin(uA.x * 0.71) * 1.9);
       vec4 sampledDiffuseColor = texture2D(map, uA);
       ${AT.has(k) ? 'vec2 uB = mat2(0.8, -0.6, 0.6, 0.8) * uA * 0.61 + vec2(0.37, 0.11); vec4 cB = texture2D(map, uB); sampledDiffuseColor = mix(sampledDiffuseColor, cB, smoothstep(0.3, 0.7, n1));' : ''}
@@ -180,7 +188,26 @@ async function boot() {
   const ARENA_ON = (() => { try { return sessionStorage.getItem('kgArena') === '1' || /[?&]arena\b/.test(location.search); } catch (e) { return false; } })(); // modo arena: só PvP no mapa de Tóquio
   await loadProps(); // adereços do Blender (ficheiro ao lado); se falhar, o mapa usa as caixas simples
   await LP(12, 'a construir a cidade');
-  const tW0 = performance.now(); const W = buildWorld(scene, wmats, A, { arena: ARENA_ON }); W.buildMs = Math.round(performance.now() - tW0);
+  const tW0 = performance.now(); const W = buildWorld(scene, wmats, A, { arena: ARENA_ON, flat: !!window.__flat }); W.buildMs = Math.round(performance.now() - tW0);
+  // ---------- relevo: colinas no campo (as cidades, estradas, água e construções ficam planas). Igual ao do servidor (mapa.json)
+  const tT0 = performance.now(), r1 = v => Math.round(v * 10) / 10;
+  const TER = ARENA_ON || window.__flat ? { at: () => 0, blocks: () => 0, H: null, sum: 0 } : makeTerrain(terrainInput(W.zones.map(z => [r1(z.x), r1(z.z), z.r, z.kind]), W.roads.map(r => [r1(r.x0), r1(r.z0), r1(r.x1), r1(r.z1)]),
+    { lakes: W.water.lakes.map(L => [r1(L.x), r1(L.z), L.rx, L.rz]), rivers: W.water.rivers.map(R => R.P.map(q => [r1(q[0]), r1(q[1]), +q[2].toFixed(2)])) }, W.rects.filter(r => !r.lv && !r.base).map(r => [r1(r.x0), r1(r.z0), r1(r.x1), r1(r.z1)]), W.pads.map(r => [r1(r.x0), r1(r.z0), r1(r.x1), r1(r.z1)])));
+  W.terMs = Math.round(performance.now() - tT0); const TERU = { tex: null, p: null };
+  // raio contra o chão (+ off metros): distância até onde o raio desce abaixo do relevo, ou Infinity
+  const terRay = (o, d, off = 0, maxT = 400) => { if (!TER.H) return Infinity; let t0 = 0, f0 = o.y - TER.at(o.x, o.z) - off; if (f0 <= 0) return 0;
+    for (let t = 1.5; t <= maxT; t += 1.5 + t * 0.02) { const f = o.y + d.y * t - TER.at(o.x + d.x * t, o.z + d.z * t) - off; if (f <= 0) { let a = t0, b = t; for (let k = 0; k < 8; k++) { const m = (a + b) / 2, fm = o.y + d.y * m - TER.at(o.x + d.x * m, o.z + d.z * m) - off; if (fm > 0) a = m; else b = m; } return b; } t0 = t; f0 = f; } return Infinity; };
+  // textura com as alturas (o chão desenhado lê daqui) e duas grelhas que seguem a câmara: perto (3,2 m) e longe (16 m, com buraco no meio)
+  if (TER.H) { const T = new THREE.DataTexture(TER.H, TER.N, TER.N, THREE.RedFormat, THREE.FloatType); T.minFilter = T.magFilter = THREE.NearestFilter; T.generateMipmaps = false; T.needsUpdate = true; TERU.tex = T; TERU.p = new THREE.Vector4(TER.EXT, TER.C, TER.N, 1); }
+  else { TERU.tex = new THREE.DataTexture(new Float32Array(4), 2, 2, THREE.RedFormat, THREE.FloatType); TERU.tex.needsUpdate = true; TERU.p = new THREE.Vector4(1, 1, 2, 0); }
+  const terGrid = (half, step, hole, skirt) => { const n = Math.round(2 * half / step), P = [], S = [], I = [], id = new Map(), vtx = (i, j, sk) => { const key = i + ',' + j + ',' + sk; if (id.has(key)) return id.get(key); const v = P.length / 3; P.push(-half + i * step, 0, -half + j * step); S.push(sk); id.set(key, v); return v; };
+    for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) { const x0 = -half + i * step, z0 = -half + j * step; if (hole && x0 >= -hole && x0 + step <= hole && z0 >= -hole && z0 + step <= hole) continue;
+      const a = vtx(i, j, 0), b = vtx(i + 1, j, 0), c = vtx(i, j + 1, 0), d = vtx(i + 1, j + 1, 0); I.push(a, c, b, b, c, d); }
+    if (skirt) for (let k = 0; k < n; k++) for (const [i0, j0, i1, j1] of [[k, 0, k + 1, 0], [k + 1, n, k, n], [0, k + 1, 0, k], [n, k, n, k + 1]]) { const a = vtx(i0, j0, 0), b = vtx(i1, j1, 0), c = vtx(i0, j0, 1), d = vtx(i1, j1, 1); I.push(a, b, c, b, d, c, a, c, b, b, c, d); }
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(P, 3)); g.setAttribute('normal', new THREE.Float32BufferAttribute(P.map((v, i) => i % 3 === 1 ? 1 : 0), 3)); g.setAttribute('aSk', new THREE.Float32BufferAttribute(S, 1)); g.setAttribute('color', new THREE.Float32BufferAttribute(new Float32Array(P.length).fill(1), 3)); g.setIndex(I); return g; }; // cor branca: o material do chão usa cores por vértice
+  const TMESH = [];
+  if (TER.H) for (const [half, step, hole, sk] of [[208, 3.2, 0, 1], [944, 16, 208, 0]]) { const m = new THREE.Mesh(terGrid(half, step, hole, sk), mats.grass); m.frustumCulled = false; m.receiveShadow = true; m.castShadow = false; m.renderOrder = -1; scene.add(m); TMESH.push(m); }
+  const terFollow = (x, z) => { const sx = Math.round(x / 16) * 16, sz = Math.round(z / 16) * 16; for (const m of TMESH) m.position.set(sx, -0.02, sz); };
   await LP(50, 'a preparar o mapa');
   atlasTex.needsUpdate = true;
   // sombras dos prédios mesmo com o telhado e as paredes de cima escondidos (quando estás lá dentro): o sol e a lanterna nunca atravessam telhados nem paredes,
@@ -268,12 +295,12 @@ async function boot() {
     return false;
   };
   const canSee = (a, b) => (sameLevel(a, b) && los(a.x, a.z, b.x, b.z, null, 's', Math.min(a.lv || 0, b.lv || 0))) || stairVis(a, b);
-  const groundY = (x, z, lv = 0) => { if (lv) return 0.05; let y = 0.03; for (const s of W.steps) if (x > s.x0 && x < s.x1 && z > s.z0 && z < s.z1 && s.y > y) y = s.y; return y; };
+  const groundY = (x, z, lv = 0) => { if (lv) return 0.05; let y = TER.at(x, z) + 0.03; for (const s of W.steps) if (x > s.x0 && x < s.x1 && z > s.z0 && z < s.z1 && s.y > y) y = s.y; return y; };
 
   const G0 = {};
   // ---------- vegetação e recursos (instanciados)
   const TLOD = []; // árvores: cada bloco de 50 m tem também uma versão simples (mesmas posições), usada ao longe na 1.ª pessoa
-  const iMesh = (geo, mat, list, matOf, shadow = true, CH = 50, tint = null, low = null) => { const groups = new Map(); for (const o of list) { const k = Math.floor(o.x / CH) + ',' + Math.floor(o.z / CH); if (!groups.has(k)) groups.set(k, []); groups.get(k).push(o); } const out = []; for (const l of groups.values()) { const m = new THREE.InstancedMesh(geo, mat, l.length); l.forEach((o, i) => { o.m0 = matOf(o); m.setMatrixAt(i, o.m0); o.mesh = m; o.idx = i; if (tint) m.setColorAt(i, tint(o, i)); }); m.castShadow = shadow; m.receiveShadow = true; m.computeBoundingSphere(); if (geo !== cedar && geo !== broad && geo !== BROAD && geo !== PINE) m.renderOrder = 3; scene.add(m); out.push(m);
+  const iMesh = (geo, mat, list, matOf, shadow = true, CH = 50, tint = null, low = null) => { const groups = new Map(); for (const o of list) { const k = Math.floor(o.x / CH) + ',' + Math.floor(o.z / CH); if (!groups.has(k)) groups.set(k, []); groups.get(k).push(o); } const out = []; for (const l of groups.values()) { const m = new THREE.InstancedMesh(geo, mat, l.length); l.forEach((o, i) => { o.m0 = matOf(o); { const e = o.m0.elements; e[13] += TER.at(e[12], e[14]); } m.setMatrixAt(i, o.m0); o.mesh = m; o.idx = i; if (tint) m.setColorAt(i, tint(o, i)); }); m.castShadow = shadow; m.receiveShadow = true; m.computeBoundingSphere(); if (geo !== cedar && geo !== broad && geo !== BROAD && geo !== PINE) m.renderOrder = 3; scene.add(m); out.push(m);
     if (low) { const L = new THREE.InstancedMesh(low, mat, l.length); L.instanceMatrix = m.instanceMatrix; if (m.instanceColor) L.instanceColor = m.instanceColor; L.castShadow = shadow; L.receiveShadow = true; L.computeBoundingSphere(); L.visible = false; scene.add(L); let cx = 0, cz = 0; for (const o of l) { cx += o.x; cz += o.z; } TLOD.push({ hi: m, lo: L, x: cx / l.length, z: cz / l.length }); out.push(L); } } return out; };
   const geo1 = fn => { const b = new Builder(0); fn(b); const out = []; for (const k of [...b.buckets.keys()]) out.push(b.merged(k)); return out.length === 1 ? out[0] : mergeAll(out); };
   const mergeAll = gs => mergeGeometries(gs, false);
@@ -535,7 +562,7 @@ async function boot() {
   const glowBags = () => { const p = G.p; if (!p) return; glowMat.opacity = 0.5 + 0.3 * Math.sin(G.t * 4.2); haloMat.opacity = 0.45 + 0.2 * Math.sin(G.t * 4.2); for (const b of G.bags) { const m = b.mesh; if (!m) continue; const near = p.alive && (b.lv || 0) === (p.lv || 0) && Math.hypot(b.x - p.x, b.z - p.z) < 6; const g = m.userData.gl || (near ? addGlow(m) : null); if (g) g.visible = near; } };
 
   // ---------- estado
-  const G = window.G = { ARENA: ARENA_ON, audio,
+  const G = window.G = { ARENA: ARENA_ON, TER, groundY, audio,
     renderer,
     TOUCH, W, ITEMS, RECIPES, CAP, t: 0, playing: false, invOpen: false, mapOpen: false, paused: false,
     p: null, inv: new Inv(), sel: 0, zs: [], bags: [], box: null, prompt: null,
@@ -551,7 +578,7 @@ async function boot() {
     L.forEach((l, i) => { const r = l[1] > 9 ? 40 : 13; o.position.set(l[0], 0.06, l[2]); o.scale.set(r, 1, r); o.updateMatrix(); m.setMatrixAt(i, o.matrix); }); m.renderOrder = 3; m.frustumCulled = false; scene.add(m); lampPools = m; } }
   G.base = makeBase({ scene, W, G, audio, addRect, removeRect, visDirty, inCity, toast: m => G.ui && G.ui.toast(m) });
   G.doorAt = doorAt;
-  const newPlayer = (x, z) => ({ x, z, y: 0.03, lv: 0, h: 0, vy: 0, base: 0, onGround: true, climb: null, root: Math.atan2(-x, -z), aim: Math.atan2(-x, -z), vx: 0, vz: 0, yaw: Math.atan2(-x, -z), hp: 100, food: 82, water: 78, stam: 100, sk: { res: 0, mira: 0, rec: 0 }, bleed: 0, alive: true, cd: 0, swing: -1, swingHit: false, recoil: 0, reload: 0, use: null, kills: 0, born: G.t, mv: 0, hurtT: 0, sprint: false, cause: '' });
+  const newPlayer = (x, z) => ({ x, z, y: TER.at(x, z) + 0.03, lv: 0, h: 0, vy: 0, base: 0, onGround: true, climb: null, root: Math.atan2(-x, -z), aim: Math.atan2(-x, -z), vx: 0, vz: 0, yaw: Math.atan2(-x, -z), hp: 100, food: 82, water: 78, stam: 100, sk: { res: 0, mira: 0, rec: 0 }, bleed: 0, alive: true, cd: 0, swing: -1, swingHit: false, recoil: 0, reload: 0, use: null, kills: 0, born: G.t, mv: 0, hurtT: 0, sprint: false, cause: '' });
   const freshKit = () => { const inv = new Inv(); inv.belt[0] = mkItem('pedra'); inv.belt[1] = mkItem('ligadura', 2); inv.bag.insert(mkItem('onigiri', 1)); inv.bag.insert(mkItem('lanterna', 1)); return inv; };
   // kit de teste (protótipo): proteção, armas com acessórios, muitas balas, comida e medicamentos
   const testKit = () => {
@@ -700,7 +727,7 @@ async function boot() {
     const ent = (d2, sg, r) => Math.max(0, sg - Math.sqrt(Math.max(0, r * r - d2)) / L);
     for (const t of T) { if (Math.abs(t.x - mx) > half || Math.abs(t.z - mz) > half) continue; let h = null;
       if (!aim) { const r = hitCapsules(P.x, P.y, P.z, Q.x, Q.y, Q.z, capsules(t)); if (r && (!best || r.f < best.s)) best = { s: r.f, zone: r.zone, point: P.clone().lerp(Q, r.f) }; continue; } // hitboxes por osso (iguais às do servidor)
-      if (t.lying) { _pa.set(t.x - Math.sin(t.yaw || 0) * 1.2, 0.24, t.z - Math.cos(t.yaw || 0) * 1.2); /* meio do corpo de quem dorme (o sítio guardado são os pés) */ const [d2, sg] = segSeg(P, Q, _pa, _pa); if (d2 <= 0.25) h = { s: ent(d2, sg, 0.5), zone: 'body', point: _pa.clone() }; }
+      if (t.lying) { _pa.set(t.x - Math.sin(t.yaw || 0) * 1.2, (t.y || 0.16) + 0.08, t.z - Math.cos(t.yaw || 0) * 1.2); /* meio do corpo de quem dorme (o sítio guardado são os pés) */ const [d2, sg] = segSeg(P, Q, _pa, _pa); if (d2 <= 0.25) h = { s: ent(d2, sg, 0.5), zone: 'body', point: _pa.clone() }; }
       else if ((t.sc || 0) > 1.5) { const fx = Math.sin(t.yaw || 0), fz = Math.cos(t.yaw || 0); _pa.set(t.x + fx * 0.72, t.y + 0.24, t.z + fz * 0.72); const [dh, sh] = segSeg(P, Q, _pa, _pa); _pa.set(t.x - fx * 0.95, t.y + 0.18, t.z - fz * 0.95); _pb.set(t.x + fx * 0.45, t.y + 0.2, t.z + fz * 0.45); const [db, sb] = segSeg(P, Q, _pa, _pb); // deitado: ao comprido no chão
         if (dh <= 0.17 * 0.17) h = { s: ent(dh, sh, 0.17), zone: 'head', point: new THREE.Vector3(t.x + fx * 0.72, t.y + 0.24, t.z + fz * 0.72) }; else if (db <= 0.26 * 0.26) h = { s: ent(db, sb, 0.26), zone: 'body', point: new THREE.Vector3(t.x, t.y + 0.2, t.z) }; }
       else {
@@ -728,7 +755,8 @@ async function boot() {
       if (Math.min(ya, yz) > top || Math.max(ya, yz) < yb - 0.05) return;
       const tin = ya <= top ? t0 : (top - P.y) / dy; if (tin < best) best = Math.max(0, tin);
     }, c => { const ox = P.x - c.x, oz = P.z - c.z, A = dx * dx + dz * dz; if (A < 1e-9) return; const B = (ox * dx + oz * dz) / A, Cq = (ox * ox + oz * oz - c.r * c.r) / A, disc = B * B - Cq; if (disc < 0) return; const t = -B - Math.sqrt(disc); if (t < 0 || t >= best) return; const hgt = c.node && c.node.kind !== 'tree' ? 1.0 : 7; if (P.y + dy * t < hgt) best = t; });
-    if (Q.y < 0.03 && P.y >= 0.03) { const t = (P.y - 0.03) / (P.y - Q.y); if (t < best) best = t; }
+    if (TER.H) { const L = Math.hypot(dx, dz, Q.y - P.y), n = Math.max(1, Math.ceil(L / 3)); let fp = P.y - TER.at(P.x, P.z) - 0.03; if (fp >= 0) for (let k = 1; k <= n; k++) { const t = k / n, f = P.y + (Q.y - P.y) * t - TER.at(P.x + dx * t, P.z + dz * t) - 0.03; if (f < 0) { const tt = (k - 1) / n + (fp / (fp - f)) / n; if (tt < best) best = tt; break; } fp = f; } } // o relevo para as balas
+    else if (Q.y < 0.03 && P.y >= 0.03) { const t = (P.y - 0.03) / (P.y - Q.y); if (t < best) best = t; }
     for (const C of W.cuts) { if (!C.shell || C.n < 2) continue; if (Math.max(P.x, Q.x) < C.x0 || Math.min(P.x, Q.x) > C.x1 || Math.max(P.z, Q.z) < C.z0 || Math.min(P.z, Q.z) > C.z1) continue;
       for (let L = 1; L < C.n; L++) { const h = L * C.fh; if ((P.y - h) * (Q.y - h) > 0) continue; const t = (P.y - h) / (P.y - Q.y); if (t >= best) continue; const x = P.x + dx * t, z = P.z + dz * t; if (!inShell(C, x, z)) continue; if (C.stairs.some(st => st.lv === L - 1 && x > st.x0 && x < st.x1 && z > st.z0 && z < st.z1)) continue; best = t; } }
     return best;
@@ -967,7 +995,7 @@ async function boot() {
   const dropBag = (x, z, grid, o = {}) => {
     if (G.net && G.net.world && !o.net) { if (!grid.empty) G.net.bag(x, z, o.y ?? groundY(x, z), o.lv ?? 0, encG(grid)); return null; }
     if (!o.net) for (const b of G.bags) if (!o.body && !b.body && (b.lv || 0) === (o.lv ?? 0) && Math.hypot(b.x - x, b.z - z) < 1.6) { for (const e of [...grid.list]) b.grid.insert(e.it); return b; }
-    const lv = o.lv ?? 0, y0 = o.y ?? groundY(x, z); const m = (o.crate ? crateM : o.body ? bodyBagM : bagM).clone(); m.position.set(x + (o.body || o.crate ? 0 : (Math.random() - 0.5) * 0.4), y0, z + (o.body || o.crate ? 0 : (Math.random() - 0.5) * 0.4)); m.rotation.y = Math.random() * 6; scene.add(m);
+    const lv = o.lv ?? 0, y0 = lv ? (o.y ?? groundY(x, z, lv)) : Math.max(o.y ?? -1e9, groundY(x, z)); /* no relevo, nunca debaixo do chão (as caixas do avião vêm do servidor com altura 0) */ const m = (o.crate ? crateM : o.body ? bodyBagM : bagM).clone(); m.position.set(x + (o.body || o.crate ? 0 : (Math.random() - 0.5) * 0.4), y0, z + (o.body || o.crate ? 0 : (Math.random() - 0.5) * 0.4)); m.rotation.y = Math.random() * 6; scene.add(m);
     const b = { x, z, grid, mesh: m, label: o.label || (o.body ? 'Revistar o teu corpo' : 'Revistar saco'), body: !!o.body, crate: !!o.crate, t: G.t, bag: true, lv, nid: o.nid, mine: o.mine }; G.bags.push(b); return b;
   };
   // ---------- lançamento aéreo: aviso com zona no mapa, avião caído com fogo e fumo, caixas com o melhor loot
@@ -985,7 +1013,7 @@ async function boot() {
     const fire = new THREE.PointLight(0xff7a2a, 30, 22, 1.6); fire.position.set(0.5, 2.5, -3); g.add(fire);
     const flames = []; for (let i = 0; i < 4; i++) { const F = makeFire(2.6 + (i % 2) * 0.8, { smoke: 0, sparks: 14 }); F.g.position.set(-1 + i * 0.9, 2.75, -4 + i * 1.4); g.add(F.g); flames.push(F); }
     const puffs = []; for (let i = 0; i < 9; i++) { const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: puffTex, transparent: true, depthWrite: false })); s.userData.t = i / 9; g.add(s); puffs.push(s); }
-    g.position.set(x, 0, z); g.rotation.y = yaw; scene.add(g);
+    g.position.set(x, TER.at(x, z) - 0.3, z); g.rotation.y = yaw; scene.add(g);
     const c = Math.cos(yaw), s = Math.sin(yaw), R = []; for (const [lx, lz, hw, hd] of [[0, 2, 1.7, 5.5], [1.2, -8, 1.6, 3.5]]) { const wx = x + lx * c + lz * s, wz = z - lx * s + lz * c, a = Math.abs(c), b2 = Math.abs(s), ex = hw * a + hd * b2, ez = hw * b2 + hd * a, r = { x0: wx - ex, z0: wz - ez, x1: wx + ex, z1: wz + ez, k: 's', h: 3, lv: 0 }; addRect(r); R.push(r); }
     return { g, fire, flames, puffs, R, x, z }; };
   const wreckDrop = () => { if (!wreck) return; scene.remove(wreck.g); wreck.flames.forEach(F => F.dispose()); wreck.g.traverse(o => { if (o.geometry) o.geometry.dispose(); }); wreck.R.forEach(removeRect); wreck = null; };
@@ -1507,7 +1535,7 @@ async function boot() {
   // o que está debaixo de um ponto do ecrã: zona de um zombie, ou um ponto à altura da arma
   // ponto do chão por baixo de um ponto do ecrã (para escolher onde pôr as coisas)
   const _gr = new THREE.Raycaster(), _gp = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0), _gv = new THREE.Vector2(), _gq = new THREE.Vector3();
-  G.groundAt = (sx, sy) => { _gv.set(sx / innerWidth * 2 - 1, -(sy / innerHeight) * 2 + 1); _gr.setFromCamera(_gv, cam); _gp.constant = -((G.p && G.p.base) || 0); return _gr.ray.intersectPlane(_gp, _gq) ? { x: _gq.x, z: _gq.z } : null; };
+  G.groundAt = (sx, sy) => { _gv.set(sx / innerWidth * 2 - 1, -(sy / innerHeight) * 2 + 1); _gr.setFromCamera(_gv, cam); _gp.constant = -((G.p && G.p.base) || 0); if (TER.H && !(G.p && G.p.lv > 0)) { const t = terRay(_gr.ray.origin, _gr.ray.direction, 0, 600); if (t < Infinity) { _gq.copy(_gr.ray.origin).addScaledVector(_gr.ray.direction, t); return { x: _gq.x, z: _gq.z }; } } return _gr.ray.intersectPlane(_gp, _gq) ? { x: _gq.x, z: _gq.z } : null; };
   const pick = (sx, sy, inflate = 1.1) => {
     ndc.set(sx / innerWidth * 2 - 1, -(sy / innerHeight) * 2 + 1); ray3.setFromCamera(ndc, cam);
     const o = ray3.ray.origin, d = ray3.ray.direction; _a.copy(o); const end = new THREE.Vector3().copy(o).addScaledVector(d, 140);
@@ -1520,7 +1548,8 @@ async function boot() {
     let tb = 1e9; if (P) for (const c of W.cuts) { if (c === G.inside || (c.shell ? !c.gR.visible : !c.group.visible)) continue; if (Math.abs((c.x0 + c.x1) / 2 - P.x) > 80 || Math.abs((c.z0 + c.z1) / 2 - P.z) > 80) continue; const t = rayBox(o, d, c.x0, 0, c.z0, c.x1, c.y1 - 2, c.z1); if (t < tb) tb = t; }
     // num piso de cima, apontar para a rua lá em baixo mira o chão da rua (à altura do peito de quem lá está)
     const gy = P && P.lv > 0 && !(P.bld && inShell(P.bld, o.x + d.x * 40, o.z + d.z * 40)) ? 1.25 : (P ? P.y : 0) + 1.25;
-    plane.constant = -gy; const tp = ray3.ray.intersectPlane(plane, hp) ? o.distanceTo(hp) : 1e9;
+    plane.constant = -gy; let tp = ray3.ray.intersectPlane(plane, hp) ? o.distanceTo(hp) : 1e9;
+    if (TER.H && P && !(P.lv > 0)) { const tt = terRay(o, d, 1.25); if (tt < Infinity) { tp = tt; hp.copy(o).addScaledVector(d, tt); } } // com relevo: a mira cai no chão à altura do peito
     if (tb < tp) { const w = new THREE.Vector3().copy(o).addScaledVector(d, tb); if (w.y > (P ? P.y : 0) + 2.3) return { point: w, wall: true }; }
     if (tp < 1e9) return { point: hp }; return { point: new THREE.Vector3(P.x, P.y + 1.25, P.z) };
   };
@@ -1686,7 +1715,7 @@ async function boot() {
     frames++; fpsT += dt; if (fpsT > 0.5) { G.fps = frames / fpsT; frames = 0; fpsT = 0; }
     G.t += dt;
     const p = G.p;
-    if (G.paused) { G.ui.frame(0); renderer.render(scene, cam); return; }
+    if (G.paused) { G.ui.frame(0); terFollow(cam.position.x, cam.position.z); renderer.render(scene, cam); return; }
     updDoors(dt); updBooms(dt); updWeather(dt); wreckTick(dt); mats.water.normalMap.offset.set((G.t * 0.011) % 1, (G.t * 0.006) % 1); if (G.playing && G.p) { if (!SECTORS.tick(G.p.x, G.p.z)) lazyTick(G.p.x, G.p.z, true); } /* um setor ou um bocado de zona por imagem, nunca os dois */ if (G.base) { G.base.tick(dt); G.buildK = G.base.frame(); }
     if (G.playing && p) {
       // movimento relativo ao ecrã, com peso: acelera e trava, o corpo vira para onde andas
@@ -1892,7 +1921,7 @@ async function boot() {
       for (const n of nodes) if (n.shake > 0) { n.shake -= dt; const a = Math.sin(n.shake * 60) * n.shake * 0.12; _hm.copy(n.m0).multiply(mat4(0, 0, 0, 0, a, a * 0.5)); if (n.alive) { n.mesh.setMatrixAt(n.idx, n.shake > 0 ? _hm : n.m0); n.mesh.instanceMatrix.needsUpdate = true; } }
       // câmara: segue-te com suavidade, sem olhar à frente (todos veem o mesmo à tua volta)
       vc.set(p.x, p.y, p.z);
-      { const kx = 1 - Math.exp(-dt * 9), ky = 1 - Math.exp(-dt * 6), c = G.car; G.camLA = G.camLA || { x: 0, z: 0 }; const la = c ? Math.min(14, Math.abs(c.v) * 0.75) * Math.sign(c.v || 0) : 0, kl = 1 - Math.exp(-dt * 2.2); /* a conduzir, a câmara olha um pouco para onde vais */ G.camLA.x += ((c ? Math.sin(c.yaw) * la : 0) - G.camLA.x) * kl; G.camLA.z += ((c ? Math.cos(c.yaw) * la : 0) - G.camLA.z) * kl; camT.x += (p.x + G.camLA.x - camT.x) * kx; camT.z += (p.z + G.camLA.z - camT.z) * kx; camT.y += (p.base - camT.y) * ky; }
+      { const kx = 1 - Math.exp(-dt * 9), ky = 1 - Math.exp(-dt * 6), c = G.car; G.camLA = G.camLA || { x: 0, z: 0 }; const la = c ? Math.min(14, Math.abs(c.v) * 0.75) * Math.sign(c.v || 0) : 0, kl = 1 - Math.exp(-dt * 2.2); /* a conduzir, a câmara olha um pouco para onde vais */ G.camLA.x += ((c ? Math.sin(c.yaw) * la : 0) - G.camLA.x) * kl; G.camLA.z += ((c ? Math.cos(c.yaw) * la : 0) - G.camLA.z) * kl; camT.x += (p.x + G.camLA.x - camT.x) * kx; camT.z += (p.z + G.camLA.z - camT.z) * kx; camT.y += (p.base + (p.lv ? 0 : TER.at(p.x, p.z)) - camT.y) * ky; } // a câmara acompanha o relevo
       updBullets(dt);
       // linha de mira no chão quando a arma está levantada
       if (AIM.on && !G.fp && AIM.raise > 0.3 && p.alive) { const L = Math.min(Math.hypot(AIM.A.x - p.x, AIM.A.z - p.z), ray(p.x, p.z, Math.sin(p.yaw), Math.cos(p.yaw), 60, null, 's', p.lv)); aimLine.visible = true; aimLine.position.set(p.x + Math.sin(p.yaw) * 0.5, p.y + 0.06, p.z + Math.cos(p.yaw) * 0.5); aimLine.rotation.y = p.yaw + Math.PI; aimLine.scale.set(1, 1, Math.max(0.5, L - 0.5)); aimLine.material.opacity = 0.35 + 0.65 * AIM.raise; } else aimLine.visible = false;
@@ -2053,7 +2082,7 @@ async function boot() {
     if (G.camOv) { const o = G.camOv; cam.position.set(o.p[0], o.p[1], o.p[2]); cam.lookAt(o.t[0], o.t[1], o.t[2]); if (o.fov && cam.fov !== o.fov) { cam.fov = o.fov; cam.updateProjectionMatrix(); } G.vmOn = false; if (o.noMe) body.root.visible = false; if (o.fl && o.fl[0]) { const q = o.fl[0]; flash.position.set(q[0], q[1], q[2]); flash.intensity = 12; flash.distance = 6; } if (o.pin) for (const q of o.pin) { q.b.root.visible = true; q.b.root.position.set(q.x, q.y ?? 0.03, q.z); if (q.rx != null) q.b.root.rotation.set(q.rx, q.yaw, 0, 'YXZ'); else q.b.root.rotation.y = q.yaw; } for (const F of MZP) if (F.keep) { F.t = 1; F.s.visible = true; } } // capturas de cinema para os cartões do menu
     lgTick(dt);
     if (G.skyArgs) { const A = G.skyArgs; SKY.update(cam.position, scene.fog.color, A[0], A[1], A[2], A[3], G.t); }
-    fireFrame(G.t, renderer, cam); renderer.render(scene, cam); olRender();
+    terFollow(cam.position.x, cam.position.z); fireFrame(G.t, renderer, cam); renderer.render(scene, cam); olRender();
     if (G.vmOn) { renderer.autoClear = false; renderer.clearDepth(); renderer.render(vm.scene, vm.cam); renderer.autoClear = true; }
   };
   await LP(96, 'quase pronto');

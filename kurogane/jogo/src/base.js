@@ -68,6 +68,19 @@ export function makeBase({ scene, W, G, audio, addRect, removeRect, visDirty, in
   const edgeKey = (i, j, s) => s === 0 ? 'h:' + i + ':' + j : s === 2 ? 'h:' + i + ':' + (j + 1) : s === 3 ? 'v:' + i + ':' + j : 'v:' + (i + 1) + ':' + j;
   const edgeGeom = k => { const [t, a, b] = k.split(':'); const i = +a, j = +b; return t === 'h' ? { horiz: true, x0: i * CELL, x1: i * CELL + CELL, z: j * CELL, c: [[i, j - 1], [i, j]] } : { horiz: false, z0: j * CELL, z1: j * CELL + CELL, x: i * CELL, c: [[i - 1, j], [i, j]] }; };
   const hasFund = (i, j) => pieces.has('f:' + cellKey(i, j));
+  // ---------- relevo: cada base fica num só nível (o da parte mais alta do terreno debaixo das fundações ligadas); a fundação desce até ao chão
+  const tAt = (x, z) => (G.TER ? G.TER.at(x, z) : 0);
+  const cellLc = (i, j) => { const x0 = i * CELL, z0 = j * CELL; let m = 0; for (const [x, z] of [[x0, z0], [x0 + CELL, z0], [x0, z0 + CELL], [x0 + CELL, z0 + CELL], [x0 + CELL / 2, z0 + CELL / 2]]) m = Math.max(m, tAt(x, z)); return Math.ceil(m * 20) / 20; };
+  const cellMin = (i, j) => { const x0 = i * CELL, z0 = j * CELL; let m = 1e9; for (const [x, z] of [[x0, z0], [x0 + CELL, z0], [x0, z0 + CELL], [x0 + CELL, z0 + CELL]]) m = Math.min(m, tAt(x, z)); return m; };
+  const LVL = new Map(); // 'i:j' → nível da fundação
+  const relevelMap = () => { LVL.clear(); const seen = new Set();
+    for (const P of pieces.values()) { if (P.t !== 'fund') continue; const k0 = cellKey(P.i, P.j); if (seen.has(k0)) continue; const Q = [[P.i, P.j]], grp = []; seen.add(k0); let L = 0;
+      while (Q.length) { const [i, j] = Q.pop(); grp.push([i, j]); L = Math.max(L, cellLc(i, j)); for (const [a, b] of [[i + 1, j], [i - 1, j], [i, j + 1], [i, j - 1]]) { const k = cellKey(a, b); if (!seen.has(k) && hasFund(a, b)) { seen.add(k); Q.push([a, b]); } } }
+      for (const [i, j] of grp) LVL.set(cellKey(i, j), L); } };
+  // nível de uma célula (com fundação: o da base; sem: o que ficaria se se pusesse uma fundação lá, juntando-se às vizinhas)
+  const cellLv = (i, j) => { const k = cellKey(i, j); if (LVL.has(k)) return LVL.get(k); let L = cellLc(i, j); for (const [a, b] of [[i + 1, j], [i - 1, j], [i, j + 1], [i, j - 1]]) { const q = LVL.get(cellKey(a, b)); if (q !== undefined) L = Math.max(L, q); } return L; };
+  const pieceLv = P => { if (P.t === 'fund' || P.t === 'teto') return cellLv(P.i, P.j); const E = edgeGeom(P.k); let L = null; for (const [a, b] of E.c) { const q = LVL.get(cellKey(a, b)); if (q !== undefined) L = Math.max(L ?? 0, q); } return L ?? Math.max(...E.c.map(([a, b]) => cellLc(a, b))); };
+  const depLv = (x, z) => { const i = Math.floor(x / CELL), j = Math.floor(z / CELL); return hasFund(i, j) ? cellLv(i, j) : tAt(x, z); };
   // de outro jogador (nem meu nem do meu clã): o servidor é que manda; aqui é só para o fantasma ficar vermelho e dizer porquê
   const theirs = o => !!(NET && o && o.u && o.u !== NET.uid && !(o.cid && NET.clan && o.cid === NET.clan));
   const distCell = (x, z, i, j) => Math.hypot(Math.max(i * CELL - x, 0, x - (i + 1) * CELL), Math.max(j * CELL - z, 0, z - (j + 1) * CELL));
@@ -89,8 +102,8 @@ export function makeBase({ scene, W, G, audio, addRect, removeRect, visDirty, in
   const CUT = 0.42; // altura das paredes baixas (42%: cerca de 1,3 m acima da fundação)
   const buildMesh = P => {
     if (P.g) { root.remove(P.g); P.g.traverse(o => o.geometry && o.geometry.dispose()); } if (P.sh) { root.remove(P.sh); P.sh = null; }
-    const g = new THREE.Group(), m = tierMat(P.tier); P.g = g; root.add(g);
-    if (P.t === 'fund') { const x0 = P.i * CELL, z0 = P.j * CELL; const b = box(CELL, FH, CELL, x0 + CELL / 2, FH / 2, z0 + CELL / 2, m, g); uvScale(b, CELL, FH); box(CELL - 0.06, 0.02, CELL - 0.06, x0 + CELL / 2, FH + 0.005, z0 + CELL / 2, m, g); }
+    const g = new THREE.Group(), m = tierMat(P.tier); P.g = g; root.add(g); g.position.y = P.lvY || 0;
+    if (P.t === 'fund') { const x0 = P.i * CELL, z0 = P.j * CELL; const b = box(CELL, FH, CELL, x0 + CELL / 2, FH / 2, z0 + CELL / 2, m, g); uvScale(b, CELL, FH); { const dn = (P.lvY || 0) - cellMin(P.i, P.j) + 0.4; if (dn > 0.45) { const sk = box(CELL - 0.02, dn, CELL - 0.02, x0 + CELL / 2, -dn / 2 + 0.01, z0 + CELL / 2, m, g); uvScale(sk, CELL, dn); } } /* pilar até ao chão */ box(CELL - 0.06, 0.02, CELL - 0.06, x0 + CELL / 2, FH + 0.005, z0 + CELL / 2, m, g); }
     else if (P.t === 'teto') { const x0 = P.i * CELL, z0 = P.j * CELL; const b = box(CELL + 0.04, 0.2, CELL + 0.04, x0 + CELL / 2, FH + WH + 0.1, z0 + CELL / 2, m, g); uvScale(b, CELL, CELL); P.roof = g; }
     else {
       const E = edgeGeom(P.k), T = 0.22, y0 = FH, H = WH;
@@ -106,30 +119,33 @@ export function makeBase({ scene, W, G, audio, addRect, removeRect, visDirty, in
     for (const r of P.rects || []) removeRect(r); P.rects = [];
     if (P.t === 'fund') return;
     if (P.t === 'teto') return;
-    const E = edgeGeom(P.k), T = 0.24, add = (a0, a1, k, h, yb, extra) => { const r = E.horiz ? { x0: a0, x1: a1, z0: E.z - T / 2, z1: E.z + T / 2 } : { x0: E.x - T / 2, x1: E.x + T / 2, z0: a0, z1: a1 }; Object.assign(r, { k, h, yb: yb || 0, lv: 0, base: P }, extra || {}); addRect(r); P.rects.push(r); return r; };
+    const E = edgeGeom(P.k), T = 0.24, add = (a0, a1, k, h, yb, extra) => { const r = E.horiz ? { x0: a0, x1: a1, z0: E.z - T / 2, z1: E.z + T / 2 } : { x0: E.x - T / 2, x1: E.x + T / 2, z0: a0, z1: a1 }; Object.assign(r, { k, h: h + (P.lvY || 0), yb: (yb || 0) + (P.lvY || 0), lv: 0, base: P }, extra || {}); addRect(r); P.rects.push(r); return r; };
     const a0 = E.horiz ? E.x0 : E.z0, a1 = E.horiz ? E.x1 : E.z1, top = FH + WH;
     if (P.t === 'parede') add(a0, a1, 's', top);
     else if (P.t === 'porta') { add(a0, a0 + DF, 's', top); add(a1 - DF, a1, 's', top); add(a0 + DF, a1 - DF, 'g', top, FH + 2.25, { lintel: 1 }); }
-    else if (P.t === 'janela') { add(a0, a0 + 0.9, 's', top); add(a1 - 0.9, a1, 's', top); add(a0 + 0.9, a1 - 0.9, 'g', top, 0, { win: 1, sill: FH + 1.0 }); }
+    else if (P.t === 'janela') { add(a0, a0 + 0.9, 's', top); add(a1 - 0.9, a1, 's', top); add(a0 + 0.9, a1 - 0.9, 'g', top, 0, { win: 1, sill: FH + 1.0 + (P.lvY || 0) }); }
   };
   // porta de verdade (abre, fecha, trava zombies e balas), integrada no sistema de portas do mapa
   const doorGeo = new THREE.BoxGeometry(1, 2.24, 0.06); doorGeo.translate(0.5, 1.12, 0);
   const mkDoor = P => {
     const E = edgeGeom(P.k), a0 = E.horiz ? E.x0 : E.z0, a1 = E.horiz ? E.x1 : E.z1, s0 = a0 + DF, s1 = a1 - DF, w = s1 - s0, fixed = E.horiz ? E.z : E.x;
     const D = { base: P, x: E.horiz ? (s0 + s1) / 2 : fixed, z: E.horiz ? fixed : (s0 + s1) / 2, horiz: E.horiz, inward: 1, lv: 0, C: null, col: 0, w, leaves: [], ro: [], t: 0, target: 0, auto: false };
-    D.rc = { x0: E.horiz ? s0 : fixed - 0.1, z0: E.horiz ? fixed - 0.1 : s0, x1: E.horiz ? s1 : fixed + 0.1, z1: E.horiz ? fixed + 0.1 : s1, k: 's', h: FH + 2.25, lv: 0, door: D, base: P };
+    D.rc = { x0: E.horiz ? s0 : fixed - 0.1, z0: E.horiz ? fixed - 0.1 : s0, x1: E.horiz ? s1 : fixed + 0.1, z1: E.horiz ? fixed + 0.1 : s1, k: 's', h: FH + 2.25 + (P.lvY || 0), lv: 0, door: D, base: P };
     addRect(D.rc); W.doors.push(D);
     const leaf = new THREE.Mesh(doorGeo, MAT[Math.min(2, P.dtier ?? P.tier)]); leaf.castShadow = leaf.receiveShadow = true; leaf.userData.leaf = 1; leaf.scale.x = w;
-    leaf.position.set(E.horiz ? s0 : fixed, FH, E.horiz ? fixed : s0); leaf.userData.a0 = E.horiz ? 0 : -Math.PI / 2; root.add(leaf); D.mesh = leaf; P.door = D;
+    leaf.position.set(E.horiz ? s0 : fixed, FH + (P.lvY || 0), E.horiz ? fixed : s0); leaf.userData.a0 = E.horiz ? 0 : -Math.PI / 2; root.add(leaf); D.mesh = leaf; P.door = D;
   };
   const rmDoor = P => { const D = P.door; if (!D) return; removeRect(D.rc); const i = W.doors.indexOf(D); if (i >= 0) W.doors.splice(i, 1); root.remove(D.mesh); P.door = null; };
-  const addStep = P => { P.step = { x0: P.i * CELL, z0: P.j * CELL, x1: P.i * CELL + CELL, z1: P.j * CELL + CELL, y: FH + 0.02, base: P }; W.steps.push(P.step); };
+  const addStep = P => { P.step = { x0: P.i * CELL, z0: P.j * CELL, x1: P.i * CELL + CELL, z1: P.j * CELL + CELL, y: FH + 0.02 + (P.lvY || 0), base: P }; W.steps.push(P.step); };
+  // volta a pôr cada peça no nível certo (depois de pôr ou tirar uma fundação, a base pode mudar de nível)
+  const applyLv = P => { buildMesh(P); pieceRects(P); if (P.t === 'fund') { if (P.step) { const i = W.steps.indexOf(P.step); if (i >= 0) W.steps.splice(i, 1); } addStep(P); } if (P.t === 'porta') { rmDoor(P); mkDoor(P); } };
+  const relevel = Pn => { relevelMap(); for (const P of pieces.values()) { const L = pieceLv(P); if (P === Pn || P.lvY !== L) { P.lvY = L; applyLv(P); } }
+    for (const d of deps) { const y = (d.yr || 0) + depLv(d.x, d.z); if (Math.abs(y - d.y) > 0.01) { d.y = y; d.g.position.y = y; if (d.rc) d.rc.h = y + DEPLOY[d.k].h; if (d.c) d.c.y = y + (d.c.bench ? 0.9 : d.c.bed ? 0.3 : 0.6); } } };
   const add = (t, key, o) => {
-    const P = { t, k: key, tier: 0, hp: TIERS[0].hp, ...o }; pieces.set(key, P); buildMesh(P); pieceRects(P);
-    if (t === 'fund') addStep(P); if (t === 'porta') mkDoor(P);
+    const P = { t, k: key, tier: 0, hp: TIERS[0].hp, ...o }; pieces.set(key, P); P.lvY = undefined; relevel(P);
     visDirty(); return P;
   };
-  const remove = P => { pieces.delete(P.k); if (P.g) root.remove(P.g); if (P.sh) { root.remove(P.sh); P.sh = null; } for (const r of P.rects || []) removeRect(r); rmDoor(P); if (P.step) { const i = W.steps.indexOf(P.step); if (i >= 0) W.steps.splice(i, 1); } visDirty(); };
+  const remove = P => { pieces.delete(P.k); if (P.g) root.remove(P.g); if (P.sh) { root.remove(P.sh); P.sh = null; } for (const r of P.rects || []) removeRect(r); rmDoor(P); if (P.step) { const i = W.steps.indexOf(P.step); if (i >= 0) W.steps.splice(i, 1); } if (P.t === 'fund') relevel(null); visDirty(); };
 
   // ---------- custos
   const can = need => Object.entries(need).every(([k, n]) => G.inv.count(k) >= n);
@@ -166,9 +182,9 @@ export function makeBase({ scene, W, G, audio, addRect, removeRect, visDirty, in
   const showGhost = (tg, mode) => {
     if (!tg || (tg.x0 === undefined && !tg.E)) { ghost.visible = false; return; }
     ghost.visible = true; ghost.rotation.set(0, 0, 0); ghost.material = GHOST[tg.bad || !can(PIECES[mode].cost) ? 1 : 0];
-    if (mode === 'fund') { ghost.scale.set(CELL, FH, CELL); ghost.position.set(tg.x0 + CELL / 2, FH / 2, tg.z0 + CELL / 2); }
-    else if (mode === 'teto') { ghost.scale.set(CELL, 0.2, CELL); ghost.position.set(tg.x0 + CELL / 2, FH + WH + 0.1, tg.z0 + CELL / 2); }
-    else { const E = tg.E; ghost.scale.set(E.horiz ? CELL : 0.24, WH, E.horiz ? 0.24 : CELL); ghost.position.set(tg.mx, FH + WH / 2, tg.mz); }
+    if (mode === 'fund') { const L = cellLv(tg.i, tg.j), dn = Math.max(0, L - cellMin(tg.i, tg.j)); ghost.scale.set(CELL, FH + dn, CELL); ghost.position.set(tg.x0 + CELL / 2, L + (FH - dn) / 2, tg.z0 + CELL / 2); }
+    else if (mode === 'teto') { ghost.scale.set(CELL, 0.2, CELL); ghost.position.set(tg.x0 + CELL / 2, cellLv(tg.i, tg.j) + FH + WH + 0.1, tg.z0 + CELL / 2); }
+    else { const E = tg.E; ghost.scale.set(E.horiz ? CELL : 0.24, WH, E.horiz ? 0.24 : CELL); ghost.position.set(tg.mx, pieceLv({ k: tg.k }) + FH + WH / 2, tg.mz); }
   };
   // martelo: a peça para onde estás virado
   const aimPiece = () => { const [fx, fz] = front(1.4), p = G.p; let best = null, bd = 2.6;
@@ -177,9 +193,10 @@ export function makeBase({ scene, W, G, audio, addRect, removeRect, visDirty, in
     return best; };
   const hl = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshBasicMaterial({ color: 0xf2a33a, transparent: true, opacity: 0.22, depthWrite: false })); hl.visible = false; hl.renderOrder = 6; scene.add(hl);
   const showHl = P => { if (!P) { hl.visible = false; return; } hl.visible = true;
-    if (P.t === 'fund') { hl.scale.set(CELL + 0.05, FH + 0.05, CELL + 0.05); hl.position.set(P.i * CELL + CELL / 2, FH / 2, P.j * CELL + CELL / 2); }
-    else if (P.t === 'teto') { hl.scale.set(CELL + 0.05, 0.25, CELL + 0.05); hl.position.set(P.i * CELL + CELL / 2, FH + WH + 0.1, P.j * CELL + CELL / 2); }
-    else { const E = edgeGeom(P.k); hl.scale.set(E.horiz ? CELL + 0.05 : 0.3, WH + 0.05, E.horiz ? 0.3 : CELL + 0.05); hl.position.set(E.horiz ? (E.x0 + E.x1) / 2 : E.x, FH + WH / 2, E.horiz ? E.z : (E.z0 + E.z1) / 2); } };
+    const L = P.lvY || 0;
+    if (P.t === 'fund') { hl.scale.set(CELL + 0.05, FH + 0.05, CELL + 0.05); hl.position.set(P.i * CELL + CELL / 2, L + FH / 2, P.j * CELL + CELL / 2); }
+    else if (P.t === 'teto') { hl.scale.set(CELL + 0.05, 0.25, CELL + 0.05); hl.position.set(P.i * CELL + CELL / 2, L + FH + WH + 0.1, P.j * CELL + CELL / 2); }
+    else { const E = edgeGeom(P.k); hl.scale.set(E.horiz ? CELL + 0.05 : 0.3, WH + 0.05, E.horiz ? 0.3 : CELL + 0.05); hl.position.set(E.horiz ? (E.x0 + E.x1) / 2 : E.x, L + FH + WH / 2, E.horiz ? E.z : (E.z0 + E.z1) / 2); } };
 
   // ---------- objetos colocados
   // candeeiro: vidro que acende de noite e uma mancha de luz no chão (a luz a sério vem das luzes perto da câmara)
@@ -203,8 +220,8 @@ export function makeBase({ scene, W, G, audio, addRect, removeRect, visDirty, in
     return g;
   };
   const placeDep = (k, x, z, yaw, o = {}) => {
-    const D = DEPLOY[k], y = o.y ?? 0;
-    const d = { k, x, z, yaw, y, hp: o.hp ?? D.hp, g: depMesh(k), on: !!o.on, burn: o.burn || 0, nid: o.nid, u: o.u };
+    const D = DEPLOY[k], yr = Math.min(o.y ?? 0, FH), y = yr + depLv(x, z); // o servidor guarda a altura em cima da fundação (0 ou 0,3); aqui junta-se o nível do sítio
+    const d = { k, x, z, yaw, y, yr, hp: o.hp ?? D.hp, g: depMesh(k), on: !!o.on, burn: o.burn || 0, nid: o.nid, u: o.u };
     if (D.bed) { d.name = o.name || DEPLOY[k].n + ' ' + (deps.filter(e => e.k === k).length + 1); d.cd = o.cd || 0; }
     d.g.position.set(x, y, z); d.g.rotation.y = yaw; root.add(d.g);
     const [w, l] = D.r, c = Math.abs(Math.cos(yaw)), s = Math.abs(Math.sin(yaw)), hw = (w * c + l * s) / 2, hl2 = (w * s + l * c) / 2;
@@ -240,7 +257,7 @@ export function makeBase({ scene, W, G, audio, addRect, removeRect, visDirty, in
     let x, z; if (PL.pin) { x = PL.pin.x; z = PL.pin.z; } else { const dist = 0.9 + Math.max(D.r[0], D.r[1]) / 2; x = p.x + Math.sin(p.yaw) * dist; z = p.z + Math.cos(p.yaw) * dist; }
     const face = Math.atan2(p.x - x, p.z - z), yaw = Math.round(face / (Math.PI / 2)) * (Math.PI / 2);
     PL.x = x; PL.z = z; PL.yaw = yaw; PL.why = placeWhy(k, x, z, yaw) || ''; PL.ok = !PL.why; };
-  const showPlace = () => { const it = PL.it; const D = DEPLOY[ITEMS[it.k].deploy]; ghost.visible = true; ghost.material = GHOST[PL.ok ? 0 : 1]; ghost.scale.set(D.r[0], Math.max(0.15, D.h), D.r[1]); ghost.rotation.set(0, PL.yaw, 0); ghost.position.set(PL.x, PL.y + Math.max(0.15, D.h) / 2, PL.z); };
+  const showPlace = () => { const it = PL.it; const D = DEPLOY[ITEMS[it.k].deploy]; ghost.visible = true; ghost.material = GHOST[PL.ok ? 0 : 1]; ghost.scale.set(D.r[0], Math.max(0.15, D.h), D.r[1]); ghost.rotation.set(0, PL.yaw, 0); ghost.position.set(PL.x, PL.y + depLv(PL.x, PL.z) + Math.max(0.15, D.h) / 2, PL.z); };
   const Base = {
     B, pieces, deps,
     // camas: lista, renascer (com espera), mudar o nome, apanhar e remover
@@ -269,10 +286,10 @@ export function makeBase({ scene, W, G, audio, addRect, removeRect, visDirty, in
       for (const P of pieces.values()) if (P.door) { const D = P.door, e = D.t * D.t * (3 - 2 * D.t); D.mesh.rotation.y = D.mesh.userData.a0 + e * Math.PI / 2 * 0.95; }
       // paredes da base perto de ti ficam baixas (vista de cima vês o vão da porta e lá dentro); na primeira pessoa ficam inteiras
       // a parede baixa continua a fazer sombra inteira (cópia só para sombras, camada 1): a lanterna e o sol não passam por cima dela
-      for (const P of pieces.values()) { if (P.t === 'fund' || P.t === 'teto' || !P.g || P.sh) continue; const sh = P.g.clone(); const drop = []; sh.traverse(o => { if (o.userData && o.userData.leaf) drop.push(o); o.layers.set(1); if (o.isMesh) { o.castShadow = true; o.receiveShadow = false; } }); drop.forEach(o => o.parent && o.parent.remove(o)); P.g.traverse(o => { if (o.isMesh && !(o.userData && o.userData.leaf)) o.castShadow = false; }); root.add(sh); P.sh = sh; }
+      for (const P of pieces.values()) { if (P.t === 'fund' || P.t === 'teto' || !P.g || P.sh) continue; const sh = P.g.clone(); const drop = []; sh.traverse(o => { if (o.userData && o.userData.leaf) drop.push(o); o.layers.set(1); if (o.isMesh) { o.castShadow = true; o.receiveShadow = false; } }); drop.forEach(o => o.parent && o.parent.remove(o)); P.g.traverse(o => { if (o.isMesh && !(o.userData && o.userData.leaf)) o.castShadow = false; }); sh.scale.y = 1; sh.position.y = P.lvY || 0; root.add(sh); P.sh = sh; }
       for (const P of pieces.values()) { if (P.t === 'fund' || P.t === 'teto' || !P.g) continue; const E = P.E || (P.E = edgeGeom(P.k)), mx = E.horiz ? (E.x0 + E.x1) / 2 : E.x, mz = E.horiz ? E.z : (E.z0 + E.z1) / 2;
         const want = p && (p.lv || 0) === 0 && !G.fp && Math.hypot(mx - p.x, mz - p.z) < 6.5 ? CUT : 1; P.cut = (P.cut ?? 1) + (want - (P.cut ?? 1)) * 0.18; if (Math.abs(P.cut - want) < 0.005) P.cut = want;
-        P.g.scale.y = P.cut; P.g.position.y = FH * (1 - P.cut); if (P.door) { P.door.mesh.scale.y = P.cut; } }
+        P.g.scale.y = P.cut; P.g.position.y = (P.lvY || 0) + FH * (1 - P.cut); if (P.door) { P.door.mesh.scale.y = P.cut; } }
       return k;
     },
     // pôr a peça escolhida
@@ -349,7 +366,7 @@ export function makeBase({ scene, W, G, audio, addRect, removeRect, visDirty, in
       return [a * CELL, b * CELL, (c + 1) * CELL, (d + 1) * CELL]; },
     pieceAt(x, z, r) { for (const P of pieces.values()) for (const q of P.rects || []) if (x > q.x0 - r && x < q.x1 + r && z > q.z0 - r && z < q.z1 + r) return P; return null; },
     // gravar e repor
-    save(encG) { return { p: [...pieces.values()].map(P => [P.t, P.k, P.i ?? null, P.j ?? null, P.tier, Math.round(P.hp), P.door ? P.door.target : 0, P.cl || 0]), d: deps.map(d => [d.k, +d.x.toFixed(2), +d.z.toFixed(2), +d.yaw.toFixed(3), d.y, Math.round(d.hp), d.c && d.c.grid ? encG(d.c.grid) : null, d.on ? 1 : 0, 0, d.name || null, d.cd || 0, d.cl || 0]) }; },
+    save(encG) { return { p: [...pieces.values()].map(P => [P.t, P.k, P.i ?? null, P.j ?? null, P.tier, Math.round(P.hp), P.door ? P.door.target : 0, P.cl || 0]), d: deps.map(d => [d.k, +d.x.toFixed(2), +d.z.toFixed(2), +d.yaw.toFixed(3), d.yr || 0, Math.round(d.hp), d.c && d.c.grid ? encG(d.c.grid) : null, d.on ? 1 : 0, 0, d.name || null, d.cd || 0, d.cl || 0]) }; },
     load(s, decG) { Base.clear(); if (!s) return;
       for (const [t, k, i, j, tier, hp, open, cl] of s.p || []) { const P = add(t, k, t === 'fund' || t === 'teto' ? { i, j } : {}); P.tier = tier; P.hp = hp; P.cl = cl || 0; buildMesh(P); if (P.door) { P.door.mesh.material = MAT[P.tier]; P.door.t = P.door.target = open ? 1 : 0; } }
       for (const [k, x, z, yaw, y, hp, gl, on, sp, name, cd, cl] of s.d || []) { const D = DEPLOY[k]; if (!D) continue; const grid = gl && D.slots ? decG(gl, new Grid(D.slots[0], D.slots[1])) : null; const d = placeDep(k, x, z, yaw, { y, hp, grid, on, name, cd }); d.cl = cl || 0; } },
