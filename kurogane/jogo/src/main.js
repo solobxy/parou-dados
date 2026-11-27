@@ -121,13 +121,17 @@ async function boot() {
   // texturas realistas do chão (ficheiros ao lado da página; até chegarem, ficam as desenhadas aqui) e duas amostras misturadas
   // com uma mancha larga, para não se ver a repetição dos quadrados
   { const AT = new Set(['grass', 'dirt', 'asph']), BR = new Set(['grass', 'dirt', 'asph', 'conc', 'tile']);
-    for (const k of BR) { const m = mats[k]; m.onBeforeCompile = sh => { sh.fragmentShader = sh.fragmentShader.replace('#include <map_fragment>', `#ifdef USE_MAP
+    for (const k of BR) { const m = mats[k]; m.onBeforeCompile = sh => { if (k === 'grass') { sh.uniforms.uDet = { value: DET }; sh.uniforms.uDirt = { get value() { return mats.dirt.map; } }; sh.fragmentShader = 'uniform sampler2D uDet, uDirt;\n' + sh.fragmentShader; } sh.fragmentShader = sh.fragmentShader.replace('#include <map_fragment>', `#ifdef USE_MAP
       vec2 uA = vMapUv; float n1 = 0.5 + 0.5 * sin(uA.x * 1.31 + sin(uA.y * 0.83) * 2.1) * sin(uA.y * 1.17 + sin(uA.x * 0.71) * 1.9);
       vec4 sampledDiffuseColor = texture2D(map, uA);
       ${AT.has(k) ? 'vec2 uB = mat2(0.8, -0.6, 0.6, 0.8) * uA * 0.61 + vec2(0.37, 0.11); vec4 cB = texture2D(map, uB); sampledDiffuseColor = mix(sampledDiffuseColor, cB, smoothstep(0.3, 0.7, n1));' : ''}
       float n2 = 0.5 + 0.5 * sin(uA.x * 0.23 + 1.7) * sin(uA.y * 0.19 + 0.4); sampledDiffuseColor.rgb *= 0.9 + 0.2 * n2;
+      ${k === 'grass' ? `{ vec2 wp = vec2(uA.x, -uA.y) * 9.0; float big = texture2D(uDet, wp * 0.0035).r, mid = texture2D(uDet, wp * 0.021 + 0.3).r; // terra a aparecer na erva e neve no norte do mapa
+        float dm = smoothstep(0.6, 0.74, big * 0.62 + mid * 0.5); sampledDiffuseColor = mix(sampledDiffuseColor, texture2D(uDirt, uA * 1.3), dm * 0.85);
+        float sn = smoothstep(-1500.0, -2200.0, wp.y + (mid - 0.5) * 320.0), sm = sn * smoothstep(0.32, 0.6, mid * 0.7 + texture2D(uDet, wp * 0.08).g * 0.5);
+        sampledDiffuseColor.rgb = mix(sampledDiffuseColor.rgb, vec3(0.84, 0.87, 0.92) * (0.88 + 0.14 * texture2D(uDet, wp * 0.6).g), sm); }` : ''}
       diffuseColor *= sampledDiffuseColor;
-      #endif`); }; m.customProgramCacheKey = () => 'chao-' + k; }
+      #endif`); }; m.customProgramCacheKey = () => 'chao2-' + k; }
     const L = new THREE.TextureLoader();
     for (const k of BR) L.load('tex/' + k + '.jpg', t => { t.wrapS = t.wrapT = THREE.RepeatWrapping; t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; const m = mats[k]; const old = m.map; m.map = t; m.needsUpdate = true; if (old && old.dispose) old.dispose(); }, undefined, () => {}); }
 

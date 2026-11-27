@@ -36,6 +36,10 @@ export function makeSky() {
           cc = mix(cc, uHor, smoothstep(0.18, 0.0, h) * 0.7); // ao longe as nuvens desvanecem no nevoeiro
           col = mix(col, cc, cv * 0.92); }
         col += uSun * disc * 2.2 * (1.0 - cv * 0.85);
+        { float az = atan(d.z, d.x); // colinas e montanhas ao longe, recortadas no horizonte (meio escondidas pelo nevoeiro)
+          float m1 = texture2D(uTex, vec2(az * 0.16, 0.13)).r, m2 = texture2D(uTex, vec2(az * 0.55, 0.61)).g, hm = 0.018 + 0.1 * m1 * m1 + 0.015 * m2, hm2 = 0.008 + 0.045 * texture2D(uTex, vec2(az * 0.31 + 0.5, 0.37)).r;
+          vec3 far = mix(uHor, uHor * vec3(0.72, 0.78, 0.8) + uZen * 0.08, 0.75), near = mix(uHor, uHor * vec3(0.55, 0.62, 0.6), 0.85);
+          col = mix(col, far, smoothstep(hm + 0.002, hm - 0.002, h) * smoothstep(-0.05, 0.0, h)); col = mix(col, near, smoothstep(hm2 + 0.002, hm2 - 0.002, h) * smoothstep(-0.05, 0.0, h)); }
         col = mix(col, uHor, smoothstep(0.02, -0.06, h)); // abaixo do horizonte: a cor do nevoeiro
         gl_FragColor = vec4(col, 1.0); }` });
   const mesh = new THREE.Mesh(new THREE.SphereGeometry(10, 32, 16), mat); mesh.frustumCulled = false; mesh.renderOrder = -1000; mesh.matrixAutoUpdate = true;
