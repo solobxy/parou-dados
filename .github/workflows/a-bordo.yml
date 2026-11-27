@@ -155,7 +155,7 @@ jobs:
         working-directory: app
         run: |
           mkdir -p ../res
-          for t in pesquisa-locais cache-limitada cache-linhas-perto idioma-aparelho caminho-a-pe convite-instalar nomes-paragens ilhas fuso-ilhas horario-dia greves-avisos ttsl-fonte cidades-margens desenho-alternativo encaixe-desenho tml-alertas fontes-oficiais historico-arquivo contactos cp-greve-servicos relatorios greve-horario greves-pais ocorrencias-posicao cp-servicos-minimos plenarios avisos-tub avisos-servico-operadores avisos-nos-horarios; do
+          for t in pesquisa-locais cache-limitada cache-linhas-perto idioma-aparelho caminho-a-pe convite-instalar nomes-paragens ilhas fuso-ilhas horario-dia greves-avisos ttsl-fonte cidades-margens desenho-alternativo encaixe-desenho tml-alertas fontes-oficiais historico-arquivo contactos cp-greve-servicos relatorios greve-horario greves-pais ocorrencias-posicao cp-servicos-minimos plenarios avisos-tub avisos-servico-operadores avisos-nos-horarios favoritos-sentido; do
             echo "== $t"
             APP=$PWD node --import tsx ../auditoria/$t.mjs 2>&1 | grep -v "Experimental\|trace-warnings" | tee ../res/$t.txt | tail -40
           done
@@ -405,6 +405,13 @@ jobs:
         run: |
           mkdir -p ../res
           SAIDA=../res timeout 400 node horario-dia-ecra.mjs 2>&1 | tee ../res/horario-dia-ecra.txt | tail -60
+
+      - name: Testar os favoritos por sentido (browser)
+        continue-on-error: true
+        working-directory: auditoria
+        run: |
+          mkdir -p ../res
+          SAIDA=../res timeout 300 node favoritos-sentido-ui.mjs 2>&1 | tee ../res/favoritos-sentido-ui.txt | tail -60
 
       - name: Testar a fonte da Transtejo Soflusa no ecrã de uma linha (browser)
         continue-on-error: true
