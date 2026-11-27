@@ -26,6 +26,7 @@ import { track, push, sample } from './interp.js';
 import { TRADERS, PRICE, SELL, TRADE_R } from './traders.js';
 import { initPWA } from './pwa.js';
 import { wear } from './wear.js';
+import { makeSky } from './sky.js';
 import { ANK, ANBYK, ANLOOT, spawnAnimals, anHit, anPart, animalAI, Fauna } from './animals.js';
 
 const TOUCH = matchMedia('(pointer: coarse)').matches || ('ontouchstart' in window && navigator.maxTouchPoints > 0);
@@ -54,6 +55,7 @@ async function boot() {
   const scene = new THREE.Scene();
   const FOG = 0xb7a991; scene.background = new THREE.Color(FOG); scene.fog = new THREE.Fog(FOG, 62, 150);
   const SUNDIR = new THREE.Vector3(-58, 40, 30).normalize();
+  const SKY = makeSky(); scene.add(SKY.mesh); const SUNV = new THREE.Vector3(); // céu com sol, lua, estrelas e nuvens
   const hemi = new THREE.HemisphereLight(0xa8bde0, 0x5b4a3a, 0.62); scene.add(hemi);
   const sun = new THREE.DirectionalLight(0xffc896, 3.0); sun.castShadow = true;
   const SH = 24, SMAP = TOUCH ? 1024 : 2048; sun.shadow.mapSize.set(SMAP, SMAP);
@@ -86,7 +88,7 @@ async function boot() {
   const lampL = [0, 1, 2, 3].map(() => { const l = new THREE.PointLight(0xffc27a, 0, 20, 1.6); scene.add(l); return l; }); // os candeeiros mais perto da câmara acendem a sério
   // o lume e os candeeiros da base mais perto: luz com sombra (as paredes da base, mesmo baixas, tapam-na; camada 1 = cópias inteiras das paredes)
   const baseL = [0].map(() => { const l = new THREE.PointLight(0xff9a4a, 0, 9, 1.7); l.castShadow = true; l.shadow.mapSize.set(256, 256); l.shadow.camera.near = 0.08; l.shadow.camera.far = 9; l.shadow.bias = -0.004; l.shadow.camera.layers.enable(1); scene.add(l); return l; });
-  const FOGD = new THREE.Color(0xb7a991), FOGS = new THREE.Color(0x9a6a52), FOGN = new THREE.Color(0x0c1018), SUNC = new THREE.Color(0xffc896), MOONC = new THREE.Color(0x8aa2d8), _fc = new THREE.Color(), _rc = new THREE.Color();
+  const FOGD = new THREE.Color(0xc3c7c2), FOGS = new THREE.Color(0xc27a66), FOGN = new THREE.Color(0x0c1018), SUNC = new THREE.Color(0xffc896), MOONC = new THREE.Color(0x8aa2d8), _fc = new THREE.Color(), _rc = new THREE.Color();
   const sm = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
 
   // ---------- texturas e materiais
@@ -1871,7 +1873,7 @@ async function boot() {
       const rn = G.rain || 0; sun.intensity = (0.32 + 2.7 * D) * (1 - 0.6 * rn); sun.color.copy(MOONC).lerp(SUNC, D);
       hemi.intensity = (0.1 + 0.52 * D) * (1 - 0.25 * rn); scene.environmentIntensity = 0.05 + 0.45 * D;
       const dusk = Math.max(0, 1 - Math.abs(D - 0.45) / 0.35) * 0.6;
-      _fc.copy(FOGN).lerp(FOGD, D).lerp(FOGS, dusk); if (rn > 0) _fc.lerp(_rc.copy(RAINFOG).multiplyScalar(0.35 + 0.65 * D), 0.55 * rn); if (G.boltT > 0) _fc.lerp(_rc.setRGB(0.85, 0.88, 0.95), Math.min(1, G.boltT * 6) * 0.5); scene.fog.color.copy(_fc); scene.background.copy(_fc); if (G.boltT > 0) hemi.intensity += G.boltT * 6;
+      _fc.copy(FOGN).lerp(FOGD, D).lerp(FOGS, dusk); if (rn > 0) _fc.lerp(_rc.copy(RAINFOG).multiplyScalar(0.35 + 0.65 * D), 0.55 * rn); if (G.boltT > 0) _fc.lerp(_rc.setRGB(0.85, 0.88, 0.95), Math.min(1, G.boltT * 6) * 0.5); scene.fog.color.copy(_fc); scene.background.copy(_fc); if (G.boltT > 0) hemi.intensity += G.boltT * 6; SUNV.set(-Math.cos(ang) * 0.9, el, 0.42).normalize(); G.skyArgs = [SUNV, D, Math.min(1, dusk * 1.7), rn];
       mats.sign.emissiveIntensity = 1.05 + 1.0 * (1 - D); mats.nwin.emissiveIntensity = 1.5 * (1 - D); mats.nwin2.emissiveIntensity = 1.1 * (1 - D); renderer.toneMappingExposure = 1.02 + 0.2 * (1 - D);
       const nt = 1 - D;
       // óculos de visão noturna: ligam sozinhos ao escurecer (mais luz e tudo em verde)
@@ -2011,6 +2013,7 @@ async function boot() {
     if (window.__rinfoOn) { renderer.info.autoReset = false; renderer.info.reset(); }
     if (G.camOv) { const o = G.camOv; cam.position.set(o.p[0], o.p[1], o.p[2]); cam.lookAt(o.t[0], o.t[1], o.t[2]); if (o.fov && cam.fov !== o.fov) { cam.fov = o.fov; cam.updateProjectionMatrix(); } G.vmOn = false; if (o.noMe) body.root.visible = false; if (o.fl && o.fl[0]) { const q = o.fl[0]; flash.position.set(q[0], q[1], q[2]); flash.intensity = 12; flash.distance = 6; } if (o.pin) for (const q of o.pin) { q.b.root.visible = true; q.b.root.position.set(q.x, 0.03, q.z); q.b.root.rotation.y = q.yaw; } for (const F of MZP) if (F.keep) { F.t = 1; F.s.visible = true; } } // capturas de cinema para os cartões do menu
     lgTick(dt);
+    if (G.skyArgs) { const A = G.skyArgs; SKY.update(cam.position, scene.fog.color, A[0], A[1], A[2], A[3], G.t); }
     fireFrame(G.t, renderer, cam); renderer.render(scene, cam); olRender();
     if (G.vmOn) { renderer.autoClear = false; renderer.clearDepth(); renderer.render(vm.scene, vm.cam); renderer.autoClear = true; }
   };
