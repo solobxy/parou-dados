@@ -357,6 +357,7 @@ export function initUI(G) {
   if (cfg && cfg.v === 1) { cfg.v = 2; for (const k in cfg.hud) { const h = cfg.hud[k]; if (h.dx || h.dy || h.s) h.L = { dx: h.dx || 0, dy: h.dy || 0, s: h.s || 1 }; delete h.dx; delete h.dy; delete h.s; } if (cfg.hud.fire) cfg.hud.fire.on = 1; delete cfg.fire; }
   if (!cfg || cfg.v !== 2) cfg = JSON.parse(JSON.stringify(DEF)); for (const k in DEF) if (cfg[k] === undefined) cfg[k] = JSON.parse(JSON.stringify(DEF[k])); for (const k in DEF.hud) if (!cfg.hud[k]) cfg.hud[k] = { ...DEF.hud[k] };
   if (cfg.sensV !== 2) { if (cfg.sens === 1) cfg.sens = SENS0; cfg.sensV = 2; }
+  if ((cfg.hudV | 0) < 3) { cfg.hudV = 3; for (const k of ['vit', 'tr', 'feed', 'fire', 'reload', 'jump', 'ads', 'crouch', 'prone']) if (cfg.hud && cfg.hud[k]) delete cfg.hud[k].L; } /* HUD compacta: as posições mudaram, recomeça do sítio novo */
   if (!cfg.autoV) { cfg.autoV = 1; if (cfg.hud && cfg.hud.sprint) cfg.hud.sprint.on = 1; } // o botão de correr sempre passa a aparecer
   if (!cfg.q2) { cfg.q2 = 1; cfg.quick = true; } // 0.22: o botão grande passa a disparar logo (antes o 1.º toque só levantava a arma)
   G.cfg = cfg; G.FP_ONLY = true; G.fpFree = G.FP_ONLY || !!cfg.fpView; // teste: o jogo só em 1.ª pessoa (a 3.ª continua para os outros te verem) // a vista escolhida fica guardada

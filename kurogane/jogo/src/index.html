@@ -823,6 +823,32 @@ body.mir #touch .tb>*,body.mir #touch .ghost{transform:scaleX(-1)}
 #asc .ascn{display:flex;gap:10px;font:600 11px/1 "Roboto Condensed",sans-serif}#asc .ascn span{display:inline-flex;align-items:center;gap:3px;background:none!important;padding:0}#asc .ascn .r{color:#ff8a7e}#asc .ascn .b{color:#8fb0ff}
 #arw .atm.full{opacity:.42;filter:saturate(.4)}#arw .atm.full span{color:#fff}
 #arGo.cdb{position:relative;overflow:hidden;opacity:1!important;background:#2a2825;color:var(--tx)}#arGo.cdb::before{content:"";position:absolute;inset:0;transform-origin:0 50%;transform:scaleX(var(--p,0));background:linear-gradient(90deg,#4f7a2e,#6c9a3d);z-index:0;transition:transform .1s linear}#arGo.cdb{isolation:isolate}#arGo.cdb::before{z-index:-1}
+
+/* HUD compacta (estilo Oxide): menos peso no ecrã, barras finas por cima do cinto, botões mais pequenos */
+body.touch{--mmw:84px}body.touch #hud{--slot:42px}
+#zone b{font-size:13px}#zone span{font-size:11px}
+#zone{max-width:calc(50vw - min(18vw,160px) - var(--sl) - var(--mmw) - 34px);min-width:0}#zone b,#zone span{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#tr{background:none!important;gap:8px}.hb+.hb::before{display:none}
+.hb{border-radius:50%;background:rgba(10,10,9,.34);box-shadow:inset 0 0 0 1.5px rgba(255,250,240,.38)}
+body.touch .hb{width:42px;height:42px;min-width:0}body.touch .hb svg{width:19px;height:19px}
+body:not(.touch) .hb{border-radius:21px}
+.tb{--sz:50px}.tb svg{width:19px;height:19px}.tb em{font-size:8.5px}
+#tFire{--sz:68px}#tFire svg{width:25px;height:25px}
+#tSprint,#tLight{--sz:44px}
+#ammo .num{font-size:22px}#ammo .num small{font-size:13px}#ammo span{font-size:10px}
+#cmp b{font-size:12px}
+#vit .vb{height:16px;width:calc((var(--slot) * 6 + 15px - 8px) / 3)}#vit{gap:4px}.vb svg{width:11px;height:11px;margin:0 5px 0 6px}.vb .num{font-size:12px}
+@media (orientation:landscape){
+ #vit{left:50%;top:auto;transform:translateX(-50%);bottom:calc(16px + var(--slot) + var(--sb));flex-direction:row;gap:4px}
+ #feed{top:calc(12px + var(--st) + 48px)}
+ body.touch #tJump{right:calc(16px + var(--sr));bottom:calc(12px + var(--sb))}
+ body.touch #tFire{right:calc(20px + var(--sr));bottom:calc(76px + var(--sb))}
+ body.touch #tReload{right:calc(98px + var(--sr));bottom:calc(64px + var(--sb))}
+ body.touch #tAds{right:calc(152px + var(--sr));bottom:calc(118px + var(--sb))}
+ body.touch #tCrouch{right:calc(16px + var(--sr));bottom:calc(160px + var(--sb))}
+ body.touch #tProne{right:calc(74px + var(--sr));bottom:calc(160px + var(--sb))}
+}
+@media (orientation:landscape) and (max-height:360px){body.touch #tUse{bottom:calc(84px + var(--sb))}body.touch #tReload{bottom:calc(84px + var(--sb))}}
 </style>
 </head>
 <body>
@@ -896,7 +922,7 @@ body.mir #touch .tb>*,body.mir #touch .ghost{transform:scaleX(-1)}
   <nav class="menu"><button class="mi pri" id="sCont" hidden><b>Continuar</b><em>Voltas onde ficaste</em></button><button class="mi pri" id="sPlay"><b>Survival</b><em>Continuas onde ficaste, ou começas perto de uma vila</em></button><button class="mi" id="sArena"><b>Arena</b><em>PvP em Tóquio · Vermelha contra Azul · 5 kits</em></button><button class="mi" id="sSet"><b>Definições</b><em>Controlos, imagem e som</em></button></nav>
   <div class="onl" id="sOnl" role="status"><i class="dot" aria-hidden="true"></i><span><b>Servidor</b><em id="sOnT">A ver quem está a jogar…</em></span></div>
   <div class="keys" id="sKeys"></div>
-  <div class="foot">Protótipo 0.53 · um servidor para todos · quem sai fica a dormir no mundo</div>
+  <div class="foot">Protótipo 0.54 · um servidor para todos · quem sai fica a dormir no mundo</div>
 </div><button id="sMus" aria-label="Música do menu"><span class="on">{{volume-2}}</span><span class="off">{{volume-x}}</span></button><a class="credit" href="https://dinissousa.pt" target="_blank" rel="noopener">feito por dinissousa.pt</a></div>
 <div id="arw" class="ov" hidden></div>
 <div id="pfm" class="ov" hidden><div class="pfbox"><div class="pfh"><b id="pfT"></b><button class="close" id="pfX" aria-label="Fechar">{{x}}</button></div><div id="pfB" class="pfb"></div></div></div>
