@@ -17,7 +17,7 @@ const pick = a => a[Math.floor(Math.random() * a.length)];
 // ---------- geometria: caixas para a linha de vista (paredes de cada piso, muretas, caixas, janelas só até ao parapeito)
 const BOX = [], CYL = [];
 if (COL) {
-  for (const [x0, z0, x1, z1, h, lv] of COL.rects) { const y0 = lv * FH; BOX.push([x0, z0, x1, z1, y0, y0 + (h >= 2.9 ? h + 0.32 : h)]); }
+  for (const [x0, z0, x1, z1, h, lv, , door] of COL.rects) { if (door) continue; const y0 = lv * FH; BOX.push([x0, z0, x1, z1, y0, y0 + (h >= 2.9 ? h + 0.32 : h)]); } // portas à parte (abrem e fecham)
   for (const [x, z, r] of COL.circ) CYL.push([x, z, r]);
 }
 // segmento A→B contra caixa (método das placas): devolve a fração t onde entra, ou 2 se não toca
@@ -32,9 +32,12 @@ const segBox = (ax, ay, az, dx, dy, dz, b) => {
   return t0;
 };
 // primeira coisa sólida entre A e B (fração 0..1), 1 se nada
+// portas da arena: [id, x0, z0, x1, z1, aberta no mapa, piso]; começam todas fechadas (como o jogo as põe ao entrar) e o estado é o do servidor
+export const DOORS = new Map((COL && COL.doors || []).map(d => [d[0], { id: d[0], x0: d[1], z0: d[2], x1: d[3], z1: d[4], o: 0, lv: d[6], b: [d[1], d[2], d[3], d[4], d[6] * FH, d[6] * FH + 2.3] }]));
 export const rayFrac = (ax, ay, az, bx, by, bz) => {
   const dx = bx - ax, dy = by - ay, dz = bz - az; let best = 1;
   const mnx = Math.min(ax, bx), mxx = Math.max(ax, bx), mnz = Math.min(az, bz), mxz = Math.max(az, bz);
+  for (const D of DOORS.values()) { if (D.o) continue; const b = D.b; if (b[2] < mnx || b[0] > mxx || b[3] < mnz || b[1] > mxz) continue; const t = segBox(ax, ay, az, dx, dy, dz, b); if (t < best) best = t; } // porta fechada tapa a vista e as balas
   for (const b of BOX) { if (b[2] < mnx || b[0] > mxx || b[3] < mnz || b[1] > mxz) continue; const t = segBox(ax, ay, az, dx, dy, dz, b); if (t < best) best = t; }
   const l2 = dx * dx + dz * dz || 1e-9;
   for (const [cx, cz, r] of CYL) { if (cx + r < mnx || cx - r > mxx || cz + r < mnz || cz - r > mxz) continue; const t = clamp(((cx - ax) * dx + (cz - az) * dz) / l2, 0, 1); if (ay + dy * t > 2.3) continue; if (Math.hypot(ax + dx * t - cx, az + dz * t - cz) < r && t < best) best = Math.max(0, t - 0.01); }
@@ -49,7 +52,7 @@ const cx_ = i => GX0 + (i + 0.5) * CS, cz_ = j => GZ0 + (j + 0.5) * CS;
 const ci = x => Math.floor((x - GX0) / CS), cj = z => Math.floor((z - GZ0) / CS);
 const markRect = (x0, z0, x1, z1, r) => { for (let i = Math.max(0, ci(x0 - r)); i <= Math.min(NX - 1, ci(x1 + r)); i++) for (let j = Math.max(0, cj(z0 - r)); j <= Math.min(NZ - 1, cj(z1 + r)); j++) { const x = cx_(i), z = cz_(j); if (x > x0 - r && x < x1 + r && z > z0 - r && z < z1 + r) blk[i + j * NX] = 1; } };
 if (COL) {
-  for (const [x0, z0, x1, z1, , lv] of COL.rects) if (!lv) markRect(x0, z0, x1, z1, RB);
+  for (const [x0, z0, x1, z1, , lv, , door] of COL.rects) if (!lv && !door) markRect(x0, z0, x1, z1, RB); // as portas não bloqueiam o caminho: o bot abre-as
   for (const [x, z, r] of COL.circ) markRect(x - r, z - r, x + r, z + r, RB);
   for (const [x0, z0, x1, z1, y] of COL.steps) if (y >= 0.2) markRect(x0, z0, x1, z1, RB);
 }
@@ -96,11 +99,11 @@ const toW = (t, u, v) => [AX + (t ? 1 : -1) * u, AZ + v];
 const SPAWN = t => { const s = t ? 1 : -1; return [[AX + s * 43, AZ - 4], [AX + s * 43, AZ + 4], [AX + s * 41, AZ], [AX + s * 44.5, AZ - 1.5], [AX + s * 44.5, AZ + 1.5], [AX + s * 41.5, AZ - 6], [AX + s * 41.5, AZ + 6]]; };
 
 const KITB = {
-  atirador: { w: 'm4', k: 'a556', ar: [2, 3], gk: 'capacete,colete,,,mochila', ban: 3 },
-  assalto: { w: 'ak', k: 'a762', ar: [0, 3], gk: ',colete,,,mochila', ban: 3 },
+  atirador: { w: 'm4', k: 'a556', ar: [2, 3], gk: 'capacete,colete,,,mochila', ban: 3, gren: 1 },
+  assalto: { w: 'ak', k: 'a762', ar: [0, 3], gk: ',colete,,,mochila', ban: 3, gren: 2 },
   sniper: { w: 'cheytac', k: 'a408', ar: [2, 0], gk: 'capacete,,,,mochila', ban: 2 },
   pesado: { w: 'm249', k: 'a556', ar: [2, 3], gk: 'capacete,colete,,,mochila', ban: 3 },
-  apoio: { w: 'smg', k: 'a9', ar: [0, 3], gk: ',colete,,,mochila', ban: 6 },
+  apoio: { w: 'smg', k: 'a9', ar: [0, 3], gk: ',colete,,,mochila', ban: 6, gren: 2 },
 };
 const NAMES = ['Kenji', 'rafa_07', 'TiagoM', 'xNuno', 'Hiro', 'LuisP', 'marta_ss', 'Daichi', 'andre99', 'Ruben_K', 'sakura_x', 'JoaoV', 'Ines_R', 'zekinha', 'Yuki', 'pedrocas', 'Rita_M', 'Kaito', 'vasco23', 'Bia_lx', 'Goncalo', 'Ren_7', 'miguelito', 'Sora', 'duarte_pt', 'Haruto', 'Carol_S', 'Tomas04', 'Akira', 'franzz'];
 const LOOK = { skin: [0xf1c9a5, 0xe3b48e, 0xd9a882, 0xb9805a, 0x8d5a3b, 0x5e3a25], hair: [0x2a211b, 0x4a3424, 0x7a5434, 0xb08a4a, 0x8a8a86, 0xb8342a], top: [0x5c6846, 0x3a4a5e, 0x6a3a32, 0x2a2b2c, 0x8a7a5a, 0xc4b9a4, 0x4f5f6a, 0x7a2a3a], legs: [0x3a3f33, 0x2c3440, 0x4a3a2a, 0x2a2a2a, 0x6a6458, 0x3d4a5a] };
@@ -108,7 +111,7 @@ const LOOK = { skin: [0xf1c9a5, 0xe3b48e, 0xd9a882, 0xb9805a, 0x8d5a3b, 0x5e3a25
 // nível de cada humano: precisão (tiros que acertam) e baixas por morte, com valores de partida para não oscilar no início
 export const humanSkill = p => { const acc = ((p.hN || 0) + 1) / ((p.sN || 0) + 5), kd = ((p.k || 0) + 1) / ((p.d || 0) + 1); return clamp(0.5 * clamp(acc / 0.5, 0, 1) + 0.5 * clamp(kd / 3, 0, 1), 0.05, 1); };
 
-export function makeBots(A) {
+export function makeBots(A) { // A: { players, add, remove, shot, kill, teamId, bcast, door }
   // A: { players, add, remove, shot, kill, bcast, board, info, now }
   const T0 = Date.now(); let nid = 9e6;
   const adj = [0, 0]; // ajuste de nível por equipa (sobe quando os bots morrem, desce quando matam)
@@ -122,7 +125,7 @@ export function makeBots(A) {
     let best = null, bd = -1; for (const q of SPAWN(p.team)) { let d = 99; for (const o of foes) d = Math.min(d, Math.hypot(o.p.x - q[0], o.p.z - q[1])); d += Math.random() * 2; if (d > bd) { bd = d; best = q; } }
     const K = KITB[p.kit]; const g = ITEMS[K.w].gun;
     Object.assign(p, { x: best[0], z: best[1], y: 0, lv: 0, yaw: p.team ? -Math.PI / 2 : Math.PI / 2, mv: 0, an: 2, w: K.w, hp: 100, alive: true, ar: [...K.ar], gk: K.gk, spawnT: now, hist: [], sc: 0, hd: null, vd: null });
-    Object.assign(b, { st: 'move', path: null, pi: 0, goal: null, tgt: null, seen: new Map(), known: new Map(), mag: g.mag, relT: 0, nextShot: 0, burst: 0, err: [0, 0], strafeT: 0, sdir: 1, holdT: 0, healT: 0, ban: K.ban, hurtT: 0, stuck: 0, lp: [p.x, p.z], lookT: 0, lookY: p.yaw, thinkT: 0, dead: 0, lane: Math.floor(Math.random() * LANES.length), li: 0, crouchT: 0, aimY: 0 });
+    Object.assign(b, { st: 'move', path: null, pi: 0, goal: null, tgt: null, seen: new Map(), known: new Map(), mag: g.mag, relT: 0, nextShot: 0, burst: 0, err: [0, 0], strafeT: 0, sdir: 1, holdT: 0, healT: 0, ban: K.ban, gren: K.gren || 0, grenT: 0, hurtT: 0, stuck: 0, lp: [p.x, p.z], lookT: 0, lookY: p.yaw, thinkT: 0, dead: 0, lane: Math.floor(Math.random() * LANES.length), li: 0, crouchT: 0, aimY: 0 });
   };
   const create = team => {
     const c = { id: nid++, bot: {}, dead: false };
@@ -177,7 +180,7 @@ export function makeBots(A) {
     // alvo: o mais perto já reconhecido (fica com o atual se ainda o vê)
     let tgt = null, td = 1e9; for (const o of foes) { const r = b.seen.get(o.id); if (r == null || r > now) continue; const d = Math.hypot(o.p.x - p.x, o.p.z - p.z) - (o.id === b.tgt ? 6 : 0); if (d < td) { td = d; tgt = o; } }
     if (tgt && tgt.id !== b.tgt) { b.tgt = tgt.id; b.err = [gauss() * (0.09 - 0.06 * S) + (Math.random() < 0.5 ? -1 : 1) * 0.03 * (1 - S), gauss() * (0.05 - 0.03 * S)]; b.burst = 0; b.nextShot = Math.max(b.nextShot, now + 60 + Math.random() * 120); b.aimHead = Math.random() < 0.08 + 0.22 * S; }
-    if (!tgt) b.tgt = null;
+    if (!tgt) { b.tgt = null; tryGrenade(c, now); }
     b.cur = tgt;
     const K = KITB[p.kit], g = ITEMS[K.w].gun;
     // recarregar: com o carregador vazio, ou com pouco e sem ninguém à vista
@@ -206,6 +209,24 @@ export function makeBots(A) {
       else { b.st = 'move'; if (!b.path || b.pi >= b.path.length) { if (b.holdNext) { b.holdNext = 0; b.st = 'hold'; b.holdT = now + 2000 + Math.random() * 4000; b.path = null; } else pickGoal(c); } }
     }
   };
+  // granadas: só a quem sabe onde está (viu, ouviu ou o radar mostrou) e está escondido atrás de alguma coisa, entre 6 e 20 m,
+  // sem colegas perto do sítio onde cai e longe do próprio bot; a física é a mesma do jogo (o cliente desenha-a igual)
+  const GR = [];
+  const tryGrenade = (c, now) => { const b = c.bot, p = c.p; if (!(b.gren > 0) || now < (b.grenT || 0) || b.relT || b.healT) return;
+    let k = null; for (const [id, v] of b.known) { if (now - v.t > 4000 || b.seen.has(id)) continue; const d = Math.hypot(v.x - p.x, v.z - p.z); if (d < 6 || d > 20) continue; if (!k || v.t > k.t) k = { ...v, d }; }
+    if (!k) return; b.grenT = now + 1500; if (Math.random() > 0.05 + 0.1 * S_(c)) return;
+    for (const o of A.players.values()) if (o.p && o.p.alive && o.p.team === p.team && o !== c && Math.hypot(o.p.x - k.x, o.p.z - k.z) < 7) return;
+    let dx = k.x + gauss() * (1.6 - S_(c)) - p.x, dz = k.z + gauss() * (1.6 - S_(c)) - p.z; const d = Math.min(22, Math.max(3, Math.hypot(dx, dz))), l = Math.hypot(dx, dz) || 1; dx /= l; dz /= l;
+    const T = 0.55 + d / 22 * 0.75, h0 = 1.43, vy = (4.9 * T * T - h0) / T, dd = d * 0.88;
+    const G = { P: [p.x + dx * 0.5, 1.5, p.z + dz * 0.5], V: [dx * dd / T, vy, dz * dd / T], t: 3.0, c, team: p.team };
+    GR.push(G); b.gren--; b.grenT = now + 9000; b.lookY = Math.atan2(dx, dz); b.lookT = now + 700; b.thrT = now + 700;
+    A.bcast({ t: 'thr', k: 'gran', P: G.P.map(v => +v.toFixed(2)), lv: 0, V: G.V.map(v => +v.toFixed(2)), base: 0, by: p.name });
+  };
+  const stepGren = dt => { for (let i = GR.length - 1; i >= 0; i--) { const G = GR[i], P = G.P, V = G.V; V[1] -= 9.8 * dt; const Q = [P[0] + V[0] * dt, P[1] + V[1] * dt, P[2] + V[2] * dt];
+      if (rayFrac(P[0], P[1], P[2], Q[0], Q[1], Q[2]) < 1) { V[0] *= -0.35; V[2] *= -0.35; Q[0] = P[0]; Q[1] = P[1]; Q[2] = P[2]; }
+      if (Q[1] < 0.07) { Q[1] = 0.07; V[1] = Math.abs(V[1]) * 0.3; V[0] *= 0.55; V[2] *= 0.55; if (Math.abs(V[1]) < 0.6) V[1] = 0; }
+      G.P = Q; G.t -= dt;
+      if (G.t <= 0) { GR.splice(i, 1); const by = G.c.p; for (const o of A.players.values()) if (o.p && !o.bot) A.send(o, { t: 'boom', k: 'gran', x: +Q[0].toFixed(2), y: +Q[1].toFixed(2), z: +Q[2].toFixed(2), lv: 0, by: by.name, nd: o.p.team === G.team ? 1 : 0 }); } } };
   // cobertura: o ponto livre mais perto (até 6 m) de onde não se vê o inimigo
   const findCover = (p, q) => { let best = null, bd = 1e9; for (let r = 1; r <= 12; r++) for (let a = 0; a < 12; a++) { const x = p.x + Math.cos(a / 12 * Math.PI * 2) * r * 0.5, z = p.z + Math.sin(a / 12 * Math.PI * 2) * r * 0.5; if (!free(x, z) || !walkLine(p.x, p.z, x, z)) continue; if (los(q.x, 1.5, q.z, x, 1.1, z)) continue; const d = r * 0.5; if (d < bd) { bd = d; best = [x, z]; } } return best; };
 
@@ -257,13 +278,15 @@ export function makeBots(A) {
     if (now < b.lookT && b.st !== 'fight') face = b.lookY;
     if (face != null) p.yaw += clamp(angD(face, p.yaw), -turn, turn);
     // andar sem atravessar nada (desliza ao longo das paredes)
+    // porta fechada à frente: abre-a (como um jogador), e todos a veem abrir
+    if (spd > 0.1) { const ax = p.x + vx / spd * 0.9, az = p.z + vz / spd * 0.9; for (const D of DOORS.values()) if (!D.o && !D.lv && ax > D.x0 - 0.35 && ax < D.x1 + 0.35 && az > D.z0 - 0.35 && az < D.z1 + 0.35) A.door(D.id, 1); }
     // velocidade com aceleração (arranca e trava como uma pessoa, sem saltos)
     { const k = Math.min(1, dt * 9); b.vx = (b.vx || 0) + (vx - (b.vx || 0)) * k; b.vz = (b.vz || 0) + (vz - (b.vz || 0)) * k; vx = b.vx; vz = b.vz; spd = Math.hypot(vx, vz); }
     if (spd > 0.05) { const nx = p.x + vx * dt, nz = p.z + vz * dt; if (free(nx, nz)) { p.x = nx; p.z = nz; } else if (free(nx, p.z)) { p.x = nx; b.vz *= 0.3; } else if (free(p.x, nz)) { p.z = nz; b.vx *= 0.3; } else { b.vx = b.vz = 0; b.path = null; b.chase = null; if (b.st === 'fight') { b.still = true; b.strafeT = now + 400; } } }
     // preso: volta a calcular o caminho
     if (now - (b.lpT || 0) > 1500) { if (spd > 0 && Math.hypot(p.x - b.lp[0], p.z - b.lp[1]) < 0.4) { b.path = null; b.chase = null; b.sdir = -b.sdir; } b.lp = [p.x, p.z]; b.lpT = now; }
     p.mv = Math.min(3, Math.hypot(vx, vz) / 3);
-    p.an = 2 + (b.st === 'fight' || b.st === 'hunt' ? 4 : 0) + (b.relT ? 16 : 0) + (b.st === 'heal' ? 64 : 0); p.w = KITB[p.kit].w;
+    p.an = 2 + (b.st === 'fight' || b.st === 'hunt' ? 4 : 0) + (b.relT ? 16 : 0) + (b.st === 'heal' ? 64 : 0) + (now < (b.thrT || 0) ? 32 : 0); p.w = KITB[p.kit].w;
     p.ts = now - T0;
     histPush(p, now);
   };
@@ -274,6 +297,7 @@ export function makeBots(A) {
     if (!ON) return;
     const now = Date.now(), dt = Math.min(0.1, (now - lastT) / 1000); lastT = now;
     if (now - lastBal > 1000) { lastBal = now; balance(); }
+    stepGren(dt);
     for (const c of bots()) {
       const p = c.p, b = c.bot; p.ts = now - T0; // a hora vai sempre para a frente, também morto (senão o jogo ignora as imagens repetidas e o corpo não cai)
       if (!p.alive) { if (!b.dead) b.dead = now; if (now - b.dead > 5200) { b.dead = 0; spawn(c); } continue; }
