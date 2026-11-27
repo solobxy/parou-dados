@@ -1,14 +1,14 @@
 {
-  "built_at": "2026-11-27T12:56:42.715281+00:00",
-  "db_bytes": 941707264,
-  "gz_bytes": 240539985,
+  "built_at": "2026-11-27T13:05:06.063860+00:00",
+  "db_bytes": 954433536,
+  "gz_bytes": 242888562,
   "totals": {
-    "lines": 3692,
-    "stops": 73918,
-    "trips": 155135,
-    "stop_times": 4880584,
-    "operators": 42,
-    "operators_ok": 39,
+    "lines": 3853,
+    "stops": 78924,
+    "trips": 156245,
+    "stop_times": 4916068,
+    "operators": 43,
+    "operators_ok": 42,
     "operators_desatualizados": 2
   },
   "feeds": [
@@ -194,7 +194,7 @@
       "validade": "ok",
       "dias_validade": 124,
       "horario_prolongado": false,
-      "url": "https://www.tub.pt/developer/gtfs/feed/tub.zip",
+      "url": "https://files.mobilitydatabase.org/mdb-1927/latest.zip",
       "last_error": null,
       "servicos_associados": null,
       "servicos_sem_calendario": null,
@@ -442,7 +442,7 @@
       "dias_validade": 365,
       "horario_prolongado": false,
       "url": "https://barraqueiro-oeste.pt/horarios-em-pdf/",
-      "last_error": null,
+      "last_error": "Hoje falhou, mantidos os dados de 2026-11-27T12:51:42.786537+00:00: https://barraqueiro-oeste.pt/horarios-em-pdf/ -> Barraqueiro Oeste: a página de horários não tem os PDFs das linhas TUT",
       "servicos_associados": null,
       "servicos_sem_calendario": null,
       "viagens_hoje": 87,
@@ -579,6 +579,63 @@
       "servicos_associados": null,
       "servicos_sem_calendario": null,
       "viagens_hoje": 279,
+      "viagens_amanha": 0,
+      "dias_uteis_sem_servico": 0
+    },
+    {
+      "id": "rodoviaria_lis",
+      "operator_name": "Rodoviária do Lis (Região de Leiria)",
+      "status": "OK",
+      "lines": 141,
+      "stops": 4475,
+      "trips": 750,
+      "valid_until": "2027-12-31",
+      "validade": "ok",
+      "dias_validade": 399,
+      "horario_prolongado": false,
+      "url": "https://drive.google.com/uc?export=download&id=1B0i33HpoO_FjkdkguRQYZ9Rm14NNkn38",
+      "last_error": null,
+      "servicos_associados": null,
+      "servicos_sem_calendario": null,
+      "viagens_hoje": 664,
+      "viagens_amanha": 25,
+      "dias_uteis_sem_servico": 0
+    },
+    {
+      "id": "mobilis_leiria",
+      "operator_name": "Mobilis (Leiria)",
+      "status": "OK",
+      "lines": 11,
+      "stops": 237,
+      "trips": 251,
+      "valid_until": "2027-12-31",
+      "validade": "ok",
+      "dias_validade": 399,
+      "horario_prolongado": false,
+      "url": "https://drive.google.com/uc?export=download&id=1B2HDu9DQZPvmySjcM4W3lVAn-d9FBAKe",
+      "last_error": null,
+      "servicos_associados": null,
+      "servicos_sem_calendario": null,
+      "viagens_hoje": 158,
+      "viagens_amanha": 58,
+      "dias_uteis_sem_servico": 0
+    },
+    {
+      "id": "pombus",
+      "operator_name": "Pombus (Pombal)",
+      "status": "OK",
+      "lines": 9,
+      "stops": 294,
+      "trips": 109,
+      "valid_until": "2027-07-31",
+      "validade": "ok",
+      "dias_validade": 246,
+      "horario_prolongado": false,
+      "url": "https://drive.google.com/uc?export=download&id=1PRYohuED6BUGrvIZN6kSV7b0XmP50gg4",
+      "last_error": null,
+      "servicos_associados": null,
+      "servicos_sem_calendario": null,
+      "viagens_hoje": 109,
       "viagens_amanha": 0,
       "dias_uteis_sem_servico": 0
     },
@@ -735,44 +792,6 @@
       "dias_uteis_sem_servico": 0
     },
     {
-      "id": "tld-7876",
-      "operator_name": "RDL RODOVIÁRIA DO LIS II",
-      "status": "SEM DADOS",
-      "lines": 0,
-      "stops": 0,
-      "trips": 0,
-      "valid_until": null,
-      "validade": "desconhecido",
-      "dias_validade": null,
-      "horario_prolongado": false,
-      "url": "https://files.mobilitydatabase.org/tld-7876/latest.zip",
-      "last_error": "O operador publicou o ficheiro sem paragens, linhas nem horários. Quando publicar dados, a PAROU usa-os sozinha.",
-      "servicos_associados": null,
-      "servicos_sem_calendario": null,
-      "viagens_hoje": 0,
-      "viagens_amanha": 0,
-      "dias_uteis_sem_servico": 0
-    },
-    {
-      "id": "tld-7877",
-      "operator_name": "RDL RODOVIÁRIA DO LIS",
-      "status": "SEM DADOS",
-      "lines": 0,
-      "stops": 0,
-      "trips": 0,
-      "valid_until": null,
-      "validade": "desconhecido",
-      "dias_validade": null,
-      "horario_prolongado": false,
-      "url": "https://files.mobilitydatabase.org/tld-7877/latest.zip",
-      "last_error": "O operador publicou o ficheiro sem paragens, linhas nem horários. Quando publicar dados, a PAROU usa-os sozinha.",
-      "servicos_associados": null,
-      "servicos_sem_calendario": null,
-      "viagens_hoje": 0,
-      "viagens_amanha": 0,
-      "dias_uteis_sem_servico": 0
-    },
-    {
       "id": "carris_metropolitana",
       "operator_name": "Carris Metropolitana",
       "status": "OK",
@@ -812,7 +831,7 @@
     }
   ],
   "desenhos": {
-    "bytes": 17846077,
+    "bytes": 18734023,
     "por_operador": {
       "ave_mobilidade": {
         "viagens": 1779,
@@ -904,6 +923,11 @@
         "com_desenho": 2690,
         "desenhos": 195
       },
+      "mobilis_leiria": {
+        "viagens": 251,
+        "com_desenho": 251,
+        "desenhos": 19
+      },
       "mov_cavado": {
         "viagens": 479,
         "com_desenho": 479,
@@ -914,10 +938,20 @@
         "com_desenho": 1492,
         "desenhos": 6
       },
+      "pombus": {
+        "viagens": 109,
+        "com_desenho": 109,
+        "desenhos": 77
+      },
       "proximo_faro": {
         "viagens": 593,
         "com_desenho": 593,
         "desenhos": 26
+      },
+      "rodoviaria_lis": {
+        "viagens": 750,
+        "com_desenho": 750,
+        "desenhos": 480
       },
       "siga_rodoeste": {
         "viagens": 791,
@@ -1202,10 +1236,10 @@
         "servicos_com_data_hoje": [
           "CU",
           "AU",
-          "FU",
-          "BU",
           "BexpU",
+          "FU",
           "DU",
+          "BU",
           "EU"
         ],
         "viagens_por_servico": [
@@ -1264,12 +1298,12 @@
   "andante": {
     "fonte_zonas": "https://andante.pt/titulos-ocasionais/",
     "fonte_precos": "https://andante.pt/comprar/andante-azul/",
-    "zonas_obtidas": "2026-11-27T12:56:25+00:00",
+    "zonas_obtidas": "2026-11-27T13:04:46+00:00",
     "n_zonas": 154,
     "n_paragens": 13711,
     "precos_em_vigor_desde": "2026-01-01",
-    "precos_obtidos": "2026-11-27T12:56:25+00:00",
+    "precos_obtidos": "2026-11-27T13:04:46+00:00",
     "z2": 1.4
   },
-  "duration_s": 493
+  "duration_s": 347
 }
