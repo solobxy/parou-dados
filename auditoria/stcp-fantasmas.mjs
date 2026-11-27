@@ -39,5 +39,13 @@ const bloco = motor.slice(motor.indexOf('for (const a of chegadas)'), motor.inde
 ok('motor: ignora entradas só de horário', /soHorario\(a\)\) continue/.test(bloco));
 ok('motor: ignora viagens ainda na origem', /aindaNaOrigem\(/.test(bloco) && /paragemDeOrigemStcp\(/.test(bloco));
 
+const filtro = motor.slice(motor.indexOf('public static async getStcpArrivals('), motor.indexOf('private static async getStcpArrivalsBrutas('));
+ok('fonte: o tempo real da STCP sai já filtrado para todos os ecrãs (Perto, paragem, linhas)',
+  filtro.length > 0 && /soHorario\(a\)/.test(filtro) && /aindaNaOrigem\(/.test(filtro));
+const fim = motor.slice(motor.lastIndexOf('result.push(mergedDep)') - 900, motor.lastIndexOf('result.push(mergedDep)'));
+ok('todos os operadores: hora «agora» com atraso grande na 1.ª paragem da viagem não passa', /aindaNaOrigem\(/.test(fim) && /primeiraParagemDaViagem\(/.test(fim));
+const prim = motor.slice(motor.indexOf('private static primeiraParagemDaViagem('), motor.indexOf('private static primeiraParagemDaViagem(') + 1200);
+ok('linha circular: a 1.ª paragem conta pela ordem, não só pelo nome', /seq === info\.seq/.test(prim));
+
 console.log(falhas ? `\n${falhas} FALHAS` : '\nTUDO OK');
 process.exit(falhas ? 1 : 0);
