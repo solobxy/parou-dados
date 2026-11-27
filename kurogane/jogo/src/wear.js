@@ -26,7 +26,12 @@ export const wear = (m, key, met = 0, sc = 1) => { if (typeof window !== 'undefi
       vec4 w1 = texture2D( uWear, du * 2.3 + 0.37 ), w2 = texture2D( uWear, du * 7.1 );
       float gr = w1.r - 0.5, fn = w2.g - 0.5, sk = smoothstep( 0.3, 0.85, w2.b ) * smoothstep( 0.35, 0.6, w1.g );
       diffuseColor.rgb *= 1.0 + gr * 0.6 + fn * 0.24;
-      ${met ? 'diffuseColor.rgb = mix( diffuseColor.rgb, diffuseColor.rgb * 0.55 + vec3( 0.32, 0.31, 0.3 ), sk * 0.7 ); wrR = gr * 0.3 + fn * 0.12 - sk * 0.32; wrM = sk * 0.35;' : 'wrR = gr * 0.16 + fn * 0.12; diffuseColor.rgb *= 1.0 - sk * 0.16;'} }`)
+      ${met ? 'diffuseColor.rgb = mix( diffuseColor.rgb, diffuseColor.rgb * 0.55 + vec3( 0.32, 0.31, 0.3 ), sk * 0.7 ); wrR = gr * 0.3 + fn * 0.12 - sk * 0.32; wrM = sk * 0.35;' : `wrR = gr * 0.16 + fn * 0.12; diffuseColor.rgb *= 1.0 - sk * 0.16;
+        vec3 c0 = diffuseColor.rgb; float sat = max(c0.r, max(c0.g, c0.b)) - min(c0.r, min(c0.g, c0.b));
+        if (c0.r > c0.g * 2.0 && c0.g > c0.b * 2.5 && sat > 0.04) { /* madeira (coronhas, guarda-mãos, cabos): veios ao longo da peça e anéis escuros */
+          float w1 = texture2D(uWear, vec2(vWrP.z * 0.9, (vWrP.x * 0.8 + vWrP.y) * 16.0) * ${sc.toFixed(2)}).r, w2 = texture2D(uWear, vec2(vWrP.z * 2.3 + 0.4, (vWrP.x * 0.8 + vWrP.y) * 42.0) * ${sc.toFixed(2)}).g;
+          diffuseColor.rgb *= 0.74 + 0.42 * w1 + 0.16 * (w2 - 0.5); diffuseColor.rgb *= 1.0 - 0.28 * smoothstep(0.62, 0.7, fract(w1 * 7.0)); wrR -= 0.12 * w1; }
+        else { diffuseColor.rgb *= 0.93 + 0.14 * texture2D(uWear, du * 26.0).g; } /* tecido e plástico: grão fino */`} }`)
       .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\n roughnessFactor = clamp( roughnessFactor + wrR, 0.06, 1.0 );')
       .replace('#include <metalnessmap_fragment>', '#include <metalnessmap_fragment>\n metalnessFactor = clamp( metalnessFactor + wrM, 0.0, 1.0 );'); };
   m.customProgramCacheKey = () => (pk ? pk() : '') + '|wear-' + key; return m; };
