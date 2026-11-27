@@ -818,8 +818,10 @@ def construir_gtfs(blocos, velho, hoje=None, dias=60, log=print):
                 vistas.add(chave)
                 n_viagens += 1
                 tid = f"{linha}_{direcao}_{out[0][1] // 60:04d}_{sid[5:]}_{n_viagens}"
+                # destino: o nome do horário oficial (a última paragem com hora), não o do GTFS antigo
+                destino = re.sub(r"\s+\)", ")", re.sub(r"\(\s+", "(", variantes(pdf[-1][0])[0])).strip()
                 trips.append({"route_id": route_id, "service_id": sid, "trip_id": tid, "direction_id": direcao,
-                              "trip_headsign": velho["stops"][out[-1][0]]["stop_name"], "shape_id": shape})
+                              "trip_headsign": destino or velho["stops"][out[-1][0]]["stop_name"], "shape_id": shape})
                 if shape:
                     shapes.add(shape)
                 ult = -1

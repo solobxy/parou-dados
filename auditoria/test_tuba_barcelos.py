@@ -173,6 +173,8 @@ cal = ler("calendar_dates.txt")
 st = ler("stop_times.txt")
 routes = ler("routes.txt")
 ok("7 viagens (5 + 2)", len(trips) == 7, len(trips))
+ok("destino = nome do horário oficial", {x["trip_headsign"] for x in trips} == {"Paragem Três", "Paragem Um"},
+   {x["trip_headsign"] for x in trips})
 ok("nome da linha vem do índice", routes and routes[0]["route_long_name"] == "Barcelos - Teste, via Algures" and routes[0]["route_id"] == "BAR99",
    routes)
 dias_por_sv = {}
