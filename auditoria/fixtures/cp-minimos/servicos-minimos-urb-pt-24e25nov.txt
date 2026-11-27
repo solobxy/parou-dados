@@ -1,0 +1,98 @@
+                      COMBOIOS URBANOS DO PORTO
+               Linhas do Marco, Guimarães e Braga
+                          SERVIÇOS MÍNIMOS
+                       24 e 25 de novembro de 2026
+
+         Comboio           Origem          Partida        Destino         Chegada
+          15153        Porto São Bento     07:20        Guimarães          08:35
+          15169        Porto São Bento     17:20        Guimarães          18:35
+          15171        Porto São Bento     18:25        Guimarães          19:39
+          15175        Porto São Bento     19:20        Guimarães          20:42
+          15154          Guimarães         07:00      Porto São Bento      08:05
+          15156          Guimarães         07:19      Porto São Bento      08:35
+          15160          Guimarães         08:51      Porto São Bento      10:05
+          15178          Guimarães         19:15      Porto São Bento      20:40
+
+         Comboio           Origem          Partida        Destino         Chegada
+          15203        Porto São Bento     06:05           Braga           07:02
+          15209        Porto São Bento     07:40           Braga           08:53
+          15233        Porto São Bento     16:50           Braga           18:03
+          15237        Porto São Bento     17:45           Braga           18:58
+          15239        Porto São Bento     18:15           Braga           19:11
+          15241        Porto São Bento     18:50           Braga           19:56
+          15245        Porto São Bento     19:45           Braga           20:58
+          15202             Braga          05:26      Porto São Bento      06:40
+          15206             Braga          06:33      Porto São Bento      07:45
+          15208             Braga          07:19      Porto São Bento      08:15
+          15212             Braga          07:48      Porto São Bento      08:40
+          15240             Braga          17:30      Porto São Bento      18:55
+          15244             Braga          18:30      Porto São Bento      19:50
+          15246             Braga          19:35      Porto São Bento      20:55
+
+         Comboio           Origem          Partida        Destino         Chegada
+          15503       Porto São Bento      05:30     Marco de Canaveses    06:40
+          15505       Porto São Bento      06:30     Marco de Canaveses    07:36
+          15401       Porto São Bento      07:00           Penafiel        07:55
+          15535       Porto São Bento      16:30     Marco de Canaveses    17:37
+          15539       Porto São Bento      17:30     Marco de Canaveses    18:46
+          15423       Porto São Bento      18:00           Penafiel        18:57
+          15543       Porto São Bento      18:30     Marco de Canaveses    19:53
+          15545       Porto São Bento      19:30     Marco de Canaveses    20:43
+          15433       Porto São Bento      20:00           Penafiel        20:55
+          15502      Marco de Canaveses    05:09      Porto São Bento      06:30
+          15400            Penafiel        05:55      Porto São Bento      06:50
+          15506      Marco de Canaveses    06:14      Porto São Bento      07:30
+          15508      Marco de Canaveses    06:59      Porto São Bento      08:10
+          15402            Penafiel        07:05      Porto São Bento      08:00
+          15510      Marco de Canaveses    07:12      Porto São Bento      08:30
+          15406            Penafiel        08:05      Porto São Bento      09:00
+          15514      Marco de Canaveses    08:24      Porto São Bento      09:35
+          15544      Marco de Canaveses    18:09      Porto São Bento      19:25
+          15546      Marco de Canaveses    19:13      Porto São Bento      20:25
+
+Nota: Para além dos serviços mínimos indicados, poderão realizar-se outros serviços.
+                    COMBOIOS URBANOS DO PORTO
+                      Linhas de Aveiro e Leixões
+                        SERVIÇOS MÍNIMOS
+                     24 e 25 de novembro de 2026
+    Comboio             Origem            Partida         Destino         Chegada
+     15609               Aveiro            07:19      Porto Campanhã       08:21
+     15613               Aveiro            08:23      Porto São Bento      09:30
+     15617               Aveiro            09:23      Porto São Bento      10:35
+     15637               Aveiro            16:23      Porto São Bento      17:30
+     15641               Aveiro            17:23      Porto São Bento      18:35
+     15645               Aveiro            18:18      Porto São Bento      19:30
+     15649               Aveiro            19:23      Porto São Bento      20:30
+      15703         Porto São Bento           04:45        Aveiro           06:00
+      15707         Porto São Bento           05:50        Aveiro           06:59
+      15711         Porto São Bento           06:55        Aveiro           08:07
+      15715         Porto São Bento           07:55        Aveiro           09:07
+      15719         Porto São Bento           08:55        Aveiro           10:07
+      15739         Porto São Bento           15:55        Aveiro           17:07
+      15743         Porto São Bento           16:55        Aveiro           18:07
+      15747         Porto São Bento           17:55        Aveiro           19:07
+      15750         Porto Campanhã            19:10        Aveiro           20:07
+      15755         Porto São Bento           19:50        Aveiro           21:08
+
+    Comboio             Origem            Partida        Destino          Chegada
+     15901               Aveiro            05:16       Leça do Balio      06:45 (1)
+     15905               Aveiro               06:18    Leça do Balio       07:36
+     15909                Ovar                07:31    Leça do Balio       08:36
+     15913                Ovar                08:31    Leça do Balio       09:36
+     15917                Ovar                09:31    Leça do Balio      10:36 (2)
+      15953               Ovar                18:31    Leça do Balio       19:37
+      15851         Porto São Bento           06:00        Ovar            06:57
+      15855         Porto São Bento           07:05        Ovar            07:57
+      15902          Leça do Balio            07:46         Ovar           08:57
+      15906          Leça do Balio            08:46   Porto Campanhã       09:11
+      15910          Leça do Balio            09:46   Porto Campanhã       10:11
+      15938          Leça do Balio            16:46         Ovar          17:57 (3)
+      15950          Leça do Balio            19:46   Porto Campanhã       20:11
+
+Nota: Para além dos serviços mínimos indicados, poderão realizar-se outros serviços.
+
+Legenda:
+(1) Efetua-se entre Aveiro e Porto Campanhã
+(2) Efetua-se entre Ovar e Porto Campanhã
+(3) Efetua-se entre Porto Campanhã e Ovar
+

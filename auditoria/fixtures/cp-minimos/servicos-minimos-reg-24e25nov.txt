@@ -1,0 +1,142 @@
+                      REGIONAL | INTERREGIONAL
+
+                            SERVIÇOS MÍNIMOS
+                    24 e 25 de novembro de 2026
+
+                             Partid                                      24         25
+ Cº          Origem                        Destino          Chegada
+                               a                                      novembro   novembro
+                                      Linha do Minho
+3000          Valença         5:50      Porto Campanhã       08:20      SM         SM
+3102     Viana do Castelo     5:52             Nine          06:48      SM         SM
+ 850          Valença         7:15      Porto Campanhã       09:15      SM         SM
+ 830          Valença        18:19       Figueira da Foz     22:32      SM         SM
+3202          Valença        18:55      Viana do Castelo     19:57      SM         SM
+ 851     Porto Campanhã       6:00           Valença          7:55      SM         SM
+ 831      Figueira da Foz     6:47           Valença         10:58      SM         SM
+3301           Nine           6:55           Valença         08:49      SM         SM
+ 857     Porto Campanhã      18:15           Valença         20:17      SM         SM
+3309           Nine          20:10           Valença         21:56      SM         SM
+3105     Porto Campanhã      22:10      Viana do Castelo     23:37      SM         SM
+                                      Linha do Douro
+ 891    Porto Campanhã        7:30    Marco de Canaveses      8:36      SM         SM
+ 897    Porto Campanhã       17:30    Marco de Canaveses     18:35      SM         SM
+ 991          Régua          11:04           Pocinho         12:32      SM         SM
+ 997          Régua          19:45           Pocinho         21:13      SM         SM
+ 990         Pocinho          6:08            Régua           7:35      SM         SM
+ 996         Pocinho         16:09            Régua          17:41      SM         SM
+ 892   Marco de Canaveses    10:02      Porto Campanhã       11:10      SM         SM
+ 898   Marco de Canaveses    19:55      Porto Campanhã       21:10      SM         SM
+                                      Ramal de Tomar
+4402          Tomar          6:14     Lisboa Sta Apolónia    8:13       SM         SM
+ 932          Tomar          6:50     Lisboa Sta Apolónia    8:28       SM         SM
+4406          Tomar          7:11     Lisboa Sta Apolónia    9:13       SM         SM
+4428          Tomar          16:00    Lisboa Sta Apolónia    18:13      SM         SM
+4434          Tomar          19:03    Lisboa Sta Apolónia    21:20      SM         SM
+4440          Tomar          22:06    Lisboa Sta Apolónia    0:10       SM         SM
+4403   Lisboa Sta Apolónia   5:50           Tomar            7:51       SM         SM
+4407   Lisboa Sta Apolónia   7:45           Tomar            9:46       SM         SM
+4427   Lisboa Sta Apolónia   17:45          Tomar            19:47      SM         SM
+4429   Lisboa Sta Apolónia   18:45          Tomar            20:51      SM         SM
+4431   Lisboa Sta Apolónia   19:45          Tomar            21:48      SM         SM
+4437   Lisboa Sta Apolónia   22:45          Tomar            0:42       SM         SM
+
+
+
+         Legenda
+ SM    Serviços Mínimos
+
+
+
+Nota: Para além dos serviços mínimos indicados, poderão realizar-se outros
+serviços.
+                        REGIONAL | INTERREGIONAL
+
+                            SERVIÇOS MÍNIMOS
+                    24 e 25 de novembro de 2026
+
+                                                                            24         25
+  Cº           Origem          Partida        Destino          Chegada
+                                                                         novembro   novembro
+                    Linha do Norte (Entroncamento/Coimbra/Porto)
+ 4504         Coimbra B         7:12       Entroncamento        9:07       SM         SM
+ 4514         Coimbra B         17:22      Entroncamento        19:09      SM
+ 4518         Coimbra B         19:22      Entroncamento        21:09      SM         SM
+ 4501      Entroncamento        5:55         Coimbra B          7:36       SM         SM
+ 4505      Entroncamento        6:40         Coimbra B          8:19       SM         SM
+ 4519      Entroncamento        17:37        Coimbra B          19:23      SM         SM
+ 4523      Entroncamento        19:40        Coimbra B          21:26      SM         SM
+                           Linha do Norte (Coimbra/Aveiro/Porto)
+ 4652          Aveiro           6:44         Coimbra B          7:36       SM         SM
+ 4678          Aveiro           18:44        Coimbra B          19:36      SM         SM
+ 4682          Aveiro           20:45        Coimbra B          21:37      SM         SM
+ 4605         Coimbra B         7:50           Aveiro           8:44       SM         SM
+ 4627         Coimbra B         18:50          Aveiro           19:45      SM         SM
+ 4631         Coimbra B         20:50          Aveiro           21:45      SM         SM
+                 Linha da Beira Baixa (Lisboa/Entroncamento/Guarda)
+ 5621      Entroncamento        7:35          Covilhã           10:48      SM         SM
+ 5601    Lisboa Sta Apolónia    16:15      Castelo Branco       19:35      SM         SM
+ 5600      Castelo Branco       5:55     Lisboa Sta Apolónia    9:20                  SM
+ 5624      Castelo Branco       18:20      Entroncamento        20:24      SM         SM
+                     Linha da Beira Alta (Lisboa/Coimbra B/Guarda)
+ 5400          Guarda           5:05         Coimbra B          7:25       SM         SM
+ 5405         Coimbra B         18:27         Guarda            20:57      SM         SM
+               Linha do Leste (Entroncamento/Badajoz/Entroncamento)
+ 481       Entroncamento        9:06          Badajoz           11:54      SM         SM
+ 482           Badajoz          13:09      Entroncamento        15:55      SM         SM
+
+
+
+
+           Legenda
+ SM     Serviços Mínimos
+
+
+
+Nota: Para além dos serviços mínimos indicados, poderão realizar-se outros
+serviços.
+                         REGIONAL | INTERREGIONAL
+
+                            SERVIÇOS MÍNIMOS
+                      24 e 25 de novembro de 2026
+
+                                                                                 24       25
+  Cº            Origem            Partida         Destino           Chegada
+                                                                              novembro novembro
+                                          Linha do Oeste
+21811     Lisboa Sta Apolónia     16:09     Mira Sintra - Meleças    16:43      SM       SM
+21810     Mira Sintra-Meleças      8:31     Lisboa Sta Apolónia      9:10       SM       SM
+ 801       Caldas da Rainha        6:13          Coimbra B           8:08       SM       SM
+ 804           Coimbra B          19:47      Caldas da Rainha        21:58      SM       SM
+                                          Linha do Vouga
+ 5105        Aveiro - Vouga        8:35     Sernada do Vouga          9:42      SM       SM
+ 5117        Aveiro - Vouga       18:15     Sernada do Vouga         19:20      SM       SM
+ 5100            Águeda            5:55        Aveiro - Vouga         6:32      SM
+ 5102     Sernada do Vouga         6:20        Aveiro - Vouga         7:25               SM
+ 5104     Sernada do Vouga         6:56        Aveiro - Vouga         8:03      SM       SM
+ 5120     Sernada do Vouga        19:50        Aveiro - Vouga        20:55      SM       SM
+ 5200       Espinho-Vouga          6:43     Oliveira de Azeméis       7:46      SM       SM
+ 5212       Espinho-Vouga         17:10     Oliveira de Azeméis      18:12      SM       SM
+ 5201     Oliveira de Azeméis      7:15       Espinho-Vouga           8:19      SM       SM
+ 5213     Oliveira de Azeméis     18:24       Espinho-Vouga          19:27      SM       SM
+                                       Linha do Algarve
+ 5900     Vila Real Sto António    5:34            Lagos              8:09      SM       SM
+ 5902     Vila Real Sto António    7:30            Lagos             10:07      SM       SM
+ 5708     Vila Real Sto António   12:34             Faro             13:35      SM       SM
+ 5713             Faro            17:15     Vila Real Sto António    18:24      SM       SM
+ 5715             Faro            17:56     Vila Real Sto António    18:58      SM       SM
+ 5901            Lagos             6:20     Vila Real Sto António     8:58      SM       SM
+ 5801            Lagos             7:05             Faro              8:31      SM       SM
+ 5903            Lagos             8:22     Vila Real Sto António    10:58      SM       SM
+
+
+
+
+          Legenda
+SM      Serviços Mínimos
+
+
+
+Nota: Para além dos serviços mínimos indicados, poderão realizar-se outros
+serviços.
+

@@ -1,0 +1,34 @@
+               COMBOIOS URBANOS DE COIMBRA
+
+                          SERVIÇOS MÍNIMOS
+                    24 e 25 de novembro de 2026
+
+
+
+     Comboio          Origem         Partida      Destino        Chegada
+
+      16806          Coimbra B       08:07     Figueira da Foz    09:12
+
+      16824          Coimbra B       18:07     Figueira da Foz    19:11
+
+      16828          Coimbra B       20:02     Figueira da Foz    21:07
+
+
+    Comboio           Origem         Partida      Destino        Chegada
+
+     16801         Figueira da Foz   05:58       Coimbra B        06:59
+
+     16805         Figueira da Foz   06:55       Coimbra B        07:58
+
+     16807         Figueira da Foz   07:36       Coimbra B        08:24
+
+     16827         Figueira da Foz   17:58       Coimbra B        19:04
+
+     16831         Figueira da Foz   19:58       Coimbra B        21:04
+
+
+
+
+Nota: Para além dos serviços mínimos indicados, poderão realizar-se
+outros serviços.
+

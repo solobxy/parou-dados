@@ -1,0 +1,279 @@
+                              COMBOIOS URBANOS LISBOA
+                                   Linha da Azambuja
+                                SERVIÇOS MÍNIMOS
+                             24 e 25 de novembro de 2026
+
+Comboio             Origem         Partida    Destino    Chegada 24 novembro      25 novembro
+ 16001      Lisboa Sta. Apolónia    06:20     Azambuja    07:15       SM              SM
+ 16005      Lisboa Sta. Apolónia    07:20     Azambuja    08:15       SM              SM
+ 16009      Lisboa Sta. Apolónia    08:20     Azambuja    09:15       SM              SM
+ 16029      Lisboa Sta. Apolónia    16:50     Azambuja    17:45       SM              SM
+ 16033      Lisboa Sta. Apolónia    17:50     Azambuja    18:45       SM              SM
+ 16037      Lisboa Sta. Apolónia    18:50     Azambuja    19:45       SM              SM
+
+
+Comboio       Origem         Partida         Destino        Chegada 24 novembro   25 novembro
+ 16006       Azambuja         7:35     Lisboa Sta. Apolónia   8:25       SM           SM
+ 16010       Azambuja         8:35     Lisboa Sta. Apolónia   9:25       SM           SM
+ 16014       Azambuja         9:35     Lisboa Sta. Apolónia  10:25       SM           SM
+ 16034       Azambuja         18:05    Lisboa Sta. Apolónia  18:55       SM           SM
+ 16038       Azambuja         19:05    Lisboa Sta. Apolónia  19:55       SM           SM
+ 16042       Azambuja         20:13    Lisboa Sta. Apolónia  21:05       SM           SM
+
+                Legenda
+SM   Serviço Mínimo
+
+
+
+
+Nota: Para além dos serviços mínimos indicados, poderão realizar-se outros serviços.
+                                COMBOIOS URBANOS LISBOA
+                                   Linha da Azambuja
+                                   SERVIÇOS MÍNIMOS
+                                24 e 25 de novembro de 2026
+
+                                                                                        24       25
+Comboio              Origem         Partida            Destino             Chegada
+                                                                                     novembro novembro
+ 16402          Alcântara-Terra         6:26    Castanheira do Ribatejo     7:19        SM       SM
+ 16404          Alcântara-Terra         6:56    Castanheira do Ribatejo     7:49        SM       SM
+ 16406          Alcântara-Terra         7:26    Castanheira do Ribatejo     8:19        SM       SM
+ 16408          Alcântara-Terra         7:56    Castanheira do Ribatejo     8:49        SM       SM
+ 16444          Alcântara-Terra        16:56    Castanheira do Ribatejo     17:49       SM       SM
+ 16448          Alcântara-Terra        17:56    Castanheira do Ribatejo     18:49       SM       SM
+ 16450          Alcântara-Terra        18:26    Castanheira do Ribatejo     18:49       SM       SM
+ 16452          Alcântara-Terra        18:56    Castanheira do Ribatejo     19:49       SM       SM
+ 16454          Alcântara-Terra        19:26    Castanheira do Ribatejo     20:19       SM       SM
+
+
+                                                                                        24       25
+Comboio                Origem          Partida        Destino             Chegada
+                                                                                     novembro novembro
+ 16506       Castanheira do Ribatejo    7:39       Alcântara-Terra         8:35         SM       SM
+ 16508       Castanheira do Ribatejo    8:09       Alcântara-Terra         9:05         SM       SM
+ 16510       Castanheira do Ribatejo    8:39       Alcântara-Terra         9:35         SM       SM
+ 16512       Castanheira do Ribatejo    9:09       Alcântara-Terra         10:05        SM       SM
+ 16548       Castanheira do Ribatejo    18:09      Alcântara-Terra         19:05        SM       SM
+ 16552       Castanheira do Ribatejo    19:09      Alcântara-Terra         20:05        SM       SM
+ 16554       Castanheira do Ribatejo    19:39      Alcântara-Terra         20:35        SM       SM
+ 16556       Castanheira do Ribatejo    20:09      Alcântara-Terra         21:05        SM       SM
+ 16558       Castanheira do Ribatejo    20:39      Alcântara-Terra         21:35        SM       SM
+
+                  Legenda
+  SM   Serviço Mínimo
+
+
+
+
+ Nota: Para além dos serviços mínimos indicados, poderão realizar-se outros serviços.
+                               COMBOIOS URBANOS LISBOA
+                              Linhas de Sintra e Azambuja
+                                 SERVIÇOS MÍNIMOS
+                              24 e 25 de novembro de 2026
+                                                                           24       25
+  Comboio            Origem        Partida     Destino        Chegada
+                                                                        novembro novembro
+    18054             Alverca       7:39        Sintra         8:45        SM       SM
+    18066             Alverca      17:09        Sintra         18:15       SM       SM
+    18076             Alverca      19:39        Sintra         20:45       SM       SM
+    18000              Sintra       6:26        Alverca        7:29        SM       SM
+    18010              Sintra       8:56        Alverca        9:59        SM       SM
+    18022              Sintra      18:26        Alverca        19:29       SM       SM
+
+                                                                           24       25
+  Comboio            Origem        Partida     Destino        Chegada
+                                                                        novembro novembro
+    18212        Lisboa Oriente      6:38        Sintra        7:25        SM       SM
+    18216        Lisboa Oriente      7:08        Sintra        7:55        SM       SM
+    18220        Lisboa Oriente      7:38        Sintra        8:25        SM       SM
+    18228        Lisboa Oriente      8:38        Sintra        9:25        SM       SM
+    18232        Lisboa Oriente      9:08        Sintra        9:55        SM       SM
+    18236        Lisboa Oriente      9:38        Sintra        10:25       SM       SM
+    18290        Lisboa Oriente     16:38        Sintra        17:25       SM       SM
+    18298        Lisboa Oriente     17:38        Sintra        18:25       SM       SM
+    18300        Lisboa Oriente     17:48        Sintra        18:35       SM       SM
+    18306        Lisboa Oriente     18:38        Sintra        19:25       SM       SM
+    18314        Lisboa Oriente     19:38        Sintra        20:25       SM       SM
+    18316        Lisboa Oriente     19:48        Sintra        20:35       SM       SM
+    18322        Lisboa Oriente     20:38        Sintra        21:25       SM       SM
+    18326        Lisboa Oriente     21:38        Sintra        22:25       SM       SM
+    18404            Sintra          5:36    Lisboa Oriente    6:22        SM       SM
+    18406            Sintra          6:06    Lisboa Oriente    6:52        SM       SM
+    18408            Sintra          6:36    Lisboa Oriente    7:22        SM       SM
+    18416            Sintra          7:36    Lisboa Oriente    8:22        SM       SM
+    18420            Sintra          8:06    Lisboa Oriente    8:52        SM       SM
+    18424            Sintra          8:36    Lisboa Oriente    9:22        SM       SM
+    18432            Sintra          9:36    Lisboa Oriente    10:22       SM       SM
+    18440            Sintra         10:36    Lisboa Oriente    11:22       SM       SM
+    18490            Sintra         16:46    Lisboa Oriente    17:32       SM       SM
+    18496            Sintra         17:36    Lisboa Oriente    18:22       SM       SM
+    18504            Sintra         18:36    Lisboa Oriente    19:22       SM       SM
+    18506            Sintra         18:46    Lisboa Oriente    19:32       SM       SM
+    18512            Sintra         19:36    Lisboa Oriente    20:22       SM       SM
+    18520            Sintra         20:36    Lisboa Oriente    21:22       SM       SM
+                    Legenda
+   SM   Serviço Mínimo
+
+
+Nota: Para além dos serviços mínimos indicados, poderão realizar-se outros serviços.
+                                 COMBOIOS URBANOS LISBOA
+                                Linhas de Sintra e Azambuja
+                                   SERVIÇOS MÍNIMOS
+                                24 e 25 de novembro de 2026
+                                                                                    24       25
+Comboio            Origem            Partida         Destino           Chegada
+                                                                                 novembro novembro
+ 18807        Lisboa Rossio          5:41              Sintra           6:21        SM       SM
+ 18811        Lisboa Rossio          6:41              Sintra           7:21        SM       SM
+ 18657        Lisboa Rossio          7:26      Mira Sintra - Meleças    7:55        SM       SM
+ 18817        Lisboa Rossio          7:41              Sintra           8:21        SM       SM
+ 18663        Lisboa Rossio          8:26      Mira Sintra - Meleças    8:55        SM       SM
+ 18823        Lisboa Rossio          8:41              Sintra           9:21        SM       SM
+ 18829        Lisboa Rossio          9:41              Sintra           10:21       SM       SM
+ 18697        Lisboa Rossio          16:21     Mira Sintra - Meleças    16:50       SM       SM
+ 18857        Lisboa Rossio          16:41             Sintra           17:21       SM       SM
+ 18703        Lisboa Rossio          17:26     Mira Sintra - Meleças    17:55       SM       SM
+ 18863        Lisboa Rossio          17:41             Sintra           18:21       SM       SM
+ 18869        Lisboa Rossio          18:41             Sintra           19:21       SM       SM
+ 18715        Lisboa Rossio          19:26     Mira Sintra - Meleças    19:55       SM       SM
+ 18875        Lisboa Rossio          19:41             Sintra           20:21       SM       SM
+ 18897        Lisboa Rossio          20:41             Sintra           21:21       SM       SM
+ 18804            Sintra             5:50          Lisboa Rossio        6:29        SM       SM
+ 18808            Sintra             6:40          Lisboa Rossio        7:19        SM       SM
+ 18814            Sintra             7:40          Lisboa Rossio        8:19        SM       SM
+ 18656    Mira Sintra - Meleças      8:05          Lisboa Rossio        8:34        SM       SM
+ 18820            Sintra             8:40          Lisboa Rossio        9:19        SM       SM
+ 18662    Mira Sintra - Meleças      9:05          Lisboa Rossio        9:34        SM       SM
+ 18826            Sintra             9:40          Lisboa Rossio        10:19       SM       SM
+ 18868            Sintra             16:40         Lisboa Rossio        17:19       SM       SM
+ 18682    Mira Sintra - Meleças      17:05         Lisboa Rossio        17:34       SM       SM
+ 18874            Sintra             17:40         Lisboa Rossio        18:19       SM       SM
+ 18688    Mira Sintra - Meleças      18:05         Lisboa Rossio        18:34       SM       SM
+ 18880            Sintra             18:40         Lisboa Rossio        19:19       SM       SM
+ 18886            Sintra             19:40         Lisboa Rossio        20:19       SM       SM
+ 18700    Mira Sintra - Meleças      20:05         Lisboa Rossio        20:34       SM       SM
+ 18892            Sintra             20:50         Lisboa Rossio        21:29       SM       SM
+
+                      Legenda
+    SM    Serviço Mínimo
+
+
+
+
+ Nota: Para além dos serviços mínimos indicados, poderão realizar-se outros serviços.
+                           COMBOIOS URBANOS DE LISBOA
+                                   Linhas de Cascais
+                                  SERVIÇOS MÍNIMOS
+                           24 e 25 de novembro de 2026
+
+                                                                Chegad    24       25
+   Comboio            Origem      Partida       Destino
+                                                                   a   novembro novembro
+      19009       Cais do Sodré     5:30        Cascais           6:10    SM       SM
+      19013       Cais do Sodré     6:30        Cascais           7:10    SM       SM
+      19501       Cais do Sodré     6:50    São Pedro Estoril     7:22    SM       SM
+      19201       Cais do Sodré     7:00        Cascais           7:34    SM       SM
+      19203       Cais do Sodré     7:15        Cascais           7:49    SM       SM
+      19505       Cais do Sodré     7:20    São Pedro Estoril     7:52    SM       SM
+      19511       Cais do Sodré     8:05    São Pedro Estoril     8:37    SM       SM
+      19211       Cais do Sodré     8:15        Cascais           8:49    SM       SM
+      19515       Cais do Sodré     8:35    São Pedro Estoril     9:07    SM       SM
+      19215       Cais do Sodré     8:45        Cascais           9:18    SM       SM
+      19517       Cais do Sodré     8:50    São Pedro Estoril     9:22    SM       SM
+      19071       Cais do Sodré    16:40        Cascais          17:21    SM       SM
+      19225       Cais do Sodré    17:00        Cascais          17:34    SM       SM
+      19527       Cais do Sodré    17:05    São Pedro Estoril    17:37    SM       SM
+      19529       Cais do Sodré    17:20    São Pedro Estoril    17:52    SM       SM
+      19235       Cais do Sodré    18:15        Cascais          18:49    SM       SM
+      19537       Cais do Sodré    18:20    São Pedro Estoril    18:52    SM       SM
+      19237       Cais do Sodré    18:30        Cascais          19:04    SM       SM
+      19539       Cais do Sodré    18:35    São Pedro Estoril    19:07    SM       SM
+      19239       Cais do Sodré    18:45        Cascais          19:19    SM       SM
+      19247       Cais do Sodré    19:45        Cascais          20:19    SM       SM
+      19249       Cais do Sodré    20:00        Cascais          20:34    SM       SM
+
+
+                 Legenda
+ SM    Serviço Mínimo
+
+
+
+
+Nota: Para além dos serviços mínimos indicados, poderão realizar-se outros
+serviços.
+                           COMBOIOS URBANOS DE LISBOA
+                                     Linhas de Cascais
+                                 SERVIÇOS MÍNIMOS
+                           24 e 25 de novembro de 2026
+
+                                     Partid                                24       25
+   Comboio             Origem                   Destino       Chegada
+                                       a                                novembro novembro
+      19010          Cascais          6:00    Cais do Sodré    6:40        SM       SM
+      19012          Cascais          6:30    Cais do Sodré    7:10        SM       SM
+      19204          Cascais          7:20    Cais do Sodré    7:54        SM       SM
+      19504      São Pedro Estoril    7:32    Cais do Sodré    8:04        SM       SM
+      19208          Cascais          7:50    Cais do Sodré    8:24        SM       SM
+      19508      São Pedro Estoril    8:02    Cais do Sodré    8:34        SM       SM
+      19210          Cascais          8:05    Cais do Sodré    8:39        SM       SM
+      19514      São Pedro Estoril    8:47    Cais do Sodré    9:19        SM       SM
+      19218          Cascais          9:05    Cais do Sodré    9:39        SM       SM
+      19518      São Pedro Estoril    9:17    Cais do Sodré    9:49        SM       SM
+      19520      São Pedro Estoril    9:32    Cais do Sodré    10:04       SM       SM
+      19222          Cascais          9:35    Cais do Sodré    10:09       SM       SM
+      19230          Cascais         17:35    Cais do Sodré    18:09       SM       SM
+      19530      São Pedro Estoril   17:47    Cais do Sodré    18:19       SM       SM
+      19232          Cascais         17:50    Cais do Sodré    18:24       SM       SM
+      19532      São Pedro Estoril   18:02    Cais do Sodré    18:34       SM       SM
+      19540      São Pedro Estoril   19:02    Cais do Sodré    19:34       SM       SM
+      19242          Cascais         19:05    Cais do Sodré    19:39       SM       SM
+      19542      São Pedro Estoril   19:17    Cais do Sodré    19:49       SM       SM
+      19244          Cascais         19:20    Cais do Sodré    19:54       SM       SM
+      19246          Cascais         19:35    Cais do Sodré    20:09       SM       SM
+      19096          Cascais         20:40    Cais do Sodré    21:20       SM       SM
+
+
+
+                 Legenda
+ SM    Serviço Mínimo
+
+
+
+
+Nota: Para além dos serviços mínimos indicados, poderão realizar-se outros
+serviços.
+                    COMBOIOS URBANOS LISBOA
+                                Linha do Sado
+                        SERVIÇOS MÍNIMOS
+                   24 e 25 de novembro de 2026
+
+
+   Comboio           Origem          Partida         Destino         Chegada
+     17101           Barreiro         0:29           Setúbal           1:00
+     17201           Barreiro         5:55        Praias-Sado-A        6:33
+     17203           Barreiro         6:25        Praias-Sado-A        7:03
+     17207           Barreiro         7:25        Praias-Sado-A        8:03
+     17209           Barreiro         7:55        Praias-Sado-A        8:33
+     17213           Barreiro         8:55        Praias-Sado-A        9:33
+     17243           Barreiro         16:25       Praias-Sado-A        17:03
+     17249           Barreiro         17:55       Praias-Sado-A        18:33
+     17251           Barreiro         18:25       Praias-Sado-A        19:03
+     17255           Barreiro         19:25       Praias-Sado-A        20:03
+     17257           Barreiro         19:55       Praias-Sado-A        20:33
+     17204        Praias-Sado-A       6:40           Barreiro          7:18
+     17206        Praias-Sado-A       7:10           Barreiro          7:48
+     17210        Praias-Sado-A       8:10           Barreiro          8:48
+     17212        Praias-Sado-A       8:40           Barreiro          9:18
+     17216        Praias-Sado-A       9:40           Barreiro          10:19
+     17246        Praias-Sado-A       17:10          Barreiro          17:48
+     17252        Praias-Sado-A       18:40          Barreiro          19:18
+     17254        Praias-Sado-A       19:10          Barreiro          19:48
+     17258        Praias-Sado-A       20:10          Barreiro          20:48
+     17260        Praias-Sado-A       20:40          Barreiro          21:18
+     17100           Setúbal          5:08           Barreiro          5:38
+
+
+
+
+Nota: Para além dos serviços mínimos indicados, poderão realizar-se outros serviços.
+

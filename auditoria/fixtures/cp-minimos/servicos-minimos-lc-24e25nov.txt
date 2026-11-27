@@ -1,0 +1,44 @@
+                 ALFA PENDULAR | INTERCIDADES
+
+                          SERVIÇOS MÍNIMOS
+                      24 e 25 de novembro de 2026
+
+                                                                             24         25
+ Cº          Origem           Partida         Destino           Chegada
+                                                                          novembro   novembro
+                                        Porto ➔ Faro
+180     Porto Campanhã         5:40             Faro             11:27      SM         SM
+182           Faro             7:00       Porto Campanhã         12:48      SM         SM
+184     Porto Campanhã        14:40             Faro             20:23      SM         SM
+186           Faro            16:00       Porto Campanhã         21:48      SM         SM
+                              Linha do Norte (Norte ➔ Sul)
+520     Porto Campanhã         6:45     Lisboa Santa Apolónia    10:00                 SM
+730         Valença            6:52     Lisboa Santa Apolónia    12:00                 SM
+720          Braga            10:04     Lisboa Santa Apolónia    14:00                 SM
+620        Guimarães          16:49     Lisboa Santa Apolónia    21:00      SM         SM
+126     Porto Campanhã        17:40     Lisboa Santa Apolónia    20:40      SM
+134          Braga            18:00     Lisboa Santa Apolónia    21:30      SM
+528     Porto Campanhã        19:45     Lisboa Santa Apolónia    23:00      SM         SM
+                              Linha do Norte (Sul ➔ Norte)
+121   Lisboa Santa Apolónia    8:00       Porto Campanhã         10:55      SM
+621   Lisboa Santa Apolónia   11:30          Guimarães           15:42      SM         SM
+523   Lisboa Santa Apolónia   15:30       Porto Campanhã         18:43      SM         SM
+135   Lisboa Santa Apolónia   16:00            Braga             19:29      SM
+731   Lisboa Santa Apolónia   17:30           Valença            22:41      SM         SM
+723   Lisboa Santa Apolónia   19:30            Braga             23:27      SM         SM
+529   Lisboa Santa Apolónia   22:30       Porto Campanhã         01:43      SM         SM
+                                         Linha do Sul
+572      Lisboa Oriente       14:02             Faro             17:39      SM         SM
+674           Faro            18:15        Lisboa Oriente        21:56      SM         SM
+                                      Linha do Alentejo
+692          Évora             9:14        Lisboa Oriente        10:57      SM         SM
+596      Lisboa Oriente       17:02            Évora             18:41      SM         SM
+
+
+              Legenda
+ SM   Serviços Mínimos
+
+
+Nota: Para além dos serviços mínimos indicados, poderão realizar-se outros
+serviços.
+
