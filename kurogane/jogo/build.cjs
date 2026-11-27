@@ -42,7 +42,7 @@ for (const f of ['menu.mp3', 'fundo.mp3', 'perigo1.mp3', 'perigo2.mp3', 'perigo3
 { const pb = path.join(__dirname, 'props', 'props.json'); if (fs.existsSync(pb)) { fs.copyFileSync(pb, path.join(OUT, 'props.json')); fs.copyFileSync(pb, path.join(OUT, 'web', 'props.json')); } }
 // texturas do chão (ficheiros ao lado: a página carrega-as depois de arrancar)
 for (const d of [path.join(OUT, 'tex'), path.join(OUT, 'web', 'tex')]) fs.mkdirSync(d, { recursive: true });
-for (const f of ['props.webp', 'grass.jpg', 'asph.jpg', 'dirt.jpg', 'conc.jpg', 'tile.jpg', 'zombie.jpg', 'zombie_n.jpg', 'player.jpg', 'player_n.jpg', 'player_m.png']) { const a = findA('tex/' + f); if (a) { fs.copyFileSync(a, path.join(OUT, 'tex', f)); fs.copyFileSync(a, path.join(OUT, 'web', 'tex', f)); } else console.log('falta a textura', f); }
+for (const f of ['foliage.webp', 'props.webp', 'grass.jpg', 'asph.jpg', 'dirt.jpg', 'conc.jpg', 'tile.jpg', 'zombie.jpg', 'zombie_n.jpg', 'player.jpg', 'player_n.jpg', 'player_m.png']) { const a = findA('tex/' + f); if (a) { fs.copyFileSync(a, path.join(OUT, 'tex', f)); fs.copyFileSync(a, path.join(OUT, 'web', 'tex', f)); } else console.log('falta a textura', f); }
 // app (manifesto, avisos e ícones) ao lado da página
 { const pd = findA('pwa'); if (pd) for (const f of fs.readdirSync(pd)) { fs.copyFileSync(path.join(pd, f), path.join(OUT, 'web', f)); fs.copyFileSync(path.join(pd, f), path.join(OUT, f)); } else console.log('falta a pasta pwa'); }
 // sons reais (CC0) ao lado da página

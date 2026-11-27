@@ -27,6 +27,7 @@ import { TRADERS, PRICE, SELL, TRADE_R } from './traders.js';
 import { initPWA } from './pwa.js';
 import { wear } from './wear.js';
 import { makeSky } from './sky.js';
+import { broadTree, pineTree, grassTuft, whiteUV } from './trees.js';
 import { ANK, ANBYK, ANLOOT, spawnAnimals, anHit, anPart, animalAI, Fauna } from './animals.js';
 
 const TOUCH = matchMedia('(pointer: coarse)').matches || ('ontouchstart' in window && navigator.maxTouchPoints > 0);
@@ -267,10 +268,22 @@ async function boot() {
   const G0 = {};
   // ---------- vegetação e recursos (instanciados)
   const TLOD = []; // árvores: cada bloco de 50 m tem também uma versão simples (mesmas posições), usada ao longe na 1.ª pessoa
-  const iMesh = (geo, mat, list, matOf, shadow = true, CH = 50, tint = null, low = null) => { const groups = new Map(); for (const o of list) { const k = Math.floor(o.x / CH) + ',' + Math.floor(o.z / CH); if (!groups.has(k)) groups.set(k, []); groups.get(k).push(o); } const out = []; for (const l of groups.values()) { const m = new THREE.InstancedMesh(geo, mat, l.length); l.forEach((o, i) => { o.m0 = matOf(o); m.setMatrixAt(i, o.m0); o.mesh = m; o.idx = i; if (tint) m.setColorAt(i, tint(o, i)); }); m.castShadow = shadow; m.receiveShadow = true; m.computeBoundingSphere(); if (geo !== cedar && geo !== broad) m.renderOrder = 3; scene.add(m); out.push(m);
+  const iMesh = (geo, mat, list, matOf, shadow = true, CH = 50, tint = null, low = null) => { const groups = new Map(); for (const o of list) { const k = Math.floor(o.x / CH) + ',' + Math.floor(o.z / CH); if (!groups.has(k)) groups.set(k, []); groups.get(k).push(o); } const out = []; for (const l of groups.values()) { const m = new THREE.InstancedMesh(geo, mat, l.length); l.forEach((o, i) => { o.m0 = matOf(o); m.setMatrixAt(i, o.m0); o.mesh = m; o.idx = i; if (tint) m.setColorAt(i, tint(o, i)); }); m.castShadow = shadow; m.receiveShadow = true; m.computeBoundingSphere(); if (geo !== cedar && geo !== broad && geo !== BROAD && geo !== PINE) m.renderOrder = 3; scene.add(m); out.push(m);
     if (low) { const L = new THREE.InstancedMesh(low, mat, l.length); L.instanceMatrix = m.instanceMatrix; if (m.instanceColor) L.instanceColor = m.instanceColor; L.castShadow = shadow; L.receiveShadow = true; L.computeBoundingSphere(); L.visible = false; scene.add(L); let cx = 0, cz = 0; for (const o of l) { cx += o.x; cz += o.z; } TLOD.push({ hi: m, lo: L, x: cx / l.length, z: cz / l.length }); out.push(L); } } return out; };
   const geo1 = fn => { const b = new Builder(0); fn(b); const out = []; for (const k of [...b.buckets.keys()]) out.push(b.merged(k)); return out.length === 1 ? out[0] : mergeAll(out); };
   const mergeAll = gs => mergeGeometries(gs, false);
+  // folhagem a sério: árvores com folhas e casca, erva em lâminas (imagem com recorte; espera por ela até 8 s)
+  const FOLT = await new Promise(r => { const t = new THREE.TextureLoader().load('tex/foliage.webp', () => r(t), undefined, () => r(t)); setTimeout(() => r(t), 8000); }); FOLT.colorSpace = THREE.SRGBColorSpace; FOLT.anisotropy = 4;
+  // níveis mais pequenos da textura com o mesmo tanto de folha recortada (senão, ao longe, cada plano de folhas fica um quadrado cheio)
+  try { const im = FOLT.image; if (im && im.width) { const TH = 0.42 * 255, mk = (w, h) => { const c = document.createElement('canvas'); c.width = w; c.height = h; return c; };
+      const cov = (d, s) => { let n = 0; for (let i = 3; i < d.length; i += 4) if (d[i] * s > TH) n++; return n / (d.length / 4); };
+      let prev = mk(im.width, im.height); prev.getContext('2d').drawImage(im, 0, 0); const c0 = cov(prev.getContext('2d').getImageData(0, 0, prev.width, prev.height).data, 1), mips = [prev];
+      while (prev.width > 1 || prev.height > 1) { const w = Math.max(1, prev.width >> 1), h = Math.max(1, prev.height >> 1), c = mk(w, h), x = c.getContext('2d', { willReadFrequently: true }); x.imageSmoothingQuality = 'high'; x.drawImage(prev, 0, 0, w, h);
+        const id = x.getImageData(0, 0, w, h), d = id.data; let lo = 1, hi = 4; for (let k = 0; k < 10; k++) { const m = (lo + hi) / 2; if (cov(d, m) < c0) lo = m; else hi = m; } const sc = (lo + hi) / 2;
+        if (sc > 1.01) { for (let i = 3; i < d.length; i += 4) d[i] = Math.min(255, d[i] * sc); x.putImageData(id, 0, 0); } mips.push(c); prev = c; }
+      FOLT.mipmaps = mips; FOLT.generateMipmaps = false; FOLT.minFilter = THREE.LinearMipmapLinearFilter; FOLT.needsUpdate = true; } } catch (e) { }
+  const fm = new THREE.MeshStandardMaterial({ map: FOLT, vertexColors: true, alphaTest: 0.42, side: THREE.DoubleSide, roughness: 0.85 });
+  const BROAD = broadTree(), PINE = pineTree();
   const cedar = geo1(b => { b.cyl(0.14, 0.22, 3.2, 9, 0, 1.6, 0, 0x5a4230, { mat: 'vf' }); for (const [r, h, y, c] of [[1.75, 2.6, 3.0, 0x2f4a2a], [1.45, 2.3, 3.8, 0x324e2c], [1.2, 2.2, 4.6, 0x34522e], [0.95, 2.0, 5.5, 0x3a5a32], [0.55, 1.5, 6.6, 0x426436]]) b.add(new THREE.ConeGeometry(r, h, 11), c, 'vf', mat4(0, y, 0, Math.random())); });
   const broad = geo1(b => { b.cyl(0.13, 0.2, 2.6, 7, 0, 1.3, 0, 0x5a4636, { mat: 'vf' }); b.cyl(0.07, 0.09, 1.2, 5, 0.4, 2.6, 0.1, 0x5a4636, { mat: 'vf', rz: -0.6 }); for (const [x, y, z, r, c] of [[0, 3.4, 0, 1.55, 0x4a6a32], [0.9, 3.9, 0.3, 1.15, 0x56763a], [-0.8, 3.8, -0.4, 1.1, 0x44622e], [0.1, 4.5, -0.2, 1.0, 0x5c7c40], [-0.3, 3.2, 0.9, 0.95, 0x50703a], [0.6, 3.1, -0.8, 0.9, 0x486834]]) b.ico(r, x, y, z, c, { mat: 'vf', det: 1 }); });
   // as mesmas árvores com menos faces (para longe): copas em icosaedros simples e cones de 6 lados
@@ -280,17 +293,18 @@ async function boot() {
   const nodes = [];
   const treeList = [[], []];
   for (const t of W.trees) { treeList[t.v].push(t); t.kind = 'tree'; t.r = 0.32 * t.s; t.hp = t.max = Math.round(150 * t.s); t.alive = true; nodes.push(t); t.col = { x: t.x, z: t.z, r: t.r, k: 's', on: true, node: t }; addCirc(t.col); }
-  treeList.forEach((l, v) => iMesh(v ? broad : cedar, tm, l, t => mat4(t.x, 0, t.z, t.ry, 0, 0, t.s), true, 50, null, v ? broadLo : cedarLo));
+  whiteUV(broadLo); whiteUV(cedarLo);
+  treeList.forEach((l, v) => iMesh(v ? BROAD : PINE, fm, l, t => mat4(t.x, 0, t.z, t.ry, 0, 0, t.s), true, 50, null, v ? broadLo : cedarLo));
   // ginkgos da rua (amarelos, de novembro)
-  { const l = W.streetTrees.map(([x, z]) => ({ x, z })); const c = new THREE.Color(); iMesh(broad, tm, l, t => mat4(t.x, 0.14, t.z, Math.random() * 6, 0, 0, 0.72), true, 50, (t, i) => c.setHex(i % 3 ? 0xffd46a : 0xf2c04a), broadLo); l.forEach(t => { t.col = { x: t.x, z: t.z, r: 0.22, k: 's', on: true }; addCirc(t.col); }); }
+  { const l = W.streetTrees.map(([x, z]) => ({ x, z })); const c = new THREE.Color(); iMesh(BROAD, fm, l, t => mat4(t.x, 0.14, t.z, Math.random() * 6, 0, 0, 0.72), true, 50, (t, i) => c.setHex(i % 3 ? 0xffd46a : 0xf2c04a), broadLo); l.forEach(t => { t.col = { x: t.x, z: t.z, r: 0.22, k: 's', on: true }; addCirc(t.col); }); }
   const rockGeo = { stone: geo1(b => { b.ico(0.95, 0, 0.35, 0, 0x8f8d86, { mat: 'vf', det: 1, sy: 0.7 }); b.ico(0.6, 0.7, 0.2, 0.3, 0x85837c, { mat: 'vf', det: 1, sy: 0.7 }); b.ico(0.5, -0.6, 0.15, -0.4, 0x9a988f, { mat: 'vf', det: 0 }); }),
     sulfur: geo1(b => { b.ico(0.9, 0, 0.3, 0, 0x8a8470, { mat: 'vf', det: 1, sy: 0.7 }); for (const [x, y, z, r] of [[0.3, 0.75, 0.2, 0.34], [-0.35, 0.6, 0.35, 0.28], [0.55, 0.4, -0.35, 0.3], [-0.2, 0.7, -0.4, 0.25]]) b.ico(r, x, y, z, 0xe0c43a, { mat: 'vf', det: 0 }); }),
     metal: geo1(b => { b.ico(0.92, 0, 0.32, 0, 0x6e625a, { mat: 'vf', det: 1, sy: 0.72 }); for (const [x, y, z, r] of [[0.35, 0.7, 0.2, 0.3], [-0.4, 0.55, 0.3, 0.26], [0.3, 0.45, -0.45, 0.28]]) b.ico(r, x, y, z, 0x9a5a32, { mat: 'vf', det: 0 }); b.ico(0.22, -0.1, 0.8, -0.2, 0xa8acb0, { mat: 'vf' }); }) };
   const rockM = {};
   for (const kind of ['stone', 'sulfur', 'metal']) { const l = W.rocks.filter(r => r.kind === kind); l.forEach(r => { r.r = 0.95 * r.s; r.hp = r.max = kind === 'stone' ? 220 : 130; r.alive = true; nodes.push(r); r.col = { x: r.x, z: r.z, r: r.r * 0.85, k: 's', on: true, node: r }; addCirc(r.col); }); iMesh(rockGeo[kind], tm, l, r => mat4(r.x, 0, r.z, r.ry, 0, 0, r.s)); }
   // tufos de erva
-  const grassGeo = new THREE.BufferGeometry(), grassMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 1, side: THREE.DoubleSide });
-  { const g = grassGeo, pos = []; for (let i = 0; i < 7; i++) { const a = i / 7 * Math.PI * 2 + Math.random() * 0.5, r = 0.08 + Math.random() * 0.12, h = 0.25 + Math.random() * 0.25, x = Math.cos(a) * r, z = Math.sin(a) * r, tx = x * 2.2, tz = z * 2.2; pos.push(x - 0.03, 0, z, x + 0.03, 0, z, tx, h, tz); } g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.computeVertexNormals();
+  const grassGeo = grassTuft(), grassMat = new THREE.MeshStandardMaterial({ map: FOLT, color: new THREE.Color(1.8, 1.8, 1.8), alphaTest: 0.4, roughness: 1, side: THREE.DoubleSide });
+  { const g = grassGeo;
     const l = []; for (let i = 0; i < 40000 && l.length < (TOUCH ? 13000 : 24000); i++) { const x = (Math.random() * 2 - 1) * (CORE - 1), z = (Math.random() * 2 - 1) * (CORE - 1); if (x > CITY.x0 - 1 && x < CITY.x1 + 1 && z > CITY.z0 - 1 && z < CITY.z1 + 1) continue; if (Math.abs(z) < 4.6) continue; if (Math.abs(x) < 2.8 && Math.abs(z) > CITY.z1) continue; if (W.paved(x, z)) continue; l.push({ x, z, s: 0.7 + Math.random() * 0.9, ry: Math.random() * 6 }); }
     const c = new THREE.Color(); iMesh(g, grassMat, l, o => mat4(o.x, 0, o.z, o.ry, 0, 0, o.s), false, 40, () => c.setHSL(0.22 + Math.random() * 0.05, 0.45, 0.24 + Math.random() * 0.12)); }
 
@@ -301,8 +315,8 @@ async function boot() {
   const bushGeo = geo1(b => { b.ico(0.62, 0, 0.32, 0, 0x3f5a2a, { mat: 'vf' }); b.ico(0.46, 0.42, 0.26, 0.2, 0x4a6632, { mat: 'vf' }); b.ico(0.4, -0.36, 0.22, -0.26, 0x36522a, { mat: 'vf' }); });
   const _gc = new THREE.Color();
   await LP(62, 'a preparar as zonas');
-  const SECTORS = makeSectors({ scene, W, nodes, addCirc, removeCirc, near, CORE, MAP, mats: { tree: tm, grass: grassMat, grassTint: () => _gc.setHSL(0.22 + Math.random() * 0.05, 0.45, 0.24 + Math.random() * 0.12) }, geos: { cedar, broad, rock: rockGeo, bush: bushGeo, grass: grassGeo, seixo: seixoGeo, fibra: fibraGeo },
-    iMesh: (geo, mat, list, matOf, shadow, CH) => iMesh(geo, mat, list, matOf, shadow, CH, geo === grassGeo ? () => _gc.setHSL(0.22 + Math.random() * 0.05, 0.45, 0.24 + Math.random() * 0.12) : null, geo === cedar ? cedarLo : geo === broad ? broadLo : null) }); // árvores da floresta também com a versão leve ao longe
+  const SECTORS = makeSectors({ scene, W, nodes, addCirc, removeCirc, near, CORE, MAP, mats: { tree: tm, leaf: fm, grass: grassMat, grassTint: () => _gc.setHSL(0.22 + Math.random() * 0.05, 0.45, 0.24 + Math.random() * 0.12) }, geos: { cedar: PINE, broad: BROAD, rock: rockGeo, bush: bushGeo, grass: grassGeo, seixo: seixoGeo, fibra: fibraGeo },
+    iMesh: (geo, mat, list, matOf, shadow, CH) => iMesh(geo, mat, list, matOf, shadow, CH, geo === grassGeo ? () => _gc.setHSL(0.22 + Math.random() * 0.05, 0.45, 0.24 + Math.random() * 0.12) : null, geo === PINE ? cedarLo : geo === BROAD ? broadLo : null) }); // árvores da floresta também com a versão leve ao longe
   // pedras soltas e plantas de fibra também no centro do mapa (mesma posição em todos os aparelhos)
   { let sd = 977; const R = () => (sd = (sd * 16807) % 2147483647) / 2147483647, picks = { seixo: [], fibra: [] };
     for (let i = 0; i < 2600 && picks.seixo.length + picks.fibra.length < 420; i++) { const x = (R() * 2 - 1) * (CORE - 6), z = (R() * 2 - 1) * (CORE - 6), kind = R() < 0.5 ? 'seixo' : 'fibra'; if (inCity(x, z) || W.paved(x, z) || W.wet(x, z, 0.5) || solidAt(x, z, 0.8)) continue; picks[kind].push({ x, z, kind, s: 0.85 + R() * 0.4, ry: R() * 6.28 }); }
@@ -1929,7 +1943,7 @@ async function boot() {
     { cam.updateMatrixWorld(); _vfM.multiplyMatrices(cam.projectionMatrix, cam.matrixWorldInverse); _vf.setFromProjectionMatrix(_vfM); } // o que a câmara vê: zombies e animais fora disto não se desenham
     { const p = G.p, nr = G.fp ? 22 : 8; horde.update(G.zs, _vf, z => { if (!p) return 2; const dx = Math.abs(z.x - p.x), dz = Math.abs(z.z - p.z); return dx < nr && dz < nr ? 0 : dx < 26 && dz < 26 ? 1 : 2; }); } /* perto do jogador: o corpo com mais detalhe */ if (!G.ARENA) fauna.update(G.zs, camT, _vf); // os animais estavam parados desde a 0.36 (a chamada tinha ficado dentro de um comentário)
     // árvores ao longe (só na 1.ª pessoa, que vê até à neblina): a versão simples a partir de ~65 m
-    G.lodT = (G.lodT || 0) - dt; if (G.lodT <= 0) { G.lodT = 0.25; for (let i = TLOD.length - 1; i >= 0; i--) if (!TLOD[i].hi.parent) TLOD.splice(i, 1); /* setores largados */ const c = cam.position, fpL = !!G.fp; for (const T of TLOD) { const far = fpL && Math.hypot(T.x - c.x, T.z - c.z) > 65; if (T.hi.visible === far) { T.hi.visible = !far; T.lo.visible = far; } } }
+    G.lodT = (G.lodT || 0) - dt; if (G.lodT <= 0) { G.lodT = 0.25; for (let i = TLOD.length - 1; i >= 0; i--) if (!TLOD[i].hi.parent) TLOD.splice(i, 1); /* setores largados */ const c = cam.position, fpL = !!G.fp; for (const T of TLOD) { const far = fpL && Math.hypot(T.x - c.x, T.z - c.z) > 120; if (T.hi.visible === far) { T.hi.visible = !far; T.lo.visible = far; } } }
     // comerciantes: respiram parados e viram-se para quem chega perto
     Body.cam = cam.position; Body.nearD = (G.fp || FPF.on) ? 22 : 45; // corpos longe: versão leve
     if (G.p) for (const N of npcs) { const dx = G.p.x - N.T.x, dz = G.p.z - N.T.z, d = Math.hypot(dx, dz); if (d > 90) { N.b.root.visible = false; continue; } N.b.root.visible = true; const want = d < 7 ? Math.atan2(dx, dz) : N.T.yaw; N.yaw += angDiff(want, N.yaw) * Math.min(1, dt * 3); N.b.root.rotation.y = N.yaw; N.b.pose(dt, 0, 0); if (G.ui.trOpenNow() && G.ui.trWho && G.ui.trWho() === N.T && d > TRADE_R + 2) G.ui.trClose(); }
