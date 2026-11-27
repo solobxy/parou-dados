@@ -1,7 +1,7 @@
 {
-  "built_at": "2026-11-27T20:01:44.031153+00:00",
-  "db_bytes": 989491200,
-  "gz_bytes": 249059364,
+  "built_at": "2026-11-27T23:38:06.255975+00:00",
+  "db_bytes": 989495296,
+  "gz_bytes": 249056246,
   "totals": {
     "lines": 4003,
     "stops": 80505,
@@ -194,7 +194,7 @@
       "validade": "ok",
       "dias_validade": 124,
       "horario_prolongado": false,
-      "url": "https://www.tub.pt/developer/gtfs/feed/tub.zip",
+      "url": "https://files.mobilitydatabase.org/mdb-1927/latest.zip",
       "last_error": null,
       "servicos_associados": null,
       "servicos_sem_calendario": null,
@@ -447,7 +447,7 @@
       "dias_validade": 365,
       "horario_prolongado": false,
       "url": "https://barraqueiro-oeste.pt/horarios-em-pdf/",
-      "last_error": null,
+      "last_error": "Hoje falhou, mantidos os dados de 2026-11-27T19:57:50.425290+00:00: https://barraqueiro-oeste.pt/horarios-em-pdf/ -> Barraqueiro Oeste: a página de horários não tem os PDFs das linhas TUT",
       "servicos_associados": null,
       "servicos_sem_calendario": null,
       "viagens_hoje": 87,
@@ -1286,13 +1286,13 @@
           "total": 385
         },
         "servicos_com_data_hoje": [
-          "BexpU",
-          "DU",
-          "CU",
-          "FU",
           "EU",
+          "BexpU",
+          "BU",
+          "FU",
           "AU",
-          "BU"
+          "CU",
+          "DU"
         ],
         "viagens_por_servico": [
           {
@@ -1350,12 +1350,12 @@
   "andante": {
     "fonte_zonas": "https://andante.pt/titulos-ocasionais/",
     "fonte_precos": "https://andante.pt/comprar/andante-azul/",
-    "zonas_obtidas": "2026-11-27T20:01:20+00:00",
+    "zonas_obtidas": "2026-11-27T23:37:40+00:00",
     "n_zonas": 154,
     "n_paragens": 13711,
     "precos_em_vigor_desde": "2026-01-01",
-    "precos_obtidos": "2026-11-27T20:01:20+00:00",
+    "precos_obtidos": "2026-11-27T23:37:40+00:00",
     "z2": 1.4
   },
-  "duration_s": 493
+  "duration_s": 559
 }
