@@ -124,7 +124,8 @@ def descarregar(hoje=None, dias=14, log=print, trabalhadores=6):
     paragens = _get("/stops")
     linhas = [r for r in _get("/routes?active=true&passengerInfo=true") if r.get("isActive", True)]
     log(f"  azoresbus: {len(paragens)} paragens, {len(linhas)} linhas na API")
-    datas = [hoje + datetime.timedelta(days=n) for n in range(dias)]
+    # desde ontem: as viagens de ontem depois da meia-noite (24:xx) ainda passam hoje de madrugada
+    datas = [hoje + datetime.timedelta(days=n) for n in range(-1, dias)]
     pedidos = [(r["id"], d) for r in linhas for d in datas]
     por_dia = {}  # (route_id, data) -> [viagens]
     falhas = []

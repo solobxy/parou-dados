@@ -1344,7 +1344,8 @@ def process_feed(conn, feed, today_dt, have_prev):
             # Horários da API do operador, dia a dia: devolve já o GTFS montado
             t0 = time.time()
             try:
-                body = azoresbus.descarregar_e_converter(log=log, hoje=today_dt.date(), dias=WINDOW_DAYS)
+                # mais 3 dias do que a janela: o último dia da janela nunca fica sem horário (senão parecia «desatualizado»)
+                body = azoresbus.descarregar_e_converter(log=log, hoje=today_dt.date(), dias=WINDOW_DAYS + 3)
                 yield feed["url"], body, 200, int((time.time() - t0) * 1000), None
             except Exception as err:  # noqa: BLE001
                 errors.append(f"{feed['url']} -> {err}")
