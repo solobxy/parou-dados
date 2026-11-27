@@ -258,6 +258,33 @@ const aLocalizar = () => [...document.querySelectorAll('body *')].some((e) => e.
   await ctx.close();
 }
 
+{ // App da Play (TWA) sem delegação da localização (registos de 26–27/11/2026, telemóveis do Dinis e de um amigo: «android |
+  // permissão prompt», o pedido de autorização nunca aparece e todos os pedidos acabam em tempo esgotado; no Chrome funciona).
+  // A app diz o que se passa e dá «Abrir no Chrome» e «Atualizar na Play Store», em vez de «Sem sinal de GPS».
+  for (const [nome, naApp] of [['app da Play', true], ['Chrome', false]]) {
+    const { ctx, p, erros } = await contexto('chrome-sempre-por-pedir');
+    await p.addInitScript({ content: `(() => {
+      const tempo = { code: 3, PERMISSION_DENIED: 1, POSITION_UNAVAILABLE: 2, TIMEOUT: 3, message: 'Timeout expired' };
+      const geo = {
+        getCurrentPosition(okf, err, o) { setTimeout(() => err && err(tempo), Math.min((o && o.timeout) || 15000, 15000)); },
+        watchPosition(okf, err, o) { if (o && Number.isFinite(o.timeout)) setTimeout(() => err && err(tempo), o.timeout); return 1; },
+        clearWatch() {},
+      };
+      Object.defineProperty(Navigator.prototype, 'geolocation', { get: () => geo, configurable: true });
+      ${naApp ? "Object.defineProperty(Document.prototype, 'referrer', { get: () => 'android-app://pt.parou.app/', configurable: true });" : ''}
+    })();` });
+    await p.goto(BASE + '/', { waitUntil: 'load', timeout: 60000 });
+    await p.waitForTimeout(26000);
+    const cartao = await p.locator('[data-teste="app-play-sem-localizacao"]').count();
+    const chrome = await p.locator('[data-teste="abrir-no-chrome"]').getAttribute('href').catch(() => null);
+    await p.screenshot({ path: `${SAIDA}/localizacao-automatica-4e-${naApp ? 'app-play' : 'chrome'}.png` });
+    if (naApp) ok('app da Play sem resposta do GPS e autorização por pedir: «Abrir no Chrome» (abre o Chrome, não a app)', cartao === 1 && /^intent:\/\/parou\.pt\/.*package=com\.android\.chrome/.test(chrome || ''), `cartão ${cartao} | ${chrome}`);
+    else ok('no Chrome, o mesmo caso não mostra o cartão da app da Play', cartao === 0, `cartão ${cartao}`);
+    ok(`sem erros na página (${nome})`, erros.length === 0, erros.join(' | '));
+    await ctx.close();
+  }
+}
+
 { // app aberta e o GPS deixa de responder (sem sinal no caminho para casa): ao fim de 10 min sem nenhuma leitura, a posição
   // do sítio onde estava deixa de aparecer como «onde estás» e a app volta a procurar
   const { ctx, p, erros } = await contexto('granted');
