@@ -30,7 +30,7 @@
   "fallbackType": "customtabs",
   "features": {
     "locationDelegation": {
-      "enabled": false
+      "enabled": true
     }
   },
   "alphaDependencies": {
