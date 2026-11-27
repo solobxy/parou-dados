@@ -104,14 +104,35 @@ def export(name, anchors, scale=1.6):
         if P.bev > 0:
             m = P.ob.modifiers.new('b', 'BEVEL'); m.width = P.bev; m.segments = P.seg; m.limit_method = 'ANGLE'; m.angle_limit = math.radians(P.ang); m.harden_normals = True; m.miter_outer = 'MITER_ARC'
         for c in P.cuts:
-            m = P.ob.modifiers.new('c', 'BOOLEAN'); m.operation = 'DIFFERENCE'; m.object = c; m.solver = 'FAST'
+            m = P.ob.modifiers.new('c', 'BOOLEAN'); m.operation = 'DIFFERENCE'; m.object = c
+            try: m.solver = 'FAST'
+            except TypeError: m.solver = 'FLOAT'  # Blender 5: o «rápido» chama-se FLOAT
         if P.cuts:  # normais pesadas pela área: as faces grandes ficam lisas e o corte não risca o sombreado
             m = P.ob.modifiers.new('w', 'WEIGHTED_NORMAL'); m.mode = 'FACE_AREA'; m.keep_sharp = True; m.weight = 100
     dg = bpy.context.evaluated_depsgraph_get(); dg.update()
+    # sombra cozida (AO) e desgaste nas arestas vivas: um multiplicador por vértice que o jogo junta à cor (fica 1 se AO=0 no ambiente)
+    AOON = os.environ.get('GUN_AO', '1') == '1'
+    BK = {}
+    if AOON:
+        sc = bpy.context.scene; sc.render.engine = 'CYCLES'; sc.cycles.device = 'CPU'; sc.cycles.samples = 48
+        w = bpy.data.worlds.new('wao'); sc.world = w; w.light_settings.distance = 0.025
+        for P in PARTS:
+            ev = P.ob.evaluated_get(dg); me = bpy.data.meshes.new_from_object(ev); ob = bpy.data.objects.new('bk', me); sc.collection.objects.link(ob); ob.matrix_world = P.ob.matrix_world.copy()
+            me.materials.clear(); me.materials.append(bpy.data.materials.new('bm')); ca = me.color_attributes.new('ao', 'FLOAT_COLOR', 'CORNER'); me.color_attributes.active_color = ca
+            BK[id(P)] = ob
+        for P in PARTS: P.ob.hide_render = True
+        bpy.ops.object.select_all(action='DESELECT')
+        for o in BK.values():
+            if len(o.data.polygons): o.select_set(True)  # peças vazias (o corte comeu tudo) não se cozem
+        bpy.context.view_layer.objects.active = next(o for o in BK.values() if len(o.data.polygons)); sc.render.bake.target = 'VERTEX_COLORS'
+        bpy.ops.object.bake(type='AO')
     G = {}
     ntri = 0
     for P in PARTS:
-        ev = P.ob.evaluated_get(dg); me = ev.to_mesh(); me.calc_loop_triangles()
+        ev = P.ob.evaluated_get(dg)
+        if AOON: me = BK[id(P)].data
+        else: me = ev.to_mesh()
+        me.calc_loop_triangles()
         nv, nl, nt = len(me.vertices), len(me.loops), len(me.loop_triangles)
         V = np.zeros(nv * 3); me.vertices.foreach_get('co', V); V = V.reshape(-1, 3)
         LV = np.zeros(nl, int); me.loops.foreach_get('vertex_index', LV)
@@ -120,18 +141,31 @@ def export(name, anchors, scale=1.6):
         TLr = TL.reshape(-1, 3)[:, ::-1].ravel() if MIRROR else TL  # espelho em x: o lado direito da arma real fica em −x no jogo (inverte a ordem dos vértices)
         Vm = V[LV[TLr]].copy(); Nm = CN[TLr].copy()
         if MIRROR: Vm[:, 0] *= -1; Nm[:, 0] *= -1
-        g = G.setdefault((P.tag, P.col, P.mat), [[], []]); g[0].append(Vm); g[1].append(Nm); ntri += nt
+        if AOON:
+            A = np.zeros(nl * 4); me.color_attributes['ao'].data.foreach_get('color', A); A = A.reshape(-1, 4)[:, 0] if nl else np.ones(0)
+            VN = np.zeros(nv * 3); me.vertices.foreach_get('normal', VN); VN = VN.reshape(-1, 3)
+            E = np.zeros(len(me.edges) * 2, int); me.edges.foreach_get('vertices', E); E = E.reshape(-1, 2)
+            d = V[E[:, 1]] - V[E[:, 0]]; L2 = np.linalg.norm(d, axis=1) + 1e-9; d = d / L2[:, None]
+            cv = np.zeros(nv); cnt = np.zeros(nv)
+            np.add.at(cv, E[:, 0], (d * VN[E[:, 0]]).sum(1)); np.add.at(cv, E[:, 1], (-d * VN[E[:, 1]]).sum(1)); np.add.at(cnt, E[:, 0], 1); np.add.at(cnt, E[:, 1], 1)
+            cv = cv / np.maximum(cnt, 1)
+            wear = np.clip((-cv - 0.12) * 2.2, 0, 1)
+            mult = (0.42 + 0.58 * A[TLr]) * (1 + 0.6 * wear[LV[TLr]])
+            Am = np.clip(np.round(mult / 2 * 255), 0, 255)
+        else: Am = np.full(len(TLr), 128.0)
+        g = G.setdefault((P.tag, P.col, P.mat), [[], [], []]); g[0].append(Vm); g[1].append(Nm); g[2].append(Am); ntri += nt
         if os.environ.get('PARTS'): print('  parte', P.ob.name, len(P.cuts), 'cortes', nt)
-        ev.to_mesh_clear()
+        if not AOON: ev.to_mesh_clear()
     out = {'g': [], 'a': anchors}
-    for (tag, col, mat), (Ps, Ns) in G.items():
-        Pp = np.concatenate(Ps); Nn = np.concatenate(Ns)
+    for (tag, col, mat), (Ps, Ns, As) in G.items():
+        Pp = np.concatenate(Ps); Nn = np.concatenate(Ns); Aa = np.concatenate(As).astype(np.int64)
         qp = np.clip(np.round(Pp / scale * 32767), -32767, 32767).astype(np.int16); qn = np.clip(np.round(Nn * 127), -127, 127).astype(np.int8)
-        key = np.concatenate([qp.astype(np.int64), qn.astype(np.int64)], 1)
+        key = np.concatenate([qp.astype(np.int64), qn.astype(np.int64), Aa[:, None]], 1)
         uk, inv = np.unique(key, axis=0, return_inverse=True); inv = inv.ravel()
         idx = inv.astype(np.uint16 if len(uk) < 65536 else np.uint32)
         b = lambda a: base64.b64encode(np.ascontiguousarray(a).tobytes()).decode()
-        grp = {'c': col, 'm': mat, 'p': b(uk[:, :3].astype(np.int16)), 'n': b(uk[:, 3:].astype(np.int8)), 'i': b(idx), 'w': 4 if idx.dtype == np.uint32 else 2}
+        grp = {'c': col, 'm': mat, 'p': b(uk[:, :3].astype(np.int16)), 'n': b(uk[:, 3:6].astype(np.int8)), 'i': b(idx), 'w': 4 if idx.dtype == np.uint32 else 2}
+        if AOON: grp['a'] = b(uk[:, 6].astype(np.uint8))
         if tag: out.setdefault('t', {}).setdefault(tag, []).append(grp)
         else: out['g'].append(grp)
     for tag in {k[0] for k in G if k[0]}:  # ponto de encaixe de cada peça solta: centro em cima (carregador) ou centro (ferrolho, bomba)

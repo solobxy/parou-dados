@@ -1892,7 +1892,7 @@ async function boot() {
         const sm = (v, w) => v + (w - v) * Math.min(1, dt * 9); FPF.rel = sm(FPF.rel || 0, p.reload > 0 ? 1 : 0); FPF.spr = sm(FPF.spr || 0, p.sprint && Math.hypot(p.vx, p.vz) > 1 ? 1 : 0);
         const uu = p.use && ITEMS[p.use.it.k] && ITEMS[p.use.it.k].use, VD = G.vmDbg || {}, use = VD.use || (uu ? { kind: (uu.water || 0) > (uu.food || 0) ? 'drink' : uu.food ? 'eat' : 'heal', t: Math.min(1, p.use.t / p.use.dur) } : null), thr = VD.thr ?? (p.thrT >= 0 ? p.thrT : -1);
         const vk = p.climb ? 'climb' : use ? 'use:' + use.kind : thr >= 0 ? 'granada' : (k || 'mao'), clb = p.climb ? { t: p.climb.t, dy: clamp(p.y - p.h + p.climb.peak - AIM.eye.y, -0.7, 0.2) } : null;
-        vm.set(show || use || thr >= 0 || clb ? vk : '', att, myLook); vm.update(dt, cam, { day: G.day, nv: G.nv, mv: Math.min(1, Math.hypot(p.vx || 0, p.vz || 0) / 3), ads: FPF.on ? a : 1, sw: p.swing, rel: FPF.rel, rp: VD.rp ?? (p.reload > 0 && p.reloadDur ? 1 - p.reload / p.reloadDur : -1), rm: p.reloadMode, spr: FPF.spr * (1 - a), up: FPF.on ? FPF.t : 1, raise: heldDef().gun ? AIM.raise : 1, use, thr, climb: clb }); }
+        vm.set(show || use || thr >= 0 || clb ? vk : '', att, myLook); vm.update(dt, cam, { env: scene.environment, envI: scene.environmentIntensity, day: G.day, nv: G.nv, mv: Math.min(1, Math.hypot(p.vx || 0, p.vz || 0) / 3), ads: FPF.on ? a : 1, sw: p.swing, rel: FPF.rel, rp: VD.rp ?? (p.reload > 0 && p.reloadDur ? 1 - p.reload / p.reloadDur : -1), rm: p.reloadMode, spr: FPF.spr * (1 - a), up: FPF.on ? FPF.t : 1, raise: heldDef().gun ? AIM.raise : 1, use, thr, climb: clb }); }
     } else {
       vm.set('', {}, myLook);
       if (PROJ.dirty || PROJ.mode !== 'top') topProj();

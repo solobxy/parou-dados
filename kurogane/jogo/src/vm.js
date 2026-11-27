@@ -123,6 +123,7 @@ export function makeVM() {
       // ao alto (telemóvel em pé) abre o campo para a arma não encher o ecrã
       cam.aspect = main.aspect; cam.fov = kind === 'long' ? Math.max(46, 2 * Math.atan(Math.tan(31 * Math.PI / 180) / Math.max(0.2, main.aspect)) * 180 / Math.PI) : 46 + 24 * Math.min(1, Math.max(0, (1 - main.aspect) / 0.54)); cam.updateProjectionMatrix(); const e = cam.projectionMatrix.elements, f = main.projectionMatrix.elements; e[8] = f[8]; e[9] = f[9]; cam.projectionMatrixInverse.copy(cam.projectionMatrix).invert();
       const D = o.day ?? 1, nv = o.nv || 0; hemi.intensity = 0.4 + 1.1 * D + 1.2 * nv; key.intensity = 0.3 + 2.2 * D;
+      if (o.env) { scene.environment = o.env; scene.environmentIntensity = Math.min(1, (o.envI ?? 0.5) * 1.25); } // reflexos do céu no metal da arma (sem isto o metal fica preto)
       const th = Math.tan(cam.fov * Math.PI / 360), hw = th * cam.aspect * 0.42, bot = -th * 0.42, H = -2 * bot, fr = cam.aspect < 1 ? 0.24 : 0; // ecrã à distância das mãos (0,42 m)
       const rp = o.rp ?? -1, rel = rp >= 0 ? Math.min(1, rp * 8, (1 - rp) * 8) : (o.rel || 0) * 0; // a recarregar: sai da mira no início e volta no fim
       const ads = kind === 'long' ? (o.ads ?? 1) * (1 - rel) : 0, hip = 1 - ads, mv = o.mv || 0, spr = (o.spr || 0) * (1 - rel), up = o.up ?? 1, dn = 1 - (o.raise ?? 1);
