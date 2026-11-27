@@ -12,6 +12,7 @@ export function pager(box, sel, o = {}) {
   const items = () => [...box.querySelectorAll(sel)].filter(e => !e.hidden);
   const conts = it => { const s = new Set(); for (const e of it) { let a = e.parentElement; while (a && a !== box) { s.add(a); a = a.parentElement; } } return [...s]; };
   const sync = (C, it) => { for (const c of C) c.classList.toggle('pgx', !it.some(e => !e.classList.contains('pgx') && c.contains(e))); };
+  const isT = e => /^H\d$/.test(e.tagName) || e.classList.contains('rhead') || e.classList.contains('pgt'); // títulos de secção
   const fits = () => box.scrollHeight <= box.clientHeight + 1 && box.scrollWidth <= box.clientWidth + 1;
   const show = (an) => { const it = items(), C = conts(it); for (const e of it) e.classList.add('pgx'); for (const e of pages[p] || []) e.classList.remove('pgx'); sync(C, it); box.scrollTop = 0;
     bar.hidden = pages.length < 2; lab.textContent = (p + 1) + ' / ' + pages.length; bP.disabled = p <= 0; bN.disabled = p >= pages.length - 1;
@@ -29,7 +30,9 @@ export function pager(box, sel, o = {}) {
         else cur.push(e); }
       if (cur.length) pages.push(cur);
       // um título não fica sozinho no fim de uma página
-      for (let i = 0; i < pages.length - 1; i++) { const pg = pages[i]; while (pg.length > 1 && /^H\d$/.test(pg[pg.length - 1].tagName)) pages[i + 1].unshift(pg.pop()); }
+      for (let i = 0; i < pages.length - 1; i++) { const pg = pages[i]; while (pg.length > 1 && isT(pg[pg.length - 1])) pages[i + 1].unshift(pg.pop()); }
+      // e uma página só com um título junta-se à seguinte
+      for (let i = 0; i < pages.length - 1; i++) if (pages[i].every(isT)) { pages[i + 1].unshift(...pages[i]); pages.splice(i, 1); i--; }
       p = Math.min(p, pages.length - 1);
     } finally { show(false); busy = false; }
   };
@@ -43,7 +46,7 @@ export function pager(box, sel, o = {}) {
   // volta a repartir quando o conteúdo ou o tamanho mudam
   let raf = 0; const later = () => { if (busy) return; cancelAnimationFrame(raf); raf = requestAnimationFrame(layout); };
   new MutationObserver(m => { if (m.some(r => r.type === 'childList' || r.attributeName === 'hidden')) later(); }).observe(box, { childList: true, subtree: true, attributes: true, attributeFilter: ['hidden'] });
-  new ResizeObserver(later).observe(box.parentNode);
+  { const ro = new ResizeObserver(later); ro.observe(box.parentNode); ro.observe(box); } later(); // reparte logo ao abrir (antes ficava à espera de uma mudança de tamanho que às vezes não vinha)
   box._pg = { layout, go, first: () => { p = 0; later(); }, get page() { return p; }, get pages() { return pages.length; } };
   return box._pg;
 }

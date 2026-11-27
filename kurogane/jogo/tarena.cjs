@@ -64,7 +64,7 @@ server.listen(0, async () => {
     await B.ev(() => { G.p.x = 3650 + 3; G.p.z = 3650 + 8; G.p.hp = 100; G.p.born = -99; }); await W(1500);
     const s0 = await A.ev(() => (G.net.arena && G.net.arena.s || [0, 0])[0]);
     await A.ev(() => { G.p.x = 3650 - 4; G.p.z = 3650 + 8; }); await W(400);
-    for (let i = 0; i < 2; i++) { await A.ev(() => { G.net.raw({ t: 'thr', k: 'gran', P: [G.p.x, 1.5, G.p.z], V: [1, 1, 0], lv: 0 }); }); await W(300); await A.ev(() => G.net.raw({ t: 'boom', k: 'gran', x: 3650 + 3, y: 0.2, z: 3650 + 8, lv: 0 })); await W(1200); } await W(1500); // duas granadas (o colete aguenta uma)
+    for (let i = 0; i < 2; i++) { await A.ev(() => { G.net.raw({ t: 'thr', k: 'gran', P: [G.p.x, 1.5, G.p.z], V: [1, 1, 0], lv: 0 }); }); await W(300); await A.ev(() => G.net.raw({ t: 'boom', k: 'gran', x: 3650 + 3, y: 0.2, z: 3650 + 8, lv: 0 })); await W(2000); } for (let i = 0; i < 20 && (await B.ev(() => G.p.alive)); i++) await W(400); await W(800); // duas granadas (o colete aguenta uma)
     const gb = await B.ev(() => ({ al: G.p.alive, by: G.arenaBy, hp: G.p.hp, booms: window.__booms || 0 })), s1 = await A.ev(() => (G.net.arena && G.net.arena.s || [0, 0])[0]); console.log('granada:', JSON.stringify(gb), 'placar vermelha', s0, '→', s1); ok(!gb.al && gb.by === 'Ana' && s1 === s0 + 1, 'as granadas da Ana matam o Bruno (azul) e contam para a vermelha');
     // granada falsa (sem lançar) não faz nada
     await W(4500); await B.ev(() => G.arenaRespawn()); await W(3500); await B.ev(() => { G.p.x = 3650 + 3; G.p.z = 3650 + 8; G.p.born = -99; }); await W(1200);

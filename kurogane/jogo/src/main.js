@@ -78,7 +78,7 @@ async function boot() {
   const RAINFOG = new THREE.Color(0x6f7680);
   // noite: lanterna (com sombras, por isso as paredes tapam), luz fraca à volta de ti e candeeiros por perto
   const torch = new THREE.SpotLight(0xfff0d8, 0, 28, 0.5, 0.55, 1.3); torch.castShadow = true; torch.shadow.camera.layers.enable(1); torch.shadow.mapSize.set(512, 512); torch.shadow.bias = -0.0008; torch.shadow.camera.near = 0.04; scene.add(torch, torch.target); // near pequeno: encostado a uma parede, a parede ainda entra no mapa de sombras (senão a luz passava para o outro lado)
-  const glow = new THREE.PointLight(0xa8b8d8, 0, 4.5, 1.6); // luz fraca à volta do boneco de noite (curta, para não se notar através de paredes) scene.add(glow);
+  const glow = new THREE.PointLight(0xa8b8d8, 0, 4.5, 1.6); scene.add(glow); // luz fraca à volta do boneco de noite (curta, para não se notar através de paredes)
   const lampL = [0, 1, 2, 3].map(() => { const l = new THREE.PointLight(0xffc27a, 0, 20, 1.6); scene.add(l); return l; }); // os candeeiros mais perto da câmara acendem a sério
   // o lume e os candeeiros da base mais perto: luz com sombra (as paredes da base, mesmo baixas, tapam-na; camada 1 = cópias inteiras das paredes)
   const baseL = [0].map(() => { const l = new THREE.PointLight(0xff9a4a, 0, 9, 1.7); l.castShadow = true; l.shadow.mapSize.set(256, 256); l.shadow.camera.near = 0.08; l.shadow.camera.far = 9; l.shadow.bias = -0.004; l.shadow.camera.layers.enable(1); scene.add(l); return l; });
@@ -622,8 +622,8 @@ async function boot() {
     const mx = (P.x + Q.x) / 2, mz = (P.z + Q.z) / 2, half = Math.hypot(Q.x - P.x, Q.z - P.z) / 2 + 2;
     const ent = (d2, sg, r) => Math.max(0, sg - Math.sqrt(Math.max(0, r * r - d2)) / L);
     for (const t of T) { if (Math.abs(t.x - mx) > half || Math.abs(t.z - mz) > half) continue; let h = null;
-      if (!aim && !t.lying) { const r = hitCapsules(P.x, P.y, P.z, Q.x, Q.y, Q.z, capsules(t)); if (r && (!best || r.f < best.s)) best = { s: r.f, zone: r.zone, point: P.clone().lerp(Q, r.f) }; continue; } // hitboxes por osso (iguais às do servidor)
-      if (t.lying) { _pa.set(t.x, t.y + 0.25, t.z); const [d2, sg] = segSeg(P, Q, _pa, _pa); if (d2 <= 0.25) h = { s: ent(d2, sg, 0.5), zone: 'body', point: _pa.clone() }; }
+      if (!aim) { const r = hitCapsules(P.x, P.y, P.z, Q.x, Q.y, Q.z, capsules(t)); if (r && (!best || r.f < best.s)) best = { s: r.f, zone: r.zone, point: P.clone().lerp(Q, r.f) }; continue; } // hitboxes por osso (iguais às do servidor)
+      if (t.lying) { _pa.set(t.x - Math.sin(t.yaw || 0) * 1.2, 0.24, t.z - Math.cos(t.yaw || 0) * 1.2); /* meio do corpo de quem dorme (o sítio guardado são os pés) */ const [d2, sg] = segSeg(P, Q, _pa, _pa); if (d2 <= 0.25) h = { s: ent(d2, sg, 0.5), zone: 'body', point: _pa.clone() }; }
       else if ((t.sc || 0) > 1.5) { const fx = Math.sin(t.yaw || 0), fz = Math.cos(t.yaw || 0); _pa.set(t.x + fx * 0.72, t.y + 0.24, t.z + fz * 0.72); const [dh, sh] = segSeg(P, Q, _pa, _pa); _pa.set(t.x - fx * 0.95, t.y + 0.18, t.z - fz * 0.95); _pb.set(t.x + fx * 0.45, t.y + 0.2, t.z + fz * 0.45); const [db, sb] = segSeg(P, Q, _pa, _pb); // deitado: ao comprido no chão
         if (dh <= 0.17 * 0.17) h = { s: ent(dh, sh, 0.17), zone: 'head', point: new THREE.Vector3(t.x + fx * 0.72, t.y + 0.24, t.z + fz * 0.72) }; else if (db <= 0.26 * 0.26) h = { s: ent(db, sb, 0.26), zone: 'body', point: new THREE.Vector3(t.x, t.y + 0.2, t.z) }; }
       else {
@@ -1374,7 +1374,7 @@ async function boot() {
   // ver as hitboxes por cima de um corpo (teste): estado { x, z, yaw, sc, an, mv, w }
   G.hitCaps = capsules; G.hitSeg = hitCapsules; G.dbgHitView = (st) => { const L = G._hv || (G._hv = []); for (const o of L) scene.remove(o); L.length = 0; if (!st) return;
     const b = mkRemote({}); L.push(b.root); b.setWeapon(st.w || null, {}); b.stance = st.sc || 0; const mode = ['none', 'pistol', 'rifle'][st.an & 3] || 'none';
-    for (let k = 0; k < 40; k++) b.pose(0.05, st.mv || 0, mode, -1, 0, 0, -1, 0, st.an & 4 ? 1 : 0.25, null, null); b.root.position.set(st.x, st.y || 0, st.z); b.root.rotation.set(0, st.yaw || 0, 0);
+    for (let k = 0; k < 40; k++) b.pose(0.05, st.mv || 0, mode, -1, 0, 0, -1, 0, st.an & 4 ? 1 : 0.25, null, null); b.root.position.set(st.x, st.y || 0, st.z); if (st.lie) { b.pose(0, 0, 'none'); b.root.rotation.set(-Math.PI / 2, st.yaw || 0, 0, 'YXZ'); } else b.root.rotation.set(0, st.yaw || 0, 0);
     const COL = { head: 0xff3030, body: 0xffc020, arms: 0x30c0ff, legs: 0x40ff60 };
     for (const q of capsules(st)) { const A = new THREE.Vector3(q[0], q[1], q[2]), B = new THREE.Vector3(q[3], q[4], q[5]), len = A.distanceTo(B); const m = new THREE.Mesh(new THREE.CapsuleGeometry(q[6], len, 4, 10), new THREE.MeshBasicMaterial({ color: COL[q[7]], wireframe: true, transparent: true, opacity: 0.85, depthTest: false })); m.renderOrder = 999; m.position.copy(A).add(B).multiplyScalar(0.5); m.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), B.clone().sub(A).normalize()); scene.add(m); L.push(m); } };
   G.dbgArenaCols = () => { const A = ARENA, ins = (x0, z0, x1, z1) => x1 > A.x - A.hw - 2 && x0 < A.x + A.hw + 2 && z1 > A.z - A.hd - 2 && z0 < A.z + A.hd + 2, f = v => +v.toFixed(3); /* colisões da arena para os bots do servidor */

@@ -77,7 +77,7 @@ server.listen(0, async () => {
     const sl = await A.ev(() => [...document.querySelectorAll('.ntag.sleep')].map(e => e.textContent + (e.style.display === 'none' ? ' (escondido)' : '')).join(','));
     console.log('a dormir:', sl); ok(/Bruno · a dormir/.test(sl), 'o Bruno ficou a dormir no mundo');
     await A.page.screenshot({ path: path.join(outDir, 'net-dormir.png') });
-    const nb0 = await A.ev(() => G.bags.length); let k = 0; for (; k < 8; k++) { const b = await A.ev(() => G.bags.length); if (b > nb0) break; await A.ev(s => { G.fp = false; G.aimS.Aw = new G.V3(s[0] + 6, 0.35, s[1]); G.p.reload = 0; G.p.cd = 0; G.inv.belt[G.sel].ammo = 5; return G.dbg.fire(); }, spot); await W(600); }
+    const nb0 = await A.ev(() => G.bags.length); let k = 0; for (; k < 8; k++) { const b = await A.ev(() => G.bags.length); if (b > nb0) break; await A.ev(s => { G.fp = false; const t = G.net.targets().find(q => q.lie) || { x: s[0] + 6, z: s[1], yaw: 0 }; G.aimS.Aw = new G.V3(t.x - Math.sin(t.yaw) * 1.3, 0.22, t.z - Math.cos(t.yaw) * 1.3); /* peito de quem dorme (de costas, a cabeça para trás dos pés) */ G.p.reload = 0; G.p.cd = 0; G.inv.belt[G.sel].ammo = 5; return G.dbg.fire(); }, spot); await W(600); }
     const bl = await A.ev(n0 => G.bags.length > n0 ? G.bags[G.bags.length - 1].label : '', nb0);
     ok(/Bruno/.test(bl), `matou quem dormia em ${k} tiros e ficou a mochila (${bl})`);
     // o Bruno volta: sabe que o mataram a dormir

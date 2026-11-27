@@ -114,9 +114,12 @@ export function initUI(G) {
       const byH = Math.floor((Hb - fixed - 8 * GAP) / 9), byW = Math.floor((Wd - g6) / 6);
       CS = clamp(Math.min(byH, byW), 34, 54); inv.style.setProperty('--cs', CS + 'px'); $('cBox').style.width = ''; return;
     }
+    // deitado e baixo (ex.: 640×300): o equipamento e o cinto encolhem para caber na altura, e as grelhas encolhem para caber na largura (nada sai do ecrã)
+    const sl2 = Math.min(sl, Math.max(28, Math.floor((Hb - 62) / 5))); if (sl2 !== sl) inv.style.setProperty('--slot', sl2 + 'px'); inv.classList.toggle('short', sl2 < sl);
+    const eqMin = Math.min(200, Math.max(150, 2 * sl2 + 74)); inv.style.setProperty('--eqw', eqMin + 'px');
     let cs = Math.floor((Hb - 30 - g6) / 6);
-    while (cs > 30 && 2 * (6 * cs + g6) + 200 + 28 > Wd) cs--;
-    CS = clamp(cs, 30, G.TOUCH ? 54 : 64); inv.style.setProperty('--cs', CS + 'px');
+    while (cs > 22 && 2 * (6 * cs + g6) + eqMin + 28 > Wd) cs--;
+    CS = clamp(cs, 22, G.TOUCH ? 54 : 64); inv.style.setProperty('--cs', CS + 'px');
     $('cBox').style.width = (6 * CS + g6) + 'px';
   };
   const P = n => n * CS + (n - 1) * GAP;

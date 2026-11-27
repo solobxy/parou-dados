@@ -493,7 +493,7 @@ const hitTest = (O, D, k, L, tgt, cars = []) => {
     // contra cada alvo: hitboxes por osso (a primeira cápsula que a bala toca neste troço); quem dorme fica deitado no chão
     let best = null;
     for (const T of tgt) { const by = T.y; if (Math.abs(nx - T.x) > 3 || Math.abs(nz - T.z) > 3) continue;
-      if (T.lying) { const dx = nx - x, dy = ny - y, dz = nz - z, l2 = dx * dx + dy * dy + dz * dz || 1e-9; let t = ((T.x - x) * dx + (by + 0.25 - y) * dy + (T.z - z) * dz) / l2; t = Math.max(0, Math.min(1, t)); if (Math.hypot(x + dx * t - T.x, y + dy * t - by - 0.25, z + dz * t - T.z) < 0.9 && Math.abs(ny - by) < 0.6 && (!best || t < best.f)) best = { T, zone: 'body', f: t }; continue; }
+      // quem dorme também tem hitboxes por osso (deitado de costas)
       const r = hitCapsules(x, y, z, nx, ny, nz, T.caps); if (r && (!best || r.f < best.f)) best = { T, zone: r.zone, f: r.f }; }
     if (best) return { T: best.T, zone: best.zone, dmg, pen, v: Math.hypot(vx, vy, vz) / v0, dist: dist + step * best.f, car: pass };
     x = nx; y = ny; z = nz; dist += step; }
@@ -519,7 +519,7 @@ const shot = (c, m) => {
     // o alvo é posto onde quem disparou o estava a ver (com a pose desse momento); sem essa hora: agora e um pouco antes
     const add = st => tgt.push({ x: st.x, y: st.y, z: st.z, c: o, caps: capsules(st, 0.015) });
     if (VT.has(o.id)) add(rewind(o.p, VT.get(o.id))); else { add(rewind(o.p, 0)); const H = o.p.hist || [], lt = H.length ? H[H.length - 1][4] : 0; if (lt) for (const back of [90, 180]) add(rewind(o.p, lt - back)); } }
-  for (const [tok, s] of Object.entries(S.sleepers)) if (!s.hid && (s.lv || 0) === (p.lv || 0) && !(myClan && s.clan === myClan) && Math.hypot(s.x - O[0], s.z - O[2]) < L + 3) tgt.push({ x: s.x, y: s.y || 0, z: s.z, sl: tok, lying: true });
+  for (const [tok, s] of Object.entries(S.sleepers)) if (!s.hid && (s.lv || 0) === (p.lv || 0) && !(myClan && s.clan === myClan) && Math.hypot(s.x - O[0], s.z - O[2]) < L + 3) tgt.push({ x: s.x, y: s.y || 0, z: s.z, sl: tok, lying: true, caps: capsules({ x: s.x, y: (s.y || 0) + 0.16, z: s.z, yaw: s.yaw || 0, lie: 1 }, 0.02) });
   // quem vai dentro de um blindado (sem se debruçar) não leva tiros; os veículos perto entram no teste
   const cars = Object.values(S.w.cars).filter(q => q.hp > 0 && Math.hypot(q.x - O[0], q.z - O[2]) < L + 6);
   for (let i = tgt.length - 1; i >= 0; i--) { const T = tgt[i]; if (T.c && cars.some(q => vt(q.k).armor && q.s.includes(T.c.id) && ((T.c.p.an | 0) & 8 || inCarBox(q, T.x, (T.y || 0) + 1, T.z, 0.1)))) tgt.splice(i, 1); }
@@ -540,7 +540,7 @@ const shot = (c, m) => {
     const v = T.c.p, [helm, vest] = v.ar || [0, 0]; let pop = null;
     if (h.zone === 'head') { if (helm && h.pen <= helm) { v.hd = (v.hd ?? 20) - dmg; dmg *= 0.8; if (v.hd <= 0) { pop = 'head'; v.ar[0] = 0; v.hd = null; } } else dmg = n > 1 ? dmg * 2.5 : 999; }
     else if (h.zone === 'body') { dmg *= 1.2; if (vest && h.pen <= vest) { v.vd = (v.vd ?? (vest >= 3 ? 50 : 25)) - dmg; dmg *= 0.8; if (v.vd <= 0) { pop = 'vest'; v.ar[1] = 0; v.vd = null; } } else if (vest) dmg *= 0.85; }
-    else if (h.zone === 'arms') dmg *= 1.0; // braços: como no CS (o colete não os protege)
+    else if (h.zone === 'arms') dmg *= 1.2; // braços: contam como o tronco (como no CS), mas o colete não os protege
     else dmg *= 0.6;
     if (v.god) dmg = 0; v.hp = Math.max(0, v.hp - dmg); const kill = v.hp <= 0; if (kill) { v.alive = false; stat(p, 'k'); stat(v, 'd'); }
     send(T.c, { t: 'hit', by: p.name, dmg: +dmg.toFixed(1), zone: h.zone, hp: v.hp, pop });

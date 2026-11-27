@@ -240,7 +240,7 @@ body.touch #bottom{bottom:calc(8px + var(--sb))}
 .iwt.heavy b,.iwt.heavy{color:var(--amb)}
 @media (max-width:400px){.tabs button{padding:0 8px;font-size:13px;letter-spacing:.04em}.iwt .ic{display:none}.iwt i{left:0}}.iwt.heavy u{background:var(--amb)}.iwt.over b,.iwt.over{color:#e5574a}.iwt.over u{background:#e5574a}
 .istat{display:none;margin-left:6px;font:600 13px "Roboto Condensed",sans-serif;letter-spacing:.06em;color:var(--tx2);text-transform:uppercase}
-.ibody{flex:1;min-height:0;display:grid;gap:8px 14px;padding-top:8px;grid-template-columns:auto minmax(200px,250px) auto;grid-template-rows:auto auto 1fr;grid-template-areas:"box eq bag" "box belt bag" "box hint bag";justify-content:center;align-items:start}
+.ibody{flex:1;min-height:0;display:grid;gap:8px 14px;padding-top:8px;grid-template-columns:auto minmax(var(--eqw,200px),250px) auto;grid-template-rows:max-content max-content 1fr;grid-template-areas:"box eq bag" "box belt bag" "box hint bag";justify-content:center;align-items:start}
 .ipan{min-height:0}
 #cBox{grid-area:box;align-self:stretch;display:flex;flex-direction:column;justify-content:flex-start;min-width:calc(var(--cs) * 6 + 10px)}
 #cEq{grid-area:eq;align-self:start;min-height:max-content}#cBelt{min-height:max-content}@media (max-height:430px){#inv .ihint{display:none}}
@@ -328,6 +328,7 @@ canvas.nvg{filter:grayscale(1) sepia(1) hue-rotate(50deg) saturate(2.4) brightne
 .recipe.lock{opacity:.5}
 .recipe img{width:52px;height:52px;object-fit:contain;background:rgba(255,255,255,.04);flex:none}
 .recipe .rn{flex:1;min-width:0}
+#cBox{container-type:inline-size}@container (max-width:250px){.recipe{display:grid;grid-template-columns:40px minmax(0,1fr);gap:6px 8px}.recipe img{width:40px;height:40px}.recipe>button{grid-column:1/-1;margin:0;width:100%}} /* caixa estreita: o botão passa para baixo em vez de tapar o nome */
 .recipe .rn b{display:block;font:700 16px "Roboto Condensed",sans-serif}
 .recipe .need{display:flex;gap:8px;flex-wrap:wrap;font:600 13px "Roboto Condensed",sans-serif;letter-spacing:.02em;color:var(--tx2)}
 .recipe .need .no{color:#F07A68}.recipe .need .ok{color:#A9C46E}
@@ -400,7 +401,7 @@ h1 small{display:block;font:900 clamp(16px,3vw,22px)/1.2 "KJP",sans-serif;letter
 #pfm.wide .pfbox{width:min(640px,100%)}
 .look{display:flex;gap:14px;align-items:flex-start}.lpv{flex:none;width:132px;height:198px;background:radial-gradient(circle at 50% 40%,#23272b,#121417 70%);display:flex;align-items:center;justify-content:center}.lpv img{width:100%;height:100%;object-fit:contain}
 .lopts{flex:1;min-width:0;display:flex;flex-direction:column;gap:9px}.lrow{display:flex;flex-direction:column;gap:5px}.lrow>span{font:700 11px "Roboto Condensed",sans-serif;letter-spacing:.1em;text-transform:uppercase;color:var(--tx2)}
-.sws{display:flex;flex-wrap:wrap;gap:6px}.sw{width:32px;height:32px;border-radius:2px;background:var(--c);box-shadow:inset 0 0 0 1px rgba(255,255,255,.14);transition:transform .12s ease-out,box-shadow .12s}.sw.on{box-shadow:inset 0 0 0 2px #121417,0 0 0 2px var(--amb);transform:scale(1.06)}
+.sws{display:flex;flex-wrap:wrap;gap:6px;padding:3px} /* a cor escolhida tem contorno: não fica cortado */.sw{width:32px;height:32px;border-radius:2px;background:var(--c);box-shadow:inset 0 0 0 1px rgba(255,255,255,.14);transition:transform .12s ease-out,box-shadow .12s}.sw.on{box-shadow:inset 0 0 0 2px #121417,0 0 0 2px var(--amb);transform:scale(1.06)}
 .lchs{display:flex;flex-wrap:wrap;gap:2px;background:#1b1a18;padding:3px;border-radius:2px;align-self:flex-start}.lch{height:34px;padding:0 10px;font:600 13px "Roboto Condensed",sans-serif;letter-spacing:.05em;text-transform:uppercase;color:var(--tx2);border-radius:2px}.lch.on{background:var(--amb);color:#17130c}
 .lcol{flex:none;width:150px;display:flex;flex-direction:column;gap:8px}.lcol .lpv{width:100%}.lact{display:flex;flex-direction:column;gap:6px}
 @media (max-width:460px){.look{flex-direction:column;align-items:stretch}.lcol{display:contents}.lpv{order:0;align-self:center;width:132px!important}.lopts{order:1;width:100%}.lact{order:2;flex-direction:row-reverse}.lact .btn{flex:1}}
@@ -787,7 +788,7 @@ body.mir #touch .tb>*,body.mir #touch .ghost{transform:scaleX(-1)}
 @media (max-width:620px){#set .ihead{flex-wrap:wrap;height:auto;row-gap:2px}#setTabs{order:3;width:100%;justify-content:space-between;gap:6px}#setTabs button{height:40px}}
 @media (orientation:portrait){#inv[data-tab=craft] .ibody,#inv[data-tab=skills] .ibody{grid-template-rows:minmax(0,1fr);grid-template-areas:"box";align-content:stretch}#inv[data-tab=craft] #cEq,#inv[data-tab=craft] #cBelt,#inv[data-tab=craft] #cBag,#inv[data-tab=craft] #iHint,#inv[data-tab=skills] #cEq,#inv[data-tab=skills] #cBelt,#inv[data-tab=skills] #cBag,#inv[data-tab=skills] #iHint{display:none}#inv[data-tab=craft] #cBox,#inv[data-tab=skills] #cBox{width:min(560px,100%);align-self:stretch}}
 .fitx{display:none!important}
-@media (orientation:landscape) and (max-height:520px){#pfm.wide .pfbox{width:min(860px,100%)}.lopts{display:grid;grid-template-columns:1fr 1fr;column-gap:20px;align-content:start}}
+@media (orientation:landscape) and (max-height:520px){#pfm.wide .pfbox{width:min(860px,100%)}.lopts{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);column-gap:20px;align-content:start}}
 @media (orientation:portrait) and (max-width:380px){#map .mh{flex-wrap:wrap;row-gap:6px}#map .mh #mScale{width:100%;text-align:center}#inv .tabs{gap:12px}#inv .tabs button{font-size:14px;letter-spacing:.03em}#inv .ihead{gap:6px}.iwt{font-size:13px}}
 .tabs button{min-width:44px}
 .pfbox{display:flex;flex-direction:column}.pfb{flex:1 1 auto;min-height:0}.pfb>.look{flex:1;min-height:0}
@@ -860,6 +861,9 @@ body.driving #dUp{right:calc(34px + var(--sr));left:auto;bottom:calc(64px + var(
 body.driving #dDn{right:calc(124px + var(--sr));left:auto;bottom:calc(30px + var(--sb))}
 body.driving #dHov{right:calc(40px + var(--sr));bottom:calc(158px + var(--sb))}
 @media (orientation:portrait){body.driving #dL{bottom:calc(120px + var(--sb))}body.driving #dR{bottom:calc(120px + var(--sb))}body.driving #dUp{bottom:calc(150px + var(--sb))}body.driving #dDn{bottom:calc(120px + var(--sb))}body.driving #dHov{bottom:calc(244px + var(--sb))}body.driving.touch #tLight{bottom:calc(206px + var(--sb))}}
+#inv.short #cBelt .ph{display:none}#inv.short .slot .lb{font-size:8.5px;letter-spacing:0}
+@media (orientation:landscape) and (max-height:520px){.pfb:has(input)>.ptabs{grid-column:1/-1}} @media (orientation:landscape) and (max-height:360px){.pfb .fld input{height:40px}.ptabs button{height:34px}.pfbox{gap:6px}.pfb:has(input){row-gap:6px}} /* conta ao deitado: separadores em cima, nome e palavra-passe lado a lado, aviso e botão por baixo */
+@media (orientation:landscape) and (max-width:720px){#adm .adh,#set .sett{display:none}} /* administração estreita: o selo ADMIN já diz onde estás */
 </style>
 </head>
 <body>
@@ -933,7 +937,7 @@ body.driving #dHov{right:calc(40px + var(--sr));bottom:calc(158px + var(--sb))}
   <nav class="menu"><button class="mi pri" id="sCont" hidden><b>Continuar</b><em>Voltas onde ficaste</em></button><button class="mi pri" id="sPlay"><b>Survival</b><em>Continuas onde ficaste, ou começas perto de uma vila</em></button><button class="mi" id="sArena"><b>Arena</b><em>PvP em Tóquio · Vermelha contra Azul · 5 kits</em></button><button class="mi" id="sSet"><b>Definições</b><em>Controlos, imagem e som</em></button></nav>
   <div class="onl" id="sOnl" role="status"><i class="dot" aria-hidden="true"></i><span><b>Servidor</b><em id="sOnT">A ver quem está a jogar…</em></span></div>
   <div class="keys" id="sKeys"></div>
-  <div class="foot">Protótipo 0.58 · um servidor para todos · quem sai fica a dormir no mundo</div>
+  <div class="foot">Protótipo 0.59 · um servidor para todos · quem sai fica a dormir no mundo</div>
 </div><button id="sMus" aria-label="Música do menu"><span class="on">{{volume-2}}</span><span class="off">{{volume-x}}</span></button><a class="credit" href="https://dinissousa.pt" target="_blank" rel="noopener">feito por dinissousa.pt</a></div>
 <div id="arw" class="ov" hidden></div>
 <div id="pfm" class="ov" hidden><div class="pfbox"><div class="pfh"><b id="pfT"></b><button class="close" id="pfX" aria-label="Fechar">{{x}}</button></div><div id="pfB" class="pfb"></div></div></div>

@@ -60,8 +60,9 @@ export function makeArena({ send: send0 }) {
       const [helm, vest] = v.ar || [0, 0]; let pop = null;
       if (hh.zone === 'head') { if (helm && hh.pen <= helm) { v.hd = (v.hd ?? 20) - dmg; dmg *= 0.8; if (v.hd <= 0) { pop = 'head'; v.ar[0] = 0; v.hd = null; } } else dmg = n > 1 ? dmg * 2.5 : 999; }
       else if (hh.zone === 'body') { dmg *= 1.2; if (vest && hh.pen <= vest) { v.vd = (v.vd ?? (vest >= 3 ? 50 : 25)) - dmg; dmg *= 0.8; if (v.vd <= 0) { pop = 'vest'; v.ar[1] = 0; v.vd = null; } } else if (vest) dmg *= 0.85; }
-      else if (hh.zone === 'arms') dmg *= 1.0; // braços: como no CS (o colete não os protege)
+      else if (hh.zone === 'arms') dmg *= 1.2; // braços: contam como o tronco (como no CS), mas o colete não os protege
       else dmg *= 0.6;
+      if (v.god) dmg = 0;
       v.hp = Math.max(0, v.hp - dmg); const kl = v.hp <= 0; if (kl) { v.alive = false; v.deadT = now; kill(p, v, k); }
       send(T.c, { t: 'hit', by: p.name, dmg: +dmg.toFixed(1), zone: hh.zone, hp: v.hp, pop });
       send(c, { t: 'hitc', on: T.c.id, zone: hh.zone, kill: kl, name: v.name }); if (!hitAny && !c.bot) { hitAny = true; p.hN = (p.hN || 0) + 1; }
@@ -105,6 +106,7 @@ export function makeArena({ send: send0 }) {
     if (m.t === 'boom') { if (m.k !== 'gran') return; const x = num(m.x, -4100, 4100), z = num(m.z, -4100, 4100), y = num(m.y, -5, 40), lv = num(m.lv, 0, 6) | 0; // granada que rebentou: só se a lançou há pouco e perto
       const q0 = (p.thrs || []).find(q => !q.used && now - q.t < 9000 && Math.hypot(q.P[0] - x, q.P[2] - z) < 60); if (!q0) return; q0.used = true; q0.B = [x, z]; // cada granada rebenta uma vez; fica registada para dar a baixa a quem a lançou
       for (const o of players.values()) if (o !== c && o.p) send(o, { t: 'boom', k: 'gran', x, y, z, lv, by: p.name, nd: o.p.team === p.team ? 1 : 0 }); if (!lv) BOTS.boom(p, x, y, z); return; }
+    if (m.t === 'tgod' && process.env.KG_TEST) { p.god = !!m.on; return; } // só nos testes: não morre
     if (m.t === 'vis') { p.vis = new Set((Array.isArray(m.L) ? m.L : []).slice(0, 40).map(v => v | 0)); p.visT = now; return; } /* quem este jogador está a ver (para o radar dos colegas) */
     if (m.t === 'ping') { send(c, { t: 'pong', k: m.k }); return; }
     if (m.t === 'lb' || m.t === 'asc') { send(c, board()); return; }
