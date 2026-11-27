@@ -155,7 +155,7 @@ jobs:
         working-directory: app
         run: |
           mkdir -p ../res
-          for t in pesquisa-locais cache-limitada cache-linhas-perto idioma-aparelho caminho-a-pe convite-instalar nomes-paragens ilhas fuso-ilhas horario-dia greves-avisos ttsl-fonte cidades-margens desenho-alternativo encaixe-desenho tml-alertas fontes-oficiais historico-arquivo contactos cp-greve-servicos relatorios greve-horario greves-pais ocorrencias-posicao cp-servicos-minimos plenarios avisos-tub avisos-servico-operadores; do
+          for t in pesquisa-locais cache-limitada cache-linhas-perto idioma-aparelho caminho-a-pe convite-instalar nomes-paragens ilhas fuso-ilhas horario-dia greves-avisos ttsl-fonte cidades-margens desenho-alternativo encaixe-desenho tml-alertas fontes-oficiais historico-arquivo contactos cp-greve-servicos relatorios greve-horario greves-pais ocorrencias-posicao cp-servicos-minimos plenarios avisos-tub avisos-servico-operadores avisos-nos-horarios; do
             echo "== $t"
             APP=$PWD node --import tsx ../auditoria/$t.mjs 2>&1 | grep -v "Experimental\|trace-warnings" | tee ../res/$t.txt | tail -40
           done
