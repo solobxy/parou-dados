@@ -32,12 +32,18 @@ const AVISOS = [
   { id: 'portugal-greve', tipo: 'greve', 'título': 'Greve na CP: serviços mínimos de 8 a 10 de dezembro', operador: 'CP', 'região': 'Nacional', 'municípios': ['Portugal'], start_datetime: '2026-12-08T00:00:00Z', end_datetime: '2026-12-11T00:00:00Z' },
 ].map((a) => ({ ...base, ...a, external_id: a.id, published_datetime: '', source: '', source_url: '', last_update: '' }));
 
+// publicações automáticas da Comunidade (sem transporte: fica o ícone do tipo em grande)
+const DADOS = [
+  { id: 'comunidade-incendio', zona: { nome: 'AROUCA', silhueta: 'centro' }, modo: null, tipo: { rotulo: 'INCÊNDIO', cor: '#FF5A2A', icone: 'chama' }, operador: 'PROTEÇÃO CIVIL', quando: 'EM CURSO', titulo: 'Incêndio grave em Arouca', destaque: { etiqueta: 'MEIOS NO TERRENO', texto: '320 operacionais · 6 meios aéreos' } },
+  { id: 'comunidade-feriado', zona: { nome: 'PORTUGAL', silhueta: 'portugal' }, modo: null, tipo: { rotulo: 'FERIADO', cor: '#4DA3FF', icone: 'calendario' }, operador: 'FERIADO NACIONAL', quando: 'TER 08/12', titulo: 'Imaculada Conceição', destaque: { etiqueta: 'TRANSPORTES', texto: 'Horário de domingos e feriados' } },
+];
+
 const browser = await chromium.launch(process.env.CHROME ? { executablePath: process.env.CHROME, args: ['--no-sandbox'] } : {});
 const p = await browser.newPage();
 const erros = [];
 p.on('pageerror', (e) => erros.push(String(e)));
 await p.goto('file://' + path.join(pasta, 'p.html'));
-const res = await p.evaluate(async ({ avisos }) => {
+const res = await p.evaluate(async ({ avisos, dados }) => {
   await Promise.all(['800 100px "Barlow Condensed"', '700 40px "Barlow Condensed"', '600 40px "Barlow Condensed"', '700 40px Barlow', '600 40px Barlow'].map((f) => document.fonts.load(f)));
   const agora = new Date('2026-11-27T21:50:00Z');
   const out = [];
@@ -54,9 +60,22 @@ const res = await p.evaluate(async ({ avisos }) => {
     for (let y = 190; y < 360; y += 2) for (let x = 72; x < 600; x += 2) { const [r, g, b] = em(x, y); if (r > 230 && g > 230 && b > 230) zona++; }
     out.push({ id: a.id, png: c.toDataURL('image/png'), faixa: em(540, 1070), fora, zona, d: { zona: d.zona.nome, modo: d.modo, tipo: d.tipo.rotulo, quando: d.quando } });
   }
+  for (const d of dados) {
+    const c = document.createElement('canvas'); c.width = 1080; c.height = 1080;
+    const ctx = c.getContext('2d');
+    Cartaz.desenharCartaz(ctx, Cartaz.cartazValido(d));
+    const px = ctx.getImageData(0, 0, 1080, 1080).data;
+    const em = (x, y) => { const i = (y * 1080 + x) * 4; return [px[i], px[i + 1], px[i + 2]]; };
+    let fora = 0;
+    for (let y = 150; y < 960; y += 2) for (let x = 1012; x < 1080; x++) { const [r, g, b] = em(x, y); if (r > 200 && g > 200 && b > 200) fora++; }
+    let zona = 0;
+    for (let y = 190; y < 360; y += 2) for (let x = 72; x < 600; x += 2) { const [r, g, b] = em(x, y); if (r > 230 && g > 230 && b > 230) zona++; }
+    out.push({ id: d.id, png: c.toDataURL('image/png'), faixa: em(540, 1070), fora, zona, d: { zona: d.zona.nome, modo: d.modo, tipo: d.tipo.rotulo, quando: d.quando } });
+  }
+  const blobDados = await Cartaz.gerarCartazDeDados(Cartaz.cartazValido(dados[0]));
   const blob = await Cartaz.gerarCartaz(avisos[0]);
-  return { out, jpeg: { tipo: blob.type, tamanho: blob.size }, fontes: document.fonts.check('800 100px "Barlow Condensed"') };
-}, { avisos: AVISOS });
+  return { out, jpeg: { tipo: blob.type, tamanho: blob.size }, jpegDados: { tipo: blobDados.type, tamanho: blobDados.size }, fontes: document.fonts.check('800 100px "Barlow Condensed"') };
+}, { avisos: AVISOS, dados: DADOS });
 ok('letras da marca carregadas', res.fontes);
 for (const r of res.out) {
   fs.writeFileSync(path.join(SAIDA, `cartaz_${r.id}.png`), Buffer.from(r.png.split(',')[1], 'base64'));
@@ -66,6 +85,7 @@ for (const r of res.out) {
   ok(`[${r.id}] nenhum texto passa a margem direita`, r.fora === 0, String(r.fora));
   console.log('       ', JSON.stringify(r.d));
 }
+ok('Comunidade: JPEG a partir dos dados guardados', res.jpegDados.tipo === 'image/jpeg' && res.jpegDados.tamanho > 30000, JSON.stringify(res.jpegDados));
 ok('JPEG final pronto a partilhar', res.jpeg.tipo === 'image/jpeg' && res.jpeg.tamanho > 30000, JSON.stringify(res.jpeg));
 ok('sem erros na página', erros.length === 0, erros.join(' | '));
 await browser.close();

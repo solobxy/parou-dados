@@ -43,14 +43,17 @@ ok('obras, desvio, mau tempo', t({ tipo: 'obras', 'título': 'Obras na avenida' 
   && t({ 'título': 'Aviso amarelo de chuva forte' }) === 'MAU TEMPO');
 ok('escolha à mão no painel manda', t({ tipo: 'interrupção', 'título': 'Avaria no elevador' }, 'obras') === 'OBRAS');
 
-// datas
+// datas: sempre com o dia escrito (a imagem fica no canal e na Comunidade; «hoje» deixava de ser verdade amanhã)
 const agora = new Date('2026-11-27T21:50:00Z');
 const q = (o) => C.quandoCurto(av(o), agora);
-ok('hoje (em curso, acaba às 23:59)', q({ status: 'Ativo', start_datetime: '2026-11-27T00:00:00Z', end_datetime: '2026-11-27T23:59:00Z' }) === 'HOJE', q({ status: 'Ativo', start_datetime: '2026-11-27T00:00:00Z', end_datetime: '2026-11-27T23:59:00Z' }));
+const v1 = q({ status: 'Ativo', start_datetime: '2026-11-27T00:00:00Z', end_datetime: '2026-11-27T23:59:00Z' });
+ok('em curso, só hoje: o dia escrito', v1 === 'SEX 27/11', v1);
 ok('dia futuro', q({ status: 'Futuro', start_datetime: '2026-12-02T00:00:00Z', end_datetime: '2026-12-02T23:59:00Z' }) === 'QUA 02/12');
-ok('amanhã', q({ status: 'Futuro', start_datetime: '2026-11-28T06:00:00Z', end_datetime: '2026-11-28T23:00:00Z' }) === 'AMANHÃ · SÁB 28/11');
+const v2 = q({ status: 'Futuro', start_datetime: '2026-11-28T06:00:00Z', end_datetime: '2026-11-28T14:00:00Z' });
+ok('amanhã também com o dia e a hora do fim (nunca «amanhã»)', v2 === 'SÁB 28/11 ATÉ 14:00', v2);
 ok('vários dias (fim à meia-noite conta o dia anterior)', q({ status: 'Futuro', start_datetime: '2026-12-08T00:00:00Z', end_datetime: '2026-12-11T00:00:00Z' }) === '08/12 → 10/12');
 ok('em curso sem fim', q({ status: 'Ativo', start_datetime: '2026-11-27T20:00:00Z', end_datetime: null }) === 'EM CURSO');
+ok('em curso até outro dia', q({ status: 'Ativo', start_datetime: '2026-11-26T20:00:00Z', end_datetime: '2026-11-30T20:00:00Z' }) === 'ATÉ SEG 30/11');
 
 // destaque
 const d1 = C.destaqueDoAviso({ linhas: [], servico_na_greve: { linhas: [], trocos: [['Senhora da Hora', 'Estádio do Dragão'], ['Hospital São João', 'Santo Ovídio']] } });
@@ -64,6 +67,29 @@ ok('SMTUC: tira «. em Avisos , Dicas , Novidades .»', O.semCategoriasNoInicio(
 ok('SMTUC: tira a lista comprida', O.semCategoriasNoInicio('. em Avisos , Eventos , Linhas , Metro Mondego , Novidades , Obras . Os SMTUC informam') === 'Os SMTUC informam');
 ok('frase normal fica', O.semCategoriasNoInicio('Em Coimbra, a greve vai afetar as linhas. Os SMTUC') === 'Em Coimbra, a greve vai afetar as linhas. Os SMTUC'
   && O.semCategoriasNoInicio('Em Coimbra, Braga e Porto. Os') === 'Em Coimbra, Braga e Porto. Os');
+
+// Comunidade: zona por lugares, publicações automáticas com imagem própria e validação do que vem da base
+ok('lugares: um concelho -> a cidade', C.zonaDosLugares(['Braga']).nome === 'BRAGA');
+ok('lugares: distritos do Norte -> NORTE', C.zonaDosLugares(['Vila Real', 'Bragança']).nome === 'NORTE');
+ok('lugares: Porto e Lisboa -> PORTUGAL', C.zonaDosLugares(['Porto', 'Lisboa']).nome === 'PORTUGAL');
+ok('lugares: Évora e Beja -> ALENTEJO', C.zonaDosLugares(['Évora', 'Beja']).nome === 'ALENTEJO');
+ok('lugares: Funchal -> MADEIRA', C.zonaDosLugares(['Madeira - Funchal']).nome === 'MADEIRA');
+ok('dia curto de AAAA-MM-DD', C.diaCurto('2026-12-08') === 'TER 08/12');
+const T = await import(pathToFileURL(path.join(APP, 'src/server/comunidade/avisosTextos.ts')).href);
+const pi = T.postIncendios([{ concelho: 'Arouca', distrito: 'Aveiro', humanos: 320, terrestres: 90, aereos: 6 }]);
+ok('incêndio: imagem própria (AROUCA, desenho do Centro, INCÊNDIO, meios)', pi.cartaz && pi.cartaz.zona.nome === 'AROUCA' && pi.cartaz.zona.silhueta === 'centro' && pi.cartaz.tipo.rotulo === 'INCÊNDIO' && pi.cartaz.modo === null
+  && /320 operacionais · 6 meios aéreos/.test(pi.cartaz.destaque.texto), JSON.stringify(pi.cartaz));
+const pv = T.postAvisoVermelho({ distritos: ['Viana do Castelo', 'Braga'], tipos: ['Vento', 'Precipitação'] });
+ok('aviso vermelho: NORTE, AVISO VERMELHO, tipos', pv.cartaz && pv.cartaz.zona.nome === 'NORTE' && pv.cartaz.tipo.rotulo === 'AVISO VERMELHO' && pv.cartaz.destaque.texto === 'Vento · Precipitação', JSON.stringify(pv.cartaz));
+const pf = T.postFeriado({ nome: 'Imaculada Conceição', diaSemana: 'terça-feira', data: '2026-12-08' });
+ok('feriado: PORTUGAL, FERIADO, dia escrito', pf.cartaz && pf.cartaz.zona.nome === 'PORTUGAL' && pf.cartaz.tipo.rotulo === 'FERIADO' && pf.cartaz.quando === 'TER 08/12');
+const cg = C.dadosDoCartaz(av({ tipo: 'greve', 'título': 'Greve no Metro', operador: 'Metro do Porto', 'região': 'Área Metropolitana do Porto', start_datetime: '2026-12-04T00:00:00Z', end_datetime: '2026-12-04T23:59:00Z', status: 'Futuro' }));
+const pg = T.postGreve({ titulo: 'Greve · Metro do Porto', corpo: 'Greve no Metro', cartaz: cg });
+ok('greve: a imagem própria passa para a publicação', pg.cartaz && pg.cartaz.zona.nome === 'PORTO' && pg.cartaz.modo === 'metro');
+ok('validação: dados certos passam (com o troço por linha)', JSON.stringify(C.cartazValido(JSON.parse(JSON.stringify({ ...cg, destaque: { etiqueta: 'SÓ FUNCIONA', texto: 'A ↔ B\nC ↔ D' } })))) === JSON.stringify({ ...cg, destaque: { etiqueta: 'SÓ FUNCIONA', texto: 'A ↔ B\nC ↔ D' } }));
+ok('validação: cor, ícone ou zona inventados não passam', C.cartazValido({ ...cg, tipo: { ...cg.tipo, cor: 'red' } }) === null
+  && C.cartazValido({ ...cg, tipo: { ...cg.tipo, icone: '<script>' } }) === null && C.cartazValido({ ...cg, zona: { nome: 'X', silhueta: 'marte' } }) === null && C.cartazValido('x') === null);
+ok('validação: textos compridos cortados', C.cartazValido({ ...cg, titulo: 'a'.repeat(500) }).titulo.length === 160);
 
 console.log(falhas ? `\n${falhas} FALHAS` : '\nTUDO OK');
 process.exit(falhas ? 1 : 0);
