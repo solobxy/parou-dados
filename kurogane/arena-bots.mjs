@@ -118,7 +118,7 @@ export function makeBots(A) { // A: { players, add, remove, shot, kill, teamId, 
   const bots = () => [...A.players.values()].filter(c => c.bot);
   const humans = () => [...A.players.values()].filter(c => c.p && !c.bot);
   const level = t => { const H = humans().filter(c => c.p.team !== t); const base = H.length ? H.reduce((s, c) => s + humanSkill(c.p), 0) / H.length : 0.35; return clamp(base * 0.92 + adj[t], 0.08, 0.86); };
-  const freeName = () => { const used = new Set([...A.players.values()].filter(c => c.p).map(c => c.p.name.toLowerCase())); const L = NAMES.filter(n => !used.has(n.toLowerCase())); return L.length ? pick(L) : 'Jogador' + Math.floor(100 + Math.random() * 900); };
+  const freeName = () => { const used = new Set([...A.players.values()].filter(c => c.p).map(c => c.p.name.toLowerCase().replace(' · bot', ''))); const L = NAMES.filter(n => !used.has(n.toLowerCase())); return L.length ? pick(L) : 'Jogador' + Math.floor(100 + Math.random() * 900); };
 
   const spawn = c => { const p = c.p, b = c.bot, now = Date.now();
     const foes = [...A.players.values()].filter(o => o.p && o.p.alive && o.p.team !== p.team);
@@ -131,7 +131,7 @@ export function makeBots(A) { // A: { players, add, remove, shot, kill, teamId, 
     const c = { id: nid++, bot: {}, dead: false };
     const kits = Object.keys(KITB), S = level(team);
     let kit = pick(['atirador', 'atirador', 'assalto', 'assalto', 'apoio', 'pesado']); if (S > 0.55 && Math.random() < 0.15) kit = 'sniper';
-    c.p = { name: freeName(), look: { skin: pick(LOOK.skin), hair: pick(LOOK.hair), top: pick(LOOK.top), legs: pick(LOOK.legs), hairS: Math.floor(Math.random() * 5), beardS: Math.floor(Math.random() * 3) }, team, kit: kits.includes(kit) ? kit : 'atirador', clan: A.teamId(team), k: 0, d: 0, hist: [], alive: false, x: AX, z: AZ, y: 0, lv: 0, yaw: 0, mv: 0, an: 0, w: '', hp: 100, ar: [0, 0], ts: 0 };
+    c.p = { name: freeName() + ' · bot', look: { skin: pick(LOOK.skin), hair: pick(LOOK.hair), top: pick(LOOK.top), legs: pick(LOOK.legs), hairS: Math.floor(Math.random() * 5), beardS: Math.floor(Math.random() * 3) }, team, kit: kits.includes(kit) ? kit : 'atirador', clan: A.teamId(team), k: 0, d: 0, hist: [], alive: false, x: AX, z: AZ, y: 0, lv: 0, yaw: 0, mv: 0, an: 0, w: '', hp: 100, ar: [0, 0], ts: 0 };
     c.p.isBot = 1; c.bot.on = o => onMsg(c, o);
     A.add(c); spawn(c); return c;
   };
