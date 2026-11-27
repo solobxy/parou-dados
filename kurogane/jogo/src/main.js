@@ -343,7 +343,10 @@ async function boot() {
   OL.quad.frustumCulled = false; OL.qs = new THREE.Scene(); OL.qs.add(OL.quad); OL.qc = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
   const _ob = new THREE.Box3(), _ov = new THREE.Vector3(), _occ = new THREE.Color();
   // móveis e caixas fazem parte da cidade juntada: tiram-se os triângulos inteiros à volta do sítio (uma vez por móvel)
-  const olCut = (c, y0) => { if (c._olg !== undefined) return c._olg; const lv = c.lv || 0; let R = null, rd = 0.9;
+  const olCut = (c, y0) => { if (c._olg !== undefined) return c._olg; if (c.recs && c.recs.length) { const out = []; for (const r of c.recs) { const m = r.mesh, A = m && m.geometry && m.geometry.attributes.position; if (!A || r.off === undefined || (r.off + r.count) > A.count) continue; m.updateMatrixWorld(); const P = A.array, M = m.matrixWorld;
+      for (let i = r.off * 3, e = (r.off + r.count) * 3; i < e; i += 3) { _ov.set(P[i], P[i + 1], P[i + 2]).applyMatrix4(M); out.push(_ov.x, _ov.y, _ov.z); } }
+    if (out.length) { const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(out, 3)); return (c._olg = g); } }
+    const lv = c.lv || 0; let R = null, rd = 0.9;
     for (const r of W.rects) { if ((r.lv || 0) !== lv || r.k !== 's' || (r.x1 - r.x0) * (r.z1 - r.z0) > 14) continue; const d = Math.hypot(Math.max(r.x0 - c.x, 0, c.x - r.x1), Math.max(r.z0 - c.z, 0, c.z - r.z1)); if (d < rd) { rd = d; R = r; } }
     const x0 = R ? R.x0 - 0.25 : c.x - 0.6, x1 = R ? R.x1 + 0.25 : c.x + 0.6, z0 = R ? R.z0 - 0.25 : c.z - 0.6, z1 = R ? R.z1 + 0.25 : c.z + 0.6, ya = y0 - 0.3, yb = y0 + (R ? Math.min(R.h || 2.5, 2.4) + 0.25 : 2.2), out = [];
     if (!OL.wm) { OL.wm = []; scene.traverse(o => { if (o.isMesh && !o.isInstancedMesh && !o.isSkinnedMesh && o.geometry && o.geometry.attributes.position && o.visible && o.material && !(o.material.depthWrite === false && o.material.transparent && o.material.opacity < 0.2)) OL.wm.push(o); }); }
@@ -554,7 +557,7 @@ async function boot() {
   for (const k in ITEMS) { const d = ITEMS[k]; ICONS[k] = I3.iconOf(d.icon, d.w * CELLPX + (d.w - 1) * 2, d.h * CELLPX + (d.h - 1) * 2, d.v || 'side', d.w === 1 && d.h === 1 ? 0.7 : 0.82, d.tint); }
   const ICONS_SQ = {}; for (const k in ITEMS) { const d = ITEMS[k]; if (d.w >= d.h * 2 && d.w >= 3) ICONS_SQ[k] = I3.iconOf(d.icon, 96, 96, 'side', 0.94, d.tint, -0.62); } G.ICONS_SQ = ICONS_SQ;
   G.ICONS = ICONS; G.portrait = eq => I3.portrait({ eq }, 160, 300); I3.setLook((Conta.ativo() || {}).look);
-  G.portraitLook = L => I3.portrait({}, 168, 252, L); G.dbgPortrait = (o, w, h) => I3.portrait(o, w, h); G.portraitBig = L => I3.portrait({ gun: 'ak', raise: 1, ry: -0.9 }, 520, 560, L); // a personagem grande no menu G.LOOK_OPTS = LOOK_OPTS;
+  G.portraitLook = L => I3.portrait({}, 168, 252, L); G.LOOK_OPTS = LOOK_OPTS; G.dbgPortrait = (o, w, h) => I3.portrait(o, w, h); G.portraitBig = L => I3.portrait({ gun: 'ak', raise: 1, ry: -0.9 }, 520, 560, L); // a personagem grande no menu G.LOOK_OPTS = LOOK_OPTS;
   Object.defineProperty(G, 'body', { get: () => body, configurable: true });
   G.setLook = L => { myLook = lookCol(L); const o = body, nb = mkBody(L); nb.root.position.copy(o.root.position); nb.root.rotation.copy(o.root.rotation); nb.root.visible = o.root.visible; scene.remove(o.root); o.dispose(); body = nb; I3.setLook(L); if (G.p && G.inv) refresh(); G.lookV = (G.lookV || 0) + 1; };
 

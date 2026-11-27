@@ -31,8 +31,11 @@ export function buildWorld(scene, mats, A, opt = {}) {
   const container = (x, z, label, table, o = {}) => { const c = { id: 'c' + (cid++), x, z, label, table, slots: o.slots || [6, 4], y: o.y ?? 0.8, grid: null, refill: 0, lv: CUR }; W.containers.push(c); return c; };
   // escadas sempre livres: o pé (no piso de baixo) e o topo (no de cima) têm uma zona onde nenhum móvel pode ficar; quem calhar lá não é construído
   const koOf = lv => { const out = []; for (const st of W.stairs) { const C = st.b, ax = st.ax, d = st.dir; for (const [at, l, sgn] of [[st.bot, st.lv, -d], [st.top, st.lv + 1, d]]) { if (l !== lv) continue; const a0 = Math.min(at, at + sgn * 1.25), a1 = Math.max(at, at + sgn * 1.25); let c0 = ax ? st.z0 : st.x0, c1 = ax ? st.z1 : st.x1; const o2 = st.open; if (o2 === (ax ? 's' : 'e')) c1 += 1.3; else if (o2 === (ax ? 'n' : 'w')) c0 -= 1.3; else { c0 -= 0.6; c1 += 0.6; } let r = ax ? { x0: a0, x1: a1, z0: c0, z1: c1 } : { x0: c0, x1: c1, z0: a0, z1: a1 }; if (C) r = { x0: Math.max(r.x0, C.ix0), x1: Math.min(r.x1, C.ix1), z0: Math.max(r.z0, C.iz0), z1: Math.min(r.z1, C.iz1) }; out.push(r); } } return out; };
+  // peças de um móvel: as que ficam junto do sítio do loot (sem paredes nem chão grandes)
+  const near = (R, c) => R.filter(r => { const q = r.bb; if (!q || r.mat === 'decal' || r.mat === 'lit' || r.mat === 'sign') return false; const dx = q[3] - q[0], dz = q[5] - q[2]; if (dx > 4.5 || dz > 4.5 || q[4] - q[1] > 2.8) return false; return Math.hypot(Math.max(q[0] - c.x, 0, c.x - q[3]), Math.max(q[2] - c.z, 0, c.z - q[5])) < 0.9; });
   const guard = fn => (...a) => {
     const m = b.mark(), r0 = W.rects.length, c0 = W.containers.length, k0 = W.circles.length, res = fn(...a);
+    if (W.containers.length > c0) { const R = b.recsSince(m); for (let i = c0; i < W.containers.length; i++) { const c = W.containers[i]; if (!c.recs) c.recs = near(R, c); } } // o contorno usa as peças deste móvel
     const KO = koOf(CUR); if (!KO.length) return res;
     const hit = (x0, z0, x1, z1) => KO.some(k => x0 < k.x1 && x1 > k.x0 && z0 < k.z1 && z1 > k.z0);
     let bad = false;
@@ -93,7 +96,7 @@ export function buildWorld(scene, mats, A, opt = {}) {
     b.pop(); const cs = Math.abs(Math.sin(ry)) > 0.5; rect(x - (cs ? 0.4 : 0.48), z - (cs ? 0.48 : 0.4), x + (cs ? 0.4 : 0.48), z + (cs ? 0.48 : 0.4), 's');
   };
   const VEND = A.draw(128, 160, (x, w, h) => { x.fillStyle = '#eef1ee'; x.fillRect(0, 0, w, h); const cs = ['#d23a2e', '#2f6fb3', '#f0c23a', '#3f9a5a', '#e7e7e7', '#7a3f9a', '#f08a2a', '#1f2a44']; for (let r = 0; r < 3; r++) for (let c = 0; c < 5; c++) { x.fillStyle = cs[(r * 3 + c) % 8]; x.fillRect(8 + c * 24, 10 + r * 50, 15, 32); x.fillStyle = 'rgba(255,255,255,.5)'; x.fillRect(10 + c * 24, 13 + r * 50, 3, 24); x.fillStyle = '#c33'; x.fillRect(9 + c * 24, 45 + r * 50, 13, 4); } });
-  const car = (x, z, ry, c, o = {}) => {
+  const car = (x, z, ry, c, o = {}) => { const m0 = b.mark();
     b.push(x, 0, z, ry);
     const dmg = o.wreck ? 0.75 : 1;
     const MC = b.model('carro', 0, 0, 0, 0, shade(c, dmg)); // vidros transparentes, bancos e tablier lá dentro
@@ -107,7 +110,7 @@ export function buildWorld(scene, mats, A, opt = {}) {
     if (o.police) { b.box(1.74, 0.3, 2.2, 0, 0.72, 0.2, 0xf2f2f0, { mat: 'm' }); const ly = MC ? -0.07 : 0; b.box(0.9, 0.12, 0.25, 0, 1.52 + ly, -0.3, 0x2a2b2c); b.box(0.35, 0.1, 0.22, -0.22, 1.6 + ly, -0.3, 0xd23a2e, { mat: 'lit' }); b.box(0.35, 0.1, 0.22, 0.22, 1.6 + ly, -0.3, 0x2a5ad2, { mat: 'lit' }); }
     b.pop();
     const cs = Math.abs(Math.sin(ry)) > 0.5, hw = cs ? 2.05 : 0.86, hd = cs ? 0.86 : 2.05; rect(x - hw, z - hd, x + hw, z + hd, 's', 1.5); W.rects[W.rects.length - 1].car = true;
-    container(x - Math.sin(ry) * 2.5, z - Math.cos(ry) * 2.5, o.taxi ? 'Abrir mala do táxi' : o.police ? 'Abrir mala da polícia' : 'Abrir mala do carro', o.police ? 'carropol' : 'carro', { y: 0.7 });
+    container(x - Math.sin(ry) * 2.5, z - Math.cos(ry) * 2.5, o.taxi ? 'Abrir mala do táxi' : o.police ? 'Abrir mala da polícia' : 'Abrir mala do carro', o.police ? 'carropol' : 'carro', { y: 0.7 }).recs = b.recsSince(m0).filter(r => r.mat !== 'lit' && r.mat !== 'decal');
     mp(x - hw, z - hd, x + hw, z + hd, '#5b5e62');
   };
   const cone = (x, z) => { if (b.model('cone', x, 0, z, 0)) return; b.cyl(0.04, 0.17, 0.62, 10, x, 0.33, z, 0xe8662a); b.box(0.38, 0.04, 0.38, x, 0.02, z, 0xe8662a); b.cyl(0.11, 0.135, 0.09, 10, x, 0.3, z, WHITE); };

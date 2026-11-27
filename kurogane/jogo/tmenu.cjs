@@ -12,6 +12,7 @@ module.exports = async (page, shot) => {
   await W(1200); await shot('m-lobby');
   await page.click('#sGo'); await W(900); await shot('m-modos'); await page.click('#mdX'); await W(300);
   await page.click('#sNews'); await W(700); await shot('m-novidades'); await page.click('#nwX'); await W(300);
+  await page.click('#sLook'); await W(700); console.log('aparência abre:', await ev(() => !document.getElementById('pfm').hidden && document.getElementById('pfT').textContent === 'Aparência' && !!document.querySelector('#pfB .sw'))); await ev(() => document.getElementById('pfX').click()); await W(300);
   await page.click('#sSet'); await W(600); await ev(() => { const b = document.querySelector('.sside [data-t=img]') || document.querySelector('#setTabs [data-t=img]'); b && b.click(); }); await W(400); await shot('m-defs');
   await ev(() => { const b = document.querySelector('.sside [data-t=conta]') || document.querySelector('#setTabs [data-t=conta]'); b && b.click(); }); await W(400); await shot('m-defs-conta');
   // terminar sessão: volta à entrada; ao recarregar continua na entrada; entrar outra vez com o mesmo nome volta ao mesmo perfil

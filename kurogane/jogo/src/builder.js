@@ -36,13 +36,14 @@ const writeJob = (r, P, N, U, C, o) => { const g = r.src, n = r.count, e = r.M, 
     if (CV) { C[w] = r.r * CV[k]; C[w + 1] = r.g * CV[k + 1]; C[w + 2] = r.b * CV[k + 2]; } else { C[w] = r.r; C[w + 1] = r.g; C[w + 2] = r.b; } } };
 const writeRec = (r, P, N, U, C, o) => { if (r.job) writeJob(r, P, N, U, C, o); else { P.set(r.p, o * 3); N.set(r.n, o * 3); U.set(r.uv, o * 2); C.set(r.c, o * 3); } };
 // junta listas de números numa geometria só (posição, normal, uv, cor)
-const mergeRecs = L => { if (!L.length) return null; let n = 0; for (const r of L) n += r.count; const P = new Float32Array(n * 3), N = new Float32Array(n * 3), U = new Float32Array(n * 2), C = new Float32Array(n * 3); let o = 0; for (const r of L) { writeRec(r, P, N, U, C, o); o += r.count; }
+const mergeRecs = L => { if (!L.length) return null; let n = 0; for (const r of L) n += r.count; const P = new Float32Array(n * 3), N = new Float32Array(n * 3), U = new Float32Array(n * 2), C = new Float32Array(n * 3); let o = 0; for (const r of L) { r.off = o; writeRec(r, P, N, U, C, o); o += r.count; }
   const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(P, 3)); g.setAttribute('normal', new THREE.BufferAttribute(N, 3)); g.setAttribute('uv', new THREE.BufferAttribute(U, 2)); g.setAttribute('color', new THREE.BufferAttribute(C, 3)); return g; };
 export class Builder {
-  constructor(chunk = 40) { this.chunk = chunk; this.buckets = new Map(); this.stack = [new THREE.Matrix4()]; this.cut = null; this.single = chunk === 0; this.log = []; }
+  constructor(chunk = 40) { this.chunk = chunk; this.buckets = new Map(); this.stack = [new THREE.Matrix4()]; this.cut = null; this.single = chunk === 0; this.log = []; this.rl = []; }
   // desfazer: marca e volta atrás (para tirar mobília que ficou a tapar escadas)
   mark() { return this.log.length; }
-  rollback(m) { while (this.log.length > m) { const g = this.log.pop().pop(); if (g) g.dispose(); } }
+  rollback(m) { while (this.log.length > m) { const g = this.log.pop().pop(); this.rl.pop(); if (g) g.dispose(); } }
+  recsSince(m) { return this.rl.slice(m); } // peças feitas desde a marca (para o contorno do móvel)
   get m() { return this.stack[this.stack.length - 1]; }
   push(x = 0, y = 0, z = 0, ry = 0, rx = 0, rz = 0) { this.stack.push(this.m.clone().multiply(mat4(x, y, z, ry, rx, rz))); return this; }
   pop() { this.stack.pop(); return this; }
@@ -70,7 +71,7 @@ export class Builder {
     const CV = g.tpl ? g.cv : null; // adereços do Blender: a cor de cada vértice (sombra cozida) multiplica a do sítio
     if (CV) for (let i = 0, k = 0; i < n; i++, k += 3) { col[k] = _c.r * CV[k]; col[k + 1] = _c.g * CV[k + 1]; col[k + 2] = _c.b * CV[k + 2]; }
     else for (let i = 0; i < n; i++) { col[i * 3] = _c.r; col[i * 3 + 1] = _c.g; col[i * 3 + 2] = _c.b; }
-    const geo = { p: pos, n: nor, uv, c: col, count: n, dispose() {} };
+    const geo = { p: pos, n: nor, uv, c: col, count: n, mat, bb: [x0, y0, z0, x1, y1, z1], dispose() {} };
     // coisas finas ou pequenas (cabos, postes, placas, cadeiras, carros) desenham-se depois da silhueta do jogador: tapam-no normalmente mas não o põem em raio-X.
     // Só paredes, edifícios, camiões, pilares e lajes por cima (viaduto, pisos) acendem a silhueta, porque só essas o escondem a sério
     let thin = false;
@@ -80,7 +81,7 @@ export class Builder {
     else if (this.cut) key = 'cut|' + this.cut + '|' + mat;
     else { _v.set(0, 0, 0).applyMatrix4(M); const ch = thin ? this.chunk * 2 : this.chunk; key = Math.floor(_v.x / ch) + ',' + Math.floor(_v.z / ch) + '|' + mat; } // coisas finas em blocos maiores: menos chamadas de desenho
     if (thin) key += '|t';
-    let b = this.buckets.get(key); if (!b) this.buckets.set(key, b = []); b.push(geo); this.log.push(b);
+    let b = this.buckets.get(key); if (!b) this.buckets.set(key, b = []); b.push(geo); this.log.push(b); this.rl.push(geo);
     return geo;
   }
   box(w, h, d, x, y, z, hex, o = {}) { if (this.dry) return this.add(new THREE.BufferGeometry(), hex, o.mat, null, o.jit); return this.add(tpl('b', () => new THREE.BoxGeometry(1, 1, 1)), hex, o.mat, mat4(x, y, z, o.ry || 0, o.rx || 0, o.rz || 0, w, h, d), o.jit); }
@@ -105,7 +106,7 @@ export class Builder {
     for (let i = 0; i < 8; i++) { const x = B[i & 1 ? 3 : 0], y = B[i & 2 ? 4 : 1], z = B[i & 4 ? 5 : 2]; const X = e[0] * x + e[4] * y + e[8] * z + e[12], Y = e[1] * x + e[5] * y + e[9] * z + e[13], Z = e[2] * x + e[6] * y + e[10] * z + e[14]; if (X < x0) x0 = X; if (X > x1) x1 = X; if (Y < y0) y0 = Y; if (Y > y1) y1 = Y; if (Z < z0) z0 = Z; if (Z > z1) z1 = Z; }
     if (typeof hex === 'object' && hex.isColor) _c.copy(hex); else _c.set(hex);
     if (jit) _c.multiplyScalar(1 + rr(-jit, jit));
-    const geo = { job: true, src: g, M: Float32Array.from(e), r: _c.r, g: _c.g, b: _c.b, mat, count: g.p.length / 3, dispose() {} };
+    const geo = { job: true, src: g, M: Float32Array.from(e), r: _c.r, g: _c.g, b: _c.b, mat, count: g.p.length / 3, bb: [x0, y0, z0, x1, y1, z1], dispose() {} };
     let thin = false;
     if (!this.single && !['decal', 'lit', 'gl', 'sign'].includes(mat)) { const dx = x1 - x0, dy = y1 - y0, dz = z1 - z0; thin = this.thin || mat === 'fence' || !((dy >= 2.0 && Math.max(dx, dz) >= 1.2) || (Math.min(dx, dz) >= 2.5 && y0 >= 2.2 && dy >= 0.12)); }
     let key;
@@ -113,7 +114,7 @@ export class Builder {
     else if (this.cut) key = 'cut|' + this.cut + '|' + mat;
     else { const ch = thin ? this.chunk * 2 : this.chunk; key = Math.floor(e[12] / ch) + ',' + Math.floor(e[14] / ch) + '|' + mat; }
     if (thin) key += '|t';
-    let b = this.buckets.get(key); if (!b) this.buckets.set(key, b = []); b.push(geo); this.log.push(b);
+    let b = this.buckets.get(key); if (!b) this.buckets.set(key, b = []); b.push(geo); this.log.push(b); this.rl.push(geo);
     return geo;
   }
   // construção aos bocados: devolve uma tarefa; step(até) faz o que couber até à hora dada e diz se acabou
@@ -162,9 +163,9 @@ export class Builder {
       if (thin) { m.renderOrder = 3; m.userData.thin = true; }
       if (parts[0] === 'cut') { let gr = cuts.get(parts[1]); if (!gr) { gr = new THREE.Group(); cuts.set(parts[1], gr); parent.add(gr); } gr.add(m); }
       else parent.add(m);
-      out.push(m);
+      out.push(m); for (const r of geos) { r.mesh = m; if (!r.job) r.p = r.n = r.uv = r.c = null; } // o contorno de um móvel vai buscar as suas peças à malha final
     }
-    this.buckets.clear(); this.log = [];
+    this.buckets.clear(); this.log = []; this.rl = [];
     return { cuts, meshes: out };
   }
 }
