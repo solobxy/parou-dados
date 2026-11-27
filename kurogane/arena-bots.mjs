@@ -5,6 +5,7 @@
 // e ajusta-se ao resultado: se os bots matam demais ficam mais lentos, se morrem demais afinam, sempre com limites humanos.
 import fs from 'node:fs';
 import { ITEMS } from './jogo/src/items.js';
+import { histPush } from './jogo/src/hitbox.js';
 
 const AX = 3650, AZ = 3650, HW = 48, HD = 31, FH = 3.3;
 const COL = (() => { try { return JSON.parse(fs.readFileSync(new URL('./arena-col.json', import.meta.url), 'utf8')); } catch (e) { return null; } })();
@@ -145,11 +146,11 @@ export function makeBots(A) {
   };
 
   // ---------- perceção: só o que um jogador poderia saber
-  const eyeY = p => (p.sc === 1 ? 1.05 : p.sc === 2 ? 0.3 : 1.55) + (p.lv || 0) * FH + (p.y || 0);
+  const eyeY = p => (p.sc === 1 ? 1.33 : p.sc === 2 ? 0.36 : 1.72) + (p.lv || 0) * FH + (p.y || 0);
   const canSee = (p, q, fovCos) => {
     const dx = q.x - p.x, dz = q.z - p.z, d = Math.hypot(dx, dz); if (d > 95) return false;
     const fx = Math.sin(p.yaw), fz = Math.cos(p.yaw); if (d > 3.5 && (dx * fx + dz * fz) / (d || 1) < fovCos) return false;
-    const ey = eyeY(p), qy = (q.y || 0) + (q.lv || 0) * FH, hy = qy + (q.sc === 1 ? 1.05 : q.sc === 2 ? 0.3 : 1.55), cy = qy + (q.sc === 2 ? 0.2 : q.sc === 1 ? 0.75 : 1.15);
+    const ey = eyeY(p), qy = (q.y || 0) + (q.lv || 0) * FH, hy = qy + (q.sc === 1 ? 1.38 : q.sc === 2 ? 0.38 : 1.8), cy = qy + (q.sc === 2 ? 0.22 : q.sc === 1 ? 0.95 : 1.3);
     return los(p.x, ey, p.z, q.x, hy, q.z) || los(p.x, ey, p.z, q.x, cy, q.z);
   };
   const heard = (x, z, srcTeam, by) => { const now = Date.now(); for (const c of bots()) { const p = c.p; if (!p.alive || p.team === srcTeam) continue; const d = Math.hypot(x - p.x, z - p.z); if (d > 70) continue; const e = 1.5 + d * 0.15; c.bot.known.set(by, { x: x + gauss() * e, z: z + gauss() * e, t: now, snd: 1 }); } };
@@ -215,7 +216,7 @@ export function makeBots(A) {
     if ((b.seen.get(t.id) || 1e15) > now) return;
     const want = Math.atan2(q.x - p.x, q.z - p.z); if (Math.abs(angD(want, p.yaw)) > 0.12) return; // ainda a virar-se
     if (now - (q.spawnT || 0) < 2500) return; // proteção de nascer: não vale a pena
-    const qy = (q.y || 0) + (q.lv || 0) * FH, ty = qy + (b.aimHead ? (q.sc === 1 ? 1.05 : q.sc === 2 ? 0.28 : 1.58) : (q.sc === 2 ? 0.2 : q.sc === 1 ? 0.72 : 1.15));
+    const qy = (q.y || 0) + (q.lv || 0) * FH, ty = qy + (b.aimHead ? (q.sc === 1 ? 1.38 : q.sc === 2 ? 0.38 : 1.8) : (q.sc === 2 ? 0.22 : q.sc === 1 ? 0.95 : 1.3)); // alturas do esqueleto (cabeça e peito)
     const ex = p.x, ey = eyeY(p) - 0.05, ez = p.z; const dx = q.x - ex, dy = ty - ey, dz = q.z - ez, d = Math.hypot(dx, dy, dz) || 1;
     // avanço: quem corre de lado é mais difícil (o bot não adivinha, aponta onde o vê com um pouco de atraso)
     const lag = (q.hist && q.hist.length > 1) ? q.hist[Math.max(0, q.hist.length - 4)] : null; const lx = lag ? (lag[1] - q.x) * (0.5 - 0.35 * S) : 0, lz = lag ? (lag[3] - q.z) * (0.5 - 0.35 * S) : 0;
@@ -264,7 +265,7 @@ export function makeBots(A) {
     p.mv = Math.min(3, Math.hypot(vx, vz) / 3);
     p.an = 2 + (b.st === 'fight' || b.st === 'hunt' ? 4 : 0) + (b.relT ? 16 : 0) + (b.st === 'heal' ? 64 : 0); p.w = KITB[p.kit].w;
     p.ts = now - T0;
-    { const H = p.hist; H.push([now, p.x, p.y, p.z]); while (H.length > 2 && now - H[0][0] > 650) H.shift(); }
+    histPush(p, now);
   };
 
   let lastBal = 0, lastT = Date.now();

@@ -130,9 +130,10 @@ export function makeNet({ G, scene, mkRemote, audio, Conta, enc, dec, hurt, die,
   N.stop = () => { want = false; clearTimeout(joinT); { const el = document.getElementById('netLost'); if (el) el.hidden = true; } if (ws) { try { if (N.on) { closeBox(); N.sendInv(); } ws.close(); } catch (e) { } } ws = null; N.on = false; clearAll(); offline(); };
   // o tiro vai com a direção de cada bala (o desvio que viste no rasto) e até onde cada uma chega antes de parar numa parede ou num zombie
   const v4 = v => [+v.x.toFixed(4), +v.y.toFixed(4), +v.z.toFixed(4)];
-  N.shot = (O, D, k, n, L, sup, ds, Ls) => send({ t: 'shot', o: [+O.x.toFixed(2), +O.y.toFixed(2), +O.z.toFixed(2)], d: v4(D), k, n, L: Math.round(L), sup: !!sup, ds: ds ? ds.map(v4) : undefined, Ls: Ls ? Ls.map(v => Math.round(v * 10) / 10) : undefined });
+  // vt: a hora (do relógio de cada alvo) a que o estavas a ver quando disparaste: o servidor põe-no onde o viste
+  N.shot = (O, D, k, n, L, sup, ds, Ls) => { const vt = []; for (const r of R.values()) if (r.b.root.visible && r.rt > 0 && vt.length < 12) vt.push([r.id, Math.round(r.rt)]); send({ t: 'shot', o: [+O.x.toFixed(2), +O.y.toFixed(2), +O.z.toFixed(2)], d: v4(D), k, n, L: Math.round(L), sup: !!sup, ds: ds ? ds.map(v4) : undefined, Ls: Ls ? Ls.map(v => Math.round(v * 10) / 10) : undefined, vt }); };
   // quem está à vista para levar um tiro (para a mira e para o rasto pararem neles)
-  N.targets = () => { const out = []; for (const r of R.values()) if (r.b.root.visible) out.push({ x: r.x, y: r.y || 0, z: r.z, sc: r.sc || 0, yaw: r.b.root.rotation.y }); for (const s of sleepers.values()) if (s.b.root.visible) out.push({ x: s.x, y: 0, z: s.z, lying: true }); return out; };
+  N.targets = () => { const out = []; for (const r of R.values()) if (r.b.root.visible && r.al !== false) out.push({ x: r.x, y: r.y || 0, z: r.z, sc: r.sc || 0, yaw: r.b.root.rotation.y - (r.lr || 0), an: r.an | 0, mv: r.mvS || 0 }); for (const s of sleepers.values()) if (s.b.root.visible) out.push({ x: s.x, y: 0, z: s.z, lying: true }); return out; };
   N.died = by => send(G.ARENA ? { t: 'died', by: by || null } : { t: 'died', it: G.inv.all().map(enc), force: 1 });
   // mundo partilhado
   N.cyc = () => (((Date.now() + off - cyc0) / 1000) % 1920 + 1920) % 1920;
@@ -168,7 +169,7 @@ export function makeNet({ G, scene, mkRemote, audio, Conta, enc, dec, hurt, die,
     const lv = me ? me.lv : 0;
     if (G.ARENA && !G.dbgNoVis) { visT -= dt; if (visT <= 0) { visT = 0.35; const L = []; for (const r of R.values()) if (r.seen && !mate(r.clan)) L.push(r.id); send({ t: 'vis', L }); } }
     for (const r of R.values()) {
-      if (!r.s1) continue; const S = sample(r.T, now, r.o); if (!S) continue; const b = S.s.a, x = S.x, z = S.z, y = S.y;
+      if (!r.s1) continue; const S = sample(r.T, now, r.o); if (!S) continue; const b = S.s.a, x = S.x, z = S.z, y = S.y; r.rt = S.rt; r.an = b[7] | 0; r.mvS = b[6] || 0;
       const dd = Math.hypot(x - r.x, z - r.z); r.spd += (Math.min(9, dd / Math.max(dt, 1e-3)) - r.spd) * Math.min(1, dt * 8);
       { if (dd > 0.003) r.my = Math.atan2(x - r.x, z - r.z); const rel = r.my == null ? 0 : angD(r.my, S.yaw); r.back = r.spd > 0.6 && Math.abs(rel) > 1.95; r.step += dd * 2.6 * (r.back ? -1 : 1); } r.x = x; r.z = z; r.y = y; // a andar para trás, as pernas andam ao contrário
       // passos dos outros: ouve-se quem anda perto (a correr de mais longe), mesmo sem o ver

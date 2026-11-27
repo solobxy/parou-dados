@@ -11,6 +11,7 @@ import { Grid, mkItem, rollLoot } from './jogo/src/bag.js';
 import { VT, vt } from './jogo/src/vtypes.js';
 import { TRADERS, PRICE, SELL, TRADE_R } from './jogo/src/traders.js';
 import { makeArena } from './arena.mjs';
+import { capsules, hitCapsules, rewind, histPush } from './jogo/src/hitbox.js';
 
 const PORT = +process.env.PORT || 3190, DIR = process.env.STATE_DIRECTORY || path.join(process.cwd(), 'dados');
 const FILE = path.join(DIR, 'estado.json'), SLEEP_MS = 72 * 3600e3, BAG_MS = 45 * 60e3, MAXP = 60;
@@ -399,8 +400,8 @@ const onMsg = (c, m) => {
       if (d > (inCar ? vt(inCar.k).vmax * 1.3 + 4 : 8) * dt + 4) { strike(c, p, 'salto ' + d.toFixed(1) + ' m em ' + dt.toFixed(2) + ' s'); send(c, { t: 'pos', x: p.x, z: p.z, lv: p.lv }); p.lastSt = now; return; } }
     if (p.alive && al0 && (p.lv | 0) === 0 && p.y < 3 && Math.hypot(nx - p.x, nz - p.z) < 8 && wallCross(p.x, p.z, nx, nz)) { p.wallN = (p.wallN || 0) + 1; if (p.wallN % 20 === 1) console.log('parede', p.name, p.wallN); send(c, { t: 'pos', x: p.x, z: p.z, lv: p.lv }); p.lastSt = now; return; } // atravessar paredes da base
     p.lastSt = now; p.x = nx; p.z = nz; p.y = num(m.y, -5, 40); p.lv = num(m.lv, 0, 6) | 0;
-    { const H = p.hist || (p.hist = []); H.push([now, p.x, p.y, p.z]); while (H.length > 2 && now - H[0][0] > 650) H.shift(); } // onde esteve nos últimos 0,65 s (para o tiro de quem o via um pouco atrás)
     p.ts = num(m.ts, 0, 1e13, 0); p.yaw = num(m.yaw, -10, 10); p.mv = num(m.mv, 0, 3); p.an = num(m.an, 0, 127) | 0; p.w = typeof m.w === 'string' ? m.w.slice(0, 12) : ''; p.sc = num(m.sc, 0, 2, 0) | 0;
+    histPush(p, now); // onde esteve no último segundo, com a pose (para pôr o alvo onde quem disparou o via)
     const al = !!m.al, hp = num(m.hp, 0, 100, p.hp); if (al && !p.alive) { p.hp = hp; p.hd = p.vd = null; } else p.hp = Math.min(hp, p.hp + 3); p.alive = al; // a vida que o servidor tirou não volta de repente
     if (Array.isArray(m.ar)) { const a = [num(m.ar[0], 0, 4) | 0, num(m.ar[1], 0, 4) | 0]; if (a[0] !== p.ar[0]) p.hd = null; if (a[1] !== p.ar[1]) p.vd = null; p.ar = a; }
     if (typeof m.gk === 'string' && (m.gk !== p.gkRaw || now - (p.gkT || 0) > 2000)) { p.gkRaw = m.gk.slice(0, 80); p.gkT = now; const T = ledOf(p).T, q = p.gkRaw.split(','); p.gk = GKS.map((s, i) => { const k = q[i] || ''; return ITEMS[k] && ITEMS[k].eq === s && T[k] > 0 ? k : ''; }).join(); p.ghillie = p.gk.includes('ghillie'); } return; }
@@ -415,6 +416,7 @@ const onMsg = (c, m) => {
   if (m.t === 'clan') { clan(c, m); return; }
   if (m.t === 'adm' || m.t === 'admclaim') { adm(c, m); return; }
   if (m.t === 'lb') { lboard(c); return; }
+  if (m.t === 'tgod' && process.env.KG_TEST) { p.god = !!m.on; return; } // só nos testes: não morre (para medir as hitboxes tiro a tiro)
   if (m.t === 'ping') { send(c, { t: 'pong', k: m.k }); return; }
   // portas do mundo
   if (m.t === 'dr') { const i = num(m.i, 0, 20000, -1) | 0, o = m.o ? 1 : 0; if (i < 0) return; if (o) S.w.doors[i] = 1; else delete S.w.doors[i]; dirty = true; bcast({ t: 'dr', i, o }, x => x !== c); return; }
@@ -488,19 +490,12 @@ const hitTest = (O, D, k, L, tgt, cars = []) => {
     for (const car of cars) { if (car === pass || Math.abs(nx - car.x) > 4 || Math.abs(nz - car.z) > 4 || !inCarBox(car, nx, ny, nz)) continue; const T = vt(car.k);
       if (T.armor || !car.s.some(Boolean)) return { car, zone: 'car', dmg, pen, v: Math.hypot(vx, vy, vz) / v0, dist }; pass = car; vx *= 0.7; vy *= 0.7; vz *= 0.7; }
     if (dist >= L) break;
-    // contra cada alvo: cápsula do corpo (0,3 m) e esfera da cabeça (0,16 m); deitado = cápsula no chão
+    // contra cada alvo: hitboxes por osso (a primeira cápsula que a bala toca neste troço); quem dorme fica deitado no chão
+    let best = null;
     for (const T of tgt) { const by = T.y; if (Math.abs(nx - T.x) > 3 || Math.abs(nz - T.z) > 3) continue;
-      const segPt = (ax, ay, az, bx, by2, bz, px, py, pz) => { const dx = bx - ax, dy = by2 - ay, dz = bz - az, l2 = dx * dx + dy * dy + dz * dz || 1e-9; let t = ((px - ax) * dx + (py - ay) * dy + (pz - az) * dz) / l2; t = Math.max(0, Math.min(1, t)); return Math.hypot(ax + dx * t - px, ay + dy * t - py, az + dz * t - pz); };
-      if (T.lying) { if (segPt(x, y, z, nx, ny, nz, T.x, by + 0.25, T.z) < 0.9 && Math.abs(ny - by) < 0.6) return { T, zone: 'body', dmg, pen, v: Math.hypot(vx, vy, vz) / v0, dist, car: pass }; continue; }
-      // agachado: cabeça e corpo mais baixos; deitado: corpo ao comprido no chão, na direção para onde está virado (cabeça à frente)
-      const sc = T.c && T.c.p ? T.c.p.sc | 0 : 0;
-      if (sc === 2) { const yw = T.c.p.yaw || 0, fx = Math.sin(yw), fz = Math.cos(yw); if (segPt(x, y, z, nx, ny, nz, T.x + fx * 0.72, by + 0.24, T.z + fz * 0.72) < 0.17) return { T, zone: 'head', dmg, pen, v: Math.hypot(vx, vy, vz) / v0, dist, car: pass };
-        for (let s = 0; s <= 6; s++) { const f = -0.95 + s * 0.25; if (segPt(x, y, z, nx, ny, nz, T.x + fx * f, by + 0.18, T.z + fz * f) < 0.24) return { T, zone: f > -0.2 ? 'body' : 'legs', dmg, pen, v: Math.hypot(vx, vy, vz) / v0, dist, car: pass }; } continue; }
-      if (sc === 1) { if (segPt(x, y, z, nx, ny, nz, T.x, by + 1.12, T.z) < 0.17) return { T, zone: 'head', dmg, pen, v: Math.hypot(vx, vy, vz) / v0, dist, car: pass };
-        for (let s = 0; s <= 3; s++) { const sy = by + 0.14 + s * 0.27; if (segPt(x, y, z, nx, ny, nz, T.x, sy, T.z) < 0.32) return { T, zone: sy > 0.6 ? 'body' : 'legs', dmg, pen, v: Math.hypot(vx, vy, vz) / v0, dist, car: pass }; } continue; }
-      const hd = segPt(x, y, z, nx, ny, nz, T.x, by + 1.62, T.z); if (hd < 0.17) return { T, zone: 'head', dmg, pen, v: Math.hypot(vx, vy, vz) / v0, dist, car: pass };
-      // corpo: distância do segmento ao eixo vertical (amostras)
-      for (let s = 0; s <= 4; s++) { const sy = by + 0.15 + s * 0.3; if (segPt(x, y, z, nx, ny, nz, T.x, sy, T.z) < 0.3) return { T, zone: sy > 0.85 ? 'body' : 'legs', dmg, pen, v: Math.hypot(vx, vy, vz) / v0, dist, car: pass }; } }
+      if (T.lying) { const dx = nx - x, dy = ny - y, dz = nz - z, l2 = dx * dx + dy * dy + dz * dz || 1e-9; let t = ((T.x - x) * dx + (by + 0.25 - y) * dy + (T.z - z) * dz) / l2; t = Math.max(0, Math.min(1, t)); if (Math.hypot(x + dx * t - T.x, y + dy * t - by - 0.25, z + dz * t - T.z) < 0.9 && Math.abs(ny - by) < 0.6 && (!best || t < best.f)) best = { T, zone: 'body', f: t }; continue; }
+      const r = hitCapsules(x, y, z, nx, ny, nz, T.caps); if (r && (!best || r.f < best.f)) best = { T, zone: r.zone, f: r.f }; }
+    if (best) return { T: best.T, zone: best.zone, dmg, pen, v: Math.hypot(vx, vy, vz) / v0, dist: dist + step * best.f, car: pass };
     x = nx; y = ny; z = nz; dist += step; }
   return pass ? { car: pass, zone: 'car', dmg, pen, v: 0.8, dist } : null;
 };
@@ -519,10 +514,11 @@ const shot = (c, m) => {
   bcast({ t: 'fx', id: c.id, o: O, d: D, sup, hv: HEAVY.has(k) ? 1 : 0, k: k.slice(0, 16) }, o => o !== c && Math.hypot(o.p.x - O[0], o.p.z - O[2]) < (sup ? 60 : 520));
   const myClan = p.clan; const tgt = [];
   // quem dispara vê os outros cerca de 0,1–0,3 s atrás (o caminho da rede e a suavização): conta onde o alvo está e onde esteve nesse tempo
+  const VT = new Map(Array.isArray(m.vt) ? m.vt.slice(0, 40).filter(q => Array.isArray(q)).map(q => [q[0] | 0, +q[1] || 0]) : []);
   for (const o of players.values()) if (o !== c && o.p && o.p.alive && !o.p.invis && (o.p.lv || 0) === (p.lv || 0) && !(myClan && o.p.clan === myClan) && Math.hypot(o.p.x - O[0], o.p.z - O[2]) < L + 3) {
-    // o caminho que fez nos últimos 0,45 s, com pontos a cada ~0,25 m (quem dispara vê-o algures nesse caminho)
-    const P = (o.p.hist || []).filter(h => now - h[0] <= 600).map(h => [h[1], h[2], h[3]]); P.push([o.p.x, o.p.y, o.p.z]); tgt.push({ x: o.p.x, y: o.p.y, z: o.p.z, c: o });
-    for (let i = P.length - 1; i > 0; i--) { const a = P[i], b = P[i - 1], dd = Math.hypot(b[0] - a[0], b[2] - a[2]); if (dd < 0.15 || dd > 6) continue; const n = Math.min(8, Math.ceil(dd / 0.25)); for (let k = 1; k <= n; k++) { const f = k / n; tgt.push({ x: a[0] + (b[0] - a[0]) * f, y: a[1] + (b[1] - a[1]) * f, z: a[2] + (b[2] - a[2]) * f, c: o }); } } }
+    // o alvo é posto onde quem disparou o estava a ver (com a pose desse momento); sem essa hora: agora e um pouco antes
+    const add = st => tgt.push({ x: st.x, y: st.y, z: st.z, c: o, caps: capsules(st, 0.015) });
+    if (VT.has(o.id)) add(rewind(o.p, VT.get(o.id))); else { add(rewind(o.p, 0)); const H = o.p.hist || [], lt = H.length ? H[H.length - 1][4] : 0; if (lt) for (const back of [90, 180]) add(rewind(o.p, lt - back)); } }
   for (const [tok, s] of Object.entries(S.sleepers)) if (!s.hid && (s.lv || 0) === (p.lv || 0) && !(myClan && s.clan === myClan) && Math.hypot(s.x - O[0], s.z - O[2]) < L + 3) tgt.push({ x: s.x, y: s.y || 0, z: s.z, sl: tok, lying: true });
   // quem vai dentro de um blindado (sem se debruçar) não leva tiros; os veículos perto entram no teste
   const cars = Object.values(S.w.cars).filter(q => q.hp > 0 && Math.hypot(q.x - O[0], q.z - O[2]) < L + 6);
@@ -544,6 +540,7 @@ const shot = (c, m) => {
     const v = T.c.p, [helm, vest] = v.ar || [0, 0]; let pop = null;
     if (h.zone === 'head') { if (helm && h.pen <= helm) { v.hd = (v.hd ?? 20) - dmg; dmg *= 0.8; if (v.hd <= 0) { pop = 'head'; v.ar[0] = 0; v.hd = null; } } else dmg = n > 1 ? dmg * 2.5 : 999; }
     else if (h.zone === 'body') { dmg *= 1.2; if (vest && h.pen <= vest) { v.vd = (v.vd ?? (vest >= 3 ? 50 : 25)) - dmg; dmg *= 0.8; if (v.vd <= 0) { pop = 'vest'; v.ar[1] = 0; v.vd = null; } } else if (vest) dmg *= 0.85; }
+    else if (h.zone === 'arms') dmg *= 1.0; // braços: como no CS (o colete não os protege)
     else dmg *= 0.6;
     if (v.god) dmg = 0; v.hp = Math.max(0, v.hp - dmg); const kill = v.hp <= 0; if (kill) { v.alive = false; stat(p, 'k'); stat(v, 'd'); }
     send(T.c, { t: 'hit', by: p.name, dmg: +dmg.toFixed(1), zone: h.zone, hp: v.hp, pop });

@@ -17,6 +17,7 @@ import { makeBase } from './base.js';
 import { makeNav } from './nav.js';
 import { makeNet } from './net.js';
 import { ARENA, arenaSpawns, ARENA_KITS, inArena } from './arena.js';
+import { capsules, hitCapsules } from './hitbox.js';
 import { makeCars } from './cars.js';
 import { makeVM } from './vm.js';
 import { track, push, sample } from './interp.js';
@@ -621,11 +622,12 @@ async function boot() {
     const mx = (P.x + Q.x) / 2, mz = (P.z + Q.z) / 2, half = Math.hypot(Q.x - P.x, Q.z - P.z) / 2 + 2;
     const ent = (d2, sg, r) => Math.max(0, sg - Math.sqrt(Math.max(0, r * r - d2)) / L);
     for (const t of T) { if (Math.abs(t.x - mx) > half || Math.abs(t.z - mz) > half) continue; let h = null;
+      if (!aim && !t.lying) { const r = hitCapsules(P.x, P.y, P.z, Q.x, Q.y, Q.z, capsules(t)); if (r && (!best || r.f < best.s)) best = { s: r.f, zone: r.zone, point: P.clone().lerp(Q, r.f) }; continue; } // hitboxes por osso (iguais às do servidor)
       if (t.lying) { _pa.set(t.x, t.y + 0.25, t.z); const [d2, sg] = segSeg(P, Q, _pa, _pa); if (d2 <= 0.25) h = { s: ent(d2, sg, 0.5), zone: 'body', point: _pa.clone() }; }
       else if ((t.sc || 0) > 1.5) { const fx = Math.sin(t.yaw || 0), fz = Math.cos(t.yaw || 0); _pa.set(t.x + fx * 0.72, t.y + 0.24, t.z + fz * 0.72); const [dh, sh] = segSeg(P, Q, _pa, _pa); _pa.set(t.x - fx * 0.95, t.y + 0.18, t.z - fz * 0.95); _pb.set(t.x + fx * 0.45, t.y + 0.2, t.z + fz * 0.45); const [db, sb] = segSeg(P, Q, _pa, _pb); // deitado: ao comprido no chão
         if (dh <= 0.17 * 0.17) h = { s: ent(dh, sh, 0.17), zone: 'head', point: new THREE.Vector3(t.x + fx * 0.72, t.y + 0.24, t.z + fz * 0.72) }; else if (db <= 0.26 * 0.26) h = { s: ent(db, sb, 0.26), zone: 'body', point: new THREE.Vector3(t.x, t.y + 0.2, t.z) }; }
       else {
-        const cr = Math.min(1, t.sc || 0), hy = 1.62 - 0.5 * cr, by2 = 1.35 - 0.45 * cr; // agachado: tudo mais baixo
+        const cr = Math.min(1, t.sc || 0), hy = 1.8 - 0.42 * cr, by2 = 1.5 - 0.45 * cr; // alturas do esqueleto (cabeça 1,8 m de pé, 1,38 m agachado)
         _pa.set(t.x, t.y + hy, t.z); const [dh, sh] = segSeg(P, Q, _pa, _pa); _pa.set(t.x, t.y + 0.15, t.z); _pb.set(t.x, t.y + by2, t.z); const [db, sb, u] = segSeg(P, Q, _pa, _pb);
         const body = (y) => ({ s: ent(db, sb, 0.33), zone: 'body', point: new THREE.Vector3(t.x, y, t.z) });
         if (!aim) { const hi = dh <= 0.17 * 0.17 ? ent(dh, sh, 0.17) : 9, bi = db <= 0.09 ? ent(db, sb, 0.3) : 9; if (hi < 9 || bi < 9) h = hi < bi ? { s: hi, zone: 'head' } : { s: bi, zone: 'body' }; }
@@ -1359,6 +1361,22 @@ async function boot() {
   G.dbgSpawn = () => spawnPoint(false);
   G.wallAhead = (x, z, yaw, lv) => ray(x, z, Math.sin(yaw), Math.cos(yaw), 1.0, null, 's', lv || 0, 1.2);
   G.dbgRay = (sx, sy) => { const rc = new THREE.Raycaster(), v = new THREE.Vector2(sx / innerWidth * 2 - 1, -(sy / innerHeight) * 2 + 1); rc.setFromCamera(v, cam); const h = rc.intersectObjects(scene.children, true).slice(0, 3); return h.map(o => [o.object.name || o.object.type, +o.distance.toFixed(2), o.object.parent && (o.object.parent.name || o.object.parent.type)]); };
+  // hitboxes: posições das articulações do esqueleto verdadeiro em cada pose (para o servidor e para o tiro no cliente)
+  G.dbgHitPoses = () => { const b = mkRemote({}); scene.remove(b.root); const out = {}, V = new THREE.Vector3(), MODES = { r: ['rifle', 'm4'], p: ['pistol', 'pistola'], n: ['none', null] };
+    const J = () => { b.root.updateMatrixWorld(true); const w = (o, x = 0, y = 0, z = 0) => { V.set(x, y, z); o.localToWorld(V); return [+V.x.toFixed(3), +V.y.toFixed(3), +V.z.toFixed(3)]; };
+      const [aL, aR] = b.arms, [lL, lR] = b.legs; return { head: w(b.head, 0, 0.13, 0.02), top: w(b.head, 0, 0.26, 0.01), neck: w(b.head), pelvis: w(b.hips), spine: w(b.torso, 0, 0.36, 0), shL: w(aL), elL: w(aL.userData.fore), haL: w(aL.userData.hand), shR: w(aR), elR: w(aR.userData.fore), haR: w(aR.userData.hand), hiL: w(lL), knL: w(lL.userData.knee), ftL: w(lL.userData.knee, 0, -0.46, 0.04), hiR: w(lR), knR: w(lR.userData.knee), ftR: w(lR.userData.knee, 0, -0.46, 0.04) }; };
+    for (let sc = 0; sc <= 2; sc++) for (const m in MODES) for (const aim of [0, 1]) for (const mv of [0, 1]) {
+      b.setWeapon(MODES[m][1], {}); b.stance = sc; const raise = aim ? 1 : 0.25; let acc = null, n = 0;
+      for (let k = 0; k < 40; k++) b.pose(0.05, mv ? 1 : 0, MODES[m][0], -1, 0, 0, -1, 0, raise, null, null);
+      const PH = mv ? 8 : 1; for (let q = 0; q < PH; q++) { for (let k = 0; k < 3; k++) b.pose(0.016, mv ? 1 : 0, MODES[m][0], -1, 0, 0, -1, q * Math.PI / 4, raise, null, null); const j = J(); if (!acc) acc = JSON.parse(JSON.stringify(j)); else for (const key in j) for (let i = 0; i < 3; i++) acc[key][i] += j[key][i]; n++; }
+      for (const key in acc) acc[key] = acc[key].map(v => +(v / n).toFixed(3)); out[sc + m + aim + mv] = acc; }
+    return out; };
+  // ver as hitboxes por cima de um corpo (teste): estado { x, z, yaw, sc, an, mv, w }
+  G.hitCaps = capsules; G.hitSeg = hitCapsules; G.dbgHitView = (st) => { const L = G._hv || (G._hv = []); for (const o of L) scene.remove(o); L.length = 0; if (!st) return;
+    const b = mkRemote({}); L.push(b.root); b.setWeapon(st.w || null, {}); b.stance = st.sc || 0; const mode = ['none', 'pistol', 'rifle'][st.an & 3] || 'none';
+    for (let k = 0; k < 40; k++) b.pose(0.05, st.mv || 0, mode, -1, 0, 0, -1, 0, st.an & 4 ? 1 : 0.25, null, null); b.root.position.set(st.x, st.y || 0, st.z); b.root.rotation.set(0, st.yaw || 0, 0);
+    const COL = { head: 0xff3030, body: 0xffc020, arms: 0x30c0ff, legs: 0x40ff60 };
+    for (const q of capsules(st)) { const A = new THREE.Vector3(q[0], q[1], q[2]), B = new THREE.Vector3(q[3], q[4], q[5]), len = A.distanceTo(B); const m = new THREE.Mesh(new THREE.CapsuleGeometry(q[6], len, 4, 10), new THREE.MeshBasicMaterial({ color: COL[q[7]], wireframe: true, transparent: true, opacity: 0.85, depthTest: false })); m.renderOrder = 999; m.position.copy(A).add(B).multiplyScalar(0.5); m.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), B.clone().sub(A).normalize()); scene.add(m); L.push(m); } };
   G.dbgArenaCols = () => { const A = ARENA, ins = (x0, z0, x1, z1) => x1 > A.x - A.hw - 2 && x0 < A.x + A.hw + 2 && z1 > A.z - A.hd - 2 && z0 < A.z + A.hd + 2, f = v => +v.toFixed(3); /* colisões da arena para os bots do servidor */
     return { rects: W.rects.filter(r => ins(r.x0, r.z0, r.x1, r.z1)).map(r => [f(r.x0), f(r.z0), f(r.x1), f(r.z1), f(r.h), r.lv | 0, r.k, r.door ? 1 : 0, r.win ? 1 : 0]), circ: W.circles.filter(c => ins(c.x, c.z, c.x, c.z)).map(c => [f(c.x), f(c.z), f(c.r), c.k]), steps: W.steps.filter(s => ins(s.x0, s.z0, s.x1, s.z1)).map(s => [f(s.x0), f(s.z0), f(s.x1), f(s.z1), f(s.y)]) }; };
   G.dbg = { vis: () => [+(VIS.ms || 0).toFixed(2), VIS.n || 0], pick: (x, y) => { const r = pick(x, y, 1); return [r.zone || null, !!r.pl, +r.point.x.toFixed(2), +r.point.y.toFixed(2), +r.point.z.toFixed(2)]; }, plHit: (a, b) => plHit(new THREE.Vector3(...a), new THREE.Vector3(...b), true), cam: () => [cam.position.x, cam.position.y, cam.position.z], cols: (x, z, r) => { const out = []; near(x - r, z - r, x + r, z + r, R => { out.push(['r', R.k, +R.x0.toFixed(2), +R.z0.toFixed(2), +R.x1.toFixed(2), +R.z1.toFixed(2), R.h, R.yb || 0]); }, C => { out.push(['c', +C.x.toFixed(2), +C.z.toFixed(2), C.r, C.node ? C.node.kind + ':' + C.node.alive : (C.k || C.kind || '?'), C.on]); }); return out; }, scr: (x, y, z) => { const q = toScreen(new THREE.Vector3(x, y, z)); return [q.x, q.y, q.ok]; }, shoulder: () => { const p = G.p; return [p.x + Math.sin(p.yaw) * 0.15, p.y + 1.35, p.z + Math.cos(p.yaw) * 0.15]; }, aimA: () => [AIM.A.x, AIM.A.y, AIM.A.z, AIM.zone, !!AIM.lock], wallHit: (a, b) => wallHit(new THREE.Vector3(...a), new THREE.Vector3(...b)), item: (k, n) => mkItem(k, n), deplete: n => { n.hp = 0; n.alive = false; n.col.on = false; n.respawn = G.t + 180; hideNode(n); if (G.net.on && n.key) G.net.node(n.key); }, nodes: () => nodes, fire: () => { const it = held(), g = it && ITEMS[it.k].gun; return g ? fire(it, g) : false; }, canSee: (a, b) => canSee(a, b), clearShot: z => clearShot(z), zoneHit: (z, P, Q, k) => zoneHit(z, P, Q, k), horde: () => horde, hurt: (d, c) => hurtPlayer(d, c || 'zombie'), hitZ: (z, zone, k) => { const B = ITEMS[k].bal; hitZombie(z, zone, { dmg: B.dmg, pen: B.pen, pel: B.pel, v: new THREE.Vector3(B.v, 0, 0), v0: B.v, dist: 10, fall: B.fall || 1 }, { x: z.x, y: 1.3, z: z.z }); } }; G.V3 = THREE.Vector3; G.M4 = THREE.Matrix4; G.RC = new THREE.Raycaster();

@@ -20,7 +20,7 @@ export const sample = (T, now, out) => {
   // atraso: o necessário para quase nunca ficar sem imagem seguinte (antes ficava fixo em 110 ms e com rede móvel saltava)
   const want = Math.min(350, Math.max(70, 45 + T.jit * 1.15)), lt = T.lt ?? now, dtm = Math.min(100, now - lt); T.lt = now;
   T.delay += Math.max(-dtm * 0.05, Math.min(dtm * 0.25, (want - T.delay) * Math.min(1, dtm / 400))); // sobe depressa, desce devagar (sem dar saltos no tempo)
-  const rt = now - T.off - T.delay;
+  const rt = now - T.off - T.delay; out.rt = rt;
   let a = B[0], b = null;
   if (rt <= a.ts) { out.x = a.x; out.z = a.z; out.y = a.y; out.yaw = a.yaw; out.s = a; out.lag = 0; return out; }
   for (let i = B.length - 1; i >= 0; i--) if (B[i].ts <= rt) { a = B[i]; b = B[i + 1] || null; break; }

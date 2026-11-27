@@ -39,8 +39,8 @@ server.listen(0, async () => {
     await fireAt(0.2); await W(900); const h2 = await hp(); ok(h2 < h1, 'deitado: o tiro no corpo no chão acerta (' + h1 + '→' + h2 + ')');
     // agachado
     await B.ev(() => { G.p.hp = 100; G.stanceSet(1); }); for (let i = 0; i < 20 && Math.abs((await A.ev(() => ([...G.net.R.values()][0] || {}).sc || 0)) - 1) > 0.1; i++) await W(300);
-    const h3 = await hp(); await fireAt(1.62); await W(900); const h4 = await hp(); ok(h4 === h3, 'agachado: o tiro à altura da cabeça de quem está de pé passa por cima (' + h3 + '→' + h4 + ')');
-    await fireAt(1.12); await W(900); const h5 = await hp(); ok(h5 < h4, 'agachado: o tiro na cabeça baixa acerta (' + h4 + '→' + h5 + ')');
+    const h3 = await hp(); await fireAt(1.85); await W(900); const h4 = await hp(); ok(h4 === h3, 'agachado: o tiro à altura da cabeça de quem está de pé passa por cima (' + h3 + '→' + h4 + ')');
+    await fireAt(1.42); await W(900); const h5 = await hp(); ok(h5 < h4, 'agachado: o tiro na cabeça baixa acerta (' + h4 + '→' + h5 + ')');
     console.log('erros A:', A.errs.length, 'B:', B.errs.length);
   } catch (e) { console.log('ERRO', e.stack || e); fails++; }
   console.log(fails ? fails + ' falhas' : 'tudo bem');

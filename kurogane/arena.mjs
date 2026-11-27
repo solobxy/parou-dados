@@ -10,6 +10,7 @@ const TEAMS = [{ id: 'arena-r', nome: 'Equipa Vermelha' }, { id: 'arena-b', nome
 const KITS = ['atirador', 'assalto', 'sniper', 'pesado', 'apoio'];
 const PROT = 2500; // proteção ao nascer (ms)
 import { makeBots } from './arena-bots.mjs';
+import { capsules, hitCapsules, rewind, histPush } from './jogo/src/hitbox.js';
 const num = (v, a, b, d = 0) => { v = +v; return Number.isFinite(v) ? Math.max(a, Math.min(b, v)) : d; };
 
 export function makeArena({ send: send0 }) {
@@ -27,14 +28,9 @@ export function makeArena({ send: send0 }) {
     const segPt = (ax, ay, az, bx, by2, bz, px, py, pz) => { const dx = bx - ax, dy = by2 - ay, dz = bz - az, l2 = dx * dx + dy * dy + dz * dz || 1e-9; let t = ((px - ax) * dx + (py - ay) * dy + (pz - az) * dz) / l2; t = Math.max(0, Math.min(1, t)); return Math.hypot(ax + dx * t - px, ay + dy * t - py, az + dz * t - pz); };
     for (let i = 0; i < 240 * 2 && dist < L + 0.6; i++) { const v = Math.hypot(vx, vy, vz), k2 = cd * v; vx -= vx * k2 * h; vy -= (vy * k2 + 9.81) * h; vz -= vz * k2 * h; const nx = x + vx * h, ny = y + vy * h, nz = z + vz * h, step = Math.hypot(nx - x, ny - y, nz - z);
       if (dist >= L) break;
-      for (const T of tgt) { const by = T.y; if (Math.abs(nx - T.x) > 3 || Math.abs(nz - T.z) > 3) continue;
-        const sc = T.c && T.c.p ? T.c.p.sc | 0 : 0;
-        if (sc === 2) { const yw = T.c.p.yaw || 0, fx = Math.sin(yw), fz = Math.cos(yw); if (segPt(x, y, z, nx, ny, nz, T.x + fx * 0.72, by + 0.24, T.z + fz * 0.72) < 0.17) return { T, zone: 'head', dmg, pen, v: Math.hypot(vx, vy, vz) / v0, dist };
-          for (let s = 0; s <= 6; s++) { const f = -0.95 + s * 0.25; if (segPt(x, y, z, nx, ny, nz, T.x + fx * f, by + 0.18, T.z + fz * f) < 0.24) return { T, zone: f > -0.2 ? 'body' : 'legs', dmg, pen, v: Math.hypot(vx, vy, vz) / v0, dist }; } continue; }
-        if (sc === 1) { if (segPt(x, y, z, nx, ny, nz, T.x, by + 1.12, T.z) < 0.17) return { T, zone: 'head', dmg, pen, v: Math.hypot(vx, vy, vz) / v0, dist };
-          for (let s = 0; s <= 3; s++) { const sy = by + 0.14 + s * 0.27; if (segPt(x, y, z, nx, ny, nz, T.x, sy, T.z) < 0.32) return { T, zone: sy > 0.6 ? 'body' : 'legs', dmg, pen, v: Math.hypot(vx, vy, vz) / v0, dist }; } continue; }
-        if (segPt(x, y, z, nx, ny, nz, T.x, by + 1.62, T.z) < 0.17) return { T, zone: 'head', dmg, pen, v: Math.hypot(vx, vy, vz) / v0, dist };
-        for (let s = 0; s <= 4; s++) { const sy = by + 0.15 + s * 0.3; if (segPt(x, y, z, nx, ny, nz, T.x, sy, T.z) < 0.3) return { T, zone: sy > 0.85 ? 'body' : 'legs', dmg, pen, v: Math.hypot(vx, vy, vz) / v0, dist }; } }
+      // hitboxes por osso: a primeira cápsula que a bala toca neste troço (de todos os alvos)
+      let best = null; for (const T of tgt) { if (Math.abs(nx - T.x) > 3 || Math.abs(nz - T.z) > 3) continue; const r = hitCapsules(x, y, z, nx, ny, nz, T.caps); if (r && (!best || r.f < best.f)) best = { T, zone: r.zone, f: r.f }; }
+      if (best) return { T: best.T, zone: best.zone, dmg, pen, v: Math.hypot(vx, vy, vz) / v0, dist: dist + step * best.f };
       x = nx; y = ny; z = nz; dist += step; }
     return null;
   };
@@ -49,10 +45,11 @@ export function makeArena({ send: send0 }) {
     const k = String(m.k || ''), n = Math.min(8, num(m.n, 1, 8, 1) | 0), L = num(m.L, 0, 400, 200), sup = !!m.sup;
     bcast({ t: 'fx', id: c.id, o: O, d: D, sup, hv: HEAVY.has(k) ? 1 : 0, k: k.slice(0, 16) }, o => o !== c);
     if (!sup) BOTS.heard(p.x, p.z, p.team, c.id); if (!c.bot) p.sN = (p.sN || 0) + 1; let hitAny = false;
-    const tgt = [];
+    const tgt = [], VT = new Map(Array.isArray(m.vt) ? m.vt.slice(0, 40).filter(q => Array.isArray(q)).map(q => [q[0] | 0, +q[1] || 0]) : []);
     for (const o of players.values()) if (o !== c && o.p && o.p.alive && o.p.team !== p.team && now - (o.p.spawnT || 0) > PROT && (o.p.lv || 0) === (p.lv || 0)) {
-      const P = (o.p.hist || []).filter(h => now - h[0] <= 600).map(h => [h[1], h[2], h[3]]); P.push([o.p.x, o.p.y, o.p.z]); tgt.push({ x: o.p.x, y: o.p.y, z: o.p.z, c: o });
-      for (let i = P.length - 1; i > 0; i--) { const a = P[i], b = P[i - 1], dd = Math.hypot(b[0] - a[0], b[2] - a[2]); if (dd < 0.15 || dd > 6) continue; const nn = Math.min(8, Math.ceil(dd / 0.25)); for (let q = 1; q <= nn; q++) { const f = q / nn; tgt.push({ x: a[0] + (b[0] - a[0]) * f, y: a[1] + (b[1] - a[1]) * f, z: a[2] + (b[2] - a[2]) * f, c: o }); } } }
+      // onde o alvo estava quando quem disparou o via (a hora vem do cliente); sem ela: agora e um pouco antes
+      const add = st => tgt.push({ x: st.x, y: st.y, z: st.z, c: o, caps: capsules(st, 0.015) });
+      if (VT.has(o.id)) add(rewind(o.p, VT.get(o.id))); else { add(rewind(o.p, 0)); const H = o.p.hist || [], lt = H.length ? H[H.length - 1][4] : 0; if (lt && !c.bot) for (const back of [90, 180]) add(rewind(o.p, lt - back)); } }
     if (!tgt.length) return;
     const ds = Array.isArray(m.ds) ? m.ds.slice(0, n) : null, Ls = Array.isArray(m.Ls) ? m.Ls : null;
     for (let i = 0; i < n; i++) {
@@ -63,6 +60,7 @@ export function makeArena({ send: send0 }) {
       const [helm, vest] = v.ar || [0, 0]; let pop = null;
       if (hh.zone === 'head') { if (helm && hh.pen <= helm) { v.hd = (v.hd ?? 20) - dmg; dmg *= 0.8; if (v.hd <= 0) { pop = 'head'; v.ar[0] = 0; v.hd = null; } } else dmg = n > 1 ? dmg * 2.5 : 999; }
       else if (hh.zone === 'body') { dmg *= 1.2; if (vest && hh.pen <= vest) { v.vd = (v.vd ?? (vest >= 3 ? 50 : 25)) - dmg; dmg *= 0.8; if (v.vd <= 0) { pop = 'vest'; v.ar[1] = 0; v.vd = null; } } else if (vest) dmg *= 0.85; }
+      else if (hh.zone === 'arms') dmg *= 1.0; // braços: como no CS (o colete não os protege)
       else dmg *= 0.6;
       v.hp = Math.max(0, v.hp - dmg); const kl = v.hp <= 0; if (kl) { v.alive = false; v.deadT = now; kill(p, v, k); }
       send(T.c, { t: 'hit', by: p.name, dmg: +dmg.toFixed(1), zone: hh.zone, hp: v.hp, pop });
@@ -88,11 +86,10 @@ export function makeArena({ send: send0 }) {
     if (m.t === 'st') {
       if (!m.al && p.alive) { p.alive = false; p.deadT = now; } // só se volta à vida com 'aspawn' (um 'st' atrasado não ressuscita quem o servidor já matou)
       p.x = num(m.x, AX - HW, AX + HW, AX); p.z = num(m.z, AZ - HD, AZ + HD, AZ); p.y = num(m.y, -5, 20); p.lv = num(m.lv, 0, 3) | 0;
-      { const H = p.hist; H.push([now, p.x, p.y, p.z]); while (H.length > 2 && now - H[0][0] > 650) H.shift(); }
       p.ts = num(m.ts, 0, 1e13, 0); p.yaw = num(m.yaw, -10, 10); p.mv = num(m.mv, 0, 3); p.an = num(m.an, 0, 127) | 0; p.w = typeof m.w === 'string' ? m.w.slice(0, 12) : ''; p.sc = num(m.sc, 0, 2, 0) | 0;
       if (p.alive) p.hp = Math.min(num(m.hp, 0, 100, p.hp), p.hp + 3);
       if (Array.isArray(m.ar)) { const a = [num(m.ar[0], 0, 4) | 0, num(m.ar[1], 0, 4) | 0]; if (a[0] !== p.ar[0]) p.hd = null; if (a[1] !== p.ar[1]) p.vd = null; p.ar = a; }
-      p.gk = typeof m.gk === 'string' ? m.gk.slice(0, 80) : ''; return;
+      p.gk = typeof m.gk === 'string' ? m.gk.slice(0, 80) : ''; histPush(p, now); return;
     }
     if (m.t === 'shot') { shot(c, m); return; }
     if (m.t === 'aspawn') { if (p.alive) return; if (p.deadT && now - p.deadT < 2500) return; p.alive = true; p.hp = 100; p.spawnT = now; p.hd = p.vd = null; p.hist = []; p.x = num(m.x, AX - HW, AX + HW, AX); p.z = num(m.z, AZ - HD, AZ + HD, AZ); return; } // renascer (no mínimo 2,5 s depois de morrer)

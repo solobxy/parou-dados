@@ -41,7 +41,7 @@ server.listen(0, async () => {
     console.log('arma do A:', gun);
     const hps = [];
     for (let i = 0; i < 4; i++) {
-      await A.ev(() => { const r = [...G.net.R.values()][0]; G.fp = false; G.aimS.Aw = new G.V3(r.x, (r.y || 0) + 1.15, r.z); G.p.reload = 0; G.p.cd = 0; const it = G.inv.belt[G.sel]; it.ammo = Math.max(it.ammo, 5); G.p.yaw = Math.atan2(r.x - G.p.x, r.z - G.p.z); return G.dbg.fire(); });
+      await A.ev(() => { const r = [...G.net.R.values()][0]; G.fp = false; G.aimS.Aw = new G.V3(r.x, (r.y || 0) + 1.42, r.z); G.p.reload = 0; G.p.cd = 0; const it = G.inv.belt[G.sel]; it.ammo = Math.max(it.ammo, 5); G.p.yaw = Math.atan2(r.x - G.p.x, r.z - G.p.z); return G.dbg.fire(); });
       await W(700); hps.push(await B.ev(() => Math.round(G.p.hp) + (G.p.alive ? '' : ' morto')));
     }
     console.log('vida do Bruno depois de cada tiro:', hps.join(', ')); ok(/morto/.test(hps[2]) && !/morto/.test(hps[1]), 'morre ao 3.º tiro no peito');
