@@ -44,6 +44,13 @@ async function abrir({ largura = 390, altura = 844, tema = 'claro' } = {}) {
   await ctx.route(/\/api\//, async (rt) => {
     const url = rt.request().url();
     const headers = { ...rt.request().headers(), 'x-forwarded-for': ip };
+    // cartões do Perto: as marcas reais (ex.: uma greve da CP a decorrer) saem, para só contar as da paragem aberta
+    if (/\/api\/transit\/nearby\?/.test(url)) {
+      const r = await rt.fetch({ headers });
+      const j = await r.json().catch(() => null);
+      if (j && Array.isArray(j.stops)) for (const st of j.stops) for (const d of st.nextDepartures || []) { delete d.greve; delete d.greveAte; }
+      return rt.fulfill({ status: r.status(), contentType: 'application/json', body: JSON.stringify(j) });
+    }
     // partidas de uma paragem: as três primeiras levam cada uma das marcas, e o aviso vai por cima
     if (/\/api\/transit\/stop\/[^/?]+\?/.test(url)) {
       const r = await rt.fetch({ headers });
