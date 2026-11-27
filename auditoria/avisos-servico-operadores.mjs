@@ -61,6 +61,7 @@ ok('Funchal: notícias de março e julho (antigas) ficam de fora', !por(hf, /Nov
 ok('MTS: a página fixa «Horários» não é um aviso', !por(ler('Metro Sul do Tejo'), /^Hor[aá]rios$/));
 
 // ------------------------------------------------------------ peças
+ok('«RETORNO PERCURSO NORMAL» não é um aviso (o serviço voltou ao normal)', A.avisoServicoOficial(site('STCP'), 'https://stcp.pt/x', 'RETORNO PERCURSO NORMAL - R. SÁ DA BANDEIRA', 'No dia 27 de novembro a linha 801 retoma o percurso normal.', null, agora) === null);
 ok('linhas citadas: «Carreira(s) 149 e 150», «linhas 072, 073», «402 . IDA»', JSON.stringify(A.linhasCitadas('Carreira(s) 149 e 150')) === '["149","150"]' && JSON.stringify(A.linhasCitadas('linhas 072, 073')) === '["72","73"]' && JSON.stringify(A.linhasCitadas('402 . IDA . R. Serpa Pinto')) === '["402"]');
 
 console.log(falhas ? `\n${falhas} falha(s)` : '\nTudo OK');
