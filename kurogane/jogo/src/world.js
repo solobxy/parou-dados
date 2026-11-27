@@ -619,7 +619,8 @@ export function buildWorld(scene, mats, A, opt = {}) {
   const place = (n, kind) => { let c = 0; for (let i = 0; i < 20000 && c < n; i++) { const x = rr(-CORE + 5, CORE - 5), z = rr(-CORE + 5, CORE - 5); if (blocked(x, z, 1) || tooClose(x, z, 5)) continue; W.rocks.push({ x, z, kind, s: rr(0.9, 1.25), ry: rr(0, 6.28) }); addPt(x, z); c++; } };
   place(520, 'stone'); place(240, 'sulfur'); place(240, 'metal');
   // arbustos e troncos caídos
-  for (let i = 0; i < 3100; i++) { const x = rr(-CORE + 3, CORE - 3), z = rr(-CORE + 3, CORE - 3); if (blocked(x, z) || tooClose(x, z, 1.6)) continue; for (let k = 0; k < 3; k++) b.ico(rr(0.4, 0.75), x + rr(-0.6, 0.6), 0.3, z + rr(-0.6, 0.6), pick([0x3f5a2a, 0x4a6a32, 0x56703a]), { mat: 'vf', det: 1, sy: 0.75 }); }
+  W.bushes = W.bushes || [];
+  for (let i = 0; i < 3100; i++) { const x = rr(-CORE + 3, CORE - 3), z = rr(-CORE + 3, CORE - 3); if (blocked(x, z) || tooClose(x, z, 1.6)) continue; for (let k = 0; k < 3; k++) { const r = rr(0.4, 0.75), bx = x + rr(-0.6, 0.6), bz = z + rr(-0.6, 0.6), c = pick([0x3f5a2a, 0x4a6a32, 0x56703a]); if (!b.dry) W.bushes.push({ x: bx, z: bz, s: r, c, ry: (bx * 7.3 + bz * 3.1) % 6.28 }); } } // tufos de arbusto (desenhados à parte, com folhas)
   for (let i = 0; i < 270; i++) { const x = rr(-CORE + 6, CORE - 6), z = rr(-CORE + 6, CORE - 6); if (blocked(x, z, 2) || tooClose(x, z, 3)) continue; const ry = rr(0, 3.14), L = rr(3, 5); b.cyl(0.28, 0.32, L, 8, x, 0.28, z, 0x5a4230, { rz: Math.PI / 2, ry }); const c = Math.cos(ry), s = Math.sin(ry); for (let t = -L / 2 + 0.4; t < L / 2; t += 0.8) circ(x + c * t, z - s * t, 0.32, 'l'); }
   // candeeiros de rua nas vilas, monumentos e bases (de 30 em 30 m, alternando o lado, virados para a estrada): de noite vê-se por onde se anda
   { const near = (x, z) => W.zones.some(zn => zn.kind !== 'forest' && (x - zn.x) ** 2 + (z - zn.z) ** 2 < (zn.r + 45) ** 2), lp = [];

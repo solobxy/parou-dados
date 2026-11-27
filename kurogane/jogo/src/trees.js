@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
 // Árvores com folhas a sério (planos com recorte da imagem foliage.webp) e casca; tufos de erva em lâminas.
 // Regiões da imagem (u para a direita, v para cima): folhas [0,.5]×[.5,1], pinheiro [.5,1]×[.5,1], casca [0,.5]×[0,.5], erva [.5,1]×[.25,.5], branco [.5,1]×[0,.25]
 const R = { leaf: [0, 0.5, 0.5, 1], pine: [0.5, 0.5, 1, 1], grass: [0.5, 0.25, 1, 0.5] }, WHITE = [0.75, 0.12];
@@ -42,7 +43,25 @@ export function pineTree() { seed = 23; const g = new G();
   return g.geo(); }
 // tufo de erva: 3 planos em cruz com lâminas (a cor vem de cada tufo)
 export function grassTuft() { seed = 31; const g = new G(), up = new THREE.Vector3(0, 1, 0);
-  for (let i = 0; i < 3; i++) { const a = i / 3 * Math.PI + rnd() * 0.3; g.quad(new THREE.Vector3(0, 0.24, 0), new THREE.Vector3(Math.cos(a) * 0.38, 0, Math.sin(a) * 0.38), new THREE.Vector3(0, 0.24, 0), R.grass, col(0xffffff), () => up, rnd() < 0.5); }
+  for (let i = 0; i < 4; i++) { const a = i / 4 * Math.PI + rnd() * 0.5, h = 0.15 + rnd() * 0.14, w = 0.22 + rnd() * 0.16, ox = (rnd() - 0.5) * 0.3, oz = (rnd() - 0.5) * 0.3, u0 = 0.5 + rnd() * 0.25; // alturas e larguras diferentes: ao longe não parece um quadrado
+    g.quad(new THREE.Vector3(ox, h, oz), new THREE.Vector3(Math.cos(a) * w, 0, Math.sin(a) * w), new THREE.Vector3(0, h, 0), [u0, 0.25, u0 + 0.25, 0.5], col(0xffffff, 0.85 + rnd() * 0.3), () => up, rnd() < 0.5); }
   return g.geo(); }
 // árvores de longe (as de antes, simples): todas as faces vão buscar o branco da imagem, fica só a cor do vértice
 export function whiteUV(geo) { const n = geo.attributes.position.count, uv = new Float32Array(n * 2); for (let i = 0; i < n; i++) { uv[i * 2] = WHITE[0]; uv[i * 2 + 1] = WHITE[1]; } geo.setAttribute('uv', new THREE.BufferAttribute(uv, 2)); return geo; }
+
+// arbusto: tufo de planos de folhas à volta de um centro (a cor vem de cada tufo); 1 m de largo, 0,7 m de alto
+export function bushTuft() { seed = 41; const g = new G(), C = new THREE.Vector3(0, 0.25, 0);
+  for (let i = 0; i < 10; i++) { const yaw = rnd() * Math.PI * 2, pit = (rnd() - 0.5) * 1.3, s = 0.42 + rnd() * 0.2;
+    const Rv = new THREE.Vector3(Math.cos(yaw), 0, -Math.sin(yaw)).multiplyScalar(s), Uv = new THREE.Vector3(Math.sin(yaw) * Math.sin(pit), Math.cos(pit), Math.cos(yaw) * Math.sin(pit)).multiplyScalar(s * 0.8);
+    const P = new THREE.Vector3((rnd() - 0.5) * 0.5, 0.3 + rnd() * 0.25, (rnd() - 0.5) * 0.5);
+    g.quad(P, Rv, Uv, R.leaf, col(0xffffff, 0.85 + rnd() * 0.3), V => V.clone().sub(C).normalize(), rnd() < 0.5); }
+  return g.geo(); }
+// pedra: esfera com ruído (bossas e arestas), base achatada; tid 4 = textura de rocha/betão
+export function rockGeo(seedR = 1, det = 5) { const g0 = new THREE.IcosahedronGeometry(1, det); g0.deleteAttribute('normal'); g0.deleteAttribute('uv'); const g = mergeVertices(g0); g0.dispose(); const P = g.attributes.position, v = new THREE.Vector3();
+  const h = (x, y, z) => { const s = Math.sin(x * 12.9898 + y * 78.233 + z * 37.719 + seedR * 17.1) * 43758.5453; return s - Math.floor(s); };
+  const n3 = (x, y, z) => { const i = Math.floor(x), j = Math.floor(y), k = Math.floor(z), fx = x - i, fy = y - j, fz = z - k, w = t => t * t * (3 - 2 * t), u = w(fx), vv = w(fy), ww = w(fz); let r = 0;
+    for (let a = 0; a < 2; a++) for (let b = 0; b < 2; b++) for (let c = 0; c < 2; c++) r += h(i + a, j + b, k + c) * (a ? u : 1 - u) * (b ? vv : 1 - vv) * (c ? ww : 1 - ww); return r; };
+  for (let i = 0; i < P.count; i++) { v.fromBufferAttribute(P, i); const d = n3(v.x * 1.6, v.y * 1.6, v.z * 1.6) * 0.5 + n3(v.x * 3.4, v.y * 3.4, v.z * 3.4) * 0.28 + n3(v.x * 7, v.y * 7, v.z * 7) * 0.12;
+    v.multiplyScalar(0.72 + d * 0.62); v.y = v.y < -0.1 ? -0.1 + (v.y + 0.1) * 0.15 : v.y * 0.78; P.setXYZ(i, v.x, v.y + 0.1, v.z); }
+  g.computeVertexNormals(); const out = g.toNonIndexed(); g.dispose(); out.setAttribute('uv', new THREE.BufferAttribute(new Float32Array(out.attributes.position.count * 2), 2)); const n = out.attributes.position.count, c = new Float32Array(n * 3).fill(1); out.setAttribute('color', new THREE.BufferAttribute(c, 3));
+  out.setAttribute('tid', new THREE.BufferAttribute(new Uint8Array(n).fill(4), 1)); return out; }

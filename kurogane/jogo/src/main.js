@@ -27,7 +27,7 @@ import { TRADERS, PRICE, SELL, TRADE_R } from './traders.js';
 import { initPWA } from './pwa.js';
 import { wear } from './wear.js';
 import { makeSky } from './sky.js';
-import { broadTree, pineTree, grassTuft, whiteUV } from './trees.js';
+import { broadTree, pineTree, grassTuft, whiteUV, bushTuft, rockGeo as rockShape } from './trees.js';
 import { ANK, ANBYK, ANLOOT, spawnAnimals, anHit, anPart, animalAI, Fauna } from './animals.js';
 
 const TOUCH = matchMedia('(pointer: coarse)').matches || ('ontouchstart' in window && navigator.maxTouchPoints > 0);
@@ -297,13 +297,20 @@ async function boot() {
   treeList.forEach((l, v) => iMesh(v ? BROAD : PINE, fm, l, t => mat4(t.x, 0, t.z, t.ry, 0, 0, t.s), true, 50, null, v ? broadLo : cedarLo));
   // ginkgos da rua (amarelos, de novembro)
   { const l = W.streetTrees.map(([x, z]) => ({ x, z })); const c = new THREE.Color(); iMesh(BROAD, fm, l, t => mat4(t.x, 0.14, t.z, Math.random() * 6, 0, 0, 0.72), true, 50, (t, i) => c.setHex(i % 3 ? 0xffd46a : 0xf2c04a), broadLo); l.forEach(t => { t.col = { x: t.x, z: t.z, r: 0.22, k: 's', on: true }; addCirc(t.col); }); }
-  const rockGeo = { stone: geo1(b => { b.ico(0.95, 0, 0.35, 0, 0x8f8d86, { mat: 'vf', det: 1, sy: 0.7 }); b.ico(0.6, 0.7, 0.2, 0.3, 0x85837c, { mat: 'vf', det: 1, sy: 0.7 }); b.ico(0.5, -0.6, 0.15, -0.4, 0x9a988f, { mat: 'vf', det: 0 }); }),
-    sulfur: geo1(b => { b.ico(0.9, 0, 0.3, 0, 0x8a8470, { mat: 'vf', det: 1, sy: 0.7 }); for (const [x, y, z, r] of [[0.3, 0.75, 0.2, 0.34], [-0.35, 0.6, 0.35, 0.28], [0.55, 0.4, -0.35, 0.3], [-0.2, 0.7, -0.4, 0.25]]) b.ico(r, x, y, z, 0xe0c43a, { mat: 'vf', det: 0 }); }),
-    metal: geo1(b => { b.ico(0.92, 0, 0.32, 0, 0x6e625a, { mat: 'vf', det: 1, sy: 0.72 }); for (const [x, y, z, r] of [[0.35, 0.7, 0.2, 0.3], [-0.4, 0.55, 0.3, 0.26], [0.3, 0.45, -0.45, 0.28]]) b.ico(r, x, y, z, 0x9a5a32, { mat: 'vf', det: 0 }); b.ico(0.22, -0.1, 0.8, -0.2, 0xa8acb0, { mat: 'vf' }); }) };
+  // pedras com forma (bossas e arestas) e textura de rocha; enxofre e metal com pedaços de minério à vista
+  const rockOf = (base, nod, sd) => { const R = rockShape(sd), c = new THREE.Color(base), C = R.attributes.color; for (let i = 0; i < C.count; i++) { const k = 0.9 + 0.2 * (((i * 2654435761) >>> 0) % 100) / 100; C.setXYZ(i, c.r * k, c.g * k, c.b * k); } const parts = [R];
+    for (const [x, y, z, r, h] of nod) { const g = new THREE.IcosahedronGeometry(r, 0).toNonIndexed(); g.translate(x, y, z); g.computeVertexNormals(); const n = g.attributes.position.count, cc = new THREE.Color(h), col = new Float32Array(n * 3); for (let i = 0; i < n; i++) col.set([cc.r, cc.g, cc.b], i * 3); g.setAttribute('color', new THREE.BufferAttribute(col, 3)); g.setAttribute('tid', new THREE.BufferAttribute(new Uint8Array(n), 1)); parts.push(g); }
+    return parts.length > 1 ? mergeAll(parts) : R; };
+  const rockGeo = { stone: rockOf(0x8f8d86, [], 1), sulfur: rockOf(0x8a8470, [[0.3, 0.62, 0.2, 0.3, 0xe0c43a], [-0.35, 0.55, 0.35, 0.25, 0xe0c43a], [0.5, 0.38, -0.35, 0.27, 0xd8b830], [-0.2, 0.6, -0.4, 0.22, 0xe0c43a]], 2),
+    metal: rockOf(0x6e625a, [[0.35, 0.6, 0.2, 0.26, 0x9a5a32], [-0.4, 0.5, 0.3, 0.23, 0x9a5a32], [0.3, 0.42, -0.45, 0.25, 0x8a4a28], [-0.1, 0.72, -0.2, 0.2, 0xa8acb0]], 3) };
   const rockM = {};
-  for (const kind of ['stone', 'sulfur', 'metal']) { const l = W.rocks.filter(r => r.kind === kind); l.forEach(r => { r.r = 0.95 * r.s; r.hp = r.max = kind === 'stone' ? 220 : 130; r.alive = true; nodes.push(r); r.col = { x: r.x, z: r.z, r: r.r * 0.85, k: 's', on: true, node: r }; addCirc(r.col); }); iMesh(rockGeo[kind], tm, l, r => mat4(r.x, 0, r.z, r.ry, 0, 0, r.s)); }
+  for (const kind of ['stone', 'sulfur', 'metal']) { const l = W.rocks.filter(r => r.kind === kind); l.forEach(r => { r.r = 0.95 * r.s; r.hp = r.max = kind === 'stone' ? 220 : 130; r.alive = true; nodes.push(r); r.col = { x: r.x, z: r.z, r: r.r * 0.85, k: 's', on: true, node: r }; addCirc(r.col); }); iMesh(rockGeo[kind], wmats.v, l, r => mat4(r.x, 0, r.z, r.ry, 0, 0, r.s)); }
   // tufos de erva
   const grassGeo = grassTuft(), grassMat = new THREE.MeshStandardMaterial({ map: FOLT, color: new THREE.Color(1.8, 1.8, 1.8), alphaTest: 0.4, roughness: 1, side: THREE.DoubleSide });
+  // a erva desvanece aos poucos entre 22 e 34 m (píxeis ao calhas), em vez de acabar em tufos quadrados ao longe
+  grassMat.onBeforeCompile = sh => { sh.vertexShader = 'varying float vGd;\n' + sh.vertexShader.replace('#include <project_vertex>', '#include <project_vertex>\n { vec4 gw = vec4(transformed, 1.0);\n#ifdef USE_INSTANCING\n gw = instanceMatrix * gw;\n#endif\n vGd = distance((modelMatrix * gw).xyz, cameraPosition); }');
+    sh.fragmentShader = 'varying float vGd;\n' + sh.fragmentShader.replace('#include <alphatest_fragment>', '#include <alphatest_fragment>\n if (fract(sin(dot(floor(gl_FragCoord.xy), vec2(12.9898, 78.233))) * 43758.5453) < smoothstep(22.0, 34.0, vGd)) discard;'); };
+  grassMat.customProgramCacheKey = () => 'erva-longe';
   { const g = grassGeo;
     const l = []; for (let i = 0; i < 40000 && l.length < (TOUCH ? 13000 : 24000); i++) { const x = (Math.random() * 2 - 1) * (CORE - 1), z = (Math.random() * 2 - 1) * (CORE - 1); if (x > CITY.x0 - 1 && x < CITY.x1 + 1 && z > CITY.z0 - 1 && z < CITY.z1 + 1) continue; if (Math.abs(z) < 4.6) continue; if (Math.abs(x) < 2.8 && Math.abs(z) > CITY.z1) continue; if (W.paved(x, z)) continue; l.push({ x, z, s: 0.7 + Math.random() * 0.9, ry: Math.random() * 6 }); }
     const c = new THREE.Color(); iMesh(g, grassMat, l, o => mat4(o.x, 0, o.z, o.ry, 0, 0, o.s), false, 40, () => c.setHSL(0.22 + Math.random() * 0.05, 0.45, 0.24 + Math.random() * 0.12)); }
@@ -312,11 +319,12 @@ async function boot() {
   const seixoGeo = geo1(b => { b.ico(0.13, 0, 0.07, 0, 0x8a877e, { mat: 'vf', det: 1, sy: 0.6 }); b.ico(0.07, 0.15, 0.04, 0.06, 0x7c7a72, { mat: 'vf', det: 0, sy: 0.6 }); b.ico(0.05, -0.12, 0.03, 0.09, 0x95928a, { mat: 'vf', det: 0, sy: 0.7 }); });
   const fibraGeo = geo1(b => { for (let i = 0; i < 6; i++) { const a = i / 6 * 6.28, h = 0.55 + (i % 3) * 0.12; b.cyl(0.012, 0.018, h, 4, Math.sin(a) * 0.08, h / 2, Math.cos(a) * 0.08, 0x5a6a32, { mat: 'vf', rz: Math.sin(a) * 0.25, rx: Math.cos(a) * 0.25 }); b.ico(0.055, Math.sin(a) * 0.2, h + 0.02, Math.cos(a) * 0.2, 0xf2efe6, { mat: 'vf', det: 1 }); } for (let i = 0; i < 5; i++) b.ico(0.09, Math.sin(i * 1.3) * 0.14, 0.12, Math.cos(i * 1.3) * 0.14, 0x4a6230, { mat: 'vf', det: 0, sy: 0.5 }); });
   // mundo de fora (8 km): setores carregados à tua volta
-  const bushGeo = geo1(b => { b.ico(0.62, 0, 0.32, 0, 0x3f5a2a, { mat: 'vf' }); b.ico(0.46, 0.42, 0.26, 0.2, 0x4a6632, { mat: 'vf' }); b.ico(0.4, -0.36, 0.22, -0.26, 0x36522a, { mat: 'vf' }); });
+  const bushGeo = bushTuft(); // arbustos com folhas (os do centro e os das florestas)
+  { const c = new THREE.Color(); if (W.bushes && W.bushes.length) iMesh(bushGeo, fm, W.bushes, o => mat4(o.x, 0, o.z, o.ry, 0, 0, o.s * 1.7), true, 50, o => c.setHex(o.c).multiplyScalar(1.55)); }
   const _gc = new THREE.Color();
   await LP(62, 'a preparar as zonas');
-  const SECTORS = makeSectors({ scene, W, nodes, addCirc, removeCirc, near, CORE, MAP, mats: { tree: tm, leaf: fm, grass: grassMat, grassTint: () => _gc.setHSL(0.22 + Math.random() * 0.05, 0.45, 0.24 + Math.random() * 0.12) }, geos: { cedar: PINE, broad: BROAD, rock: rockGeo, bush: bushGeo, grass: grassGeo, seixo: seixoGeo, fibra: fibraGeo },
-    iMesh: (geo, mat, list, matOf, shadow, CH) => iMesh(geo, mat, list, matOf, shadow, CH, geo === grassGeo ? () => _gc.setHSL(0.22 + Math.random() * 0.05, 0.45, 0.24 + Math.random() * 0.12) : null, geo === PINE ? cedarLo : geo === BROAD ? broadLo : null) }); // árvores da floresta também com a versão leve ao longe
+  const SECTORS = makeSectors({ scene, W, nodes, addCirc, removeCirc, near, CORE, MAP, mats: { tree: tm, leaf: fm, rock: wmats.v, grass: grassMat, grassTint: () => _gc.setHSL(0.22 + Math.random() * 0.05, 0.45, 0.24 + Math.random() * 0.12) }, geos: { cedar: PINE, broad: BROAD, rock: rockGeo, bush: bushGeo, grass: grassGeo, seixo: seixoGeo, fibra: fibraGeo },
+    iMesh: (geo, mat, list, matOf, shadow, CH) => iMesh(geo, mat, list, matOf, shadow, CH, geo === grassGeo ? () => _gc.setHSL(0.22 + Math.random() * 0.05, 0.45, 0.24 + Math.random() * 0.12) : geo === bushGeo ? () => _gc.setHSL(0.24 + Math.random() * 0.04, 0.38, 0.3 + Math.random() * 0.1) : null, geo === PINE ? cedarLo : geo === BROAD ? broadLo : null) }); // árvores da floresta também com a versão leve ao longe
   // pedras soltas e plantas de fibra também no centro do mapa (mesma posição em todos os aparelhos)
   { let sd = 977; const R = () => (sd = (sd * 16807) % 2147483647) / 2147483647, picks = { seixo: [], fibra: [] };
     for (let i = 0; i < 2600 && picks.seixo.length + picks.fibra.length < 420; i++) { const x = (R() * 2 - 1) * (CORE - 6), z = (R() * 2 - 1) * (CORE - 6), kind = R() < 0.5 ? 'seixo' : 'fibra'; if (inCity(x, z) || W.paved(x, z) || W.wet(x, z, 0.5) || solidAt(x, z, 0.8)) continue; picks[kind].push({ x, z, kind, s: 0.85 + R() * 0.4, ry: R() * 6.28 }); }
