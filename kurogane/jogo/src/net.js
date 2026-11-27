@@ -64,12 +64,10 @@ export function makeNet({ G, scene, mkRemote, audio, Conta, enc, dec, hurt, die,
       case 'pf': if (pfWait) { const f = pfWait; pfWait = null; f(m); } return;
       case 'xp': N.xp = m; G.setLv && G.setLv(m.lv); if (m.up && G.refreshWeapon) G.refreshWeapon(); G.ui.xp && G.ui.xp(m); return;
       case 'frq': G.ui.toast(m.n + ' quer ser teu amigo. Aceita no menu, em Perfil.'); audio.play && audio.play('ui'); return;
+      case 's1': rowIn(m.p, performance.now()); return;
       case 's': {
         const now = performance.now(), seen = new Set();
-        for (const a of m.ps) { const r = R.get(a[0]); if (!r) continue; seen.add(r.id); if (r.s1 && (Math.hypot(a[1] - r.s1[1], a[2] - r.s1[2]) > 25 || a[4] !== r.s1[4])) r.T = track(); r.s1 = a; push(r.T, a[13] || now, now, { x: a[1], z: a[2], y: a[3], yaw: a[5], a });
-          if (G.ARENA) r.b.setTeam(r.clan === 'arena-b' ? 1 : r.clan === 'arena-r' ? 0 : null);
-          const ar = a[12] || [0, 0], gk = typeof a[14] === 'string' ? a[14] : null, ak = gk ?? ar.join(); if (ak !== r.ar) { r.ar = ak; if (gk != null) { const q = gk.split(','), e = {}; ['head', 'vest', 'suit', 'eyes', 'back'].forEach((s, i) => { if (q[i] && ITEMS[q[i]]) e[s] = { k: q[i] }; }); r.b.setGear(e); r.gh = !!e.suit; } else r.b.setGear({ head: ar[0] ? { k: 'capacete' } : null, vest: ar[1] ? { k: 'colete' } : null }); }
-          if (r.w !== a[8]) { r.w = a[8]; const q = String(a[8] || '').split('~'); r.wi = q[0]; r.b.setWeapon(q[0] || null, { skin: q[1] | 0 }); } }
+        for (const a of m.ps) { const r = rowIn(a, now); if (r) seen.add(r.id); }
         for (const r of R.values()) if (!seen.has(r.id)) { r.s1 = null; r.T = track(); r.b.root.visible = false; r.el.style.display = 'none'; }
         if (m.zu) world.z.rows(m.zu); if (m.zg) world.z.gone(m.zg); if (m.cu) G.cars.rows(m.cu); if (m.cg) G.cars.gone(m.cg);
         return;
@@ -140,6 +138,11 @@ export function makeNet({ G, scene, mkRemote, audio, Conta, enc, dec, hurt, die,
   N.died = by => send(G.ARENA ? { t: 'died', by: by || null } : { t: 'died', it: G.inv.all().map(enc), force: 1 });
   // mundo partilhado
   N.cyc = () => (((Date.now() + off - cyc0) / 1000) % 1920 + 1920) % 1920;
+  // linha de estado de outro jogador (vem na volta do servidor, «s», ou logo que ele a manda, «s1»)
+  const rowIn = (a, now) => { const r = R.get(a[0]); if (!r) return null; if (r.s1 && (Math.hypot(a[1] - r.s1[1], a[2] - r.s1[2]) > 25 || a[4] !== r.s1[4])) r.T = track(); r.s1 = a; push(r.T, a[13] || now, now, { x: a[1], z: a[2], y: a[3], yaw: a[5], a });
+          if (G.ARENA) r.b.setTeam(r.clan === 'arena-b' ? 1 : r.clan === 'arena-r' ? 0 : null);
+          const ar = a[12] || [0, 0], gk = typeof a[14] === 'string' ? a[14] : null, ak = gk ?? ar.join(); if (ak !== r.ar) { r.ar = ak; if (gk != null) { const q = gk.split(','), e = {}; ['head', 'vest', 'suit', 'eyes', 'back'].forEach((s, i) => { if (q[i] && ITEMS[q[i]]) e[s] = { k: q[i] }; }); r.b.setGear(e); r.gh = !!e.suit; } else r.b.setGear({ head: ar[0] ? { k: 'capacete' } : null, vest: ar[1] ? { k: 'colete' } : null }); }
+          if (r.w !== a[8]) { r.w = a[8]; const q = String(a[8] || '').split('~'); r.wi = q[0]; r.b.setWeapon(q[0] || null, { skin: q[1] | 0 }); } return r; };
   N.raw = o => send(o);
   // perfil e amigos: dentro do jogo vai pela ligação que já existe; no menu abre uma ligação curta só para isto
   let pfWait = null;
@@ -176,7 +179,7 @@ export function makeNet({ G, scene, mkRemote, audio, Conta, enc, dec, hurt, die,
     { const hide = G.mapOpen || G.invOpen || G.paused || !G.playing; if (tags.hidden !== hide) tags.hidden = hide; }
     if (me && now - sendT >= 32) { sendT = now; /* 30 vezes por segundo: os outros veem-te com menos atraso */ send({ t: 'st', ...me, ts: Math.round(now) }); if (N.world) { const ca = G.cars.up(); if (ca) send({ t: 'cu', L: [ca] }); } }
     if (zdQ.length) { send({ t: 'zd', L: zdQ.splice(0, 40) }); }
-    zT -= dt; if (zT <= 0 && N.world) { zT = 0.1; const L = world.z.up(); if (L.length) send({ t: 'zu', L, ts: Math.round(now) }); }
+    zT -= dt; if (zT <= 0 && N.world) { zT = 0.066; const L = world.z.up(); if (L.length) send({ t: 'zu', L, ts: Math.round(now) }); }
     if (cur) { if (cur.open && G.box !== cur.c) closeBox(); else if (cur.open) { psT -= dt; if (psT <= 0) { psT = 0.4; const sg = sigOf(cur.c); if (sg !== cur.sig) { cur.sig = sg; send({ t: 'ps', c: cur.key, it: world.encG(cur.c.grid) }); } } } else if (performance.now() - cur.t > 4000) cur = null; }
     invT -= dt; if (invT <= 0) { invT = 3; N.sendInv(); }
     const lv = me ? me.lv : 0;

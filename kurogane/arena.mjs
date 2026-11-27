@@ -90,7 +90,7 @@ export function makeArena({ send: send0 }) {
       p.ts = num(m.ts, 0, 1e13, 0); p.yaw = num(m.yaw, -10, 10); p.mv = num(m.mv, 0, 3); p.an = num(m.an, 0, 127) | 0; p.w = typeof m.w === 'string' ? m.w.slice(0, 12) : ''; p.sc = num(m.sc, 0, 2, 0) | 0;
       if (p.alive) p.hp = Math.min(num(m.hp, 0, 100, p.hp), p.hp + 3);
       if (Array.isArray(m.ar)) { const a = [num(m.ar[0], 0, 4) | 0, num(m.ar[1], 0, 4) | 0]; if (a[0] !== p.ar[0]) p.hd = null; if (a[1] !== p.ar[1]) p.vd = null; p.ar = a; }
-      p.gk = typeof m.gk === 'string' ? m.gk.slice(0, 80) : ''; histPush(p, now); return;
+      p.gk = typeof m.gk === 'string' ? m.gk.slice(0, 80) : ''; histPush(p, now); relay(c); return;
     }
     if (m.t === 'shot') { shot(c, m); return; }
     if (m.t === 'aspawn') { if (p.alive) return; if (p.deadT && now - p.deadT < 2500) return; p.alive = true; p.hp = 100; p.spawnT = now; p.hd = p.vd = null; p.hist = []; p.x = num(m.x, AX - HW, AX + HW, AX); p.z = num(m.z, AZ - HD, AZ + HD, AZ); return; } // renascer (no mínimo 2,5 s depois de morrer)
@@ -119,13 +119,18 @@ export function makeArena({ send: send0 }) {
   // portas da arena: o servidor guarda o estado e avisa todos (antes cada um via as suas)
   const door = (id, o, from) => { const D = DOORS.get(id); if (!D || D.o === o) return; D.o = o; bcast({ t: 'dr', i: id, o }, x => x !== from); };
   const BOTS = makeBots({ players, add: addBot, remove: removeBot, shot: (c, m) => shot(c, m), kill: (a, b, h) => kill(a, b, h), teamId: t => TEAMS[t].id, bcast: (o, f) => bcast(o, f), send: (c, o) => send(c, o), door: (id, o) => door(id, o, null) });
+  // radar: um inimigo aparece a quem é da outra equipa se disparou há pouco ou se algum colega o está a ver
+  const spotOf = (c, o, now, L) => { if (o.p.team === c.p.team) return 1; if (!o.p.alive) return 0; if (now - (o.p.lastShot || 0) < 2500) return 1; for (const t of L) if (t.p.team === c.p.team && t.p.alive && t.p.vis && now - (t.p.visT || 0) < 1500 && t.p.vis.has(o.id)) return 1; return 0; };
+  const aRow = (o, sp) => { const q = o.p; return [o.id, +q.x.toFixed(2), +q.z.toFixed(2), +q.y.toFixed(2), q.lv, +q.yaw.toFixed(2), +q.mv.toFixed(2), q.an, q.w, Math.round(q.hp), q.alive ? 1 : 0, 0, q.ar, Math.round(q.ts || 0), q.gk || '', q.sc | 0, sp]; };
+  // o estado de cada jogador segue logo para os outros (sem esperar pela volta de 33 ms): menos atraso nos tiroteios
+  const relay = c => { const now = Date.now(), L = [...players.values()].filter(o => o.p && !o.bot); for (const o of L) if (o !== c) send(o, { t: 's1', p: aRow(c, spotOf(o, c, now, L)) }); };
   setInterval(() => {
     BOTS.tick(); const L = [...players.values()].filter(c => c.p); tickN++;
     if (!L.length) { if (!emptyT) emptyT = Date.now(); else if (Date.now() - emptyT > 120e3) { score[0] = score[1] = 0; } return; } emptyT = 0;
     const now = Date.now();
     // radar: um inimigo aparece a quem é da outra equipa se disparou há pouco ou se algum colega o está a ver
-    const spot = (c, o) => { if (o.p.team === c.p.team) return 1; if (!o.p.alive) return 0; if (now - (o.p.lastShot || 0) < 2500) return 1; for (const t of L) if (t.p.team === c.p.team && t.p.alive && t.p.vis && now - (t.p.visT || 0) < 1500 && t.p.vis.has(o.id)) return 1; return 0; };
-    for (const c of L) { const out = []; for (const o of L) { if (o === c) continue; const q = o.p; out.push([o.id, +q.x.toFixed(2), +q.z.toFixed(2), +q.y.toFixed(2), q.lv, +q.yaw.toFixed(2), +q.mv.toFixed(2), q.an, q.w, Math.round(q.hp), q.alive ? 1 : 0, 0, q.ar, Math.round(q.ts || 0), q.gk || '', q.sc | 0, spot(c, o)]); } send(c, { t: 's', ps: out }); }
+    const spot = (c, o) => spotOf(c, o, now, L);
+    for (const c of L) { const out = []; for (const o of L) { if (o === c) continue; out.push(aRow(o, spot(c, o))); } send(c, { t: 's', ps: out }); }
   }, 33);
   return { add, msg, drop, count: () => [...players.values()].filter(c => c.p && !c.bot).length, counts, score, bots: () => BOTS.bots().length };
 }

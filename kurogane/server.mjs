@@ -411,7 +411,7 @@ const onMsg = (c, m) => {
     histPush(p, now); // onde esteve no último segundo, com a pose (para pôr o alvo onde quem disparou o via)
     const al = !!m.al, hp = num(m.hp, 0, 100, p.hp); if (al && !p.alive) { p.hp = hp; p.hd = p.vd = null; } else p.hp = Math.min(hp, p.hp + 3); p.alive = al; // a vida que o servidor tirou não volta de repente
     if (Array.isArray(m.ar)) { const a = [num(m.ar[0], 0, 4) | 0, num(m.ar[1], 0, 4) | 0]; if (a[0] !== p.ar[0]) p.hd = null; if (a[1] !== p.ar[1]) p.vd = null; p.ar = a; }
-    if (typeof m.gk === 'string' && (m.gk !== p.gkRaw || now - (p.gkT || 0) > 2000)) { p.gkRaw = m.gk.slice(0, 80); p.gkT = now; const T = ledOf(p).T, q = p.gkRaw.split(','); p.gk = GKS.map((s, i) => { const k = q[i] || ''; return ITEMS[k] && ITEMS[k].eq === s && T[k] > 0 ? k : ''; }).join(); p.ghillie = p.gk.includes('ghillie'); } return; }
+    if (typeof m.gk === 'string' && (m.gk !== p.gkRaw || now - (p.gkT || 0) > 2000)) { p.gkRaw = m.gk.slice(0, 80); p.gkT = now; const T = ledOf(p).T, q = p.gkRaw.split(','); p.gk = GKS.map((s, i) => { const k = q[i] || ''; return ITEMS[k] && ITEMS[k].eq === s && T[k] > 0 ? k : ''; }).join(); p.ghillie = p.gk.includes('ghillie'); } relay(c); return; }
   if (m.t === 'inv') { if (m.bag || m.belt) invMsg(c, p, m); return; }
   if (m.t === 'gt') { gather(c, p, m); return; }
   if (m.t === 'cr') { craft(c, p, m); return; }
@@ -643,10 +643,17 @@ const leave = p => { if (!p.clan) return; const C = S.clans[p.clan]; if (C) { C.
 // ---------- imagens do mundo: jogadores 20 por segundo, zombies e carros 10 (só o que está perto; o clã sempre, para o mapa)
 let tickN = 0;
 const ZR = 300; // zombies que cada um recebe (metros): até onde a luneta deixa ver bem
+// linha de estado de um jogador (para os outros)
+const plRow = (o, far) => [o.id, +o.p.x.toFixed(2), +o.p.z.toFixed(2), +o.p.y.toFixed(2), o.p.lv, +o.p.yaw.toFixed(2), +o.p.mv.toFixed(2), o.p.an, o.p.w, Math.round(o.p.hp), o.p.alive ? 1 : 0, far ? 1 : 0, o.p.ar, Math.round(o.p.ts || 0), o.p.gk || '', o.p.sc | 0];
+// assim que chega o estado de um jogador, segue logo para quem está perto (sem esperar pela volta seguinte do servidor: menos atraso
+// e menos solavanco). A volta de 30 por segundo continua a mandar todos (quem entra ou sai de perto, zombies e carros).
+const relay = c => { const p = c.p, row = plRow(c, false); let msg = null;
+  for (const o of players.values()) { if (o === c || !o.p || o.dead || (p.invis && !S.roles[o.p.uid])) continue; if (Math.abs(o.p.x - p.x) > 320 || Math.abs(o.p.z - p.z) > 320 || Math.hypot(o.p.x - p.x, o.p.z - p.z) > 320) continue;
+    send(o, msg || (msg = { t: 's1', p: row })); } };
 setInterval(() => {
-  const L = [...players.values()].filter(c => c.p), full = (++tickN % 3) === 0; // jogadores 30 vezes por segundo; zombies e carros 10
+  const L = [...players.values()].filter(c => c.p), full = (++tickN % 2) === 0; // jogadores 30 vezes por segundo (e cada um logo que chega); zombies e carros 15
   for (const c of L) {
-    const out = [], staff = !!S.roles[c.p.uid]; for (const o of L) { if (o === c || (o.p.invis && !staff)) continue; const d = Math.hypot(o.p.x - c.p.x, o.p.z - c.p.z), mate = c.p.clan && o.p.clan === c.p.clan; if (d > 320 && !mate) continue; out.push([o.id, +o.p.x.toFixed(2), +o.p.z.toFixed(2), +o.p.y.toFixed(2), o.p.lv, +o.p.yaw.toFixed(2), +o.p.mv.toFixed(2), o.p.an, o.p.w, Math.round(o.p.hp), o.p.alive ? 1 : 0, d > 320 ? 1 : 0, o.p.ar, Math.round(o.p.ts || 0), o.p.gk || '', o.p.sc | 0]); }
+    const out = [], staff = !!S.roles[c.p.uid]; for (const o of L) { if (o === c || (o.p.invis && !staff)) continue; const d = Math.hypot(o.p.x - c.p.x, o.p.z - c.p.z), mate = c.p.clan && o.p.clan === c.p.clan; if (d > 320 && !mate) continue; out.push(plRow(o, d > 320)); }
     const msg = { t: 's', ps: out };
     // zombies: só os que mudaram desde a última vez (e os que saíram de perto)
     if (full && c.zc) { const u = [], seen = new Set(); const zs = S.w.zs;

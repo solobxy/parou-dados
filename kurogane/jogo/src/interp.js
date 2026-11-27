@@ -2,7 +2,7 @@
 // A hora a que chega varia (rede do telemóvel, espera no servidor); a hora a que saiu não. Desenha-se um pouco atrás,
 // entre as duas imagens certas, e o atraso ajusta-se sozinho à rede de cada um (mais atraso quando a rede dá solavancos).
 const MAX = 48, WIN = 90; // até 48 imagens guardadas; a rede mede-se nas últimas 90 (3 s a 30 por segundo)
-export const track = () => ({ buf: [], off: null, jit: 25, delay: 110, os: [] });
+export const track = () => ({ buf: [], off: null, jit: 25, delay: 80, os: [] });
 // ts: hora de envio (ms, relógio de quem mandou); recv: hora de chegada (ms, o nosso relógio)
 export const push = (T, ts, recv, s) => {
   const B = T.buf; if (B.length) { const last = B[B.length - 1].ts; if (ts < last - 1000 || ts - last > 5000) { B.length = 0; T.off = null; T.offS = null; T.os.length = 0; } else if (ts <= last) return false; } // relógio novo ou parado há muito: recomeça; repetida ou fora de ordem: fora
@@ -18,7 +18,7 @@ const angLerp = (a, b, f) => { let d = b - a; while (d > Math.PI) d -= 2 * Math.
 export const sample = (T, now, out) => {
   const B = T.buf; if (!B.length) return null;
   // atraso: o necessário para quase nunca ficar sem imagem seguinte (antes ficava fixo em 110 ms e com rede móvel saltava)
-  const want = Math.min(350, Math.max(70, 45 + T.jit * 1.15)), lt = T.lt ?? now, dtm = Math.min(100, now - lt); T.lt = now;
+  const want = Math.min(350, Math.max(48, 36 + T.jit * 1.15)), lt = T.lt ?? now, dtm = Math.min(100, now - lt); T.lt = now;
   T.delay += Math.max(-dtm * 0.05, Math.min(dtm * 0.25, (want - T.delay) * Math.min(1, dtm / 400))); // sobe depressa, desce devagar (sem dar saltos no tempo)
   // a diferença de relógios também muda devagar (a mínima da janela salta quando sai da janela: antes isso fazia o boneco saltar para trás)
   if (T.offS == null) T.offS = T.off; else T.offS += Math.max(-dtm * 0.08, Math.min(dtm * 0.08, T.off - T.offS));
