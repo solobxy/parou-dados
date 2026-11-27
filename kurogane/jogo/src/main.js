@@ -1,7 +1,8 @@
 // Kurogane (nome provisório) · protótipo jogável de um só jogador.
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { Builder, Atlas, ctex, mat4, FONT_JP } from './builder.js';
+import { loadProps } from './props.js';
+import { Builder, Atlas, ctex, mat4, FONT_JP, PSTAT } from './builder.js';
 import { buildWorld, MAP, CORE, CITY, inCity } from './world.js';
 import { makeSectors } from './sectors.js';
 import { Body, ZHorde, ZHEAD, bagMesh, HIP, zombiePose, newPose, LOOK_OPTS, RDP, PCOL, lookCol } from './chars.js';
@@ -160,6 +161,7 @@ async function boot() {
     m.customProgramCacheKey = () => 'det-' + key; return m; };
   const wmats = { ...mats, v: detail(S(), 1, 'v'), vf: detail(S({ flatShading: true }), 1, 'vf'), m: detail(S({ roughness: 0.38, metalness: 0.55 }), 0.55, 'm') }; // só o que está construído no mapa (personagens e armas ficam sem isto)
   const ARENA_ON = (() => { try { return sessionStorage.getItem('kgArena') === '1' || /[?&]arena\b/.test(location.search); } catch (e) { return false; } })(); // modo arena: só PvP no mapa de Tóquio
+  await loadProps(); // adereços do Blender (ficheiro ao lado); se falhar, o mapa usa as caixas simples
   await LP(12, 'a construir a cidade');
   const tW0 = performance.now(); const W = buildWorld(scene, wmats, A, { arena: ARENA_ON }); W.buildMs = Math.round(performance.now() - tW0);
   await LP(50, 'a preparar o mapa');
@@ -1201,7 +1203,9 @@ async function boot() {
     },
     encG, dec,
   };
-  G.WV = WV; G.net = makeNet({ G, scene, mkRemote, bagMesh: bagM, audio, Conta, enc, dec, die, world: netWorld, WV,
+  // teste: um adereço do Blender à frente do jogador (para ver de perto)
+  G.dbgProp = (name, tint = 0x3a5a3a, d = 2.2, ry = Math.PI, dy = 0) => { if (G._dbgPropG) scene.remove(G._dbgPropG); const p = G.p, bb = new Builder(0), x = p.x + Math.sin(p.yaw) * d, z = p.z + Math.cos(p.yaw) * d; const ok = bb.model(name, x, groundY(x, z, 0) + dy, z, p.yaw + ry, tint); const g = G._dbgPropG = new THREE.Group(); bb.build(g, wmats); scene.add(g); return ok ? g.children.length : 0; };
+  G.WV = WV; G.propStat = PSTAT; G.net = makeNet({ G, scene, mkRemote, bagMesh: bagM, audio, Conta, enc, dec, die, world: netWorld, WV,
     hurt: (dmg, by, zone, pop, cause) => {
       if (!G.p || !G.p.alive) return; if (cause === 'zombie') { hurtPlayer(dmg, 'zombie'); return; } G.killer = by; if (cause === 'carro') { hurtPlayer(dmg, 'carro', true); return; }
       if (pop) { const s = pop === 'head' ? 'head' : 'vest'; if (G.inv.eq[s]) { G.inv.eq[s] = null; refresh(); G.ui.toast(s === 'head' ? 'O teu capacete partiu-se' : 'O teu colete partiu-se'); } }

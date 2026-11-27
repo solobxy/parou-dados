@@ -2,9 +2,11 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+import { propParts } from './props.js';
 
 let seed = 7202611;
 export const setSeed = s => { seed = s; };
+export const PSTAT = {}; // quantos adereços do Blender e onde estão os primeiros (para testes)
 export const getSeed = () => seed;
 export const rnd = () => { seed = (seed + 0x6D2B79F5) | 0; let t = Math.imul(seed ^ (seed >>> 15), 1 | seed); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
 export const rr = (a, b) => a + (b - a) * rnd();
@@ -27,11 +29,11 @@ const tpl = (key, mk) => { let g = TPL.get(key); if (!g) { g = mk(); if (g.index
 const _lm = new THREE.Matrix4(), _nm = new THREE.Matrix3();
 // peça adiada (molde + matriz + cor): faz agora as contas para dentro das listas finais
 const _nm2 = new THREE.Matrix3(), _mm = new THREE.Matrix4();
-const writeJob = (r, P, N, U, C, o) => { const g = r.src, n = r.count, e = r.M; _mm.fromArray(e); const q = _nm2.getNormalMatrix(_mm).elements, S = g.p, NN = g.n, UU = g.uv, sc = UVS[r.mat];
+const writeJob = (r, P, N, U, C, o) => { const g = r.src, n = r.count, e = r.M, CV = g.cv; _mm.fromArray(e); const q = _nm2.getNormalMatrix(_mm).elements, S = g.p, NN = g.n, UU = g.uv, sc = UVS[r.mat];
   for (let i = 0, k = 0, w = o * 3; i < n; i++, k += 3, w += 3) { const x = S[k], y = S[k + 1], z = S[k + 2]; const X = e[0] * x + e[4] * y + e[8] * z + e[12], Y = e[1] * x + e[5] * y + e[9] * z + e[13], Z = e[2] * x + e[6] * y + e[10] * z + e[14]; P[w] = X; P[w + 1] = Y; P[w + 2] = Z;
     const a = NN[k], b = NN[k + 1], c = NN[k + 2]; let nx = q[0] * a + q[3] * b + q[6] * c, ny = q[1] * a + q[4] * b + q[7] * c, nz = q[2] * a + q[5] * b + q[8] * c; const l = Math.hypot(nx, ny, nz) || 1; N[w] = nx / l; N[w + 1] = ny / l; N[w + 2] = nz / l;
     const u = (o + i) * 2; if (r.mat === 'fence') { U[u] = (X + Z) / 0.5; U[u + 1] = Y / 0.5; } else if (sc) { U[u] = X / sc; U[u + 1] = -Z / sc; } else if (UU) { U[u] = UU[i * 2]; U[u + 1] = UU[i * 2 + 1]; } else { U[u] = 0; U[u + 1] = 0; }
-    C[w] = r.r; C[w + 1] = r.g; C[w + 2] = r.b; } };
+    if (CV) { C[w] = r.r * CV[k]; C[w + 1] = r.g * CV[k + 1]; C[w + 2] = r.b * CV[k + 2]; } else { C[w] = r.r; C[w + 1] = r.g; C[w + 2] = r.b; } } };
 const writeRec = (r, P, N, U, C, o) => { if (r.job) writeJob(r, P, N, U, C, o); else { P.set(r.p, o * 3); N.set(r.n, o * 3); U.set(r.uv, o * 2); C.set(r.c, o * 3); } };
 // junta listas de números numa geometria só (posição, normal, uv, cor)
 const mergeRecs = L => { if (!L.length) return null; let n = 0; for (const r of L) n += r.count; const P = new Float32Array(n * 3), N = new Float32Array(n * 3), U = new Float32Array(n * 2), C = new Float32Array(n * 3); let o = 0; for (const r of L) { writeRec(r, P, N, U, C, o); o += r.count; }
@@ -65,7 +67,9 @@ export class Builder {
     else if (U) uv.set(U.subarray(0, n * 2));
     if (typeof hex === 'object' && hex.isColor) _c.copy(hex); else _c.set(hex);
     if (jit) _c.multiplyScalar(1 + rr(-jit, jit));
-    for (let i = 0; i < n; i++) { col[i * 3] = _c.r; col[i * 3 + 1] = _c.g; col[i * 3 + 2] = _c.b; }
+    const CV = g.tpl ? g.cv : null; // adereços do Blender: a cor de cada vértice (sombra cozida) multiplica a do sítio
+    if (CV) for (let i = 0, k = 0; i < n; i++, k += 3) { col[k] = _c.r * CV[k]; col[k + 1] = _c.g * CV[k + 1]; col[k + 2] = _c.b * CV[k + 2]; }
+    else for (let i = 0; i < n; i++) { col[i * 3] = _c.r; col[i * 3 + 1] = _c.g; col[i * 3 + 2] = _c.b; }
     const geo = { p: pos, n: nor, uv, c: col, count: n, dispose() {} };
     // coisas finas ou pequenas (cabos, postes, placas, cadeiras, carros) desenham-se depois da silhueta do jogador: tapam-no normalmente mas não o põem em raio-X.
     // Só paredes, edifícios, camiões, pilares e lajes por cima (viaduto, pisos) acendem a silhueta, porque só essas o escondem a sério
@@ -87,6 +91,11 @@ export class Builder {
   cap(r, len, x, y, z, hex, o = {}) { return this.add(new THREE.CapsuleGeometry(r, len, 4, 12), hex, o.mat, mat4(x, y, z, o.ry || 0, o.rx || 0, o.rz || 0), o.jit); }
   // chão horizontal (retângulo em x/z)
   floor(x0, z0, x1, z1, y, hex, mat = 'v') { const g = new THREE.PlaneGeometry(x1 - x0, z1 - z0); g.rotateX(-Math.PI / 2); return this.add(g, hex, mat, mat4((x0 + x1) / 2, y, (z0 + z1) / 2)); }
+  // adereço do Blender: devolve false se o ficheiro não chegou (quem chama faz as caixas de antes). Só as peças com tint levam a cor do sítio e o jit
+  model(name, x, y, z, ry, tint = 0xffffff, o = {}) { const L = propParts(name); if (!L) return false; const M = mat4(x, y, z, ry || 0, o.rx || 0, o.rz || 0, (o.s || 1) * (o.sx || 1), o.s || 1, (o.s || 1) * (o.sz || 1)); let jit = o.jit || 0;
+    if (!this.dry) { const e = this.m.elements, wx = e[0] * x + e[4] * y + e[8] * z + e[12], wz = e[2] * x + e[6] * y + e[10] * z + e[14]; const c = PSTAT[name] || (PSTAT[name] = { n: 0, at: [] }); c.n++; if (c.at.length < 6) c.at.push([+wx.toFixed(1), +wz.toFixed(1), +(Math.atan2(e[8], e[10]) + (ry || 0)).toFixed(2)]); }
+    for (const P of L) { this.add(P, P.t ? tint : 0xffffff, P.m === 'lit' ? 'lit' : (o.mat && P.m === 'v' ? o.mat : P.m), M, P.t ? jit : 0); if (P.t) jit = 0; }
+    if (jit) rr(-jit, jit); return true; }
   plane(w, h, x, y, z, hex, o = {}) { const g = new THREE.PlaneGeometry(w, h); if (o.uv) { const uv = g.attributes.uv; for (let i = 0; i < uv.count; i++) uv.setXY(i, o.uv.u0 + uv.getX(i) * (o.uv.u1 - o.uv.u0), o.uv.v0 + uv.getY(i) * (o.uv.v1 - o.uv.v0)); } return this.add(g, hex, o.mat, mat4(x, y, z, o.ry || 0, o.rx || 0, o.rz || 0), o.jit); }
   tube(points, r, hex, o = {}) { const c = new THREE.CatmullRomCurve3(points); const t0 = this.thin; this.thin = true; try { return this.add(new THREE.TubeGeometry(c, o.seg || 10, r, 4, false), hex, o.mat); } finally { this.thin = t0; } }
   // adiado (zonas que se constroem enquanto andas): guarda só o molde, a matriz e a cor; as contas fazem-se aos bocados, nas imagens seguintes
