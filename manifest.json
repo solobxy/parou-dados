@@ -1,14 +1,14 @@
 {
-  "built_at": "2026-11-27T13:05:06.063860+00:00",
-  "db_bytes": 954433536,
-  "gz_bytes": 242888562,
+  "built_at": "2026-11-27T17:06:28.582841+00:00",
+  "db_bytes": 962113536,
+  "gz_bytes": 244397643,
   "totals": {
-    "lines": 3853,
-    "stops": 78924,
-    "trips": 156245,
-    "stop_times": 4916068,
-    "operators": 43,
-    "operators_ok": 42,
+    "lines": 3908,
+    "stops": 80415,
+    "trips": 157165,
+    "stop_times": 4956964,
+    "operators": 44,
+    "operators_ok": 43,
     "operators_desatualizados": 2
   },
   "feeds": [
@@ -194,7 +194,7 @@
       "validade": "ok",
       "dias_validade": 124,
       "horario_prolongado": false,
-      "url": "https://files.mobilitydatabase.org/mdb-1927/latest.zip",
+      "url": "https://www.tub.pt/developer/gtfs/feed/tub.zip",
       "last_error": null,
       "servicos_associados": null,
       "servicos_sem_calendario": null,
@@ -442,11 +442,30 @@
       "dias_validade": 365,
       "horario_prolongado": false,
       "url": "https://barraqueiro-oeste.pt/horarios-em-pdf/",
-      "last_error": "Hoje falhou, mantidos os dados de 2026-11-27T12:51:42.786537+00:00: https://barraqueiro-oeste.pt/horarios-em-pdf/ -> Barraqueiro Oeste: a página de horários não tem os PDFs das linhas TUT",
+      "last_error": null,
       "servicos_associados": null,
       "servicos_sem_calendario": null,
       "viagens_hoje": 87,
       "viagens_amanha": 32,
+      "dias_uteis_sem_servico": 0
+    },
+    {
+      "id": "azoresbus",
+      "operator_name": "AzoresBus (São Miguel)",
+      "status": "OK",
+      "lines": 55,
+      "stops": 1491,
+      "trips": 920,
+      "valid_until": "2026-12-13",
+      "validade": "ok",
+      "dias_validade": 16,
+      "horario_prolongado": false,
+      "url": "https://azoresbus.pt/Schedule",
+      "last_error": null,
+      "servicos_associados": null,
+      "servicos_sem_calendario": null,
+      "viagens_hoje": 557,
+      "viagens_amanha": 215,
       "dias_uteis_sem_servico": 0
     },
     {
@@ -831,12 +850,17 @@
     }
   ],
   "desenhos": {
-    "bytes": 18734023,
+    "bytes": 20070590,
     "por_operador": {
       "ave_mobilidade": {
         "viagens": 1779,
         "com_desenho": 1779,
         "desenhos": 495
+      },
+      "azoresbus": {
+        "viagens": 920,
+        "com_desenho": 920,
+        "desenhos": 920
       },
       "barraqueiro_oeste": {
         "viagens": 119,
@@ -855,8 +879,8 @@
       },
       "carris": {
         "viagens": 30896,
-        "com_desenho": 30042,
-        "desenhos": 295
+        "com_desenho": 30896,
+        "desenhos": 310
       },
       "cim_ttm": {
         "viagens": 380,
@@ -1025,8 +1049,8 @@
       },
       "tub_braga": {
         "viagens": 3794,
-        "com_desenho": 3717,
-        "desenhos": 392
+        "com_desenho": 3718,
+        "desenhos": 393
       },
       "tuba_barcelos": {
         "viagens": 644,
@@ -1234,13 +1258,13 @@
           "total": 385
         },
         "servicos_com_data_hoje": [
+          "FU",
           "CU",
           "AU",
-          "BexpU",
-          "FU",
           "DU",
-          "BU",
-          "EU"
+          "EU",
+          "BexpU",
+          "BU"
         ],
         "viagens_por_servico": [
           {
@@ -1298,12 +1322,12 @@
   "andante": {
     "fonte_zonas": "https://andante.pt/titulos-ocasionais/",
     "fonte_precos": "https://andante.pt/comprar/andante-azul/",
-    "zonas_obtidas": "2026-11-27T13:04:46+00:00",
+    "zonas_obtidas": "2026-11-27T17:06:05+00:00",
     "n_zonas": 154,
     "n_paragens": 13711,
     "precos_em_vigor_desde": "2026-01-01",
-    "precos_obtidos": "2026-11-27T13:04:46+00:00",
+    "precos_obtidos": "2026-11-27T17:06:05+00:00",
     "z2": 1.4
   },
-  "duration_s": 347
+  "duration_s": 471
 }
