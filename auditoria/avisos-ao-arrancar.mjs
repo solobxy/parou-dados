@@ -13,13 +13,18 @@ const ok = (n, c, e = '') => { if (!c) falhas++; console.log(c ? 'OK     ' : 'FA
 const agora = Date.now();
 const hojeIni = new Date(agora - 3600_000).toISOString(), hojeFim = new Date(agora + 10 * 3600_000).toISOString();
 const greve = { id: 'mp-greve-teste', tipo: 'greve', status: 'Ativo', operador: 'Metro do Porto', título: 'Greve reduz serviço do Metro', source: 'Metro do Porto — avisos', source_url: 'u', start_datetime: hojeIni, end_datetime: hojeFim, content_hash: 'x', servico_na_greve: { linhas: [], trocos: [['senhora da hora', 'estadio do dragao']], horas: [0, 1440] } };
-fs.writeFileSync(path.join(PASTA, 'avisos-em-memoria.json'), JSON.stringify({ em: agora - 60_000, avisos: [greve] }));
+fs.writeFileSync(path.join(PASTA, 'avisos-em-memoria.json'), JSON.stringify({ em: agora - 60_000, versao: 2, entradas: [['metro-porto|mp-greve-teste', greve]] }));
 const P = await import(path.join(APP, 'src/server/grevesPlaneador.ts'));
 const g = P.grevesAgora();
 ok('ao arrancar, a greve da cópia está logo em memória', g.some((x) => x.operador === 'Metro do Porto' && x.servico?.trocos?.length === 1), JSON.stringify(g.map((x) => x.titulo)));
 // cópia velha (mais de 6 h) não se usa
 const C = await import(path.join(APP, 'src/server/centralAlertsEngine.ts'));
-fs.writeFileSync(path.join(PASTA, 'avisos-em-memoria.json'), JSON.stringify({ em: agora - 7 * 3600_000, avisos: [{ ...greve, id: 'velho' }] }));
+fs.writeFileSync(path.join(PASTA, 'avisos-em-memoria.json'), JSON.stringify({ em: agora - 7 * 3600_000, versao: 2, entradas: [['velho', { ...greve, id: 'velho' }]] }));
 ok('cópia com mais de 6 h: não se repõe', C.reporCopiaDosAvisos() === 0);
+// 27/11/2026: repor com a chave errada duplicava as greves («o mesmo aviso duas vezes»)
+ok('a greve reposta aparece uma só vez', g.filter((x) => x.titulo === 'Greve reduz serviço do Metro').length === 1, String(g.length));
+ok('cópia antiga (sem chaves) não se repõe', (fs.writeFileSync(path.join(PASTA, 'avisos-em-memoria.json'), JSON.stringify({ em: agora, avisos: [{ ...greve, id: 'antigo' }] })), C.reporCopiaDosAvisos()) === 0);
+const rep = C.semAvisosRepetidos([{ id: 'a', n: 1 }, { id: 'a', n: 2 }, { id: 'b' }, {}]);
+ok('lista sem avisos repetidos (mesmo id)', rep.length === 3 && rep[0].n === 1, JSON.stringify(rep));
 console.log(falhas ? `${falhas} FALHOU` : 'Tudo OK');
 process.exit(falhas ? 1 : 0);
