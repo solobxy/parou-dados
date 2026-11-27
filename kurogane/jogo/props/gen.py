@@ -24,8 +24,9 @@ for f in sorted(glob.glob('out/*.json')):
         parts.append({'m': p['m'], 't': p['t'], 'n': n, 'v': len(V), 'a': [round(v, 4) for v in mn + mx], 's': round(sc, 3), 'o': o})
         total += n // 3
     idx[d['name']] = parts
-open('props.bin', 'wb').write(bytes(blob))
-open('props.json', 'w').write(json.dumps(idx, separators=(',', ':')))
+import base64
 h = hashlib.sha256(bytes(blob) + json.dumps(idx).encode()).hexdigest()[:10]
+# vai como JSON (base64): o servidor dos artefactos só serve tipos conhecidos
+open('props.json', 'w').write(json.dumps({'v': h, 'b': base64.b64encode(bytes(blob)).decode()}, separators=(',', ':')))
 open('../src/propver.js', 'w').write("// gerado por props/gen.py: índice dos adereços (o ficheiro props.bin vai ao lado da página)\nexport const PROPV = '%s';\nexport const PROPIDX = %s;\n" % (h, json.dumps(idx, separators=(',', ':'))))
-print('adereços:', len(idx), 'triângulos:', total, 'props.bin: %.0f KB' % (len(blob) / 1024))
+print('adereços:', len(idx), 'triângulos:', total, 'dados: %.0f KB' % (len(blob) / 1024))

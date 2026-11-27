@@ -1,5 +1,5 @@
 // Adereços modelados no Blender (props/defs.py): formas com pormenor e sombra de contacto (AO) já cozida nas cores dos vértices.
-// Vêm num ficheiro ao lado da página (props.bin); se não chegar, o mapa usa as caixas simples de antes (os sorteios do mapa são os mesmos).
+// Vêm num ficheiro ao lado da página (props.json, os bytes em base64); se não chegar, o mapa usa as caixas simples de antes (os sorteios do mapa são os mesmos).
 import { PROPV, PROPIDX } from './propver.js';
 let BUF = null; const CACHE = new Map();
 export const propsReady = () => !!BUF;
@@ -8,8 +8,8 @@ export async function loadProps(ms = 6000) {
   try { if (/[?&]noprops\b/.test(location.search)) return false; const c = JSON.parse(localStorage.getItem('kurogane-cfg-v1') || 'null'); if (c && c.props === false) return false; } catch (e) { } // definição «Objetos com pormenor» desligada
   try {
     const ctl = typeof AbortController === 'function' ? new AbortController() : null, tm = setTimeout(() => ctl && ctl.abort(), ms);
-    const r = await fetch('props.bin?v=' + PROPV, ctl ? { signal: ctl.signal } : {}); clearTimeout(tm);
-    if (!r.ok) return false; BUF = await r.arrayBuffer(); return true;
+    const r = await fetch('props.json?v=' + PROPV, ctl ? { signal: ctl.signal } : {}); clearTimeout(tm);
+    if (!r.ok) return false; const j = await r.json(); if (j.v !== PROPV) return false; const s = atob(j.b), u = new Uint8Array(s.length); for (let i = 0; i < s.length; i++) u[i] = s.charCodeAt(i); BUF = u.buffer; return true;
   } catch (e) { return false; }
 }
 // as peças de um adereço, prontas para o construtor (sem índice, como os moldes): posição, normal, cor por vértice e caixa
