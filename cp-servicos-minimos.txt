@@ -1,0 +1,28 @@
+OK      dias do documento: 24 e 25/11/2026 
+OK      Alfa/IC: 180 (Porto–Faro) nos dois dias 
+OK      Alfa/IC: 520 só a 25 (coluna do dia 25) ["121","126","134","135","180","182","184","186","523","528","529","572","596","620","621","674","692","723","731"]
+OK      Alfa/IC: 126 e 121 só a 24 
+OK      Alfa/IC: 529 (chega à 01:43) nos dois dias 
+OK      Regional: 3000 Valença–Porto e 850 (com espaço antes do número) 
+OK      Regional: mais de 60 comboios por dia 72
+OK      Urbanos de Lisboa: 16001 e 18054 (cabeçalho na mesma linha e noutra) 
+OK      Urbanos do Porto (sem colunas por dia): 15153 nos dois dias 
+OK      Urbanos do Porto: 71 comboios 71
+OK      Urbanos de Coimbra: 8 comboios (16801…16831) 
+OK      horas e números de página não viram comboios 
+OK      juntar: cada dia com os comboios de todos os documentos 
+OK      ligações: as duas dos serviços mínimos, com o endereço completo ["https://www.cp.pt/info/documents/d/cp/servicos-minimos-lc-24e25nov","https://www.cp.pt/info/documents/d/cp/servicos-minimos-urb-pt-24e25nov"]
+OK      número do comboio da viagem (cp:15153_20251226 → 15153) 
+OK      o aviso leva a lista para o planeador 
+OK      180 às 05:40 de 24/11: serviço mínimo 
+OK      520 a 24/11 (só a 25): pode não se realizar 
+OK      520 a 25/11: serviço mínimo 
+OK      529 depois da meia-noite (01:00 de 26): lista de 25 
+OK      dia da greve sem lista (23/11): como antes (pode não se realizar) 
+OK      sem número de comboio: como antes 
+OK      outro operador não é afetado 
+OK      estado na partida: «garantido» e «incerta» 
+OK      partida de uma paragem (greveDaPartida) usa o número da viagem 
+OK      resumo do aviso diz que há serviços mínimos 
+
+Tudo OK

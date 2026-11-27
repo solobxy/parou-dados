@@ -1,0 +1,16 @@
+OK      TTSL: título com o dia («Plenário TTSL | 7 mai») Plenário TTSL | 7 mai
+OK      TTSL: não é greve, é plenário 
+OK      TTSL: das 13:15 às 18:15 de 7/5/2026 2026-05-07T12:15:00.000Z 2026-05-07T17:15:00.000Z
+OK      TTSL: data de publicação lida («6 Maio, 2026» sem «de») 
+OK      TTSL: anunciado na véspera fica «Futuro» 
+OK      TTSL desconvocado («realizado na devida normalidade»): Cancelado Cancelado
+OK      MTS: 24/9/2026 das 10:30 às 14:30 2026-09-24T09:30:00.000Z 2026-09-24T13:30:00.000Z
+OK      aviso antigo (já passou) não entra 
+OK      só o plenário em vigor conta (o desconvocado não) 
+OK      barco às 14:00: perturbação prevista (plenário) 
+OK      barco às 12:00 e às 18:30: sem marca 
+OK      outro operador não é afetado 
+OK      estado da partida: «pode não se realizar» 
+OK      resumo: plenário das 13:15 às 18:15 {"das":"13:15","as":"18:15"}
+
+Tudo OK

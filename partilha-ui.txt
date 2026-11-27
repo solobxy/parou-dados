@@ -1,0 +1,21 @@
+OK      o botão «Partilhar a viagem» aparece nos detalhes da opção, com alvo de 40 px 40
+OK      aparece a faixa «A partilhar a viagem…» 
+OK      sem folha de partilha, a mensagem com a ligação fica copiada Acompanha a minha viagem até Estação da Trindade: chego por volta das 23:48. https://parou.pt/v/rowxwqg4kdh5
+OK      o botão sai enquanto a partilha está ativa 
+OK      [320] página da ligação: destino e hora de chegada Viagem até Estação da Trindade Chegada prevista às 23:48 Posição atualizada há 0 s. Posição Destino F 23:28 Campanhã → 2
+OK      [320] página da ligação: o transporte 
+OK      [320] página da ligação: a posição está atualizada 
+OK      [320] sem scroll para o lado 0px
+OK      [390] página da ligação: destino e hora de chegada Viagem até Estação da Trindade Chegada prevista às 23:48 Posição atualizada há 3 s. Posição Destino F 23:28 Campanhã → 2
+OK      [390] página da ligação: o transporte 
+OK      [390] página da ligação: a posição está atualizada 
+OK      [390] sem scroll para o lado 0px
+OK      [1280] página da ligação: destino e hora de chegada Viagem até Estação da Trindade Chegada prevista às 23:48 Posição atualizada há 5 s. Posição Destino F 23:28 Campanhã → 2
+OK      [1280] página da ligação: o transporte 
+OK      [1280] página da ligação: a posição está atualizada 
+OK      [1280] sem scroll para o lado 0px
+OK      «Parar» tira a faixa 
+OK      depois de parar, a ligação diz que a partilha acabou 
+OK      sem erros na página 
+
+Tudo OK

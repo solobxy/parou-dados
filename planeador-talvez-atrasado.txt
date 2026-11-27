@@ -1,0 +1,30 @@
+[SQLite DB] Base de dados sem feeds. A registar feeds oficiais do catálogo...
+[SQLite DB] 31 feeds registados com sucesso.
+[Planeador] índice pronto (2 padrões, 2 paragens, 5 ms)
+OK      o motor em memória do planeador ficou pronto pronto (2 padrões, 2 paragens, 5 ms)
+[Central Alerts Engine] A sincronizar alertas oficiais de todas as fontes reais...
+[Planeador] previsões da Carris Metropolitana: não consegui ler (HTTP 503); uso o horário.
+[Planeador] previsões da UNIR: não consegui ler (HTTP 503); uso o horário.
+[TUB] viagens: não consegui ler (HTTP 503); a app usa o horário até voltar.
+[TML GO Hub] Erro em /alerts: HTTP 503 
+OK      [agora] aparece o 8019 das 12:23 como "pode ainda não ter passado" 8017@12:38→12:56 [mais_rapido] | 8019@12:23→12:41 (talvez)
+OK      [agora] não é a recomendada (a 1.ª é a garantida: 8017 das 12:38) 8017@12:38→12:56 [mais_rapido] | 8019@12:23→12:41 (talvez)
+OK      [agora] não leva o destaque "mais rápido" nem "melhor" 8017@12:38→12:56 [mais_rapido] | 8019@12:23→12:41 (talvez)
+OK      [agora] sai "já" (nunca uma hora de saída no passado) 12:24
+OK      [agora] o troço vem marcado para o ecrã explicar 
+[Central Alerts Engine] Sincronização concluída. Total: 0 alertas auditados.
+OK      [telemóvel] depois de reordenar, a 1.ª continua a ser a garantida 8017@12:38→12:56 [mais_rapido] | 8019@12:23→12:41 (talvez)
+OK      [telemóvel] a "talvez" fica em 2.º, sem destaque 8017@12:38→12:56 [mais_rapido] | 8019@12:23→12:41 (talvez)
+OK      [telemóvel] "mais rápido" e "melhor" só nas garantidas 8017@12:38→12:56 [mais_rapido] | 8019@12:23→12:41 (talvez)
+[Central Alerts Engine] A sincronizar alertas oficiais de todas as fontes reais...
+[Central Alerts Engine] Sincronização concluída. Total: 0 alertas auditados.
+OK      [mais tarde] num pedido para outra hora não há "pode ainda não ter passado" 8019@13:03→13:21 [mais_rapido] | 8017@13:08→13:26
+[Central Alerts Engine] A sincronizar alertas oficiais de todas as fontes reais...
+[Central Alerts Engine] Sincronização concluída. Total: 0 alertas auditados.
+OK      [medido] com 4 min de janela medida, o 8019 das 12:23 ainda aparece às 12:26 8017@12:38→12:56 [mais_rapido] | 8019@12:23→12:41 (talvez)
+[Central Alerts Engine] A sincronizar alertas oficiais de todas as fontes reais...
+[Central Alerts Engine] Sincronização concluída. Total: 0 alertas auditados.
+OK      [medido] operador pontual: não há "pode ainda não ter passado" 8017@12:38→12:56 [mais_rapido]
+OK      [ecrã] o cartão explica a opção 
+
+Tudo OK

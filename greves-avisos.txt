@@ -1,0 +1,45 @@
+OK      [tipo] plenário com a causa STRIKE não é greve atraso significativo
+OK      [tipo] «possíveis constrangimentos» não é greve 
+OK      [tipo] greve continua a ser greve 
+OK      [tipo] greve com plenário no texto continua greve (o título diz greve) 
+OK      [cp] o aviso da greve do SMAQ é lido ["greve-23a27-nov","greve-itau-7fevereiro","plataformas-intercidades-23-27-novembro",null]
+OK      [cp] é uma greve greve
+OK      [cp] título do aviso Greve - serviços mínimos a 24 e 25 de novembro
+OK      [cp] operador CP 
+OK      [cp] começa no início do dia 23/11 (Lisboa) 2026-11-23T00:00:00.000Z
+OK      [cp] acaba no fim do dia 27/11 (Lisboa) 2026-11-27T23:59:59.999Z
+OK      [cp] liga ao aviso oficial https://www.cp.pt/pt/detalhe-aviso/greve-23a27-nov
+OK      [cp] o resumo diz quem convocou Perturbações na circulação de 23 a 27 de novembro 2026 — Por motivo de greve con
+OK      [cp] mudança de plataformas não é greve outros alertas oficiais
+OK      [cp] aviso sem datas (validação obrigatória) fica de fora 
+OK      [cp] dias de perturbação fora da greve: 22 e 28/11 ["2026-11-22","2026-11-28"]
+OK      [cp] sem esses dias no texto, não inventa 
+[SQLite DB] Base de dados sem feeds. A registar feeds oficiais do catálogo...
+[SQLite DB] 31 feeds registados com sucesso.
+[SEO] Índice: 0 operadores, 0 linhas, 0 paragens (5 ms)
+OK      [página] CP na grelha como greve (não «Notícias de greve») Greve a decorrer · até 30/11
+OK      [página] CP na grelha com a data do fim Greve a decorrer · até 30/11
+OK      [página] Metro Sul do Tejo: «Greve anunciada» com a data Greve anunciada · 28/11
+OK      [página] plenário: a Carris Metropolitana não leva selo de greve Sem greve anunciada
+OK      [página] há uma secção de plenários e possíveis constrangimentos 
+OK      [página] o plenário está nessa secção e não nas greves 
+OK      [página] a greve da CP liga ao aviso oficial 
+OK      [página] os outros dias com perturbações aparecem prevê perturbações também a 25 de novembro e 1 de dezembro.
+OK      [datas] o HTML não tem «amanhã», «hoje às» nem «ontem» 
+OK      [datas] as datas vão num <time datetime> para o browser 
+OK      [datas] a página traz o script que as troca 
+OK      [datas] script encontrado 
+OK      [datas] no browser, amanhã às 05:00 lê-se «amanhã às 05:00» amanhã às 05:00
+OK      [datas] datas longe ficam por extenso por extenso
+OK      [descrição] /greves inteira, até 155, sem reticências Há greve hoje? Greves anunciadas no metro, na CP, Carris, STCP, Fertagus e outros transportes, com datas e serviços mínimos. Sempre atualizado. (143)
+OK      [cp] página /greves/cp diz greve a decorrer 
+OK      [cp] descrição sem «amanhã»/«hoje às» e sem reticências Sim: há greve da CP (comboios) a decorrer. Datas, serviços mínimos, notícias e alternativas em dia de greve, sempre atualizado. (127)
+OK      [cp] perguntas frequentes (Google) sem «amanhã»/«hoje às» 
+OK      [plenário] /greves/carris-metropolitana não diz que há greve 
+OK      [plenário] /greves/carris-metropolitana mostra o plenário à parte 
+OK      [canal] data por extenso, sem «amanhã» sábado, 28 de novembro às 07:00
+OK      [canal] no canal, as datas dos avisos do IPMA e das greves usam quandoFixo 
+OK      [descrição] texto longo fica com frases inteiras, sem reticências Há greve hoje? Greves anunciadas no metro de Lisboa e do Porto, na CP e nos comboios, na Carris, na STCP, na Fertagus e noutros transportes, com datas. (151)
+OK      [descrição] frase única longa: corta na vírgula e fecha com ponto Horários de autocarro, metro, comboio e barco em Portugal: Carris Metropolitana, Carris, Metro de Lisboa, CP, STCP. (115)
+OK      [descrição] texto curto fica igual 
+Todos os testes passaram

@@ -1,0 +1,62 @@
+OK      [320 claro] preço no resumo das duas opções Andante, não na da CP ["Bilhete Andante Z2:\n1,40 €","Bilhete Andante Z3:\n1,85 €"]
+OK      [320 claro] opção sem tarifa (CP) não mostra preço 
+OK      [320 claro] preço dentro do cartão e sem tapar as linhas 
+OK      [320 claro] ao abrir: título e preço Andante Z2 · 1,40 € Viagem simples: vale 1 h desde a 1.ª validação. Se ainda não tens cartão Andante Azul, custa mais 0,60 €. Tarifário oficial App Anda
+OK      [320 claro] quanto tempo vale e o cartão Azul 
+OK      [320 claro] ligação ao tarifário oficial https://andante.pt/comprar/andante-azul/
+OK      [320 claro] ligações com alvo de toque de 40 px [40,40]
+OK      [320 claro] sem scroll para o lado 0px
+OK      [320 claro] texto secundário com contraste ≥ 4,5:1 5.33
+OK      [320 claro] sem erros na página 
+OK      [390 claro] preço no resumo das duas opções Andante, não na da CP ["Bilhete Andante Z2:\n1,40 €","Bilhete Andante Z3:\n1,85 €"]
+OK      [390 claro] opção sem tarifa (CP) não mostra preço 
+OK      [390 claro] preço dentro do cartão e sem tapar as linhas 
+OK      [390 claro] ao abrir: título e preço Andante Z2 · 1,40 € Viagem simples: vale 1 h desde a 1.ª validação. Se ainda não tens cartão Andante Azul, custa mais 0,60 €. Tarifário oficial App Anda
+OK      [390 claro] quanto tempo vale e o cartão Azul 
+OK      [390 claro] ligação ao tarifário oficial https://andante.pt/comprar/andante-azul/
+OK      [390 claro] ligações com alvo de toque de 40 px [40,40]
+OK      [390 claro] sem scroll para o lado 0px
+OK      [390 claro] texto secundário com contraste ≥ 4,5:1 5.33
+OK      [390 claro] sem erros na página 
+OK      [390 escuro] preço no resumo das duas opções Andante, não na da CP ["Bilhete Andante Z2:\n1,40 €","Bilhete Andante Z3:\n1,85 €"]
+OK      [390 escuro] opção sem tarifa (CP) não mostra preço 
+OK      [390 escuro] preço dentro do cartão e sem tapar as linhas 
+OK      [390 escuro] ao abrir: título e preço Andante Z2 · 1,40 € Viagem simples: vale 1 h desde a 1.ª validação. Se ainda não tens cartão Andante Azul, custa mais 0,60 €. Tarifário oficial App Anda
+OK      [390 escuro] quanto tempo vale e o cartão Azul 
+OK      [390 escuro] ligação ao tarifário oficial https://andante.pt/comprar/andante-azul/
+OK      [390 escuro] ligações com alvo de toque de 40 px [40,40]
+OK      [390 escuro] sem scroll para o lado 0px
+OK      [390 escuro] texto secundário com contraste ≥ 4,5:1 6.95
+OK      [390 escuro] sem erros na página 
+OK      [390 ambar] preço no resumo das duas opções Andante, não na da CP ["Bilhete Andante Z2:\n1,40 €","Bilhete Andante Z3:\n1,85 €"]
+OK      [390 ambar] opção sem tarifa (CP) não mostra preço 
+OK      [390 ambar] preço dentro do cartão e sem tapar as linhas 
+OK      [390 ambar] ao abrir: título e preço Andante Z2 · 1,40 € Viagem simples: vale 1 h desde a 1.ª validação. Se ainda não tens cartão Andante Azul, custa mais 0,60 €. Tarifário oficial App Anda
+OK      [390 ambar] quanto tempo vale e o cartão Azul 
+OK      [390 ambar] ligação ao tarifário oficial https://andante.pt/comprar/andante-azul/
+OK      [390 ambar] ligações com alvo de toque de 40 px [40,40]
+OK      [390 ambar] sem scroll para o lado 0px
+OK      [390 ambar] texto secundário com contraste ≥ 4,5:1 5.87
+OK      [390 ambar] sem erros na página 
+OK      [1280 claro] preço no resumo das duas opções Andante, não na da CP ["Bilhete Andante Z2:\n1,40 €","Bilhete Andante Z3:\n1,85 €"]
+OK      [1280 claro] opção sem tarifa (CP) não mostra preço 
+OK      [1280 claro] preço dentro do cartão e sem tapar as linhas 
+OK      [1280 claro] ao abrir: título e preço Andante Z2 · 1,40 € Viagem simples: vale 1 h desde a 1.ª validação. Se ainda não tens cartão Andante Azul, custa mais 0,60 €. Tarifário oficial App Anda
+OK      [1280 claro] quanto tempo vale e o cartão Azul 
+OK      [1280 claro] ligação ao tarifário oficial https://andante.pt/comprar/andante-azul/
+OK      [1280 claro] ligações com alvo de toque de 40 px [40,40]
+OK      [1280 claro] sem scroll para o lado 0px
+OK      [1280 claro] texto secundário com contraste ≥ 4,5:1 5.33
+OK      [1280 claro] sem erros na página 
+OK      [320 escuro] preço no resumo das duas opções Andante, não na da CP ["Bilhete Andante Z2:\n1,40 €","Bilhete Andante Z3:\n1,85 €"]
+OK      [320 escuro] opção sem tarifa (CP) não mostra preço 
+OK      [320 escuro] preço dentro do cartão e sem tapar as linhas 
+OK      [320 escuro] ao abrir: título e preço Andante Z2 · 1,40 € Viagem simples: vale 1 h desde a 1.ª validação. Se ainda não tens cartão Andante Azul, custa mais 0,60 €. Tarifário oficial App Anda
+OK      [320 escuro] quanto tempo vale e o cartão Azul 
+OK      [320 escuro] ligação ao tarifário oficial https://andante.pt/comprar/andante-azul/
+OK      [320 escuro] ligações com alvo de toque de 40 px [40,40]
+OK      [320 escuro] sem scroll para o lado 0px
+OK      [320 escuro] texto secundário com contraste ≥ 4,5:1 6.95
+OK      [320 escuro] sem erros na página 
+
+Tudo OK

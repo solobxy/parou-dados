@@ -1,0 +1,74 @@
+OK      [320 claro] o resumo da opção com CP avisa da greve Greve na CP · pode não circular
+OK      [320 claro] só as opções com greve avisam (CP e metro) 2
+OK      [320 claro] troço do metro que funciona na greve: «menos viagens», não «pode não circular» Greve na Metro do Porto · menos viagens
+OK      [320 claro] no troço do comboio: explicação e aviso oficial Greve na CP à hora desta viagem: pode não circular. Aviso oficial
+OK      [320 claro] ligação ao aviso oficial da CP https://www.cp.pt/pt/detalhe-aviso/greve-23a27-nov
+OK      [320 claro] ligação com alvo de toque de 40 px 40
+OK      [320 claro] sem scroll para o lado 0px
+OK      [320 claro] texto do aviso com contraste ≥ 4,5:1 18.88
+OK      [320 claro] troço do metro: funciona, com uma viagem a cada 15 min Greve na Metro do Porto: este troço funciona, com uma viagem a cada 15 min (7h–20h). Ver notícia
+OK      [320 claro] fonte dita como notícia («Ver notícia»), com a ligação Greve na Metro do Porto: este troço funciona, com uma viagem a cada 15 min (7h–20h). Ver notícia
+OK      [320 claro] sem scroll para o lado (metro aberto) 0px
+OK      [320 claro] sem erros na página 
+OK      [390 claro] o resumo da opção com CP avisa da greve Greve na CP · pode não circular
+OK      [390 claro] só as opções com greve avisam (CP e metro) 2
+OK      [390 claro] troço do metro que funciona na greve: «menos viagens», não «pode não circular» Greve na Metro do Porto · menos viagens
+OK      [390 claro] no troço do comboio: explicação e aviso oficial Greve na CP à hora desta viagem: pode não circular. Aviso oficial
+OK      [390 claro] ligação ao aviso oficial da CP https://www.cp.pt/pt/detalhe-aviso/greve-23a27-nov
+OK      [390 claro] ligação com alvo de toque de 40 px 40
+OK      [390 claro] sem scroll para o lado 0px
+OK      [390 claro] texto do aviso com contraste ≥ 4,5:1 18.88
+OK      [390 claro] troço do metro: funciona, com uma viagem a cada 15 min Greve na Metro do Porto: este troço funciona, com uma viagem a cada 15 min (7h–20h). Ver notícia
+OK      [390 claro] fonte dita como notícia («Ver notícia»), com a ligação Greve na Metro do Porto: este troço funciona, com uma viagem a cada 15 min (7h–20h). Ver notícia
+OK      [390 claro] sem scroll para o lado (metro aberto) 0px
+OK      [390 claro] sem erros na página 
+OK      [390 escuro] o resumo da opção com CP avisa da greve Greve na CP · pode não circular
+OK      [390 escuro] só as opções com greve avisam (CP e metro) 2
+OK      [390 escuro] troço do metro que funciona na greve: «menos viagens», não «pode não circular» Greve na Metro do Porto · menos viagens
+OK      [390 escuro] no troço do comboio: explicação e aviso oficial Greve na CP à hora desta viagem: pode não circular. Aviso oficial
+OK      [390 escuro] ligação ao aviso oficial da CP https://www.cp.pt/pt/detalhe-aviso/greve-23a27-nov
+OK      [390 escuro] ligação com alvo de toque de 40 px 40
+OK      [390 escuro] sem scroll para o lado 0px
+OK      [390 escuro] texto do aviso com contraste ≥ 4,5:1 16.12
+OK      [390 escuro] troço do metro: funciona, com uma viagem a cada 15 min Greve na Metro do Porto: este troço funciona, com uma viagem a cada 15 min (7h–20h). Ver notícia
+OK      [390 escuro] fonte dita como notícia («Ver notícia»), com a ligação Greve na Metro do Porto: este troço funciona, com uma viagem a cada 15 min (7h–20h). Ver notícia
+OK      [390 escuro] sem scroll para o lado (metro aberto) 0px
+OK      [390 escuro] sem erros na página 
+OK      [390 ambar] o resumo da opção com CP avisa da greve Greve na CP · pode não circular
+OK      [390 ambar] só as opções com greve avisam (CP e metro) 2
+OK      [390 ambar] troço do metro que funciona na greve: «menos viagens», não «pode não circular» Greve na Metro do Porto · menos viagens
+OK      [390 ambar] no troço do comboio: explicação e aviso oficial Greve na CP à hora desta viagem: pode não circular. Aviso oficial
+OK      [390 ambar] ligação ao aviso oficial da CP https://www.cp.pt/pt/detalhe-aviso/greve-23a27-nov
+OK      [390 ambar] ligação com alvo de toque de 40 px 40
+OK      [390 ambar] sem scroll para o lado 0px
+OK      [390 ambar] texto do aviso com contraste ≥ 4,5:1 16.51
+OK      [390 ambar] troço do metro: funciona, com uma viagem a cada 15 min Greve na Metro do Porto: este troço funciona, com uma viagem a cada 15 min (7h–20h). Ver notícia
+OK      [390 ambar] fonte dita como notícia («Ver notícia»), com a ligação Greve na Metro do Porto: este troço funciona, com uma viagem a cada 15 min (7h–20h). Ver notícia
+OK      [390 ambar] sem scroll para o lado (metro aberto) 0px
+OK      [390 ambar] sem erros na página 
+OK      [1280 claro] o resumo da opção com CP avisa da greve Greve na CP · pode não circular
+OK      [1280 claro] só as opções com greve avisam (CP e metro) 2
+OK      [1280 claro] troço do metro que funciona na greve: «menos viagens», não «pode não circular» Greve na Metro do Porto · menos viagens
+OK      [1280 claro] no troço do comboio: explicação e aviso oficial Greve na CP à hora desta viagem: pode não circular. Aviso oficial
+OK      [1280 claro] ligação ao aviso oficial da CP https://www.cp.pt/pt/detalhe-aviso/greve-23a27-nov
+OK      [1280 claro] ligação com alvo de toque de 40 px 40
+OK      [1280 claro] sem scroll para o lado 0px
+OK      [1280 claro] texto do aviso com contraste ≥ 4,5:1 18.88
+OK      [1280 claro] troço do metro: funciona, com uma viagem a cada 15 min Greve na Metro do Porto: este troço funciona, com uma viagem a cada 15 min (7h–20h). Ver notícia
+OK      [1280 claro] fonte dita como notícia («Ver notícia»), com a ligação Greve na Metro do Porto: este troço funciona, com uma viagem a cada 15 min (7h–20h). Ver notícia
+OK      [1280 claro] sem scroll para o lado (metro aberto) 0px
+OK      [1280 claro] sem erros na página 
+OK      [320 escuro] o resumo da opção com CP avisa da greve Greve na CP · pode não circular
+OK      [320 escuro] só as opções com greve avisam (CP e metro) 2
+OK      [320 escuro] troço do metro que funciona na greve: «menos viagens», não «pode não circular» Greve na Metro do Porto · menos viagens
+OK      [320 escuro] no troço do comboio: explicação e aviso oficial Greve na CP à hora desta viagem: pode não circular. Aviso oficial
+OK      [320 escuro] ligação ao aviso oficial da CP https://www.cp.pt/pt/detalhe-aviso/greve-23a27-nov
+OK      [320 escuro] ligação com alvo de toque de 40 px 40
+OK      [320 escuro] sem scroll para o lado 0px
+OK      [320 escuro] texto do aviso com contraste ≥ 4,5:1 16.12
+OK      [320 escuro] troço do metro: funciona, com uma viagem a cada 15 min Greve na Metro do Porto: este troço funciona, com uma viagem a cada 15 min (7h–20h). Ver notícia
+OK      [320 escuro] fonte dita como notícia («Ver notícia»), com a ligação Greve na Metro do Porto: este troço funciona, com uma viagem a cada 15 min (7h–20h). Ver notícia
+OK      [320 escuro] sem scroll para o lado (metro aberto) 0px
+OK      [320 escuro] sem erros na página 
+
+Tudo OK

@@ -1,0 +1,26 @@
+OK      [período] a semana vai de 18 a 24/11 2026-11-18 a 2026-11-24
+OK      [atrasos] UNIR: 300 amostras da semana (as de outubro não contam) 300
+OK      [atrasos] UNIR: 33,3% com 5+ min 33.3
+OK      [atrasos] UNIR: pior hora às 8h {"hora":8,"amostras":300,"mediana_min":0,"pct_2min_ou_mais":33.3,"pct_5min_ou_mais":33.3,"pct_10min_ou_mais":0,"pct_adiantado_1min_ou_mais":0}
+OK      [atrasos] TUB a horas 
+OK      [pontualidade] soma os dias da semana pesados pelas passagens (65% a horas) {"operador":"Carris Metropolitana","passagens":4000,"dias":2,"a_horas_pct":65,"atrasado_mais_5min_pct":30,"atrasado_mais_10min_pct":10,"adiantado_mais_1min_pct":20,"mediana_media_min":2}
+OK      [avisos] a greve da semana entra, a obra de setembro não {"greve":1}
+OK      [viagens] UNIR 60 por dia, antes 100 (-40%) {"operador":"UNIR","feed":"unirh","linhas":1,"viagens_dia":60,"antes":100,"variacao_pct":-40}
+OK      [viagens] a 8019 aparece nas linhas que perderam viagens {"operador":"UNIR","linha":"8019","viagens_dia":60,"antes":100,"variacao_pct":-40}
+OK      [notícias] conta as da semana {"greve":1}
+OK      [sempre] inclui as medições de outubro 
+OK      [períodos] terça 1 de dezembro fecha o dia e o mês (não a semana) 
+OK      [períodos] 1 de janeiro fecha mês, trimestre e anos dia,sempre,mes,trimestre,ano,2anos,3anos
+OK      [guardar] guarda o do dia, o da semana e o de sempre dia/2026-11-29.json, sempre/ultimo.json, semana/2026-11-29.json
+OK      [guardar] os ficheiros existem 
+[SQLite DB] Base de dados sem feeds. A registar feeds oficiais do catálogo...
+[SQLite DB] 31 feeds registados com sucesso.
+[Planeador] índice pronto (1 padrões, 2 paragens, 7 ms)
+OK      [horários] quarta: 3 viagens da L1, das 07:00 às 09:20 {"feed":"teste","linha":"teste:L1","nome":"L1","viagens":3,"primeira":25200,"ultima":33600}
+OK      [horários] domingo: 1 viagem 
+OK      [horários] o dia fica guardado no histórico {"viagens":3}
+OK      [à parte] o relatório feito noutro processo dá o mesmo {"periodo":"sempre","desde":"2020-01-01","ate":"2026-11-26","gerado":"2026-11-27T23:19:32.122Z","notas":"Atrasos: previsões em direto dos operadores, medidas de
+NOTA    relatório à parte em 111 ms
+OK      [ligação] o servidor arranca o arquivo dos horários e os relatórios 
+
+Tudo OK

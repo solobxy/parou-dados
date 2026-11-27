@@ -1,0 +1,19 @@
+OK      [texto] é exatamente o que a TTSL pediu Fonte — Transtejo Soflusa (TTSL)
+OK      [texto] entra na lista de créditos 
+OK      [línguas] inglês: «Source — Transtejo Soflusa (TTSL)» Source — Transtejo Soflusa (TTSL)
+OK      [línguas] alemão: «Quelle — …» 
+OK      [línguas] francês: «Source — …» 
+OK      [línguas] o SMTUC continua com o texto dele 
+OK      [outros] a Carris não ganha atribuição 
+OK      [app] o componente carrega 
+OK      [app] paragem da TTSL: mostra a fonte uma só vez 
+OK      [app] paragem só da Carris: sem fonte 
+OK      [app] em inglês 
+OK      [página pt] /linhas/transtejo-soflusa mostra «Fonte — Transtejo Soflusa (TTSL)» 200
+OK      [página/en] /linhas/transtejo-soflusa mostra «Source — Transtejo Soflusa (TTSL)» 200
+OK      [página/de] /linhas/transtejo-soflusa mostra «Quelle — Transtejo Soflusa (TTSL)» 200
+OK      [página/fr] /linhas/transtejo-soflusa mostra «Source — Transtejo Soflusa (TTSL)» 200
+OK      [página] linha da TTSL mostra a fonte /linhas/transtejo-soflusa/al-trafaria-porto-brandao-alges
+OK      [página] paragem da TTSL mostra a fonte /paragens/transtejo-soflusa/barreiro
+OK      [página] /linhas/carris não mostra a fonte da TTSL 
+Todos os testes passaram

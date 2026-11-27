@@ -1,0 +1,34 @@
+OK      [regra] Campanhã → Trindade (mesma zona PRT1): Z2, 1,40 € {"sistema":"andante","zonas":2,"preco":1.4,"duracaoMin":60,"fonte":"https://andante.pt/comprar/andante-azul/","preco24h":5.35,"cartao":0.6,"emVigorDesde":"2026-01-01"}
+OK      [regra] com 24 h, cartão Azul, duração e data de entrada em vigor 
+OK      [regra] Trindade → Pedras Rubras (VCD8, 4 anéis): Z4, 2,30 € (exemplo oficial do Andante) {"sistema":"andante","zonas":4,"preco":2.3,"duracaoMin":75,"fonte":"https://andante.pt/comprar/andante-azul/","preco24h":8.55,"cartao":0.6,"emVigorDesde":"2026-01-01"}
+OK      [regra] conta-se sempre a partir da 1.ª validação (ir e voltar pela MAI1 = Z3) 
+OK      [regra] uma zona sem certeza (perto de fronteira): nada 
+OK      [regra] um troço num operador sem Andante: nada 
+OK      [regra] última entrada depois da duração do título (Z2 = 1 h): nada 
+OK      [regra] última entrada dentro da hora: Z2 
+OK      [regra] preços lidos há mais de 10 dias: nada 
+OK      [regra] preços que ainda não estão em vigor no dia da viagem: nada 
+OK      [regra] e passam a valer no dia em que entram em vigor 
+OK      [regra] sem preços: nada 
+OK      [regra] zona sem anéis na tabela oficial: nada 
+OK      [CP] urbanos e regionais têm Andante 
+OK      [CP] Intercidades, Alfa e InterRegional não 
+[SQLite DB] Base de dados sem feeds. A registar feeds oficiais do catálogo...
+[SQLite DB] 31 feeds registados com sucesso.
+[Planeador] índice pronto (6 padrões, 15 paragens, 7 ms)
+OK      [plano] o motor do planeador ficou pronto 
+[Central Alerts Engine] A sincronizar alertas oficiais de todas as fontes reais...
+OK      [plano] metro na mesma zona: Andante Z2 a 1,40 € {"sistema":"andante","zonas":2,"preco":1.4,"duracaoMin":60,"fonte":"https://andante.pt/comprar/andante-azul/","preco24h":5.35,"cartao":0.6,"emVigorDesde":"2026-01-01"}
+OK      [plano] com a página oficial como fonte 
+OK      [plano] a opção «a pé» não tem bilhete 
+OK      [plano] metro de PRT1 até VCD8: Z4 a 2,30 € {"sistema":"andante","zonas":4,"preco":2.3,"duracaoMin":75,"fonte":"https://andante.pt/comprar/andante-azul/","preco24h":8.55,"cartao":0.6,"emVigorDesde":"2026-01-01"}
+OK      [plano] passa numa paragem sem zona certa: sem bilhete 
+OK      [plano] Intercidades da CP: sem bilhete Andante 
+OK      [plano] Regional da CP com zonas: Andante Z3 {"sistema":"andante","zonas":3,"preco":1.85,"duracaoMin":60,"fonte":"https://andante.pt/comprar/andante-azul/","preco24h":6.85,"cartao":0.6,"emVigorDesde":"2026-01-01"}
+OK      [plano] operador sem Andante: sem bilhete 
+OK      [plano] preços lidos há 20 dias (site oficial em baixo): sem bilhete 
+OK      [plano] base sem as tabelas do Andante (antiga): o planeador continua a responder, sem bilhete 
+NOTA   3 opções com transporte, 2 só de metro; F: Z2 1.4€ | B: Z2 1.4€
+OK      [real] Campanhã → Trindade de metro: Andante Z2 ao preço oficial HTTP 200
+
+Tudo OK

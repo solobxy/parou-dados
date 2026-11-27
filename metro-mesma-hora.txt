@@ -1,0 +1,12 @@
+OK      [regra] A e F no mesmo sentido e minuto: a A avisa que tem a mesma hora que a F F
+OK      [regra] e a F avisa que tem a mesma hora que a A A
+OK      [regra] sentido contrário ao mesmo minuto: sem aviso (são metros em linhas diferentes) 
+OK      [regra] outro minuto: sem aviso 
+OK      [regra] com tempo real não se avisa 
+OK      [regra] autocarros ao mesmo minuto não avisam (podem mesmo passar juntos) 
+OK      [regra] a mesma linha duas vezes não avisa 
+NOTA   Campanhã: 13 partidas do metro, 1 minutos com A e F
+FALHOU  [app] em Campanhã, A (Dragão) e F (Fânzeres) ao mesmo minuto trazem o aviso [["A","Estádio do Dragão","00:10",null],["F","Fânzeres","00:10",null]]
+OK      [app] nenhum aviso sem a outra linha ao mesmo minuto 0
+
+1 FALHA(S)

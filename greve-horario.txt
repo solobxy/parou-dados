@@ -1,0 +1,31 @@
+OK      página inicial: notícias ligadas (sem repetidos) ["658","655"]
+OK      notícia: título, data e texto (sem HTML) tro do Porto lamenta o transtorno causado aos seus clientes.
+OK      aviso: greve a 27/11 (dia inteiro), oficial (não notícia) ["2026-11-27T00:00:00.000Z","Metro do Porto — avisos","Futuro"]
+OK      aviso: véspera («já amanhã», a acabar por volta das 23h00) ["2026-11-26T22:00:00.000Z","2026-11-26T23:00:00.000Z"]
+OK      aviso: o que funciona = tronco comum e eixo Hospital São João–Santo Ovídio [["senhora da hora","dragao"],["senhora da hora","estadio do dragao"],["hospital sao joao","santo ovidio"]]
+OK      aviso: frequências das duas faixas e horas com serviço (6h–24h) ["15 min (7h–20h) · 30 min (6h–7h, 20h–0h)",[360,1440]]
+OK      aviso de greve desconvocada: anula esse dia {"anulada":["2026-11-27"]}
+OK      notícia sem greve: nada 
+[SQLite DB] Base de dados sem feeds. A registar feeds oficiais do catálogo...
+[SQLite DB] 31 feeds registados com sucesso.
+OK      sexta: Linha Amarela em Trindade (no eixo que funciona) = serviço reduzido; antes das 6h e depois da meia-noite, sem serviço 05:35:sem-servico 10:05:reduzido 22:35:reduzido 23:35:reduzido 00:25:sem-servico
+OK      sexta: Santo Ovídio no sentido de Vila d'Este (sai do eixo) = sem serviço 05:40:sem-servico 10:10:sem-servico 22:40:sem-servico 23:40:sem-servico 00:30:sem-servico
+OK      sexta: Linha Laranja em Fânzeres (fora do tronco comum) = sem serviço 05:30:sem-servico 10:00:sem-servico 22:30:sem-servico 23:30:sem-servico 00:20:sem-servico
+OK      sexta: Linha Laranja em Trindade a caminho da Senhora da Hora (tronco comum) = serviço reduzido às 10h 05:40:sem-servico 10:10:reduzido 22:40:reduzido 23:40:reduzido 00:30:sem-servico
+OK      sexta: Senhora da Hora a caminho de Matosinhos (ponta do tronco, a sair dele) = sem serviço 05:40:sem-servico 10:10:sem-servico 22:40:sem-servico 23:40:sem-servico 00:30:sem-servico
+OK      quinta (véspera): 10h normal, 22h35 pode não se realizar, 23h35 e 00h25 sem serviço 05:35 10:05 22:35:incerta 23:35:sem-servico 00:25:sem-servico
+OK      quinta: o resumo é só o da véspera (com a hora do fim), não o da greve de sexta [{"titulo":"Greve reduz serviço do Metro esta sexta-feira","url":"https://www.metrodoporto.pt/pages/630?news_id=658","operador":"Metro do Porto","dia":"2026-11-27","vespera":true,"fimVespera":"23:00"}]
+OK      sexta: resumo com o que funciona (nomes das estações como na base) e frequências {"titulo":"Greve reduz serviço do Metro esta sexta-feira","url":"https://www.metrodoporto.pt/pages/630?news_id=658","operador":"Metro do Porto","dia":"2026-11-27","funciona":["Senhora da Hora – Estádio do Dragão","Hospital São João – Santo Ovídio"],"frequencia":"15 min (7h–20h) · 30 min (6h–7h, 20h–0h)"}
+OK      dia sem greve: nenhuma marca nem resumo 05:35 10:05 22:35 23:35 00:25
+OK      sem avisos de greve: o horário fica como estava 
+OK      greve sem o que funciona: as partidas do dia ficam «pode não se realizar», com o resumo 05:30:incerta 10:00:incerta 22:30:incerta 23:30:incerta 00:20:incerta
+OK      paragem: Fânzeres sem serviço, Trindade serviço reduzido [{"estado":"sem-servico","operador":"Metro do Porto"},{"estado":"reduzido","operador":"Metro do Porto","cada":15},null,null]
+OK      paragem: partida com tempo real não leva marca (o metro está mesmo a circular) 
+OK      paragem: outro operador (STCP) não leva a greve do metro 
+OK      paragem: resumo do aviso [{"titulo":"Greve reduz serviço do Metro esta sexta-feira","url":"https://www.metrodoporto.pt/pages/630?news_id=658","operador":"Metro do Porto","dia":"2026-11-27","funciona":["Senhora da Hora – Estádio do Dragão","Hospital São João – Santo Ovídio"],"frequencia":"15 min (7h–20h) · 30 min (6h–7h, 20h–0h)"}]
+OK      paragem: sem greves, as marcas antigas saem (resposta em cache) 
+OK      trajeto quinta às 23h30: sem serviço (já passou o fim anunciado) {"titulo":"Greve reduz serviço do Metro esta sexta-feira","url":"https://www.metrodoporto.pt/pages/630?news_id=658","operador":"Metro do Porto","previsto":true,"semServico":true}
+OK      trajeto quinta às 22h30: perturbação prevista (ainda há serviço) {"titulo":"Greve reduz serviço do Metro esta sexta-feira","url":"https://www.metrodoporto.pt/pages/630?news_id=658","operador":"Metro do Porto","previsto":true}
+OK      opção de rota com troço sem serviço conta como greve «pode não circular» (2) 
+
+Tudo OK

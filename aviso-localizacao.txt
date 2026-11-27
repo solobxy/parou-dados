@@ -1,0 +1,14 @@
+OK      [abrir] ao abrir a app (sem toque) não aparece a explicação do aviso em falta 
+OK      [toque] o toque abre uma ligação de localização nova [{"t":1141.6000000000931,"nova":true,"gesto":true,"pendentesAntes":0},{"t":1158.3000000000466,"nova":false},{"t":1158.3000000000466,"nova":false}]
+OK      [toque] essa ligação leva o toque (o Chrome pode mostrar o aviso) {"t":1141.6000000000931,"nova":true,"gesto":true,"pendentesAntes":0}
+OK      [toque] não havia nenhum pedido pendente a ocupar a ligação {"t":1141.6000000000931,"nova":true,"gesto":true,"pendentesAntes":0}
+OK      [pausa] o Chrome recusou logo: a PAROU explica de imediato 
+OK      [pausa] a explicação diz como ligar e como recuperar o aviso Desliza o dedo de cima para baixo e liga a Localização.
+Para o aviso voltar: toca no ícone ao lado do endereço, repõe as permissões e toca outra vez em Ativar l
+OK      [pausa] «Escolher um local» continua à vista (o cartão não fica tapado) 
+OK      [pausa] sem erros de JavaScript 
+OK      [aviso] o aviso apareceu e a pessoa disse «Não»: não se fala de aviso em falta 
+OK      [aviso] o toque abriu a ligação com o toque 
+OK      [iPhone] não há aviso do Android: a explicação não aparece 
+
+Tudo OK

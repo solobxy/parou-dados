@@ -1,0 +1,66 @@
+OK      distância de 100 m a norte 100.00
+OK      rumo a norte = 0 
+OK      rumo a este = 90 
+OK      rodar pelo lado mais curto: 350 → 10 passa por 360 
+OK      rodar pelo lado mais curto: 10 → 350 passa por 0 
+OK      o relógio do servidor avança com o relógio local 1015.50
+OK      relógio: uma diferença enorme (telemóvel adormecido) adota o novo 
+NOTA    [reta Carris Metropolitana/TUB (15 s)] antes: parado 89% do tempo, velocidade máx. 75 m/s; agora: parado 0%, máx. 10.7 m/s, atraso 20–22 s
+OK      [reta Carris Metropolitana/TUB (15 s)] nunca «teleporta»: velocidade desenhada ≤ 14 m/s 10.7
+OK      [reta Carris Metropolitana/TUB (15 s)] anda sempre (parado menos de 5% do tempo; antes 89%) 0.0%
+OK      [reta Carris Metropolitana/TUB (15 s)] não anda para trás 0
+OK      [reta Carris Metropolitana/TUB (15 s)] a velocidade mostrada é parecida com a real (mediana entre 5,5 e 10,5 m/s) 8.00
+OK      [reta Carris Metropolitana/TUB (15 s)] nunca mostra o autocarro à frente da realidade 20.34
+OK      [reta Carris Metropolitana/TUB (15 s)] o atraso fica entre 8 e 40 s 20.3–22.9 s
+NOTA    [reta STCP (32 s)] antes: parado 95% do tempo, velocidade máx. 160 m/s; agora: parado 0%, máx. 10.8 m/s, atraso 24–27 s
+OK      [reta STCP (32 s)] nunca «teleporta»: velocidade desenhada ≤ 14 m/s 10.8
+OK      [reta STCP (32 s)] anda sempre (parado menos de 5% do tempo; antes 95%) 0.0%
+OK      [reta STCP (32 s)] não anda para trás 0
+OK      [reta STCP (32 s)] a velocidade mostrada é parecida com a real (mediana entre 5,5 e 10,5 m/s) 8.04
+OK      [reta STCP (32 s)] nunca mostra o autocarro à frente da realidade 23.93
+OK      [reta STCP (32 s)] o atraso fica entre 8 e 60 s 23.9–29.3 s
+OK      [esquina] sem «teleportes» (≤ 14 m/s) 10.8
+OK      [esquina] corta a esquina no máximo 70 m (posições de 15 em 15 s) 69 m
+OK      [esquina] depois da esquina continua pelo caminho certo (desvio final < 15 m) 0.0
+OK      [esquina] o rumo muda de norte para este rumo final 90
+OK      [erro de GPS] a posição errada (1 km ao lado) é ignorada 0.0 m ao lado
+OK      [erro de GPS] sem «teleportes» 10.8
+OK      [desvio permanente] acaba por aceitar o novo caminho (não fica preso) 300 m
+OK      [desvio permanente] sem «teleportes» grandes (≤ 40 m/s, a deslizar) 29.1
+OK      [sem posições novas] o marcador pára e não foge (no máximo ~20 s de viagem, 170 m, depois da última posição) 160 m
+OK      [sem posições novas] acaba parado 0.000
+OK      [lacuna de 5 min] reaparece no sítio certo com no máximo um salto 1
+OK      [lacuna de 5 min] acaba perto da posição verdadeira 158 m
+OK      [semáforo] sem «teleportes» 10.7
+OK      [semáforo] enquanto está parado, o marcador não treme (rumo mantido) 
+NOTA    [semáforo] 23% do tempo parado no modelo
+OK      [autocarro novo] ao aparecer, arranca sem salto (≤ 1,35× a velocidade do troço) 10.8
+NOTA    [autocarro novo] parado 8% do tempo desde que aparece (só há uma posição até chegar a segunda)
+OK      [autocarro novo, com a posição anterior] anda desde o primeiro instante e sem salto parado 0%, máx. 10.8 m/s
+NOTA    [reais stcp] 18 autocarros; velocidade máx. desenhada p50 13.4 p90 19.5 m/s (antes p50 218 p90 314 m/s); parado enquanto andava: 3%; erro médio 214 m (antes 171 m)
+OK      [reais stcp] nenhum autocarro «teleporta» (nunca mais de 60 m/s desenhados) 18/18
+OK      [reais stcp] 90% dos autocarros nunca passam de 1,5× a velocidade mais alta do seu próprio percurso 1.35×
+OK      [reais stcp] a andar quase sempre (parado menos de 10% do tempo em mediana, quando o operador envia) 3%
+OK      [reais stcp] não é menos exato do que o mapa antigo (erro médio até 1,4× + 30 m) 214 m contra 171 m
+NOTA    [reais cm] 18 autocarros; velocidade máx. desenhada p50 22.5 p90 38.5 m/s (antes p50 289 p90 361 m/s); parado enquanto andava: 3%; erro médio 357 m (antes 328 m)
+OK      [reais cm] nenhum autocarro «teleporta» (nunca mais de 60 m/s desenhados) 18/18
+OK      [reais cm] 90% dos autocarros nunca passam de 1,5× a velocidade mais alta do seu próprio percurso 1.35×
+OK      [reais cm] a andar quase sempre (parado menos de 10% do tempo em mediana, quando o operador envia) 3%
+OK      [reais cm] não é menos exato do que o mapa antigo (erro médio até 1,4× + 30 m) 357 m contra 328 m
+NOTA    [reais tub] 18 autocarros; velocidade máx. desenhada p50 17.4 p90 23.1 m/s (antes p50 247 p90 463 m/s); parado enquanto andava: 14%; erro médio 231 m (antes 191 m)
+OK      [reais tub] nenhum autocarro «teleporta» (nunca mais de 60 m/s desenhados) 18/18
+OK      [reais tub] 90% dos autocarros nunca passam de 1,5× a velocidade mais alta do seu próprio percurso 1.35×
+OK      [reais tub] a andar quase sempre (parado menos de 25% do tempo em mediana, quando o operador envia) 14%
+OK      [reais tub] não é menos exato do que o mapa antigo (erro médio até 1,4× + 30 m) 231 m contra 191 m
+OK      séries reais testadas 54
+OK      [servidor] primeira vez que vê o veículo: ainda não há posição anterior 
+OK      [servidor] segunda posição: a anterior é a primeira {"lat":41.15,"lon":-8.61,"timestamp":1800000000}
+OK      [servidor] a mesma posição outra vez: a anterior continua a ser a primeira {"lat":41.15,"lon":-8.61,"timestamp":1800000000}
+OK      [servidor] posição mais antiga (fora de ordem) é ignorada 
+OK      [servidor] terceira posição: a anterior é a segunda (não a primeira) {"lat":41.152,"lon":-8.612,"timestamp":1800000030}
+OK      [servidor] anterior com mais de 120 s não serve 
+OK      [servidor] esquece veículos que deixa de ver (5 min) 1
+OK      [servidor] a lista leve leva «ant» (arredondado a 5 casas) {"id":"stcp:3","op":"stcp","linha":"803","lat":41.12346,"lon":-8.61235,"t":1800000030,"ant":{"lat":41.1,"lon":-8.6,"t":1800000000}}
+OK      [servidor] sem posição anterior não leva «ant» 
+
+Todos os testes OK

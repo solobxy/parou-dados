@@ -1,0 +1,15 @@
+OK      [real] ida e volta pela mesma rua (Ericeira): o desenho oficial serve 
+OK      [real] ida e volta pela mesma rua (Ericeira): paragens encaixadas 40/40
+OK      [real] uma paragem com coordenadas erradas (Sacavém): o desenho oficial serve 
+OK      [real] uma paragem com coordenadas erradas (Sacavém): paragens encaixadas 46/47
+OK      [ida e volta 4×] o desenho serve 
+OK      [ida e volta 4×] posições sempre a avançar 
+OK      [ida e volta 4×] sem recuar 0
+OK      [ida e volta 4×] a última paragem fica no fim do desenho 159.88227229296484 de 161
+OK      [paragem errada] o desenho continua a servir 
+OK      [paragem errada] só essa paragem fica sem posição [0,10,20,30,40,50,60,70,null,90,100,110,120,130,140,150,160,170,180,190]
+OK      [paragem errada] as vizinhas ficam no sítio certo (não arrastadas) 70 90
+OK      [outra linha] desenho a 5 km das paragens é recusado 
+OK      [outra linha] desenho que se afasta a meio (metade das paragens longe) é recusado 
+OK      [rapidez] 50 encaixes de uma linha com 36 paragens e 160 pontos em menos de 1 s 43 ms
+Todos os testes passaram

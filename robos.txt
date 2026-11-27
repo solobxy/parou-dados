@@ -1,0 +1,21 @@
+OK      Googlebot Googlebot
+OK      Bingbot Bingbot
+OK      OAI-SearchBot OAI-SearchBot
+OK      ChatGPT-User ChatGPT-User
+OK      PerplexityBot PerplexityBot
+OK      pessoa num iPhone não é robô 
+OK      sem user-agent não é robô 
+OK      tipo linha 
+OK      tipo linha em inglês 
+OK      tipo paragem 
+OK      tipo operador 
+OK      tipo sitemap 
+OK      tipo api 
+OK      conta pedidos do Google {"n":2,"ms":2620,"lentos":1,"estados":{"200":1,"503":1},"tipos":{"linha":1,"paragem":1}}
+OK      conta os 503 
+OK      conta os lentos (> 2 s) 
+OK      separa por tipo de página 
+OK      grava o ficheiro 
+OK      volta a ler o que gravou 
+OK      guarda no máximo 40 dias 40
+tudo OK

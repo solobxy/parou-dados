@@ -1,0 +1,80 @@
+OK      há paragens em Campanhã na base de teste cp:94_2006, stcp:CMP5, stcp:CMP6, stcp:CMP2
+OK      API ?time=amanhã 22:00: responde com partidas 200 59
+OK      API ?time: todas a partir dessa hora 2026-11-28 22:10, 2026-11-28 22:26, 2026-11-28 22:30, 2026-11-28 22:41
+OK      API ?time longe de agora: só horário oficial (nada em direto) 
+OK      API: «agora» logo a seguir não devolve as partidas de amanhã às 22:00 (memória separada) 2026-11-27 23:35
+OK      API ?ultimas=1: a última de cada linha 27
+OK      API ?ultimas=1: uma só por linha e destino 
+OK      API ?ultimas=1: as que ainda vão partir vêm primeiro, por hora 
+OK      API ?ultimas=1: não há partidas da mesma linha e destino depois da «última» (hoje) 
+OK      API: recusa horas e datas inválidas (400) 400,400,400
+OK      [390] a paragem aberta tem o botão «Agora» 
+OK      [390] ao tocar abre os dias, a hora e «Última de cada linha» 
+OK      [390] depois de escolher a hora, o painel fecha 
+OK      [390] a lista diz que é o horário oficial, de que dia e a partir de que hora Horário oficial · Amanhã, a partir das 22:00
+OK      [390] amanhã às 22:00: pede ao servidor essa hora /api/transit/stop/cp%3A94_2006?linhas=1&time=2026-11-28T22%3A00
+OK      [390] amanhã às 22:00: mostra partidas com hora fixa (nada de «min») R Viana do Castelo CP - Comboios de Portugal 22:10 | Linha do Marco Porto Sao Bento CP - Comboios de Portugal 22:26 | R Marco de Canaveses CP - Comboios de Portugal 22:30
+OK      [390] a primeira hora no ecrã é a do servidor 22:10 vs R Viana do Castelo CP - Comboios de Portugal 22:10
+OK      [390] o botão diz o que se está a ver («Amanhã, 22:00») Amanhã, 22:00
+OK      [390] com o painel aberto, o botão de cima não repete a escolha («Escolher dia e hora») Escolher dia e hora
+OK      [390] «Última partida»: lista uma por linha, com hora 26: R Lisboa Santa Apolonia CP - Comboios de Portugal 01:08 | Linha de Aveiro Ovar CP - Comboios de Portugal 06:55
+OK      [390] «Última partida» pede ao servidor as últimas de amanhã /api/transit/stop/cp%3A94_2006?ultimas=1&data=2026-11-28
+OK      [390] «Última de cada linha» fecha o painel e o botão diz «Últimas · Amanhã» Últimas · Amanhã
+OK      [390] no modo última não aparece a hora (só «A partir das…» para voltar a esse modo) 
+OK      [390] alvos de toque ≥ 40 px [40,40,40,40,40,40,40,40,40,40,40]
+OK      [390] sem scroll para o lado 0px
+OK      [390] «Voltar a agora»: o botão volta a dizer «Agora» e a lista volta às partidas em direto 
+OK      [390] sem erros na página 
+OK      [320] a paragem aberta tem o botão «Agora» 
+OK      [320] ao tocar abre os dias, a hora e «Última de cada linha» 
+OK      [320] depois de escolher a hora, o painel fecha 
+OK      [320] a lista diz que é o horário oficial, de que dia e a partir de que hora Horário oficial · Amanhã, a partir das 22:00
+OK      [320] amanhã às 22:00: pede ao servidor essa hora /api/transit/stop/cp%3A94_2006?linhas=1&time=2026-11-28T22%3A00
+OK      [320] amanhã às 22:00: mostra partidas com hora fixa (nada de «min») R Viana do Castelo CP - Comboios de Portugal 22:10 | Linha do Marco Porto Sao Bento CP - Comboios de Portugal 22:26 | R Marco de Canaveses CP - Comboios de Portugal 22:30
+OK      [320] a primeira hora no ecrã é a do servidor 22:10 vs R Viana do Castelo CP - Comboios de Portugal 22:10
+OK      [320] o botão diz o que se está a ver («Amanhã, 22:00») Amanhã, 22:00
+OK      [320] com o painel aberto, o botão de cima não repete a escolha («Escolher dia e hora») Escolher dia e hora
+OK      [320] «Última partida»: lista uma por linha, com hora 26: R Lisboa Santa Apolonia CP - Comboios de Portugal 01:08 | Linha de Aveiro Ovar CP - Comboios de Portugal 06:55
+OK      [320] «Última partida» pede ao servidor as últimas de amanhã /api/transit/stop/cp%3A94_2006?ultimas=1&data=2026-11-28
+OK      [320] «Última de cada linha» fecha o painel e o botão diz «Últimas · Amanhã» Últimas · Amanhã
+OK      [320] no modo última não aparece a hora (só «A partir das…» para voltar a esse modo) 
+OK      [320] alvos de toque ≥ 40 px [40,40,40,40,40,40,40,40,40,40,40]
+OK      [320] sem scroll para o lado 0px
+OK      [320] «Voltar a agora»: o botão volta a dizer «Agora» e a lista volta às partidas em direto 
+OK      [320] sem erros na página 
+OK      erro: diz que não foi possível e oferece «Tentar outra vez» (não «sem partidas») 
+OK      erro: «Tentar outra vez» volta a pedir e mostra as partidas 
+OK      sem erros na página (erro) 
+OK      [390] percurso: há «Horário do dia nesta paragem» 
+OK      [390] percurso: mostra o horário do dia (por horas) 96 números
+OK      [390] percurso: o pedido leva a viagem aberta (sentido e linhas com o mesmo nome) http://127.0.0.1:3000/api/lines/cp%3A25-94_1008-94_9001/dia?paragem=cp%3A94_2006&sentido=0&data=2026-11-27&viagem=cp%3A15553_20261023
+OK      [390] percurso: «Amanhã» pede o horário de amanhã http://127.0.0.1:3000/api/lines/cp%3A25-94_1008-94_9001/dia?paragem=cp%3A94_2006&sentido=0&data=2026-11-28&viagem=cp%3A15553_20261023
+OK      [390] percurso: sem scroll para o lado 0px
+OK      [390] percurso: «Ver o percurso» volta às paragens da viagem 
+OK      [390] sem erros na página (percurso) 
+OK      [320] percurso: há «Horário do dia nesta paragem» 
+OK      [320] percurso: mostra o horário do dia (por horas) 96 números
+OK      [320] percurso: o pedido leva a viagem aberta (sentido e linhas com o mesmo nome) http://127.0.0.1:3000/api/lines/cp%3A25-94_1008-94_9001/dia?paragem=cp%3A94_2006&sentido=0&data=2026-11-27&viagem=cp%3A15553_20261023
+OK      [320] percurso: «Amanhã» pede o horário de amanhã http://127.0.0.1:3000/api/lines/cp%3A25-94_1008-94_9001/dia?paragem=cp%3A94_2006&sentido=0&data=2026-11-28&viagem=cp%3A15553_20261023
+OK      [320] percurso: sem scroll para o lado 0px
+OK      [320] percurso: «Ver o percurso» volta às paragens da viagem 
+OK      [320] sem erros na página (percurso) 
+OK      [390] rotas: há o botão «Sair agora» Sair agora
+OK      [390] rotas: volta a calcular para amanhã às 22:00 (quando=… certo) 2026-11-28T22:00:00.000Z vs 2026-11-28T22:00:00.000Z
+OK      [390] rotas: o botão diz «Sair amanhã, 22:00» Sair amanhã, 22:00
+OK      [390] rotas: as opções saem a partir das 22:00 (ou diz que não há ligações) [1345,1323,1327]
+OK      [390] rotas: sem scroll para o lado 0px
+OK      [390] rotas: «Agora» volta a calcular para agora (sem quando) null
+OK      [390] sem erros na página (rotas) 
+OK      [320] rotas: há o botão «Sair agora» Sair agora
+OK      [320] rotas: volta a calcular para amanhã às 22:00 (quando=… certo) 2026-11-28T22:00:00.000Z vs 2026-11-28T22:00:00.000Z
+OK      [320] rotas: o botão diz «Sair amanhã, 22:00» Sair amanhã, 22:00
+OK      [320] rotas: as opções saem a partir das 22:00 (ou diz que não há ligações) [1345,1323,1327]
+OK      [320] rotas: sem scroll para o lado 0px
+OK      [320] rotas: «Agora» volta a calcular para agora (sem quando) null
+OK      [320] sem erros na página (rotas) 
+NOTA    captura 390 escuro
+NOTA    captura 390 ambar
+NOTA    captura 1280 claro
+
+Tudo OK

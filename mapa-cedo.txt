@@ -1,0 +1,27 @@
+OK      [sem posição, 390x844] o esqueleto já mostra o mapa 6 quadrados
+OK      [sem posição, 390x844] no mesmo sítio onde a app os põe (sem saltos) 6 em comum, desvio máx. 0.0 px
+OK      [sem posição, 390x844] pede logo os quadrados do mapa 6 pedidos cedo
+OK      [sem posição, 390x844] todos são os que o mapa mostra 
+OK      [sem posição, 390x844] cobrem a maior parte do mapa 6 de 6 do mapa
+OK      [sem posição, 390x844] sem erros 
+OK      [Porto guardado, 390x844] o esqueleto já mostra o mapa 6 quadrados
+OK      [Porto guardado, 390x844] no mesmo sítio onde a app os põe (sem saltos) 6 em comum, desvio máx. 0.0 px
+OK      [Porto guardado, 390x844] pede logo os quadrados do mapa 6 pedidos cedo
+OK      [Porto guardado, 390x844] todos são os que o mapa mostra 
+OK      [Porto guardado, 390x844] cobrem a maior parte do mapa 6 de 6 do mapa
+OK      [Porto guardado, 390x844] sem erros 
+OK      [Porto guardado, 412x915] o esqueleto já mostra o mapa 4 quadrados
+OK      [Porto guardado, 412x915] no mesmo sítio onde a app os põe (sem saltos) 4 em comum, desvio máx. 0.0 px
+OK      [Porto guardado, 412x915] pede logo os quadrados do mapa 4 pedidos cedo
+OK      [Porto guardado, 412x915] todos são os que o mapa mostra 
+OK      [Porto guardado, 412x915] cobrem a maior parte do mapa 4 de 4 do mapa
+OK      [Porto guardado, 412x915] sem erros 
+OK      [Faro guardado, 360x740] o esqueleto já mostra o mapa 6 quadrados
+OK      [Faro guardado, 360x740] no mesmo sítio onde a app os põe (sem saltos) 6 em comum, desvio máx. 0.0 px
+OK      [Faro guardado, 360x740] pede logo os quadrados do mapa 6 pedidos cedo
+OK      [Faro guardado, 360x740] todos são os que o mapa mostra 
+OK      [Faro guardado, 360x740] cobrem a maior parte do mapa 6 de 6 do mapa
+OK      [Faro guardado, 360x740] sem erros 
+OK      [outras páginas] não pede quadrados do mapa 0
+
+Tudo OK

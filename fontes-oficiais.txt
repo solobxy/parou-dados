@@ -1,0 +1,11 @@
+OK      a lista tem ANEPC (https://prociv.gov.pt) https://prociv.gov.pt https://www.ipma.pt https://fogos.pt https://nap-portugal.imt-ip.pt https://dados.gov.pt https://diariodarepublica.pt
+OK      a lista tem IPMA (https://www.ipma.pt) https://prociv.gov.pt https://www.ipma.pt https://fogos.pt https://nap-portugal.imt-ip.pt https://dados.gov.pt https://diariodarepublica.pt
+OK      a lista tem Fogos.pt (https://fogos.pt) https://prociv.gov.pt https://www.ipma.pt https://fogos.pt https://nap-portugal.imt-ip.pt https://dados.gov.pt https://diariodarepublica.pt
+OK      a lista tem IMT (Ponto de Acesso Nacional) (https://nap-portugal.imt-ip.pt) https://prociv.gov.pt https://www.ipma.pt https://fogos.pt https://nap-portugal.imt-ip.pt https://dados.gov.pt https://diariodarepublica.pt
+OK      a lista tem dados.gov.pt (https://dados.gov.pt) https://prociv.gov.pt https://www.ipma.pt https://fogos.pt https://nap-portugal.imt-ip.pt https://dados.gov.pt https://diariodarepublica.pt
+OK      a lista tem Diário da República (feriados) (https://diariodarepublica.pt) https://prociv.gov.pt https://www.ipma.pt https://fogos.pt https://nap-portugal.imt-ip.pt https://dados.gov.pt https://diariodarepublica.pt
+OK      todos os links são https completos 
+OK      o aviso diz que a PAROU não é uma entidade governamental e manda ligar 112 
+OK      os Alertas mostram a lista com links e o aviso 
+
+Tudo OK

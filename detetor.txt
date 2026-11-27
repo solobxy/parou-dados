@@ -1,0 +1,19 @@
+OK      entra no 801: é escolhido {"id":"stcp:A","d":4,"n":5}
+OK      entra no 801: deteta em menos de 2 min depois de entrar aos 84 s (entrou aos 40)
+OK      não confunde com o autocarro da rua ao lado nem o de trás 
+OK      a pé com o autocarro a passar: não pergunta 
+OK      parado na paragem junto ao autocarro: não pergunta 
+OK      dois autocarros lado a lado: oferece as duas linhas 801,803
+OK      relógio adiantado 8 s, acertado pelo servidor: deteta 
+OK      relógio adiantado 5 s, sem acerto: ainda deteta (tolerância de relógio) 
+OK      antes de recusar há candidato 
+OK      depois de recusar não volta a perguntar 
+OK      carro 100 m atrás do autocarro: não pergunta 
+OK      ida: a meio entre a 2.ª e a 3.ª, a seguinte é a 3.ª {"indice":2,"naParagem":false,"distanciaAoPercursoM":2.9966293562981194}
+OK      volta (com a posição anterior): a seguinte é a do regresso {"indice":10,"naParagem":false,"distanciaAoPercursoM":2.9966293562981194}
+OK      à mesma distância dos dois sentidos, a posição anterior (ida) decide {"indice":2,"naParagem":false,"distanciaAoPercursoM":19.977529041460738}
+OK      à mesma distância dos dois sentidos, a posição anterior (volta) decide {"indice":10,"naParagem":false,"distanciaAoPercursoM":19.977529041460738}
+OK      em cima de uma paragem diz que está na paragem {"indice":3,"naParagem":true,"distanciaAoPercursoM":0}
+OK      longe do percurso a distância ao percurso é grande 160
+
+Tudo certo

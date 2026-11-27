@@ -1,0 +1,9 @@
+OK      lê as 6 linhas da lista "Estado das Linhas" ["A","B","C","D","E","F"]
+OK      letras A–F pelas imagens (lina_a, linha_b…) 
+OK      todas "Ok" ["Ok","Ok","OK","Ok","Ok","Ok"]
+OK      não lê a lista que vem depois 
+OK      linha E: texto da perturbação, com acentos Circulação interrompida entre Verdes e Aeroporto devido a avaria.
+OK      linha A: greve 
+OK      página sem a lista: nada (não dá falsos "normais") 
+
+Tudo OK

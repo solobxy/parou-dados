@@ -1,0 +1,79 @@
+[SQLite DB] Base de dados sem feeds. A registar feeds oficiais do catálogo...
+[SQLite DB] 31 feeds registados com sucesso.
+[Planeador] índice pronto (19 padrões, 35 paragens, 15 ms)
+OK      o motor em memória do planeador ficou pronto pronto (19 padrões, 35 paragens, 15 ms)
+[Central Alerts Engine] A sincronizar alertas oficiais de todas as fontes reais...
+[Planeador] previsões da UNIR: não consegui ler (HTTP 503); uso o horário.
+[TML GO Hub] Erro em /alerts: HTTP 503 
+[Central Alerts Engine] Sincronização concluída. Total: 0 alertas auditados.
+OK      [controlo] sem previsões, o 1A das 12:05 é o melhor 1A@12:05→12:26 | 1A@12:20→12:41
+[Central Alerts Engine] A sincronizar alertas oficiais de todas as fontes reais...
+[Central Alerts Engine] Sincronização concluída. Total: 0 alertas auditados.
+OK      [controlo] sem previsões, A3 + B3 das 12:24 é o melhor A3@12:05>B3@12:24→12:35
+[Central Alerts Engine] A sincronizar alertas oficiais de todas as fontes reais...
+[Central Alerts Engine] Sincronização concluída. Total: 0 alertas auditados.
+OK      [controlo] sem previsões, o 27 das 12:03 é o melhor 27@12:03→12:19 | 27@12:13→12:29
+OK      [controlo] sem previsões, nada aparece como "em direto" 
+[Central Alerts Engine] A sincronizar alertas oficiais de todas as fontes reais...
+[Central Alerts Engine] Sincronização concluída. Total: 0 alertas auditados.
+OK      [controlo] sem previsões, o transbordo de 1 min (A5 → B5 das 12:21) não se propõe C5@12:10→13:01
+[Central Alerts Engine] A sincronizar alertas oficiais de todas as fontes reais...
+[Central Alerts Engine] Sincronização concluída. Total: 0 alertas auditados.
+OK      [suprimida] o 1A das 12:05 (suprimido) não aparece 1B@12:07→12:34 | 1A@12:20→12:41 | 1B@12:22→12:49
+OK      [suprimida] o melhor passa a ser o 1B das 12:07 1B@12:07→12:34 | 1A@12:20→12:41 | 1B@12:22→12:49
+[Central Alerts Engine] A sincronizar alertas oficiais de todas as fontes reais...
+[Central Alerts Engine] Sincronização concluída. Total: 0 alertas auditados.
+OK      [atraso] o 9 das 12:08 passa a ser o que chega primeiro 9@12:08→12:29 | 7@12:15→12:31 | 9@12:18→12:39
+OK      [atraso] o 7 nunca aparece às 12:05 (vai às 12:17) 9@12:08→12:29 | 7@12:15→12:31 | 9@12:18→12:39
+[Central Alerts Engine] A sincronizar alertas oficiais de todas as fontes reais...
+[Central Alerts Engine] Sincronização concluída. Total: 0 alertas auditados.
+OK      [atraso pequeno] o 17 sai às 12:08 (hora em direto) 17@12:08*→12:24
+OK      [atraso pequeno] a viagem vem marcada como em direto, com 3 min de atraso {"isRealtime":true,"atraso":3,"estado":"TEMPO_REAL"}
+[Central Alerts Engine] A sincronizar alertas oficiais de todas as fontes reais...
+[Central Alerts Engine] Sincronização concluída. Total: 0 alertas auditados.
+OK      [transbordo] não propõe o B3 das 12:24 (com o A3 atrasado já não dá) C3@12:10→13:01 | A3@12:35>B3@12:54→13:05
+OK      [transbordo] o melhor passa a ser o C3 direto (chega às 13:00 e pouco) C3@12:10→13:01 | A3@12:35>B3@12:54→13:05
+[Central Alerts Engine] A sincronizar alertas oficiais de todas as fontes reais...
+[Central Alerts Engine] Sincronização concluída. Total: 0 alertas auditados.
+OK      [já passou] não manda apanhar o 27 das 12:03, que já saiu da paragem 27@12:13→12:29 | 27@12:23→12:39
+OK      [já passou] o melhor é o 27 das 12:13 27@12:13→12:29 | 27@12:23→12:39
+[Central Alerts Engine] A sincronizar alertas oficiais de todas as fontes reais...
+[Central Alerts Engine] Sincronização concluída. Total: 0 alertas auditados.
+OK      [margem curta] com as duas viagens em direto, propõe o transbordo de 1 min (A5 → B5 das 12:21) A5@12:05*>B5@12:21*→12:32
+OK      [margem curta] e é o que chega primeiro (12:31 e pouco) A5@12:05*>B5@12:21*→12:32
+[Central Alerts Engine] A sincronizar alertas oficiais de todas as fontes reais...
+[Central Alerts Engine] Sincronização concluída. Total: 0 alertas auditados.
+OK      [margem curta] só com uma das viagens em direto, não (fica a margem de 2 min) C6@12:10→13:01
+[Central Alerts Engine] A sincronizar alertas oficiais de todas as fontes reais...
+[Central Alerts Engine] Sincronização concluída. Total: 0 alertas auditados.
+OK      [para trás] não usa a previsão que anda para trás para apanhar o B7 das 12:13 C7@12:10→12:41
+[Central Alerts Engine] A sincronizar alertas oficiais de todas as fontes reais...
+[Central Alerts Engine] Sincronização concluída. Total: 0 alertas auditados.
+OK      [adiantado] com 25 min de avanço fica o horário (o A8 das 12:05, sem "em direto") A8@12:05→12:21
+[Central Alerts Engine] A sincronizar alertas oficiais de todas as fontes reais...
+[Central Alerts Engine] Sincronização concluída. Total: 0 alertas auditados.
+[Central Alerts Engine] A sincronizar alertas oficiais de todas as fontes reais...
+[Central Alerts Engine] Sincronização concluída. Total: 0 alertas auditados.
+[Central Alerts Engine] A sincronizar alertas oficiais de todas as fontes reais...
+[Central Alerts Engine] Sincronização concluída. Total: 0 alertas auditados.
+[Central Alerts Engine] A sincronizar alertas oficiais de todas as fontes reais...
+[Central Alerts Engine] Sincronização concluída. Total: 0 alertas auditados.
+[Central Alerts Engine] A sincronizar alertas oficiais de todas as fontes reais...
+[Central Alerts Engine] Sincronização concluída. Total: 0 alertas auditados.
+[Central Alerts Engine] A sincronizar alertas oficiais de todas as fontes reais...
+[Central Alerts Engine] Sincronização concluída. Total: 0 alertas auditados.
+[Central Alerts Engine] A sincronizar alertas oficiais de todas as fontes reais...
+[Central Alerts Engine] Sincronização concluída. Total: 0 alertas auditados.
+[Central Alerts Engine] A sincronizar alertas oficiais de todas as fontes reais...
+[Central Alerts Engine] Sincronização concluída. Total: 0 alertas auditados.
+[Central Alerts Engine] A sincronizar alertas oficiais de todas as fontes reais...
+[Central Alerts Engine] Sincronização concluída. Total: 0 alertas auditados.
+OK      [todos] nenhum percurso com horas para trás 
+OK      as previsões foram pedidas poucas vezes (um pedido partilhado) {"cm":2,"tub":2}
+[Central Alerts Engine] A sincronizar alertas oficiais de todas as fontes reais...
+[Central Alerts Engine] Sincronização concluída. Total: 0 alertas auditados.
+OK      [velhas] com previsões de há 10 min, volta o horário (o 1A das 12:05) 1A@12:05→12:26 | 1A@12:20→12:41
+OK      [ecrã] o cartão do percurso mostra o sinal de "em direto" na primeira linha 
+OK      [ecrã] o passo a passo diz o atraso em direto 
+
+Tudo OK

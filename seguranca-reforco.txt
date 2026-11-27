@@ -1,0 +1,26 @@
+OK      [CSP] a página traz script-src a valer frame-ancestors 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; 
+OK      [CSP] sem o modo «só avisar» 
+OK      [CSP] os avisos continuam a chegar (report-uri) com amostra 
+OK      [admin] com a chave no cabeçalho entra 200
+OK      [admin] com a chave no endereço (?chave=) não entra 403
+OK      [admin] sem chave não entra 403
+OK      [isco] o robô recebe uma resposta normal 201 {"id":"occ-mwzm8rgq"}
+OK      [isco] mas nada fica guardado 404
+OK      [isco] não aparece na lista 
+OK      [isco] registo de robô não cria conta nem sessão 200 {"utilizador":null}
+OK      [isco] o formulário de LoginModal.tsx tem o campo escondido 
+OK      [isco] o formulário de ReportModal.tsx tem o campo escondido 
+OK      [isco] o formulário de ReclamacoesView.tsx tem o campo escondido 
+OK      [isco] o formulário de Compositor.tsx tem o campo escondido 
+OK      [página /] nenhum script da PAROU bloqueado 
+OK      [página /horarios] nenhum script da PAROU bloqueado 
+OK      [página /alertas] nenhum script da PAROU bloqueado 
+OK      [página /sobre] nenhum script da PAROU bloqueado 
+OK      [página /privacidade] nenhum script da PAROU bloqueado 
+OK      [página /greves] nenhum script da PAROU bloqueado 
+OK      [página /linhas] nenhum script da PAROU bloqueado 
+OK      [página /linhas/carris-metropolitana] nenhum script da PAROU bloqueado 
+OK      [página /nao-existe-xyz] nenhum script da PAROU bloqueado 
+OK      [páginas] sem erros de JavaScript 
+
+Tudo OK

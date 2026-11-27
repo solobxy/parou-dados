@@ -1,0 +1,15 @@
+OK      [bytes] conta os bytes em UTF-8 2000
+OK      [bytes] passa do limite: sai a menos usada (b), fica a usada (a) 
+OK      [bytes] nunca passa do limite 4000
+OK      [prazo] depois do prazo não devolve 
+OK      [prazo] e liberta os bytes 3000
+OK      [entradas] nunca passa do máximo de entradas 5
+OK      [entradas] ficam as últimas 
+OK      [texto] guarda acentos e símbolos sem os estragar 
+OK      [texto] getBuffer dá os mesmos bytes 
+OK      [gigante] uma página maior que 1/4 do limite não entra 
+OK      [limpeza] limparExpiradas apaga só as que passaram do prazo 
+OK      [podarMapa] fica com o máximo 
+OK      [podarMapa] saem as mais antigas 
+OK      [podarMapa] abaixo do máximo não mexe 
+Todos os testes passaram

@@ -1,0 +1,46 @@
+OK      letras da marca carregadas 
+OK      [porto-greve] faixa laranja em baixo 255,107,26
+OK      [porto-greve] zona em grande (PORTO) 8184
+OK      [porto-greve] nenhum texto passa a margem direita 0
+        {"zona":"PORTO","modo":"metro","tipo":"GREVE","quando":"SEX 27/11"}
+OK      [coimbra-greve] faixa laranja em baixo 255,107,26
+OK      [coimbra-greve] zona em grande (COIMBRA) 10805
+OK      [coimbra-greve] nenhum texto passa a margem direita 0
+        {"zona":"COIMBRA","modo":"autocarro","tipo":"GREVE","quando":"QUA 02/12"}
+OK      [lisboa-avaria] faixa laranja em baixo 255,107,26
+OK      [lisboa-avaria] zona em grande (LISBOA) 8862
+OK      [lisboa-avaria] nenhum texto passa a margem direita 0
+        {"zona":"LISBOA","modo":"comboio","tipo":"AVARIA","quando":"EM CURSO"}
+OK      [porto-desvio] faixa laranja em baixo 255,107,26
+OK      [porto-desvio] zona em grande (PORTO) 8184
+OK      [porto-desvio] nenhum texto passa a margem direita 0
+        {"zona":"PORTO","modo":"autocarro","tipo":"DESVIO","quando":"30/11 → 12/12"}
+OK      [braga-obras] faixa laranja em baixo 255,107,26
+OK      [braga-obras] zona em grande (BRAGA) 8766
+OK      [braga-obras] nenhum texto passa a margem direita 0
+        {"zona":"BRAGA","modo":"autocarro","tipo":"OBRAS","quando":"28/11 → 20/12"}
+OK      [lisboa-normal] faixa laranja em baixo 255,107,26
+OK      [lisboa-normal] zona em grande (LISBOA) 8862
+OK      [lisboa-normal] nenhum texto passa a margem direita 0
+        {"zona":"LISBOA","modo":"barco","tipo":"SERVIÇO NORMAL","quando":"EM CURSO"}
+OK      [acores-tempo] faixa laranja em baixo 255,107,26
+OK      [acores-tempo] zona em grande (AÇORES) 9923
+OK      [acores-tempo] nenhum texto passa a margem direita 0
+        {"zona":"AÇORES","modo":"autocarro","tipo":"MAU TEMPO","quando":"SÁB 28/11 ATÉ 23:00"}
+OK      [portugal-greve] faixa laranja em baixo 255,107,26
+OK      [portugal-greve] zona em grande (PORTUGAL) 9968
+OK      [portugal-greve] nenhum texto passa a margem direita 0
+        {"zona":"PORTUGAL","modo":"comboio","tipo":"GREVE","quando":"08/12 → 10/12"}
+OK      [comunidade-incendio] faixa laranja em baixo 255,107,26
+OK      [comunidade-incendio] zona em grande (AROUCA) 9966
+OK      [comunidade-incendio] nenhum texto passa a margem direita 0
+        {"zona":"AROUCA","modo":null,"tipo":"INCÊNDIO","quando":"EM CURSO"}
+OK      [comunidade-feriado] faixa laranja em baixo 255,107,26
+OK      [comunidade-feriado] zona em grande (PORTUGAL) 9971
+OK      [comunidade-feriado] nenhum texto passa a margem direita 0
+        {"zona":"PORTUGAL","modo":null,"tipo":"FERIADO","quando":"TER 08/12"}
+OK      Comunidade: JPEG a partir dos dados guardados {"tipo":"image/jpeg","tamanho":96767}
+OK      JPEG final pronto a partilhar {"tipo":"image/jpeg","tamanho":124597}
+OK      sem erros na página 
+
+TUDO OK

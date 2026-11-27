@@ -1,0 +1,19 @@
+OK      id da linha inteira fica como antes 
+OK      id de um sentido 
+OK      id do sentido 0 
+OK      lê a linha inteira 
+OK      lê um sentido 
+OK      ids com «_» e «:» da CP/Carris ficam intactos 
+OK      não é linha: paragem 
+OK      não é linha: lixo 
+OK      sentidos guardados: os dois sentidos 
+OK      sentidos guardados: linha inteira 
+OK      outra linha com o número a começar igual não conta 
+OK      nada guardado → guarda só este sentido {"tirar":[],"juntar":[1],"ficaGuardado":true}
+OK      sentido guardado → sai {"tirar":["line-stcp:801~s1"],"juntar":[],"ficaGuardado":false}
+OK      o outro sentido junta-se sem tirar o primeiro {"tirar":[],"juntar":[0],"ficaGuardado":true}
+OK      linha inteira guardada (favorito antigo) → fica só o outro sentido {"tirar":["line-stcp:801"],"juntar":[1],"ficaGuardado":false}
+OK      linha de um só sentido guardada inteira → sai {"tirar":["line-cp:x"],"juntar":[],"ficaGuardado":false}
+OK      avisos: os dois sentidos do 801 dão uma só linha [{"op":"STCP","ln":"801"},{"op":"cm","ln":"1001"}]
+OK      avisos: sentido sem dados usa o id da linha sem o sufixo [{"op":"STCP","ln":"801"},{"op":"cm","ln":"1001"}]
+Tudo OK

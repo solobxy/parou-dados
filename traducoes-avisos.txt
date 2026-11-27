@@ -1,0 +1,9 @@
+OK      traduz para inglês, francês e alemão {"en":"[en] Greve reduz serviço do Metro esta sexta-feira","fr":"[fr] Greve reduz serviço do Metro esta sexta-feira","de":"[de] Greve reduz serviço do Metro esta sexta-feira"}
+OK      espaços a mais não contam como outro título (6 pedidos, não 9) 6
+OK      sem tradução numa língua: as outras ficam {"en":"[en] falha no francês","de":"[de] falha no francês"}
+OK      título já traduzido não volta a ser pedido 0
+OK      fica guardado em disco 
+OK      o aviso na resposta leva «titulos» {"en":"[en] Greve reduz serviço do Metro esta sexta-feira","fr":"[fr] Greve reduz serviço do Metro esta sexta-feira","de":"[de] Greve reduz serviço do Metro esta sexta-feira"}
+OK      [ecrã] avisos do topo do Perto na língua da app 
+OK      [ecrã] Alertas: títulos, resumos das greves e notícias na língua da app 
+Tudo OK

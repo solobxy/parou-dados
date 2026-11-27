@@ -1,0 +1,29 @@
+OK      [margem] Cacilhas (MTS) fica a sul do Tejo e não conta como Lisboa 
+OK      [margem] Almada fica a sul do Tejo e não conta como Lisboa 
+OK      [margem] Pragal fica a sul do Tejo e não conta como Lisboa 
+OK      [margem] Cova da Piedade fica a sul do Tejo e não conta como Lisboa 
+OK      [margem] Barreiro fica a sul do Tejo e não conta como Lisboa 
+OK      [margem] Seixal fica a sul do Tejo e não conta como Lisboa 
+OK      [margem] Cais do Sodré conta como Lisboa e não como Almada 
+OK      [margem] Terreiro do Paço conta como Lisboa e não como Almada 
+OK      [margem] Alcântara-Mar conta como Lisboa e não como Almada 
+OK      [margem] Santa Apolónia conta como Lisboa e não como Almada 
+OK      [margem] Xabregas conta como Lisboa e não como Almada 
+OK      [margem] Marquês de Pombal conta como Lisboa e não como Almada 
+OK      [margem] Cacilhas conta como Almada 
+OK      [margem] Belém fica a norte do Tejo 
+OK      [margem] o centro do Montijo conta como Montijo (estuário) 
+OK      [margem] Trafaria não conta como Oeiras 
+OK      [douro] Cais de Gaia é Gaia e não Porto 
+OK      [douro] General Torres é Gaia e não Porto 
+OK      [douro] Jardim do Morro é Gaia e não Porto 
+OK      [douro] Afurada é Gaia e não Porto 
+OK      [douro] Oliveira do Douro é Gaia e não Porto 
+OK      [douro] São Bento é Porto e não Gaia 
+OK      [douro] Ribeira é Porto e não Gaia 
+OK      [douro] Campanhã é Porto e não Gaia 
+OK      [douro] Aliados é Porto e não Gaia 
+OK      [douro] Avintes (Gaia) não conta como Gondomar 
+OK      [douro] Valbom conta como Gondomar 
+OK      [outras] Porto não muda (fora do Tejo) 
+Todos os testes passaram

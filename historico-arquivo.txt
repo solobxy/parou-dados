@@ -1,0 +1,15 @@
+OK      [avisos] um aviso novo fica guardado {"novos":1,"mudaram":0}
+OK      [avisos] o mesmo aviso outra vez não cria versão nova {"novos":0,"mudaram":0}
+OK      [avisos] o texto mudou: versão nova {"novos":0,"mudaram":1}
+OK      [avisos] o estado mudou (Futuro → Ativo): versão nova {"novos":0,"mudaram":1}
+OK      [avisos] fica o estado atual, a 1.ª e a última vez visto e o n.º de versões {"estado":"Ativo","versoes":3}
+OK      [avisos] linhas e municípios guardados 
+OK      [versões] as 3 versões ficam, cada uma com o aviso inteiro 3
+OK      [avisos] vários avisos de uma vez {"novos":1,"mudaram":1}
+OK      [avisos] lista vazia (fonte em baixo) não apaga nada 
+OK      [notícias] cada notícia fica uma vez, com a 1.ª e a última vez vista ["RTP:https://x/1","RTP:https://x/2"]
+OK      [ligação] a sincronização dos avisos arquiva 
+OK      [ligação] a leitura das notícias arquiva 
+OK      [cópias] o histórico e os atrasos entram nas cópias de segurança 
+
+Tudo OK

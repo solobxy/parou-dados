@@ -1,0 +1,7 @@
+OK      nenhum ecrã manda escrever para o contacto@parou.pt (não chega a ninguém) 
+OK      o contacto mostrado é o email do Dinis 
+OK      o telefone está nos contactos 
+OK      os dados para o Google têm o email e o telefone 
+OK      a página de contactos mostra o email e o telefone 
+
+Tudo OK

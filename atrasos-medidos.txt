@@ -1,0 +1,20 @@
+[SQLite DB] Base de dados sem feeds. A registar feeds oficiais do catálogo...
+[SQLite DB] 31 feeds registados com sucesso.
+[Planeador] índice pronto (1 padrões, 3 paragens, 4 ms)
+OK      o motor em memória ficou pronto pronto (1 padrões, 3 paragens, 4 ms)
+[Planeador] previsões da UNIR: não consegui ler (HTTP 503); uso o horário.
+[TUB] viagens: não consegui ler (HTTP 503); a app usa o horário até voltar.
+OK      [medição] uma amostra por viagem a andar (a que sai daqui a 2 h não conta) [{"feed":"cmh","linha":"cmh:1000","atrasoS":240},{"feed":"cmh","linha":"cmh:1000","atrasoS":120},{"feed":"cmh","linha":"cmh:1000","atrasoS":60}]
+OK      [medição] o atraso é o da próxima paragem (1, 2 e 4 min) [60,120,240]
+OK      [medição] cada amostra traz o feed e a linha {"feed":"cmh","linha":"cmh:1000","atrasoS":240}
+OK      [janela] sem medições, 2 min 120
+OK      [janela] 40% com 4+ min de atraso: janela de 4 min 240
+OK      [janela] a hora conta (às 3 da manhã não há medições: 2 min) 120
+OK      [janela] operador sem previsões usa os outros 240
+OK      [janela] medições com mais de 14 dias não contam 240
+OK      [janela] operador pontual (10% com 1+ min): sem janela 0
+OK      [janela] o cálculo: 50% com 2+ min, 36% com 3+, 20% com 4+ → 3 min 
+OK      [janela] nunca mais de 5 min 
+OK      [resumo] o resumo por operador funciona [{"feed":"cmh","amostras":400,"janelaAgora":240},{"feed":"tub_braga","amostras":400,"janelaAgora":0},{"feed":"unirh","amostras":400,"janelaAgora":60}]
+
+Tudo OK

@@ -1,0 +1,15 @@
+[SQLite DB] Base de dados sem feeds. A registar feeds oficiais do catálogo...
+[SQLite DB] 31 feeds registados com sucesso.
+OK      Proteção Civil: as coordenadas da fonte (exatas) {"lat":40.207937,"lon":-8.891904,"aproximada":false}
+OK      sem coordenadas: a localidade escrita, dentro do concelho (Buarcos) {"lat":40.16496,"lon":-8.875103,"aproximada":true}
+OK      só o concelho: a sede (Almada cidade, não o bairro «Almada» em Mafra), em terra {"lat":38.68313,"lon":-9.15763,"aproximada":true}
+OK      Costa da Caparica (Almada): a localidade, não o mar {"lat":38.644517,"lon":-9.233607,"aproximada":true}
+OK      Açores: «Sao Joao» sem acentos no concelho Lajes do Pico (não o São João de Ovar) {"lat":38.4,"lon":-28.21,"aproximada":true}
+OK      Madeira: concelho de Machico {"lat":32.7168,"lon":-16.7666,"aproximada":true}
+OK      nada que se encontre: fica fora do mapa (nada de posições inventadas) 
+OK      coordenadas fora de Portugal não contam 
+OK      lista: a da Proteção Civil com as coordenadas da fonte [40.165,-8.876]
+OK      lista: a sem coordenadas com a posição do concelho (aproximada) [38.68313,-9.15763]
+OK      mapa: nada de desvios ao acaso à volta do centro do distrito 
+
+Tudo OK

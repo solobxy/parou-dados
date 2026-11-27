@@ -1,0 +1,58 @@
+OK      cria um aviso de greve da Metro do Porto (e um só, com duas notícias) [["Metro do Porto","2026-11-27T00:00:00.000Z"]]
+OK      dia da greve: sexta-feira 27/11 até ao fim do dia 2026-11-27T23:59:59.999Z
+OK      a greve começa na sexta 00:00 2026-11-27T00:00:00.000Z
+OK      véspera: serviço a acabar mais cedo desde quinta às 22:00 (últimas partidas ~23h) 2026-11-26T22:00:00.000Z
+OK      véspera sem hora no texto: 22:00 (o habitual) 2026-11-26T22:00:00.000Z
+OK      a fonte é a notícia (dito como tal), com ligação para ela Notícia — RTP Notícias
+OK      tipo greve, gravidade grave, região do Porto 
+OK      greve noutro setor (médicos) não cria aviso 
+OK      "unir" (verbo) não é a UNIR 
+OK      notícia com mais de 10 dias não conta 
+OK      a notícia da CP sem dia na manchete usa "hoje" (25/11) e já passou → nada []
+OK      três fontes: «RTP Notícias, SAPO 24 e ECO» Fonte: RTP Notícias, SAPO 24 e ECO (o operador ainda não publicou aviso no site)
+OK      com aviso oficial para o mesmo dia, a notícia não duplica 
+OK      greve desconvocada: sem aviso 
+OK      "de 1 a 3 de dezembro": do início de 1 ao fim de 3 2026-12-01T00:00:00.000Z 2026-12-03T23:59:59.999Z
+OK      Metro de Lisboa reconhecido, dias 2 e 4 de dezembro 
+OK      dia da semana: "na sexta-feira" numa notícia de quarta → 27/11 
+OK      "amanhã" numa notícia de quarta → 26/11 
+OK      "esta sexta-feira" numa notícia de sexta → o próprio dia 
+OK      "desta quinta-feira" numa notícia de quinta → o próprio dia 
+OK      "deste sábado" numa notícia de sábado → o próprio dia 
+OK      "na quinta-feira" numa notícia de quinta continua a ser a da semana seguinte 
+OK      notícia da greve da CP em curso (com aviso oficial de 23 a 27/11) não cria greve a 3/12 []
+OK      «O Essencial RTP» de segunda 23/11 ("desta segunda-feira") não cria greve da CP a 30/11 []
+OK      "que começou na segunda-feira" numa notícia de quinta: não é um dia de greve 
+OK      "em greve desde segunda-feira": não é um dia de greve 
+OK      "iniciada na segunda-feira" e "teve início na segunda-feira": não 
+OK      "na passada segunda-feira" e "segunda-feira passada": não 
+OK      balanço "a greve de terça-feira suprimiu 75% dos comboios" numa notícia de quinta: não 
+OK      "começou esta segunda-feira" numa notícia de segunda → o próprio dia 2026-11-23
+OK      "começou na segunda-feira" numa notícia de segunda à noite → o próprio dia (não a semana seguinte) 2026-11-23
+OK      "começou na segunda-feira e repete-se na sexta-feira" → sexta 27/11 2026-11-27
+OK      "prolonga-se até sexta-feira" numa notícia de quinta → 27/11 2026-11-27
+OK      "prolonga-se até sexta-feira" numa notícia de sexta → o próprio dia (não a semana seguinte) 2026-11-27
+OK      "termina na sexta-feira" numa notícia de sexta → o próprio dia; numa de quinta → 27/11 2026-11-27
+OK      "desta quinta-feira" numa notícia publicada à meia-noite e dez de sexta: é a véspera, não a quinta seguinte 
+OK      "esta sexta-feira" numa notícia de quarta e "esta segunda-feira" numa de domingo continuam a ser os dias que aí vêm 2026-11-27 2026-11-30
+OK      o futuro continua a contar: "começa na segunda-feira", "vai começar", "arranca", "a partir de" → 30/11 2026-11-30 | 2026-11-30 | 2026-11-30 | 2026-11-30 | 2026-11-30
+OK      notícia a meio da greve da CP ("que começou na segunda-feira") não cria greve a 30/11 []
+OK      o mesmo num operador sem aviso oficial (STCP): nenhuma greve falsa na semana seguinte []
+OK      dezembro → janeiro: "5 de janeiro" numa notícia de dezembro é do ano seguinte 
+OK      RSS: lê a notícia de greve (CDATA) e ignora as outras [{"titulo":"Greve dos maquinistas reduz serviço do Metro do Porto na sexta-feira","resumo":"O Metro do Porto vai reduzir o serviço…","fonte":"RTP Notícias","url":"https://www.rtp.pt/n1","data":"2026-11-25T18:53:00.000Z"}]
+OK      RSS: entidades HTML («&ccedil;») passam a letras O Metro do Porto vai reduzir o serviço…
+OK      troço do metro na sexta às 10h: greve, com a notícia como fonte {"titulo":"Greve dos maquinistas reduz serviço do Metro do Porto na sexta-feira","url":"https://www.rtp.pt/noticias/economia/greve-dos-maquinistas-reduz-servico-do-metro-do-porto-na-sexta-feira_n1781632","operador":"Metro do Porto","noticia":true,"semServico":true}
+OK      quinta às 23h30: perturbação prevista (o serviço acaba às 23h), não greve {"titulo":"Greve dos maquinistas reduz serviço do Metro do Porto na sexta-feira","url":"https://www.rtp.pt/noticias/economia/greve-dos-maquinistas-reduz-servico-do-metro-do-porto-na-sexta-feira_n1781632","operador":"Metro do Porto","noticia":true,"previsto":true,"semServico":true}
+OK      quinta às 10h não 
+OK      autocarro da STCP na sexta não leva a greve do metro 
+OK      serviço na greve: linha Amarela, troço Senhora da Hora–Estádio do Dragão, 15 min das 7h às 20h e 30 min das 6h às 7h {"linhas":["amarela"],"trocos":[["senhora da hora","estadio do dragao"]],"frequencia":"15 min (7h–20h) · 30 min (6h–7h)","horas":[360,1200]}
+OK      serviço na greve com "Sra." e "S. João": dois troços {"linhas":["amarela"],"trocos":[["senhora da hora","estadio do dragao"],["hospital de sao joao","santo ovidio"]]}
+OK      "entre as 07h00 e as 20h00" não é um troço 
+OK      o aviso leva o serviço que funciona {"linhas":["amarela"],"trocos":[["senhora da hora","estadio do dragao"]]}
+OK      Dragão → Campanhã (linha B, tronco comum): funciona, com serviço reduzido {"titulo":"Greve dos maquinistas reduz serviço do Metro do Porto na sexta-feira","url":"https://www.rtp.pt/noticias/economia/greve-dos-maquinistas-reduz-servico-do-metro-do-porto-na-sexta-feira_n1781632","operador":"Metro do Porto","noticia":true,"reduzido":true}
+OK      Dragão → Fânzeres (linha F, fora do tronco): pode não circular {"titulo":"Greve dos maquinistas reduz serviço do Metro do Porto na sexta-feira","url":"https://www.rtp.pt/noticias/economia/greve-dos-maquinistas-reduz-servico-do-metro-do-porto-na-sexta-feira_n1781632","operador":"Metro do Porto","noticia":true,"semServico":true}
+OK      linha D (Amarela) anunciada inteira: funciona com serviço reduzido 
+OK      linha D só entre H. S. João e Santo Ovídio: Santo Ovídio → Vila d'Este pode não circular {"titulo":"Greve dos maquinistas reduz serviço do Metro do Porto na sexta-feira","url":"https://www.rtp.pt/noticias/economia/greve-dos-maquinistas-reduz-servico-do-metro-do-porto-na-sexta-feira_n1781632","operador":"Metro do Porto","noticia":true,"semServico":true}
+OK      linha D: Trindade → Aliados funciona 
+
+Tudo OK

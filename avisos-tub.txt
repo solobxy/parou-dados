@@ -1,0 +1,20 @@
+OK      feed real: 19 avisos publicados 
+OK      ficam só os do serviço (10 a 13) 12: Alteração temporária de percurso - Praça | Alteração temporária de percurso - Linha | LINHA 09 | Novos horários a partir do di | Alteração de percursos – Interdição da R | Interface Estádio - Minho Center (a part | Alteração temporária de percurso - Linha | Shuttle de Substituição - Elevador do Bo | Alteração temporária de percurso - Linha | Linha 83 - Novo horário de regresso | Alteração temporária de percurso | Linha | Alteração temporária de percurso | Linha | Alteração local de paragem | Linha 2
+OK      fica de fora: /Concurso Postal/ 
+OK      fica de fora: /jogo TUB/ 
+OK      fica de fora: /whatsapp/i 
+OK      fica de fora: /Multibanco/ 
+OK      fica de fora: /Passe x 2/ 
+OK      fica de fora: /Taxas/ 
+OK      fica de fora: /Mapa da rede/ 
+OK      «Linhas 72 e 92»: linhas 72 e 92, alteração de percurso 72,92 alteração de percurso
+OK      «LINHA 09 | Novos horários»: linha 9 (sem o zero), novo horário 9 novo horário
+OK      lista longa: 13 linhas, com a 907 e a 933 ["7","14","21","32","35","37","54","84","91","93","907","914","933"]
+OK      aviso publicado para amanhã (28/11): «Futuro» Futuro
+OK      avisos de hoje para trás: «Ativo», sem data de fim 
+OK      operador TUB, Braga, fonte oficial 
+OK      ids estáveis (o mesmo aviso não se duplica) 
+OK      chave de linha igual à da linha guardada na app (tub_braga 72 → tub|72) tub|72 tub|72
+OK      formato desconhecido não dá avisos 
+
+Tudo OK

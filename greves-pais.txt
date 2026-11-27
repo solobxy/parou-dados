@@ -1,0 +1,41 @@
+OK      MTS: título sem o nome do site, data dos metadados e texto do aviso ["MTS CONFRONTADA COM NOVO PRÉ-AVISO DE GREVE DO SMAQ","2026-11-13T12:13:47+00:00"]
+OK      MTS: greve de 16 a 22 de novembro, oficial ["2026-11-16T00:00:00.000Z","2026-11-22T23:59:59.999Z","Operadores — avisos oficiais"]
+OK      MTS: serviços mínimos só na Linha 3, das 7h às 9h e das 17h às 19h {"linhas":["3"],"trocos":[],"janelas":[[420,540],[1020,1140]]}
+OK      MTS: Linha 3 às 8h = serviço reduzido; às 12h = sem serviço; Linha 1 = sem serviço ["reduzido","sem","sem"]
+OK      MTS: aviso de uma greve que já acabou não aparece 
+OK      lista de avisos: só a ligação da greve, do mesmo site, sem páginas de categoria ["https://www.smtuc.pt/novidades/fesinap-convoca-greve-para-a-proxima-4a-feira/"]
+OK      SMTUC: greve a 2 de dezembro (data da página no texto) ["2026-12-02T00:00:00.000Z","Futuro"]
+OK      SMTUC: autocarro da SMTUC a 2/12 leva a greve (pode não circular) {"titulo":"FESINAP convoca greve para a próxima 4ª feira","url":"https://www.smtuc.pt/novidades/fesinap-convoca-greve-para-a-proxima-4a-feira/","operador":"SMTUC"}
+OK      SMTUC: Metro Mondego (outro operador de Coimbra) não leva a greve da SMTUC 
+OK      aviso sem data na página e só com «quarta-feira»: não cria greve (podia ser qualquer quarta) null
+OK      SMTUC (página real): o título é o do aviso, não «Blog» FESINAP convoca greve para a próxima 4ª feira
+OK      SMTUC (página real): greve só a 2 de dezembro (a data da página não é dia de greve) ["FESINAP convoca greve para a próxima 4ª feira","2026-12-02T00:00:00.000Z","2026-12-02T23:59:59.999Z"]
+OK      carimbo de alteração no fim («26 de Novembro, 2026»): não cria uma greve a 26/11 
+OK      STAL: «6ª feira e sábado» publicado a 16/11 → greve de 20 a 21/11 ["2026-11-20T00:00:00.000Z","2026-11-21T23:59:59.999Z"]
+OK      «4ª feira» lê-se quarta-feira 
+[SQLite DB] Base de dados sem feeds. A registar feeds oficiais do catálogo...
+[SQLite DB] 31 feeds registados com sucesso.
+OK      todos os operadores da app (45, continente e ilhas) têm nomes para ligar às greves 
+OK      greve «Horários do Funchal» chega ao operador horarios_funchal ["horarios do funchal"]
+OK      greve «Rodoeste» chega ao operador siga_rodoeste ["rodoeste","siga rodoeste"]
+OK      greve «CAM» chega ao operador cam_madeira ["cam","companhia de autocarros da madeira","cam - companhia de autocarros da madeira"]
+OK      greve «TUB» chega ao operador tub_braga ["tub","tub braga","transportes urbanos de braga"]
+OK      greve «Guimabus» chega ao operador guimabus ["guimabus","guimabus (guimaraes)"]
+OK      greve «Vamus Algarve» chega ao operador vamus ["vamus algarve","vamus"]
+OK      greve «Próximo» chega ao operador proximo_faro ["proximo","proximo (faro)"]
+OK      greve «TCB Barreiro» chega ao operador tcb_barreiro ["tcb barreiro","tcb"]
+OK      greve «MobiCascais» chega ao operador mdb-1272 ["mobicascais","cascais proxima"]
+OK      greve «Transtejo Soflusa» chega ao operador transtejo_soflusa ["transtejo soflusa","transtejo","soflusa"]
+OK      greve «Carris Metropolitana» chega ao operador carris_metropolitana ["carris metropolitana"]
+OK      notícias: Madeira, Açores, Guimarães e Infraestruturas de Portugal (comboios da CP) ["Horários do Funchal","Atlânticoline","Guimabus","CP"]
+OK      fontes de notícias regionais (Coimbra, Minho, Algarve, Leiria, Aveiro) 
+OK      Metro de Lisboa: «só a Linha Azul» → Az funciona (reduzido), Vd sem serviço ["reduzido","sem"]
+OK      serviço por números de carreira («apenas as carreiras 201, 205 e 300») {"linhas":["201","205","300"],"trocos":[]}
+OK      fonte sem responder há 31 min: o aviso sem data de fim sai (sem confirmação); o que tem data fica; outra fonte fica ["Terminado","Ativo","Ativo"]
+OK      fonte sem responder há só 10 min: o aviso fica (uma falha curta não apaga nada) 
+OK      a fonte volta a responder: deixa de estar em falha 
+OK      CP sem «Data de fim»: «até 31 de dezembro» no texto dá o fim 
+OK      CP: «até ao dia 15 de janeiro de 2027» 
+OK      CP: texto sem fim escrito → sem fim (fica enquanto a CP o mostrar) 
+
+Tudo OK

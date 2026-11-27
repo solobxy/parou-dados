@@ -1,0 +1,10 @@
+OK      [regra] só greves que ainda valem (fora obras, antigas e canceladas) CP,Metro de Lisboa
+OK      [regra] comboio da CP amanhã às 06:40, dentro da greve: aviso {"titulo":"Greve - serviços mínimos a 24 e 25 de novembro","url":"https://www.cp.pt/pt/detalhe-aviso/greve-23a27-nov","operador":"CP"}
+OK      [regra] comboio da CP depois do fim da greve: sem aviso 
+OK      [regra] outro operador no mesmo dia: sem aviso 
+OK      [regra] dia com perturbações previstas pelo operador: aviso «previsto» {"titulo":"Greve no Metro","url":"https://www.cp.pt/pt/detalhe-aviso/greve-23a27-nov","operador":"Metro de Lisboa","previsto":true}
+OK      [regra] Carris não é a Carris Metropolitana 
+OK      [regra] greve sem fim indicado: vale no dia em que começa 
+NOTA   sem greve oficial da CP agora: a parte real fica para quando houver
+
+Tudo OK

@@ -1,0 +1,5 @@
+OK      sem forma de mudar o tamanho do painel (setMapaExpandido) 
+OK      sem arrastar o painel com o dedo 
+OK      sem a pega (barrinha cinzenta) 
+OK      sem o botão «Aumentar o mapa» nem «Encolher a lista» 
+Tudo OK

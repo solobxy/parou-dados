@@ -1,0 +1,32 @@
+[SQLite DB] Base de dados sem feeds. A registar feeds oficiais do catálogo...
+[SQLite DB] 31 feeds registados com sucesso.
+OK      [preparar] o aviso conta como greve com o que funciona 
+OK      [paragem] há partidas das 4 linhas A B F T A B F T A B F T
+OK      [paragem] F (para Fânzeres, fora do troço) = sem serviço {"estado":"sem-servico","operador":"Metro do Porto"}
+OK      [paragem] B para a Póvoa = só até à Senhora da Hora {"estado":"reduzido","operador":"Metro do Porto","ate":"Senhora da Hora","cada":15,"repetida":true}
+OK      [paragem] A para Matosinhos = só até à Senhora da Hora {"estado":"reduzido","operador":"Metro do Porto","ate":"Senhora da Hora","cada":15}
+OK      [paragem] T (todo dentro do troço) = serviço reduzido, sem «só até» {"estado":"reduzido","operador":"Metro do Porto","cada":15,"repetida":true}
+OK      [frequência] 16h → 15 min; 6h30 → 30; 21h → 30; 3h → nada 15 30 30 
+OK      [frequência] sem horas = o dia todo 
+OK      [de 15 em 15] todas as partidas que funcionam levam «cada 15» 
+OK      [de 15 em 15] fica UMA partida para a Senhora da Hora (A, B e T juntas) A→Senhora da Hora:reduzido F→Fânzeres:sem-servico
+OK      [de 15 em 15] as sem serviço: uma por linha e destino (riscada) 1
+OK      [de 15 em 15] a lista original (cache) não perde partidas 
+OK      [paragem] sem greve as marcas saem 
+OK      [perto] as linhas do Dragão aparecem A B F T
+OK      [perto] F = sem serviço {"estado":"sem-servico","operador":"Metro do Porto"}
+OK      [perto] B = só até à Senhora da Hora {"estado":"reduzido","operador":"Metro do Porto","ate":"Senhora da Hora","cada":15}
+OK      [perto] a marca vai na resposta (JSON) 
+OK      [tempo real] não se marca 
+OK      [servidor] Perto (/api/transit/nearby) marca a greve em cada paragem 
+OK      [servidor] linhas perto (/api/lines?near) marcam a greve 
+OK      [servidor] partidas de uma paragem (/api/stops/:id/departures) marcam a greve 
+OK      [servidor] detalhe da paragem (/api/transit/stop/:id) continua a marcar 
+OK      [servidor] todas as chamadas que dão partidas marcam a greve 
+OK      [ecrã] cartões do Perto: as sem serviço vão para o fim; destino real e etiqueta da greve nas 3 listas 
+OK      [ecrã] cartão de linha (Horários/Favoritos): destino real e etiqueta da greve 
+OK      [ecrã] partidas no detalhe da linha: destino real e etiqueta da greve 
+OK      [ecrã] texto: «Não vai até Fórum Maia (greve)» Não vai até Fórum Maia (greve)
+OK      [ecrã] texto: sem serviço 
+OK      [ecrã] destino real: Senhora da Hora em vez de Fórum Maia 
+Tudo OK

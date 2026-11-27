@@ -1,0 +1,20 @@
+[SQLite DB] Base de dados sem feeds. A registar feeds oficiais do catálogo...
+[SQLite DB] 31 feeds registados com sucesso.
+[Planeador] índice pronto (1 padrões, 3 paragens, 4 ms)
+OK      o motor em memória do planeador ficou pronto pronto (1 padrões, 3 paragens, 4 ms)
+[Central Alerts Engine] A sincronizar alertas oficiais de todas as fontes reais...
+[Planeador] previsões da Carris Metropolitana: não consegui ler (HTTP 503); uso o horário.
+[TUB] viagens: não consegui ler (HTTP 503); a app usa o horário até voltar.
+[TML GO Hub] Erro em /alerts: HTTP 503 
+OK      [horários] a UNIR 5101 aparece nos percursos normais 5101@08:05→08:24 | 5101@08:25→08:44 [unir:0 híbridas:0 pontes:0 duplas:0]
+OK      [horários] com a hora do horário da TMP (08:05) e a chegada (08:23) 5101@08:05→08:24 | 5101@08:25→08:44 [unir:0 híbridas:0 pontes:0 duplas:0]
+OK      [horários] operador UNIR, linha 5101 com a cor da UNIR {"op":"UNIR","cor":"#CE9926"}
+OK      [horários] entra e sai nas paragens da UNIR (nomes da AMP) {"de":"Sete Bicas","para":"Fim"}
+OK      [horários] o troço tem os pontos das paragens para o mapa 3
+OK      [horários] sem pesquisas à parte da UNIR pela AMP (já vem com horas) 5101@08:05→08:24 | 5101@08:25→08:44 [unir:0 híbridas:0 pontes:0 duplas:0]
+OK      [horários] o índice sabe que a UNIR tem horários 
+OK      [horários] não há linhas da UNIR "estimadas" no índice 
+[Central Alerts Engine] Sincronização concluída. Total: 0 alertas auditados.
+OK      [tempo real] a 5101 das 08:05 aparece às 08:12, em direto, com 7 min de atraso 5101@08:12*→08:31 | 5101@08:25→08:44 [unir:0 híbridas:0 pontes:0 duplas:0]
+
+Tudo OK

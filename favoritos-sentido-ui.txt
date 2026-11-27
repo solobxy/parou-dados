@@ -1,0 +1,30 @@
+OK      [preparar] há uma linha real com dois sentidos horarios_funchal:001_0: 0 → Ponta Laranjeira | 1 → Centro EEM
+OK      [detalhe] a linha abre com a estrela e os sentidos 
+OK      [detalhe] sem nada guardado a estrela está apagada 
+OK      [detalhe] a estrela acende no sentido «Ponta Laranjeira» 
+OK      [detalhe] o rótulo da estrela diz o destino Tirar «Ponta Laranjeira» dos favoritos
+OK      [detalhe] guardou só este sentido, com o destino [{"id":"line-horarios_funchal:001_0~s0","sentido":0,"destino":"Ponta Laranjeira"}]
+OK      [detalhe] no outro sentido «Centro EEM» a estrela está apagada 
+OK      [detalhe] os dois sentidos ficam como dois favoritos [{"id":"line-horarios_funchal:001_0~s1","sentido":1,"destino":"Centro EEM"},{"id":"line-horarios_funchal:001_0~s0","sentido":0,"destino":"Ponta Laranjeira"}]
+OK      [detalhe] a lista das linhas dos Horários tem a linha uma só vez, sem sufixo ["horarios_funchal:001_0"]
+OK      [detalhe] os dois sentidos mostram a estrelinha 2
+OK      [favoritas] aparece o sentido A 
+OK      [favoritas] aparece o sentido B 
+OK      [favoritas] a linha A diz o destino A 001 Ponta Laranjeira
+OK      [favoritas] a linha B diz o destino B 001 Centro EEM
+OK      [favoritas] tocar em «→ B» abre o sentido B 
+OK      [favoritas] e a estrela está acesa 
+OK      [favoritas] tirar A deixa só B [{"id":"line-horarios_funchal:001_0~s1","sentido":1,"destino":"Centro EEM"}]
+OK      [favoritas] a linha A sai da lista e a B fica 
+OK      [sem erros de página] 
+OK      [antigo] linha inteira guardada: a estrela está acesa no sentido A 
+OK      [antigo] e no sentido B 
+OK      [antigo] tirar A deixa B guardado (e a linha inteira sai) [{"id":"line-horarios_funchal:001_0~s1","sentido":1,"destino":"Centro EEM"}]
+OK      [antigo] a estrela de A apaga 
+OK      [antigo] a de B continua acesa 
+OK      [antigo] sem erros de página 
+OK      [320] as duas linhas favoritas aparecem 2
+OK      [320] sem scroll lateral 0
+OK      [320] a estrela tem pelo menos 44 px 44x44
+OK      [320] detalhe sem scroll lateral 0
+tudo OK

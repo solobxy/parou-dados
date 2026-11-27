@@ -1,0 +1,79 @@
+OK      localização desligada: a app pede para a ligar 
+OK      enquanto está desligada, pergunta em silêncio sem exagerar (≤ 1 pedido a cada 0,3 s) 20 pedidos em 6 s
+OK      ao ligar a localização, a app mostra onde a pessoa está sem tocar em nada 220 ms
+OK      e fá-lo depressa (menos de 1 s) 220 ms
+OK      a app pediu e recebeu a posição do telemóvel 1 posições
+OK      sem erros na página 
+OK      pedidos pendurados: ao fim de pouco tempo a app pede para ligar a localização 
+OK      pedidos pendurados: ao ligar a localização, aparece sozinha e depressa (menos de 7 s) 899 ms
+OK      sem erros na página (pendurados) 
+OK      sem sinal de GPS: não recomeça a localização sem parar 0 recomeços em 8 s
+OK      sem sinal de GPS: não fica preso em «A localizar…» 
+OK      sem erros na página (sem sinal) 
+OK      só a posição aproximada dá: não entra num ciclo de recomeços 0 recomeços em 10 s
+OK      sem erros na página (aproximada) 
+OK      posição guardada de há 9 h: não aparece como «onde estás» (nada de paragens desse sítio), fica «A localizar…» paragens false | a localizar true
+OK      posição guardada de há 9 h: quando o GPS responde, aparece a posição verdadeira 
+OK      sem erros na página (posição velha) 
+OK      GPS a arrancar há 24 s: diz «Sem sinal de GPS» e não «Liga a localização» sem sinal true | liga false
+OK      GPS a arrancar: a posição aparece quando o GPS a dá (o seguimento não foi recomeçado à espera) {"watchs":1,"limpos":0}
+OK      GPS a arrancar: um só seguimento, nunca limpo enquanto esperava {"watchs":1,"limpos":0}
+OK      sem erros na página (GPS a arrancar) 
+OK      app da Play sem resposta do GPS e autorização por pedir: «Abrir no Chrome» (abre o Chrome, não a app) cartão 1 | intent://parou.pt/#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=https%3A%2F%2Fparou.pt%2F;end
+OK      sem erros na página (app da Play) 
+OK      no Chrome, o mesmo caso não mostra o cartão da app da Play cartão 0
+OK      sem erros na página (Chrome) 
+OK      GPS calado há 11 min: a posição antiga deixa de aparecer como «onde estás» e volta a procurar antes true | paragens depois false | a localizar false | sem sinal true
+OK      GPS calado: diz «Sem sinal de GPS» (a localização está ligada), não «Liga a localização» sem sinal true | liga false
+OK      sem erros na página (posição caduca) 
+OK      GPS lento (20 s) ao abrir: as paragens aparecem muito antes do GPS (última posição, de há 5 min) 224 ms (página carregada aos 136 ms)
+OK      GPS lento ao abrir: não fica em «A localizar…» 
+OK      GPS lento ao abrir: diz que está a afinar a posição 
+OK      sem erros na página (GPS lento) 
+OK      desligada: a app pede para a ligar (e não mostra a posição antiga) 
+OK      ligada com GPS lento: mostra onde está em menos de 5 s (sem esperar os 20 s do GPS) 2026 ms
+OK      ligada com GPS lento: não fica em «A localizar…» 
+OK      sem erros na página (ligada, GPS lento) 
+OK      Chrome real («por pedir»), desligada: a app mostra o convite para ligar 
+OK      Chrome real, desligada: no máximo um pedido silencioso a cada 0,3 s 15 pedidos em ~4,5 s
+OK      Chrome real, desligada: vai lendo a autorização, sem exagerar (4 a 16 vezes em 3 s) 13 leituras
+OK      Chrome real («por pedir»): ao ligar a localização, a app pede e recebe a posição sem ninguém tocar em nada 240 ms
+OK      Chrome real («por pedir»): e fá-lo depressa (menos de 2 s) 240 ms
+OK      Chrome real («por pedir»): fica com a posição (não volta ao convite nem fica em «A localizar…») 
+OK      Chrome real: com a posição no ecrã, deixa de ler a autorização 0 leituras em 3 s
+OK      diagnóstico: parada no convite, a app conta ao servidor o estado (autorização, marcas guardadas), sem a posição {"tipo":"gps","mensagem":"parada há 4 s (ao abrir ou ao parar) | permissão prompt | visible | foco 1 | já deu 1 | desligada na app 0 | local à mão 0 | guardada 
+OK      diagnóstico: depois de ligar sozinha, manda os tempos de cada passo {"tipo":"gps","mensagem":"ligou depois de 5 s parada | toque 1 | visible","extra":"336:perm:prompt 386:g1:L/2s 417:g1:er
+OK      sem erros na página (Chrome real, por pedir) 
+OK      Chrome real («recusada»), desligada: a app pede para ligar a localização 
+OK      Chrome real («recusada»): ao ligar a localização, aparece sozinha em menos de 2 s 235 ms
+OK      Chrome real («recusada»): fica com a posição (não volta ao pedido nem fica em «A localizar…») 
+OK      sem erros na página (Chrome real, recusada) 
+OK      Chrome real, GPS lento: desligada, a app mostra o convite 
+OK      Chrome real, GPS lento: ao ligar, as paragens da última posição conhecida aparecem em menos de 1 s (sem esperar pelo GPS) 193 ms
+OK      Chrome real, GPS lento: o ecrã não passa por «A localizar…» 
+OK      Chrome real, GPS lento: diz que está a afinar a posição 
+OK      sem erros na página (Chrome real, GPS lento) 
+OK      página escondida: não lê a autorização nem faz pedidos 1 leituras, 0 pedidos
+OK      de volta à app com a localização já ligada: aparece sozinha em menos de 2 s 98 ms
+OK      sem erros na página (voltar das Definições) 
+OK      sem a marca guardada: desligada, nenhum pedido de localização 
+OK      sem a marca guardada: ao ligar a localização, liga sozinha em menos de 3 s 761 ms
+OK      sem erros na página (sem a marca guardada) 
+OK      sempre «por pedir», desligada: a app mostra o convite 
+OK      sempre «por pedir»: ao ligar a localização, mostra onde ele está sem tocar em nada (menos de 0,8 s) 296 ms
+OK      sempre «por pedir»: fica com a posição (não volta ao convite) 
+OK      sempre «por pedir»: o registo de diagnóstico mostra a sonda a passar de «recusado» a «posição» {"tipo":"gps","mensagem":"ligou depois de 3 s parada | toque 1 | visible","extra":"78:st:idle 328:perm:prompt 378:g1:L/2s 408:g1:erro1 408:sonda:erro1-por-pedir
+OK      sem erros na página (sempre por pedir) 
+OK      autorização do site retirada: no máximo uma pergunta do browser sem toque (nunca em ciclo) 1 perguntas em 9 s
+OK      autorização do site retirada: continua o convite 
+OK      sem erros na página (autorização retirada) 
+OK      boas-vindas: «Finalizar» pede a localização no mesmo toque aberta true | fechada true | 4 pedidos
+OK      sem erros na página (boas-vindas, Finalizar) 
+OK      boas-vindas: «Saltar» não pede a localização aberta true | fechada true | 0 pedidos
+OK      sem erros na página (boas-vindas, Saltar) 
+OK      site nunca autorizado: nenhum pedido de localização sem um toque 0 pedidos
+OK      site nunca autorizado: lê a autorização devagar (no máximo ~1 vez por segundo) 7 leituras
+OK      sem erros na página (sem autorização) 
+OK      com a página escondida não se fazem pedidos 0 pedidos
+
+Tudo OK

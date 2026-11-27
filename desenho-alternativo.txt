@@ -1,0 +1,11 @@
+[SQLite DB] Base de dados sem feeds. A registar feeds oficiais do catálogo...
+[SQLite DB] 31 feeds registados com sucesso.
+OK      [normal] a ida usa o desenho dela 
+OK      [estragado] a volta (desenho dela é um laço noutro sítio) ganha desenho [0,12,24,36,48,60]
+OK      [estragado] com todas as paragens encaixadas [0,12,24,36,48,60]
+OK      [estragado] o desenho passa junto das paragens (o da ida, ao contrário) 0 m
+OK      [circular] a volta que começa noutro ponto do laço ganha desenho [0,6,12,18,24,30,36,42,48]
+OK      [circular] começa e acaba junto da 1.ª paragem 
+OK      [sem alternativa] continua sem desenho (linha reta, como antes) 
+OK      [rapidez] 200 pedidos em menos de 1 s (a escolha fica guardada) 48 ms
+Todos os testes passaram

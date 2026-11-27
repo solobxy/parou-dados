@@ -1,0 +1,24 @@
+OK      [320] o aviso da greve aparece no topo do Perto e diz «Greve» Metro do Porto · Greve dos maquinistas terá impacto ligeiro no Metro do Porto este sábado AMANHÃ
+OK      [320] alvo de toque ≥ 40 px 40px
+OK      [320] sem scroll para o lado 0px
+OK      [320] tocar no aviso abre os Alertas http://127.0.0.1:3000/alertas
+OK      [320] sem erros na página 
+OK      [390] o aviso da greve aparece no topo do Perto e diz «Greve» Metro do Porto · Greve dos maquinistas terá impacto ligeiro no Metro do Porto este sábado AMANHÃ
+OK      [390] alvo de toque ≥ 40 px 40px
+OK      [390] sem scroll para o lado 0px
+OK      [390] tocar no aviso abre os Alertas http://127.0.0.1:3000/alertas
+OK      [390] sem erros na página 
+OK      [320] duas greves: aparecem as duas (CP e Metro do Porto), e não a de daqui a 5 dias ["Metro do Porto · Greve dos maquinistas reduz serviço do Metro do Porto na sexta-feira HOJE","CP · Greve - Perturbações na circulação - 23 a 27 de novembro GREVE"]
+OK      [320] a do Metro (véspera a decorrer) vem primeiro e diz «Hoje» Metro do Porto · Greve dos maquinistas reduz serviço do Metro do Porto na sexta-feira HOJE
+OK      [320] a da CP (a decorrer) diz «Greve» CP · Greve - Perturbações na circulação - 23 a 27 de novembro GREVE
+OK      [320] duas greves: cada aviso com alvo de toque ≥ 40 px [40,40]
+OK      [320] duas greves: sem scroll para o lado 0px
+OK      [320] sem erros na página (duas greves) 
+OK      [390] duas greves: aparecem as duas (CP e Metro do Porto), e não a de daqui a 5 dias ["Metro do Porto · Greve dos maquinistas reduz serviço do Metro do Porto na sexta-feira HOJE","CP · Greve - Perturbações na circulação - 23 a 27 de novembro GREVE"]
+OK      [390] a do Metro (véspera a decorrer) vem primeiro e diz «Hoje» Metro do Porto · Greve dos maquinistas reduz serviço do Metro do Porto na sexta-feira HOJE
+OK      [390] a da CP (a decorrer) diz «Greve» CP · Greve - Perturbações na circulação - 23 a 27 de novembro GREVE
+OK      [390] duas greves: cada aviso com alvo de toque ≥ 40 px [40,40]
+OK      [390] duas greves: sem scroll para o lado 0px
+OK      [390] sem erros na página (duas greves) 
+
+Tudo OK

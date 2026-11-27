@@ -1,0 +1,19 @@
+OK      [regra] pedido válido: dura até 30 min depois da chegada prevista 1795827227275
+OK      [regra] nunca mais de 4 h 
+OK      [regra] destino fora de Portugal ou sem nome: recusado 
+OK      [regra] chegada daqui a mais de 4 h: recusado 
+OK      [regra] Açores e Madeira contam 
+OK      [regra] textos cortados, cor e horas inválidas fora 
+OK      [regra] longe do destino: continua a caminho 
+OK      [regra] a menos de 150 m do destino: chegou (e acaba 15 min depois) 
+OK      [regra] posição com mais de 10 min não se mostra (fica só a hora da última) 
+OK      [regra] a vista pública nunca leva o id do segredo nem o histórico 
+OK      [api] criar: ligação parou.pt/v/<12 letras> e segredo https://parou.pt/v/agr16qtaidwx
+OK      [api] ver: destino, chegada, transportes e posição 
+OK      [api] ver: sem segredo e sem indexação 
+OK      [api] atualizar sem o segredo: recusado 
+OK      [api] atualizar com o segredo: posição nova (só a última) 
+OK      [api] parar: apaga logo (quem abre a ligação vê que acabou) 
+OK      [api] id estranho: 404 
+
+Tudo OK

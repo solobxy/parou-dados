@@ -1,0 +1,15 @@
+[SQLite DB] Base de dados sem feeds. A registar feeds oficiais do catálogo...
+[SQLite DB] 31 feeds registados com sucesso.
+[Planeador] índice pronto (2 padrões, 4 paragens, 2 ms)
+OK      o motor em memória do planeador ficou pronto pronto (2 padrões, 4 paragens, 2 ms)
+[Central Alerts Engine] A sincronizar alertas oficiais de todas as fontes reais...
+[Planeador] previsões da Carris Metropolitana: não consegui ler (HTTP 503); uso o horário.
+[Planeador] previsões da UNIR: não consegui ler (HTTP 503); uso o horário.
+[TUB] viagens: não consegui ler (HTTP 503); a app usa o horário até voltar.
+[TML GO Hub] Erro em /alerts: HTTP 503 
+OK      a linha 59 das 08:13 aparece (12 min a pé dá para a apanhar) 59@08:13→08:27 (a pé 17) | 2@08:04→08:39 (a pé 7)
+OK      com a hora real: sair às 08:01 e chegar antes das 08:30 59@08:13→08:27 (a pé 17) | 2@08:04→08:39 (a pé 7)
+OK      a linha 2 (à porta, chega às 08:34 e pouco) continua nas opções 59@08:13→08:27 (a pé 17) | 2@08:04→08:39 (a pé 7)
+OK      nenhuma opção manda apanhar a 59 da hora seguinte (09:13) 59@08:13→08:27 (a pé 17) | 2@08:04→08:39 (a pé 7)
+
+Tudo OK

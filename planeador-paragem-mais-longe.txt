@@ -1,0 +1,18 @@
+[SQLite DB] Base de dados sem feeds. A registar feeds oficiais do catálogo...
+[SQLite DB] 31 feeds registados com sucesso.
+[Planeador] índice pronto (2 padrões, 4 paragens, 4 ms)
+OK      o motor em memória do planeador ficou pronto pronto (2 padrões, 4 paragens, 4 ms)
+[Central Alerts Engine] A sincronizar alertas oficiais de todas as fontes reais...
+[Planeador] previsões da Carris Metropolitana: não consegui ler (HTTP 503); uso o horário.
+[Planeador] previsões da UNIR: não consegui ler (HTTP 503); uso o horário.
+[TUB] viagens: não consegui ler (HTTP 503); a app usa o horário até voltar.
+[TML GO Hub] Erro em /alerts: HTTP 503 
+OK      com 45 min de espera, aparece o 801 da paragem mais longe 801@08:30→08:46 (a pé 20) | 801@08:45→09:01 (a pé 20) | 8006@08:45→09:26 (a pé 4)
+OK      o 801 chega bem antes do 8006 (antes das 09:00) 801@08:30→08:46 (a pé 20) | 801@08:45→09:01 (a pé 20) | 8006@08:45→09:26 (a pé 4)
+OK      a opção que anda pouco (8006, à porta) continua na lista 801@08:30→08:46 (a pé 20) | 801@08:45→09:01 (a pé 20) | 8006@08:45→09:26 (a pé 4)
+OK      a pé até à paragem mais longe ≤ 25 min no total 801@08:30→08:46 (a pé 20) | 801@08:45→09:01 (a pé 20) | 8006@08:45→09:26 (a pé 4)
+[Central Alerts Engine] Sincronização concluída. Total: 0 alertas auditados.
+OK      com pouca espera fica o 8006 à porta 8006@08:45→09:26 (a pé 4)
+OK      com pouca espera não manda andar 19 min até outra paragem 8006@08:45→09:26 (a pé 4)
+
+Tudo OK

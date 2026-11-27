@@ -1,0 +1,18 @@
+OK      entram só os avisos com linhas, prazo e de fonte oficial (3) SUPRESSÃO DA LINHA - INAUGURAÇÃO DAS LUZES DE NATAL | ALTERAÇÃO DE PERCURSO - OBRAS - R. EGAS MONIZ | Linhas 072 e 6F
+OK      alteração de horário não marca partidas (o horário já é o novo) 
+OK      linha 22 às 16h00 de 28/11: «pode não se realizar» 
+OK      linha 22 às 15h00 (antes das 15h30): sem marca 
+OK      linha 23 à mesma hora: sem marca 
+OK      linha 402 às 23h00 de 27/11: «percurso alterado» 
+OK      linha 402 às 7h00 de 28/11 (já acabou às 6h): sem marca 
+OK      aviso sem fim (linha 500) não marca horários 
+OK      aviso de notícia (linha 600) não marca horários 
+OK      códigos: «072» do aviso = linha «72»; «6f» = «6F» 
+OK      outro operador não é afetado 
+OK      com greve no mesmo dia, manda a greve 
+OK      resumo do aviso: «aviso: suprimido», dia 28/11 
+OK      trajetos: desvio não muda a escolha; supressão conta como «pode não circular» 
+OK      paragem: só a partida da linha 22 depois das 15h30 fica marcada [{"estado":"incerta","operador":"STCP"},null,null]
+OK      paragem: um resumo, do aviso da linha 22 
+
+Tudo OK

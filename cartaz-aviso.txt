@@ -1,0 +1,48 @@
+OK      Metro do Porto -> PORTO 
+OK      STCP -> PORTO 
+OK      Carris Metropolitana -> LISBOA 
+OK      MobiCascais com região errada (Cávado) continua LISBOA 
+OK      TUB -> BRAGA e TUBA -> BARCELOS 
+OK      SMTUC -> COIMBRA 
+OK      Horários do Funchal -> MADEIRA 
+OK      AzoresBus -> AÇORES 
+OK      CP nacional -> PORTUGAL 
+OK      CP na área do Porto -> PORTO 
+OK      CP na região de Coimbra -> COIMBRA 
+OK      CP nacional só com Lisboa e Cascais -> LISBOA 
+OK      Vamus -> ALGARVE 
+OK      metro / comboio / barco / autocarro 
+OK      Metro Mondego é autocarro (metrobus) 
+OK      greve 
+OK      avaria pelo texto 
+OK      serviço normal pelo título 
+OK      greve desconvocada 
+OK      obras, desvio, mau tempo 
+OK      escolha à mão no painel manda 
+OK      em curso, só hoje: o dia escrito SEX 27/11
+OK      dia futuro 
+OK      amanhã também com o dia e a hora do fim (nunca «amanhã») SÁB 28/11 ATÉ 14:00
+OK      vários dias (fim à meia-noite conta o dia anterior) 
+OK      em curso sem fim 
+OK      em curso até outro dia 
+OK      greve: o que funciona, um troço por linha {"etiqueta":"SÓ FUNCIONA","texto":"Senhora da Hora ↔ Estádio do Dragão\nHospital São João ↔ Santo Ovídio"}
+OK      linhas afetadas 
+OK      nome do ficheiro 
+OK      SMTUC: tira «. em Avisos , Dicas , Novidades .» 
+OK      SMTUC: tira a lista comprida 
+OK      frase normal fica 
+OK      lugares: um concelho -> a cidade 
+OK      lugares: distritos do Norte -> NORTE 
+OK      lugares: Porto e Lisboa -> PORTUGAL 
+OK      lugares: Évora e Beja -> ALENTEJO 
+OK      lugares: Funchal -> MADEIRA 
+OK      dia curto de AAAA-MM-DD 
+OK      incêndio: imagem própria (AROUCA, desenho do Centro, INCÊNDIO, meios) {"zona":{"nome":"AROUCA","silhueta":"centro"},"modo":null,"tipo":{"rotulo":"INCÊNDIO","cor":"#FF5A2A","icone":"chama"},"operador":"PROTEÇÃO CIVIL","quando":"EM CURSO","titulo":"Incêndio grave em Arouca","destaque":{"etiqueta":"MEIOS NO TERRENO","texto":"320 operacionais · 6 meios aéreos"}}
+OK      aviso vermelho: NORTE, AVISO VERMELHO, tipos {"zona":{"nome":"NORTE","silhueta":"norte"},"modo":null,"tipo":{"rotulo":"AVISO VERMELHO","cor":"#FF4D3D","icone":"chuva"},"operador":"IPMA","quando":"","titulo":"O nível mais grave de aviso do IPMA","destaque":{"etiqueta":"AVISO PARA","texto":"Vento · Precipitação"}}
+OK      feriado: PORTUGAL, FERIADO, dia escrito 
+OK      greve: a imagem própria passa para a publicação 
+OK      validação: dados certos passam (com o troço por linha) 
+OK      validação: cor, ícone ou zona inventados não passam 
+OK      validação: textos compridos cortados 
+
+TUDO OK

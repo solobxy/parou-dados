@@ -1,0 +1,18 @@
+OK      hora estimada da fonte anterior (ao segundo, não aos minutos) 
+OK      hora exata da API oficial 
+OK      sem hora: minutos que faltam 
+OK      atraso 0 e hora certa ao segundo (20:15:00) = só horário 
+OK      com atraso não é só horário 
+OK      API oficial com GPS e atraso 0 é tempo real 
+OK      API oficial sem GPS e atraso 0 = só horário 
+OK      206 das 18:26 «a chegar» com 98 min no início da linha: não é um autocarro a chegar 
+OK      o mesmo atraso a meio da linha fica (o autocarro está mesmo atrasado) 
+OK      na origem com atraso pequeno (3 min) fica 
+OK      na origem, saída daqui a 8 min com atraso: fica (há hora prevista) 
+OK      motor: ignora entradas só de horário 
+OK      motor: ignora viagens ainda na origem 
+OK      fonte: o tempo real da STCP sai já filtrado para todos os ecrãs (Perto, paragem, linhas) 
+OK      todos os operadores: hora «agora» com atraso grande na 1.ª paragem da viagem não passa 
+OK      linha circular: a 1.ª paragem conta pela ordem, não só pelo nome 
+
+TUDO OK

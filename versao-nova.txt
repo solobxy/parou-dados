@@ -1,0 +1,10 @@
+OK      [sem toque] o service worker toma conta da página 
+OK      versão nova publicada com a app aberta: ao voltar à app, recarrega sozinha para a versão nova 1168 ms
+OK      e depressa (menos de 10 s depois de voltar) 1168 ms
+OK      [sem toque] sem erros na página 
+OK      [tocou] o service worker toma conta da página 
+OK      se a pessoa já tocou no ecrã depois de voltar: não recarrega na cara dela 
+OK      ao sair da app, recarrega para a versão nova 
+OK      [tocou] sem erros na página 
+
+Tudo OK

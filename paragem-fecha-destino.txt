@@ -1,0 +1,14 @@
+OK      [320] a paragem abriu 
+OK      [320] ao escolher o destino a paragem fecha 
+OK      [320] as opções de viagem ficam à vista 
+OK      [320] a duração é a da viagem (51 min), não desde agora (4 h 40) 51 min 05:45 – 06:36 MAIS RÁPIDO 2 min F 2 min Apanha linha 
+OK      [320] continua na app (o voltar da paragem não saiu da página) 
+OK      [320] sem erros na página 
+OK      [390] a paragem abriu 
+OK      [390] ao escolher o destino a paragem fecha 
+OK      [390] as opções de viagem ficam à vista 
+OK      [390] a duração é a da viagem (51 min), não desde agora (4 h 40) 51 min 05:45 – 06:36 MAIS RÁPIDO 2 min F 2 min Apanha linha 
+OK      [390] continua na app (o voltar da paragem não saiu da página) 
+OK      [390] sem erros na página 
+
+Tudo OK

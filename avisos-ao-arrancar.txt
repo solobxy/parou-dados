@@ -1,0 +1,9 @@
+[Central Alerts] 1 avisos repostos da cópia em disco (greves e avisos logo ao arrancar)
+[Central Alerts Engine] A sincronizar alertas oficiais de todas as fontes reais...
+OK      ao arrancar, a greve da cópia está logo em memória ["Greve reduz serviço do Metro"]
+[TML GO Hub] Erro em /alerts: HTTP 503 
+OK      cópia com mais de 6 h: não se repõe 
+OK      a greve reposta aparece uma só vez 1
+OK      cópia antiga (sem chaves) não se repõe 
+OK      lista sem avisos repetidos (mesmo id) [{"id":"a","n":1},{"id":"b"},{}]
+Tudo OK

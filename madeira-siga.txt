@@ -1,0 +1,13 @@
+OK      página da CAM abre 200
+OK      CAM: tem o Aerobus (500) e a 625 Camacha 
+OK      CAM: nenhum nome com o código de variante (ex.: «Boqueirão0I», «CamachaAV») 
+OK      CAM: uma página por número de linha (53 linhas, sem repetidas «-2») 54 ligações
+OK      página da SIGA Rodoeste abre 200
+OK      Rodoeste: tem linhas para a Ribeira Brava e a Calheta 
+OK      Rodoeste: ~107 linhas, uma por número 107 ligações
+OK      existe a página da linha 500 (Aerobus) /linhas/cam-madeira/500-aerobus-praia-formosa-aeroporto
+OK      linha 500 abre e tem as paragens do Aeroporto e da Praia Formosa 200
+OK      a linha liga às paragens da CAM /paragens/cam-madeira/praia-formosa-01289
+OK      página de paragem da CAM abre /paragens/cam-madeira/praia-formosa-01289 200
+OK      Horários do Funchal continua a abrir 200
+Madeira (SIGA): tudo OK

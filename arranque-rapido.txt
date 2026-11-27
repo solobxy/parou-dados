@@ -1,0 +1,13 @@
+OK      [html] o CSS principal não trava o primeiro ecrã (preload, não stylesheet) 
+OK      [html] sem JavaScript, o CSS continua a entrar (noscript) 
+OK      [html] o esqueleto está no HTML 
+OK      [html] nenhum <script src> para a leitura da página (todos com defer, async ou module) 
+OK      [CSS atrasado 3 s] o esqueleto aparece em menos de 1,5 s primeiro ecrã: 92 ms
+OK      [CSS atrasado 3 s] a app só aparece com o CSS aplicado false
+OK      [CSS atrasado 3 s] sem erros 
+OK      [normal] a app arranca com estilos 
+OK      [normal] sem erros 
+NOTA    [4G lenta] primeiro ecrã 264 ms; app pronta ~3157 ms
+OK      [4G lenta] o primeiro ecrã aparece em menos de 1,5 s 264 ms
+
+Tudo OK

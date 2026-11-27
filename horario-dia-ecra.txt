@@ -1,0 +1,62 @@
+OK      [preparar] há uma linha real com partidas amanhã na 2.ª paragem sobe_desce_tavira:0001 · Rot. Bombeiros · 7 partidas
+OK      [api] partidas de amanhã ordenadas pela hora 
+OK      [api] cada partida tem hora HH:MM e destino 08:16 09:11 09:53
+OK      [api] diz o dia pedido 2026-11-28
+OK      [api] recusa datas a mais de 14 dias 400
+OK      [api] recusa datas inválidas 400
+OK      [api] recusa pedidos sem paragem 400
+OK      [api] na última paragem de uma linha não circular diz «última paragem» horarios_funchal:001_0 · Ponta Laranjeira  T-01 (871)
+OK      [api] há linhas reais em que a última paragem não promete partidas 
+OK      [api] pode ficar em cache 5 minutos public, max-age=300
+NOTA    a paragem aparece 2 vezes nesta linha (circular)
+OK      [dias] só uma paragem aberta (mesmo nas linhas circulares) 1
+OK      [dias] aparece a fila de dias ao tocar na paragem Hoje | Amanhã | Domingo 29 | Segunda 30 | Terça 1 | Quarta 2 | Quinta 3
+OK      [dias] começa em «Hoje» e «Amanhã» Hoje,Amanhã
+OK      [dias] «Hoje» vem escolhido 
+OK      [dias] botões com pelo menos 40 px de altura 40,40,40,40,40,40,40
+OK      [amanhã] mostra o horário do dia 
+OK      [amanhã] «Amanhã» fica escolhido 
+OK      [amanhã] a primeira hora do servidor está no ecrã 08:16 em «08 16 09 11 53 10 11 11 11 14 13 11»
+OK      [amanhã] uma hora no ecrã por cada partida do servidor 7 = 7
+OK      [amanhã] só cores da marca no tema claro 0
+OK      [amanhã] tocar no horário não o fecha 
+OK      [outro dia] mostra horário ou uma frase clara 
+OK      [hoje] voltar a «Hoje» tira o horário do dia 
+OK      [hoje] e mostra as partidas de hoje (ou «Sem partidas previstas») 
+OK      [ecrã] sem erros na página 
+OK      [a carregar] mostra «A carregar horário…» 
+OK      [erro] diz que não carregou e oferece «Tentar outra vez» Não foi possível carregar o horário. Tentar outra vez
+OK      [erro] não diz que a linha não passa 
+OK      [erro] «Tentar outra vez» recupera o horário 2 pedidos
+OK      [erro] sem erros na página 
+OK      [320 claro] horário visível 
+OK      [320 claro] sem scroll lateral da página 320
+OK      [320 claro] o horário cabe na largura 70+208
+OK      [320 claro] sem erros na página 
+OK      [1280 claro] horário visível 
+OK      [1280 claro] sem scroll lateral da página 1280
+OK      [1280 claro] o horário cabe na largura 362+584
+OK      [1280 claro] sem erros na página 
+OK      [390 escuro] horário visível 
+OK      [390 escuro] sem scroll lateral da página 390
+OK      [390 escuro] o horário cabe na largura 70+278
+OK      [390 escuro] horas com contraste ≥ 4,5:1 14.2
+OK      [390 escuro] sem erros na página 
+OK      [390 ambar] horário visível 
+OK      [390 ambar] sem scroll lateral da página 390
+OK      [390 ambar] o horário cabe na largura 70+278
+OK      [390 ambar] horas com contraste ≥ 4,5:1 15.3
+OK      [390 ambar] sem erros na página 
+OK      [390 porto] horário visível 
+OK      [390 porto] sem scroll lateral da página 390
+OK      [390 porto] o horário cabe na largura 70+278
+OK      [390 porto] horas com contraste ≥ 4,5:1 15.4
+OK      [390 porto] sem erros na página 
+OK      [320 escuro] horário visível 
+OK      [320 escuro] sem scroll lateral da página 320
+OK      [320 escuro] o horário cabe na largura 70+208
+OK      [320 escuro] horas com contraste ≥ 4,5:1 14.2
+OK      [320 escuro] sem erros na página 
+OK      [ligação ?linha=, normal] abre a linha e ela fica aberta abriu true, continua true
+OK      [ligação ?linha=, rede lenta] abre a linha e ela fica aberta abriu true, continua true
+tudo OK

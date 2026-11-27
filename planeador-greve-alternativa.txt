@@ -1,0 +1,18 @@
+[SQLite DB] Base de dados sem feeds. A registar feeds oficiais do catálogo...
+[SQLite DB] 31 feeds registados com sucesso.
+[Planeador] índice pronto (2 padrões, 4 paragens, 4 ms)
+OK      o motor em memória do planeador ficou pronto pronto (2 padrões, 4 paragens, 4 ms)
+[Central Alerts Engine] A sincronizar alertas oficiais de todas as fontes reais...
+[TML GO Hub] Erro em /alerts: HTTP 503 
+[Central Alerts Engine] Sincronização concluída. Total: 1 alertas auditados.
+OK      a greve da notícia entrou nos avisos 2026-11-27T00:00:00.000Z → 2026-11-27T23:59:59.999Z (Notícia — RTP Notícias)
+[Planeador] previsões da Carris Metropolitana: não consegui ler (HTTP 503); uso o horário.
+[Planeador] previsões da UNIR: não consegui ler (HTTP 503); uso o horário.
+[TUB] viagens: não consegui ler (HTTP 503); a app usa o horário até voltar.
+OK      sexta: o metro E aparece marcado com greve (fonte: notícia) 601@10:10→11:11 (mais_rapido) | E@10:02[GREVE]→10:33 | E@10:17[GREVE]→10:48
+OK      sexta: o 601 (sem greve) aparece, mesmo chegando 30 min mais tarde 601@10:10→11:11 (mais_rapido) | E@10:02[GREVE]→10:33 | E@10:17[GREVE]→10:48
+OK      sexta: «mais rápido» é o 601, não o metro com greve 601@10:10→11:11 (mais_rapido) | E@10:02[GREVE]→10:33 | E@10:17[GREVE]→10:48
+OK      sexta: o 601 vem em primeiro 601@10:10→11:11 (mais_rapido) | E@10:02[GREVE]→10:33 | E@10:17[GREVE]→10:48
+OK      quinta de manhã: o metro sem greve E@10:02→10:33 (mais_rapido) | E@10:17→10:48
+
+Tudo OK

@@ -1,0 +1,12 @@
+OK      [texto] é exatamente o que a TTSL pediu Fonte — Transtejo Soflusa (TTSL)
+OK      [texto] entra na lista de créditos 
+OK      [línguas] inglês: «Source — Transtejo Soflusa (TTSL)» Source — Transtejo Soflusa (TTSL)
+OK      [línguas] alemão: «Quelle — …» 
+OK      [línguas] francês: «Source — …» 
+OK      [línguas] o SMTUC continua com o texto dele 
+OK      [outros] a Carris não ganha atribuição 
+OK      [app] o componente carrega 
+OK      [app] paragem da TTSL: mostra a fonte uma só vez 
+OK      [app] paragem só da Carris: sem fonte 
+OK      [app] em inglês 
+Todos os testes passaram

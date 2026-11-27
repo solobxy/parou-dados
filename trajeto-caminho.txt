@@ -1,0 +1,18 @@
+OK      fica em cima da rua, também na esquina (máx. 3 m) novo 0.0 m · antigo 46.2 m
+OK      o antigo cortava a esquina (prova de que o teste apanha o problema) 46.2 m
+OK      mais perto de onde o autocarro está agora (atraso pelo menos 35% menor) novo 91 m atrás · antigo 179 m atrás
+OK      atraso do novo abaixo de ~12 s de viagem 11.4 s
+OK      nunca anda para trás 
+OK      sem saltos (máx. por imagem ≤ 1,7× a velocidade) 0.45 m
+OK      depois da esquina a seta aponta para norte (a estrada) 0
+OK      parado numa paragem: nunca recua 
+OK      parado numa paragem: não foge mais de 200 m para a frente 106 m à frente no pior momento
+OK      com ruído do GPS (±10 m) continua em cima da rua 0.0 m
+OK      o desenho do outro sentido não é escolhido 
+OK      com os dois sentidos, escolhe o certo 
+OK      desvio para fora do desenho: volta ao movimento antigo (segue as posições) 
+OK      … e o marcador vai para onde o autocarro está (perto das posições) 120 m da rua
+OK      sem desenho: exatamente o movimento antigo 
+OK      o mapa usa o movimento pela estrada 
+
+TUDO OK

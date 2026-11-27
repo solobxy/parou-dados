@@ -1,0 +1,47 @@
+OK      [390] agora: aviso por cima das partidas com o que funciona e as frequências Greve na Metro do Porto · Amanhã Só funciona: Senhora da Hora – Estádio do Dragão e Hospital São João – Santo Ovídio, com uma viagem a cada 15 min (7h–20h) · 30 min (6h–7h, 20h–0h). Fora disso não há viagens. Aviso oficial
+OK      [390] agora: «Aviso oficial» abre o aviso do operador 
+OK      [390] agora: a ligação do aviso tem 40 px de altura 40px
+OK      [390] agora: cada partida com a sua marca Sem serviço (greve)|Pode não se realizar|Serviço reduzido
+OK      [390] agora: a hora da partida sem serviço aparece riscada line-through
+OK      [390] amanhã 22:00: aviso e marcas nas partidas Greve na Metro do Porto · Amanhã Só funciona: Senhora da Hor | Sem serviço (greve)|Pode não se realizar|Serviço reduzido
+OK      [390] horário do dia: aviso da véspera com a hora a que acaba o serviço Véspera da greve na Metro do Porto O serviço acaba por volta das 23:00: depois disso já não há viagens. Aviso oficial
+OK      [390] horário do dia: legenda (riscado = sem serviço, sublinhado = pode não se realizar) 10 sem serviço 10 pode não se realizar
+OK      [390] horário do dia: minutos sem serviço riscados e os incertos sublinhados a pontinhos incerta:underline:dotted incerta:underline:dotted sem-servico:line-through:solid sem-servico:line-through:solid
+OK      [390] horário do dia: leitor de ecrã ouve «sem serviço» em cada minuto riscado [" (Sem serviço (greve))"," (Sem serviço (greve))"]
+OK      [390] sem scroll para o lado 0px
+OK      [390] horário do dia, dia todo incerto: aviso «algumas viagens podem não se realizar» e minutos sem marca 0 | Greve na CP · Amanhã Algumas viagens podem não se realizar. Aviso oficial
+OK      [390] sem erros na página 
+OK      [320] agora: aviso por cima das partidas com o que funciona e as frequências Greve na Metro do Porto · Amanhã Só funciona: Senhora da Hora – Estádio do Dragão e Hospital São João – Santo Ovídio, com uma viagem a cada 15 min (7h–20h) · 30 min (6h–7h, 20h–0h). Fora disso não há viagens. Aviso oficial
+OK      [320] agora: «Aviso oficial» abre o aviso do operador 
+OK      [320] agora: a ligação do aviso tem 40 px de altura 40px
+OK      [320] agora: cada partida com a sua marca Sem serviço (greve)|Pode não se realizar|Serviço reduzido
+OK      [320] agora: a hora da partida sem serviço aparece riscada line-through
+OK      [320] amanhã 22:00: aviso e marcas nas partidas Greve na Metro do Porto · Amanhã Só funciona: Senhora da Hor | Sem serviço (greve)|Pode não se realizar|Serviço reduzido
+OK      [320] horário do dia: aviso da véspera com a hora a que acaba o serviço Véspera da greve na Metro do Porto O serviço acaba por volta das 23:00: depois disso já não há viagens. Aviso oficial
+OK      [320] horário do dia: legenda (riscado = sem serviço, sublinhado = pode não se realizar) 10 sem serviço 10 pode não se realizar
+OK      [320] horário do dia: minutos sem serviço riscados e os incertos sublinhados a pontinhos incerta:underline:dotted incerta:underline:dotted sem-servico:line-through:solid sem-servico:line-through:solid
+OK      [320] horário do dia: leitor de ecrã ouve «sem serviço» em cada minuto riscado [" (Sem serviço (greve))"," (Sem serviço (greve))"]
+OK      [320] sem scroll para o lado 0px
+OK      [320] horário do dia, dia todo incerto: aviso «algumas viagens podem não se realizar» e minutos sem marca 0 | Greve na CP · Amanhã Algumas viagens podem não se realizar. Aviso oficial
+OK      [320] sem erros na página 
+OK      [escuro] aviso e marcas à vista 
+OK      [escuro] sem erros na página 
+OK      [ambar] aviso e marcas à vista 
+OK      [ambar] sem erros na página 
+OK      [cartões claro] a partida que só vai até à Senhora da Hora mostra «Senhora da Hora» e não «Fórum Maia» Linha do Marco Senhora da Hora Não vai até Fórum Maia (greve) de 15 em 15 min sem hora certa | Linha de Aveiro Porto Sao Bento Serviço reduzido 12 min 23:40 | Linha de Braga Porto Sao Bento 17 min 23:45
+OK      [cartões claro] serviço de 15 em 15 min: no lugar da hora «de 15 em 15 min · sem hora certa» Linha do Marco Senhora da Hora Não vai até Fórum Maia (greve) de 15 em 15 min sem hora certa | Linha de Aveiro Porto Sao Bento Serviço reduzido 12 min 23:40 | Linha de Braga Porto Sao Bento 17 min 23:45
+OK      [cartões claro] as que se realizam vêm primeiro; a sem serviço vai para o fim Linha do Marco Senhora da Hora Não vai até Fórum Maia (greve) de 15 em 15 min sem hora certa | Linha de Aveiro Porto Sao Bento Serviço reduzido 12 min 23:40 | Linha de Braga Porto Sao Bento 17 min 23:45
+OK      [cartões claro] etiqueta da greve com fundo de aviso e contraste ≥ 4,5:1 {"fundo":"rgb(255, 247, 237)","cor":"rgb(154, 52, 18)","peso":"600","tam":"12px"} contraste 6.9
+OK      [cartões claro] sem erros na página 
+OK      [cartões escuro] a partida que só vai até à Senhora da Hora mostra «Senhora da Hora» e não «Fórum Maia» Linha do Marco Senhora da Hora Não vai até Fórum Maia (greve) de 15 em 15 min sem hora certa | Linha de Aveiro Porto Sao Bento Serviço reduzido 12 min 23:40 | Linha de Braga Porto Sao Bento 17 min 23:45
+OK      [cartões escuro] serviço de 15 em 15 min: no lugar da hora «de 15 em 15 min · sem hora certa» Linha do Marco Senhora da Hora Não vai até Fórum Maia (greve) de 15 em 15 min sem hora certa | Linha de Aveiro Porto Sao Bento Serviço reduzido 12 min 23:40 | Linha de Braga Porto Sao Bento 17 min 23:45
+OK      [cartões escuro] as que se realizam vêm primeiro; a sem serviço vai para o fim Linha do Marco Senhora da Hora Não vai até Fórum Maia (greve) de 15 em 15 min sem hora certa | Linha de Aveiro Porto Sao Bento Serviço reduzido 12 min 23:40 | Linha de Braga Porto Sao Bento 17 min 23:45
+OK      [cartões escuro] etiqueta da greve com fundo de aviso e contraste ≥ 4,5:1 {"fundo":"rgb(52, 33, 15)","cor":"rgb(255, 161, 102)","peso":"600","tam":"12px"} contraste 7.7
+OK      [cartões escuro] sem erros na página 
+OK      [cartões ambar] a partida que só vai até à Senhora da Hora mostra «Senhora da Hora» e não «Fórum Maia» Linha do Marco Senhora da Hora Não vai até Fórum Maia (greve) de 15 em 15 min sem hora certa | Linha de Aveiro Porto Sao Bento Serviço reduzido 12 min 23:40 | Linha de Braga Porto Sao Bento 17 min 23:45
+OK      [cartões ambar] serviço de 15 em 15 min: no lugar da hora «de 15 em 15 min · sem hora certa» Linha do Marco Senhora da Hora Não vai até Fórum Maia (greve) de 15 em 15 min sem hora certa | Linha de Aveiro Porto Sao Bento Serviço reduzido 12 min 23:40 | Linha de Braga Porto Sao Bento 17 min 23:45
+OK      [cartões ambar] as que se realizam vêm primeiro; a sem serviço vai para o fim Linha do Marco Senhora da Hora Não vai até Fórum Maia (greve) de 15 em 15 min sem hora certa | Linha de Aveiro Porto Sao Bento Serviço reduzido 12 min 23:40 | Linha de Braga Porto Sao Bento 17 min 23:45
+OK      [cartões ambar] etiqueta da greve com fundo de aviso e contraste ≥ 4,5:1 {"fundo":"rgb(255, 237, 218)","cor":"rgb(154, 52, 18)","peso":"600","tam":"12px"} contraste 6.4
+OK      [cartões ambar] sem erros na página 
+
+Tudo OK

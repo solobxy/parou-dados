@@ -1,0 +1,6 @@
+OK      [cafetaria] a greve do bar a bordo não é uma greve dos comboios outros alertas oficiais
+OK      [cafetaria] fica como aviso informativo outros alertas oficiais Moderada
+OK      [greve real] a greve dos ferroviários continua greve greve
+OK      [misto] se há comboios suprimidos, é greve greve
+
+Tudo OK

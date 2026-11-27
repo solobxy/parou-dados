@@ -1,0 +1,19 @@
+OK      STCP: lê a página «Alterações de serviço» 
+OK      STCP: 9 avisos ALTERAÇÃO DE PERCURSO - OBRAS - R. EGAS  | ALTERAÇÃO DE PERCURSO - CORRIDA S. SILVE | ALTERAÇÃO DE PERCURSO - INAUGURAÇÃO DAS  | ALTERAÇÃO DE PERCURSO - OBRAS - R. DA RE | SUPRESSÃO DA LINHA - INAUGURAÇÃO DAS LUZ | ALTERAÇÃO PERCURSO - OBRAS - R. PROF. AM | ALTERAÇÃO DE PERCURSO - OBRAS - AV. BRAS | DESATIVAÇÃO PROVISÓRIA DE PARAGEM - MARQ | ALTERAÇÃO DE PERCURSO - INAUGURAÇÃO DAS 
+OK      Egas Moniz: linha 402, de 27/11 às 22h00 até 28/11 às 6h00 («do dia seguinte»), alteração de percurso 402 2026-11-27T22:00:00.000Z 2026-11-28T06:00:00.000Z
+OK      Supressão da linha 22 «No dia 28, a partir das 15h30»: 28/11 às 15h30, cancelamento, Futuro 22 2026-11-28T15:30:00.000Z cancelamento
+OK      Corrida S. Silvestre: linhas 7xx, a 1/12 
+OK      Paragem Marquês: paragem encerrada 
+OK      STCP: todos com fim (nada fica para sempre) 
+OK      SMTUC Celas: alteração de percurso com as linhas citadas (4, 6F, 19A…) ["4","6","6F","36","7","16","16G","103","19","19A","19R","19T"]
+OK      SMTUC Linha 204 «a partir desta 6ª feira»: linha 204, ativo (mudança que fica: 30 dias) 
+OK      SMTUC: a greve do STAL (já passou) não vira «aviso do serviço» 
+OK      páginas fixas («Rede e Horários», «Linha Azul») não são avisos 
+OK      Funchal «Carreira nº: 003 (3)»: linha 3, começa a 2/12 (data do aviso à frente) 3 2026-12-02T00:00:00.000Z
+OK      Funchal «Carreiras nºs: 031, 032 … 131»: 7 linhas sem zeros ["31","32","34","37","38","39","131"]
+OK      Funchal: notícias de março e julho (antigas) ficam de fora 
+OK      MTS: a página fixa «Horários» não é um aviso 
+OK      «RETORNO PERCURSO NORMAL» não é um aviso (o serviço voltou ao normal) 
+OK      linhas citadas: «Carreira(s) 149 e 150», «linhas 072, 073», «402 . IDA» 
+
+Tudo OK

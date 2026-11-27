@@ -1,0 +1,25 @@
+OK      [regra] a mesma viagem, com previsão do operador: hora prevista (6 min de atraso) {"ms":1795673160000,"direto":true}
+OK      [regra] viagens «cmh:» encontram as «cm:» da paragem (sem previsão: hora do horário) {"ms":1795672860000,"direto":false}
+OK      [regra] ids diferentes em direto: a mesma linha à mesma hora do horário {"ms":1795672680000,"direto":true}
+OK      [regra] outra linha ou outra hora: nada 
+OK      [regra] atrasado 6 min: o aviso chega 6 min mais tarde 
+OK      [regra] adiantado 2 min: o aviso chega 2 min mais cedo 
+OK      [regra] sem previsão: a hora do horário 
+OK      [regra] previsão absurda (mais de 1 h): a hora do horário 
+OK      [regra] texto com a hora prevista e «em direto» 
+OK      [regra] sem previsão: hora do horário, sem «em direto» 
+[Push] 3 lembretes de partida enviados
+OK      [envio] autocarro atrasado: o aviso espera por ele 
+OK      [envio] autocarro adiantado: o aviso sai já, com a hora prevista e «em direto» Apanha linha 801 às 23:32 em S. Pedro (em direto)
+OK      [envio] sem previsão: sai à hora do horário, sem «em direto» Apanha linha 801 às 23:33 em S. Pedro
+OK      [envio] lembrete normal (sem paragem) continua igual 
+OK      [envio] o atrasado fica à espera (não é dado como enviado) 
+[Push] 1 lembretes de partida enviados
+OK      [envio] quando o autocarro se aproxima, o aviso sai 
+OK      [envio] nunca sai duas vezes 0
+[Push] Chaves VAPID novas criadas
+OK      [app] o pedido em direto guarda paragem, viagem, linha e antecedência (a pé + minutos) {"paragem":"stcp:SPC1","viagem":"stcp:801_1","linha":"801","hora":1795823747110,"antes":720000,"em_direto":"em direto"}
+OK      [app] paragem com caracteres estranhos: fica lembrete normal (à hora fixa) {"paragem":null}
+OK      [app] hora do transporte antes da hora do aviso: fica lembrete normal 
+
+Tudo OK

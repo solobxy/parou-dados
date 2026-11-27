@@ -1,0 +1,14 @@
+OK      [API] os avisos da TML chegam (endereço com a organização) 7 avisos; pedidos: https://go.tmlmobilidade.pt/hub/api/v1/Y4FLB/alerts
+OK      [API] as agências da TML chegam 
+[Central Alerts Engine] A sincronizar alertas oficiais de todas as fontes reais...
+[Central Alerts Engine] Sincronização concluída. Total: 3 alertas auditados.
+OK      [central] o aviso do Metro de Lisboa entra, com o operador certo {"op":"Metro de Lisboa","linhas":["Amarela"]}
+OK      [central] a linha do Metro vem pela cor (2 = Amarela) ["Amarela"]
+OK      [central] o aviso da MobiCascais entra, com o operador e as linhas {"op":"MobiCascais","linhas":["12","20"]}
+OK      [central] o aviso da Carris Metropolitana não se repete pela TML (chega pela API da Carris Metropolitana) ML1,MC1,grupo-1d5o6xi
+OK      [repetidos] os 4 avisos da linha 27 (um por dia) ficam num só Dias 28 e 29 de novembro e 5 de dezembro de 2026
+OK      [repetidos] fica o da próxima data (o de há 3 dias já passou), com o título das datas que faltam {"t":"Dias 28 e 29 de novembro e 5 de dezembro de 2026","ini":"2026-11-30T23:19:31.416Z","st":"Futuro"}
+OK      [repetidos] avisos diferentes da mesma agência continuam separados ML1,MC1,grupo-1d5o6xi
+OK      [repetidos] numa nova sincronização continua a ser um só (o mesmo código) 
+
+Tudo OK
