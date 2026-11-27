@@ -1,15 +1,15 @@
 {
-  "built_at": "2026-11-27T18:07:45.763919+00:00",
-  "db_bytes": 990285824,
-  "gz_bytes": 249193198,
+  "built_at": "2026-11-27T19:25:50.542447+00:00",
+  "db_bytes": 989491200,
+  "gz_bytes": 249059680,
   "totals": {
-    "lines": 4004,
-    "stops": 80519,
-    "trips": 161395,
-    "stop_times": 5120368,
+    "lines": 4003,
+    "stops": 80505,
+    "trips": 161466,
+    "stop_times": 5116342,
     "operators": 45,
     "operators_ok": 44,
-    "operators_desatualizados": 2
+    "operators_desatualizados": 1
   },
   "feeds": [
     {
@@ -225,19 +225,24 @@
       "id": "tuba_barcelos",
       "operator_name": "TUBA Barcelos",
       "status": "OK",
-      "lines": 60,
-      "stops": 1626,
-      "trips": 644,
-      "valid_until": "2024-12-31",
-      "validade": "caducado",
-      "dias_validade": -696,
-      "horario_prolongado": true,
-      "url": "https://map.mobility.ubiwhere.com/dataset/1842a15c-1aec-4f65-8e29-e57c8b4cbd74/resource/a595ee4b-bf86-4323-b1f4-7e3b3eb00e5e/download/gtfs_bar.zip",
-      "last_error": "O operador não atualizou as datas do calendário (terminam em 2024-12-31); a usar o horário semanal em vigor.",
+      "lines": 59,
+      "stops": 1612,
+      "trips": 715,
+      "valid_until": "2026-12-14",
+      "validade": "ok",
+      "dias_validade": 17,
+      "horario_prolongado": false,
+      "url": "https://tuba.barcelos.pt/",
+      "last_error": null,
       "servicos_associados": null,
-      "servicos_sem_calendario": null,
-      "viagens_hoje": 487,
-      "viagens_amanha": 94,
+      "servicos_sem_calendario": [
+        {
+          "service": "TUBA_uteis_ferias",
+          "viagens": 75
+        }
+      ],
+      "viagens_hoje": 683,
+      "viagens_amanha": 152,
       "dias_uteis_sem_servico": 0
     },
     {
@@ -869,7 +874,7 @@
     }
   ],
   "desenhos": {
-    "bytes": 20272196,
+    "bytes": 20143413,
     "por_operador": {
       "ave_mobilidade": {
         "viagens": 1779,
@@ -1076,9 +1081,9 @@
         "desenhos": 393
       },
       "tuba_barcelos": {
-        "viagens": 644,
-        "com_desenho": 644,
-        "desenhos": 262
+        "viagens": 715,
+        "com_desenho": 296,
+        "desenhos": 174
       },
       "unirh": {
         "viagens": 15784,
@@ -1281,13 +1286,13 @@
           "total": 385
         },
         "servicos_com_data_hoje": [
+          "BU",
+          "DU",
           "EU",
           "BexpU",
-          "FU",
-          "DU",
-          "BU",
           "CU",
-          "AU"
+          "AU",
+          "FU"
         ],
         "viagens_por_servico": [
           {
@@ -1345,12 +1350,12 @@
   "andante": {
     "fonte_zonas": "https://andante.pt/titulos-ocasionais/",
     "fonte_precos": "https://andante.pt/comprar/andante-azul/",
-    "zonas_obtidas": "2026-11-27T18:07:25+00:00",
+    "zonas_obtidas": "2026-11-27T19:25:27+00:00",
     "n_zonas": 154,
     "n_paragens": 13711,
     "precos_em_vigor_desde": "2026-01-01",
-    "precos_obtidos": "2026-11-27T18:07:25+00:00",
+    "precos_obtidos": "2026-11-27T19:25:27+00:00",
     "z2": 1.4
   },
-  "duration_s": 485
+  "duration_s": 525
 }
