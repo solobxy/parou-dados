@@ -122,7 +122,9 @@ for (const largura of [390, 320]) {
     ok(`[${largura}] agora: cada partida com a sua marca`, marcas.slice(0, 3).join('|') === 'Sem serviço (greve)|Pode não se realizar|Serviço reduzido', marcas.join('|'));
     const riscada = await p.$$eval('[data-teste="greve-partida"]', (els) => {
       const e = els.find((x) => x.getBoundingClientRect().width > 0 && /Sem serviço/.test(x.textContent || ''));
-      const hora = e?.parentElement?.querySelector('span.font-condensada, span[class*="font-condensada"]') || e?.previousElementSibling?.querySelector?.('span') || e?.previousElementSibling;
+      // a etiqueta fica por baixo do destino; a hora está do outro lado da mesma linha
+      const linha = e?.closest('[class*="justify-between"]');
+      const hora = linha?.querySelector('span[class*="text-[22px]"], span[class*="text-[26px]"]');
       return hora ? getComputedStyle(hora).textDecorationLine : '';
     });
     ok(`[${largura}] agora: a hora da partida sem serviço aparece riscada`, /line-through/.test(riscada), riscada);
