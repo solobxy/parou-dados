@@ -40,6 +40,7 @@ from netex_gtfs import netex_para_gtfs
 import barraqueiro_oeste
 import azoresbus
 import flixbus_pt
+import tuba_barcelos
 import andante
 
 OUT_DB = "gtfs.db"
@@ -114,9 +115,10 @@ SEED_FEEDS = [
     {"id": "guimabus", "operator_name": "Guimabus (Guimarães)", "mode": "Autocarro",
      "url": "https://map.mobility.ubiwhere.com/dataset/ee6d46e4-9f19-4f4a-ab93-1a3cd69df349/resource/08f1ee6c-2d3f-4fb3-a861-5d6fb347a6d4/download/gtfs_gui.zip",
      "mdb": ["guimabus", "guimaraes"]},
-    {"id": "tuba_barcelos", "operator_name": "TUBA Barcelos", "mode": "Autocarro", "calendario_semanal": 730,
-     "url": "https://map.mobility.ubiwhere.com/dataset/1842a15c-1aec-4f65-8e29-e57c8b4cbd74/resource/a595ee4b-bf86-4323-b1f4-7e3b3eb00e5e/download/gtfs_bar.zip",
-     "mdb": ["tuba", "barcelos"]},
+    # TUBA: o horário em vigor (desde 14/09/2026) só existe em PDF no site da Câmara; o GTFS aberto (ubiwhere)
+    # é de 2025 e serve só de base de paragens e traçados. Ver tuba_barcelos.py.
+    {"id": "tuba_barcelos", "operator_name": "TUBA Barcelos", "mode": "Autocarro",
+     "formato": "pdf_tuba", "url": tuba_barcelos.PAGINA, "mdb": ["tuba", "barcelos"]},
     {"id": "mobiave", "operator_name": "Mobiave (Famalicão)", "mode": "Autocarro", "calendario_semanal": 730,
      "url": "https://map.mobility.ubiwhere.com/dataset/fe6015e4-86c7-437a-8d31-10759fe21a1d/resource/7ac67ef8-015c-42e8-9546-f6f0be956270/download/gtfs_vnf.zip",
      "mdb": ["mobiave", "famalicao"]},
@@ -1350,6 +1352,16 @@ def process_feed(conn, feed, today_dt, have_prev):
             try:
                 # mais 3 dias do que a janela: o último dia da janela nunca fica sem horário (senão parecia «desatualizado»)
                 body = azoresbus.descarregar_e_converter(log=log, hoje=today_dt.date(), dias=WINDOW_DAYS + 3)
+                yield feed["url"], body, 200, int((time.time() - t0) * 1000), None
+            except Exception as err:  # noqa: BLE001
+                errors.append(f"{feed['url']} -> {err}")
+                log_fetch(conn, fid, feed["url"], 0, 0, 0, "Falha", str(err))
+            return
+        if feed.get("formato") == "pdf_tuba":
+            # Horários em PDF (TUBA Barcelos): devolve já o GTFS montado sobre as paragens do GTFS antigo
+            t0 = time.time()
+            try:
+                body = tuba_barcelos.descarregar_e_converter(log=log, hoje=today_dt.date(), dias=WINDOW_DAYS + 3)
                 yield feed["url"], body, 200, int((time.time() - t0) * 1000), None
             except Exception as err:  # noqa: BLE001
                 errors.append(f"{feed['url']} -> {err}")
