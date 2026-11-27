@@ -478,6 +478,7 @@ export function initUI(G) {
   $('sHow').onclick = () => { audio.play('ui'); $('pfT').textContent = 'Como se joga'; pfm.classList.remove('wide', 'kpw'); pfB.innerHTML = `<div class="keys howk">${$('sKeys').innerHTML}</div><p class="note">Revista tudo, come e bebe, treina o corpo (perde-se ao morrer) e evita a cidade de noite. O melhor loot está no centro, onde há PvP.</p>`; pfm.hidden = false; };
   // ---------- novidades (as mais recentes primeiro; o ponto vermelho some depois de as abrires)
   const NEWS = [
+    { id: '0.85', d: '27/11/2026', t: 'Menus em todos os ecrãs', img: 'menu/n-ecras.jpg', b: '<p>Todos os menus passam a caber no ecrã, de telemóveis pequenos deitados a tablets e computadores. Se algo não couber, desliza dentro do menu em vez de ficar cortado.</p><ul><li>No ecrã das Skins podes ver como fica qualquer skin, mesmo trancada: toca nela</li><li>Em ecrãs baixos, o menu principal arruma os botões em grelha e o Jogar fica sempre à vista</li></ul>' },
     { id: '0.84', d: '27/11/2026', t: 'Rede mais rápida', img: 'menu/n-rede.jpg', b: '<p>O teu movimento chega aos outros jogadores logo que o mandas, sem esperar pela volta seguinte do servidor. O atraso que o servidor punha baixou de cerca de 20 ms (até 34 ms) para menos de 1 ms, e os outros aparecem mais perto de onde estão de verdade.</p><ul><li>Survival e arena</li><li>Os zombies dos outros atualizam 15 vezes por segundo em vez de 10</li></ul>' },
     { id: '0.83', d: '27/11/2026', t: 'A skin fica na arma', img: 'menu/n-skins2.jpg', b: '<p>A skin passa a ser da própria arma. Quando apanhas, fazes ou compras uma arma pela primeira vez, ela fica com a skin que escolheste para esse tipo de arma, para sempre.</p><ul><li>Se a largares ou deres, quem a apanhar fica com ela pintada assim</li><li>Funciona no survival e na arena</li><li>O ícone da arma no inventário mostra a skin</li></ul>' },
     { id: '0.82', d: '27/11/2026', t: 'Skins de armas', img: 'menu/n-skins.jpg', b: '<p>No menu, em Skins, escolhe a pintura de cada arma: Floresta, Deserto, Urbano, Neve, Tigre, Carmesim e Ouro. Os outros jogadores também a veem.</p><ul><li>Cada skin abre num nível: a primeira no nível 2, o Ouro no 20</li><li>Podes usar a mesma skin em todas as armas de uma vez</li></ul>' },
@@ -604,19 +605,20 @@ export function initUI(G) {
   const showPerfil = async () => { $('pfT').textContent = 'Perfil'; pfm.classList.remove('kpw'); pfm.classList.add('wide'); pfB.onclick = null; pfB.innerHTML = '<p class="note">A carregar…</p>'; pfm.hidden = false; pfPaint(await pfFetch(null, true)); };
   G.ui_perfil = showPerfil;
   // ---------- skins das armas: escolher uma por arma; as que o nível ainda não abriu ficam trancadas
-  let skGun = 'ak';
-  const showSkins = () => { $('pfT').textContent = 'Skins'; pfm.classList.remove('kpw'); pfm.classList.add('wide'); pfm.hidden = false; skPaint(); pfFetch().then(() => { if (!pfm.hidden && $('pfT').textContent === 'Skins') skPaint(); }); };
-  const skPaint = () => { const lv = G.myLv || 1, guns = Object.keys(ITEMS).filter(k => ITEMS[k].gun && ITEMS[k].icon), on = G.skinFor(skGun);
-    if (!guns.includes(skGun)) skGun = guns[0];
-    pfB.innerHTML = `<div class="sk-top"><p>Nível ${lv}. A skin escolhida vai para as armas que encontrares a partir de agora e fica nelas para sempre, mesmo que as largues. Cada skin abre num nível.</p></div>
+  let skGun = 'ak', skPv = -1; // skPv: skin a pré-visualizar (também as trancadas); -1 = a que está em uso
+  const showSkins = () => { $('pfT').textContent = 'Skins'; pfm.classList.remove('kpw'); pfm.classList.add('wide'); pfm.hidden = false; skPv = -1; skPaint(); pfFetch().then(() => { if (!pfm.hidden && $('pfT').textContent === 'Skins') skPaint(); }); };
+  const skPaint = () => { const lv = G.myLv || 1, guns = Object.keys(ITEMS).filter(k => ITEMS[k].gun && ITEMS[k].icon); if (!guns.includes(skGun)) skGun = guns[0];
+    const on = G.skinFor(skGun), pv = skPv >= 0 ? skPv : on, P = SKINS[pv], plk = P.lv > lv;
+    pfB.innerHTML = `<div class="sk-wrap"><div class="sk-l"><p class="sk-lead">Nível ${lv}. A skin escolhida vai para as armas que encontrares a partir de agora e fica nelas para sempre, mesmo que as largues.</p>
       <div class="sk-guns" role="tablist">${guns.map(k => `<button role="tab" data-g="${k}" class="${k === skGun ? 'on' : ''}" aria-selected="${k === skGun}">${esc(ITEMS[k].s || ITEMS[k].n)}</button>`).join('')}</div>
-      <div class="sk-pv"><img alt="${esc(ITEMS[skGun].n)} com a skin ${esc(SKINS[on].n)}" src="${G.skinIcon(skGun, on, 480, 200)}"></div>
-      <div class="sk-grid">${SKINS.map((S, i) => { const lk = S.lv > lv; return `<button class="sk-t${i === on ? ' on' : ''}${lk ? ' lock' : ''}" data-s="${i}" aria-pressed="${i === on}"${lk ? ` aria-label="${esc(S.n)}, abre no nível ${S.lv}"` : ''}><img alt="" src="${G.skinIcon(skGun, i, 236, 104)}"><b>${esc(S.n)}</b><em>${lk ? 'Nível ' + S.lv : i === on ? 'Em uso' : 'Usar'}</em>${lk ? '<span class=lk>{{lock}}</span>' : ''}</button>`; }).join('')}</div>
-      ${on ? `<button class="btn big" id="skAll">Usar ${esc(SKINS[on].n)} em todas as armas</button>` : ''}`;
+      <div class="sk-pv"><img alt="${esc(ITEMS[skGun].n)} com a skin ${esc(P.n)}" src="${G.skinIcon(skGun, pv, 480, 200)}"><span class="sk-pvn"><b>${esc(P.n)}</b><em>${plk ? 'Abre no nível ' + P.lv : 'Em uso'}</em></span></div></div>
+      <div class="sk-r"><div class="sk-grid">${SKINS.map((S, i) => { const lk = S.lv > lv; return `<button class="sk-t${i === on ? ' on' : ''}${i === pv && i !== on ? ' pv' : ''}${lk ? ' lock' : ''}" data-s="${i}" aria-pressed="${i === on}"${lk ? ` aria-label="${esc(S.n)}, abre no nível ${S.lv}. Toca para ver"` : ''}><img alt="" src="${G.skinIcon(skGun, i, 236, 104)}"><b>${esc(S.n)}</b><em>${lk ? 'Nível ' + S.lv : i === on ? 'Em uso' : 'Usar'}</em>${lk ? '<span class=lk>{{lock}}</span>' : ''}</button>`; }).join('')}</div>
+      ${on ? `<button class="btn" id="skAll">Usar ${esc(SKINS[on].n)} em todas as armas</button>` : ''}</div></div>`;
     const tab = pfB.querySelector('.sk-guns .on'); if (tab) tab.scrollIntoView({ block: 'nearest', inline: 'center' });
     pfB.onclick = e => { const g = e.target.closest('[data-g]'), t = e.target.closest('[data-s]'); if (!g && !t) return; e.stopPropagation(); audio.play('ui');
-      if (g) { skGun = g.dataset.g; skPaint(); return; }
-      const i = +t.dataset.s; if (SKINS[i].lv > lv) { toast('A skin ' + SKINS[i].n + ' abre no nível ' + SKINS[i].lv); return; } G.setSkin(skGun, i); pfRender(); skPaint(); };
+      if (g) { skGun = g.dataset.g; skPv = -1; skPaint(); return; }
+      const i = +t.dataset.s; if (SKINS[i].lv > lv) { skPv = i; skPaint(); return; } // trancada: só se vê como fica
+      skPv = -1; G.setSkin(skGun, i); pfRender(); skPaint(); };
     if ($('skAll')) $('skAll').onclick = e => { e.stopPropagation(); audio.play('apanhar'); for (const k of guns) G.skins[k] = on; G.setSkin(skGun, on); pfRender(); skPaint(); toast('Skin ' + SKINS[on].n + ' em todas as armas'); }; };
   $('sSkins').onclick = () => { audio.play('ui'); showSkins(); };
   G.ui_skins = showSkins;
