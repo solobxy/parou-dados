@@ -178,6 +178,17 @@ SEED_FEEDS = [
     {"id": "cim_ttm", "operator_name": "Terras de Trás-os-Montes (rede regular)", "mode": "Autocarro",
      "url": "https://transporte-regular.cim-ttm.pt/MobilityHub.Api/api/Gtfs"},
     # Tâmega e Sousa: o ficheiro traz também os comboios da CP (agência 1094_CP), que já vêm da CP: ficam só os autocarros
+    # Região de Leiria (CIMRL): pasta partilhada com um ficheiro por rede (indicada no NAP). TUMG (Marinha Grande) fica de fora
+    # enquanto o ficheiro só tiver o horário de verão (acabou a 15/09/2026).
+    {"id": "rodoviaria_lis", "operator_name": "Rodoviária do Lis (Região de Leiria)", "mode": "Autocarro",
+     "drive_pasta": "1QH90GAg1X49uo4x3PLuG1_Bkd6xKHyjP", "ficheiro": "cimrl.zip",
+     "url": "https://drive.google.com/uc?export=download&id=1B0i33HpoO_FjkdkguRQYZ9Rm14NNkn38"},
+    {"id": "mobilis_leiria", "operator_name": "Mobilis (Leiria)", "mode": "Autocarro",
+     "drive_pasta": "1QH90GAg1X49uo4x3PLuG1_Bkd6xKHyjP", "ficheiro": "mobilis.zip",
+     "url": "https://drive.google.com/uc?export=download&id=1B2HDu9DQZPvmySjcM4W3lVAn-d9FBAKe"},
+    {"id": "pombus", "operator_name": "Pombus (Pombal)", "mode": "Autocarro",
+     "drive_pasta": "1QH90GAg1X49uo4x3PLuG1_Bkd6xKHyjP", "ficheiro": "pombus.zip",
+     "url": "https://drive.google.com/uc?export=download&id=1PRYohuED6BUGrvIZN6kSV7b0XmP50gg4"},
     {"id": "tamega_sousa", "operator_name": "Tâmega e Sousa (Transdev e outros)", "mode": "Autocarro", "agencias": ["1", "2", "3", "4"],
      "url": "https://transportes.cimtamegaesousa.pt/Servico/services/consultas.svc/Feed/OpenGTFS"},
 ]
@@ -191,7 +202,7 @@ DISCOVERY_SKIP = [
     "guimabus", "tuba", "mobiave", "smtuc", "transportes urbanos de coimbra", "vamus",
     "proximo", "giro", "sobe e desce", "horarios do funchal", "flixbus",
     "metropolitanos de lisboa", "metro mondego", "rodoeste", "rede siga", "companhia de autocarros da madeira",
-    "barraqueiro", "busway", "sit metropolitano", "ave mobilidade", "cavado", "flaviamobil", "tras-os-montes", "tamega",
+    "barraqueiro", "busway", "sit metropolitano", "ave mobilidade", "cavado", "flaviamobil", "tras-os-montes", "tamega", "rodoviaria do lis", "mobilis", "pombus",
 ]
 
 # Só se guardam viagens que funcionam entre ontem e daqui a WINDOW_DAYS dias
@@ -1267,6 +1278,16 @@ def converter_netex(feed, body):
     return gtfs
 
 
+def ficheiro_na_pasta_drive(pasta, nome):
+    """Endereço de download de um ficheiro (pelo nome) numa pasta pública do Google Drive, ou None."""
+    _, body = http_get(f"https://drive.google.com/embeddedfolderview?id={pasta}", timeout=60)
+    html = body.decode("utf-8", "replace") if isinstance(body, (bytes, bytearray)) else str(body)
+    for m in re.finditer(r'href="https://drive\.google\.com/file/d/([A-Za-z0-9_-]{20,})/[^"]*"[\s\S]{0,800}?flip-entry-title">([^<]+)<', html):
+        if m.group(2).strip().lower() == nome.lower():
+            return f"https://drive.google.com/uc?export=download&id={m.group(1)}"
+    return None
+
+
 def process_feed(conn, feed, today_dt, have_prev):
     fid = feed["id"]
     origin = feed.get("source_origin", "seed")
@@ -1281,6 +1302,15 @@ def process_feed(conn, feed, today_dt, have_prev):
                 break
         except Exception as err:  # noqa: BLE001
             log(f"  {fid}: portal {api.split('/')[2]} indisponível ({err})")
+    # Pasta partilhada do Google Drive (Região de Leiria): o ficheiro pelo nome, para continuar a funcionar quando o
+    # operador o substitui por um novo (o endereço fixo em «url» fica como reserva)
+    if feed.get("drive_pasta") and feed.get("ficheiro"):
+        try:
+            u = ficheiro_na_pasta_drive(feed["drive_pasta"], feed["ficheiro"])
+            if u:
+                candidates.insert(0, (u, None))
+        except Exception as err:  # noqa: BLE001
+            log(f"  {fid}: pasta do Drive indisponível ({err})")
     for u in (feed.get("url"), feed.get("mirror")):
         if u and u not in [x[0] for x in candidates]:
             candidates.append((u, None))
