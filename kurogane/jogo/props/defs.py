@@ -253,3 +253,107 @@ def carro():
     inn.torus(0.17, 0.022, 14, 5, -0.38, 1.1, 0.48, rx=-1.1)  # volante
 
 PROPS.update({'carro': carro})
+
+def sofa():
+    # sofá: base, almofadas do assento e das costas separadas (a folga faz sombra), braços boleados, pés
+    s = Part('v', tint=True, angle=50)
+    s.box(1.9, 0.22, 0.82, 0, 0.2, 0.02, bev=0.04)
+    for sx in (-0.43, 0.43): s.box(0.84, 0.16, 0.66, sx, 0.38, 0.07, bev=0.06, seg=2)
+    k = Part('v', tint=True, shade=0.86, angle=50)
+    k.box(1.9, 0.55, 0.2, 0, 0.55, -0.32, bev=0.06, seg=1)
+    for sx in (-0.43, 0.43): k.box(0.82, 0.38, 0.14, sx, 0.62, -0.18, rx=-0.12, bev=0.06, seg=2)
+    for sx in (-0.88, 0.88): k.box(0.18, 0.58, 0.85, sx, 0.36, 0, bev=0.07, seg=2)
+    f = Part('v', 0x2a2420, angle=30)
+    for sx in (-0.85, 0.85):
+        for sz in (-0.33, 0.33): f.cyl(0.025, 0.02, 0.09, 6, sx, 0.045, sz)
+
+def fogao():
+    m = Part('m', 0xe8e6e0, angle=35)
+    m.box(0.7, 0.86, 0.6, 0, 0.45, 0, bev=0.015)
+    m.box(0.7, 0.2, 0.04, 0, 0.98, -0.29, bev=0.01)  # costas
+    d = Part('v', 0x1e1f20, angle=35)
+    d.box(0.66, 0.02, 0.56, 0, 0.885, 0)  # placa
+    d.box(0.52, 0.34, 0.012, 0, 0.42, 0.302)  # vidro do forno
+    for sx in (-0.17, 0.17):
+        for sz in (-0.13, 0.13): d.cyl(0.085, 0.09, 0.02, 12, sx, 0.9, sz); d.torus(0.06, 0.007, 10, 4, sx, 0.915, sz, rx=math.pi / 2)
+    k = Part('m', 0xb8bcc0, angle=35)
+    for i in range(4): k.cyl(0.022, 0.022, 0.03, 8, -0.24 + i * 0.16, 0.78, 0.31, rx=math.pi / 2)  # botões
+    k.tube([(-0.22, 0.65, 0.31), (-0.22, 0.65, 0.35), (0.22, 0.65, 0.35), (0.22, 0.65, 0.31)], 0.01, 6)  # puxador do forno
+
+def frigo():
+    m = Part('m', 0xe8e6e0, angle=40)
+    m.box(0.7, 1.78, 0.6, 0, 0.9, -0.02, bev=0.03)
+    m.box(0.68, 0.58, 0.05, 0, 1.47, 0.3, bev=0.02); m.box(0.68, 1.12, 0.05, 0, 0.6, 0.3, bev=0.02)  # portas
+    h = Part('m', 0x8a8e92, angle=30)
+    h.box(0.03, 0.3, 0.035, -0.29, 1.5, 0.345, bev=0.008); h.box(0.03, 0.42, 0.035, -0.29, 0.95, 0.345, bev=0.008)
+    d = Part('v', 0x2a2b2c, angle=30)
+    d.box(0.6, 0.06, 0.02, 0, 0.03, 0.27)  # grelha de baixo
+    mg = Part('v', 0xd23a2e, angle=30); mg.box(0.06, 0.06, 0.01, 0.15, 1.6, 0.328)  # íman
+    mg2 = Part('v', 0xf0c23a, angle=30); mg2.box(0.12, 0.16, 0.004, 0.12, 1.4, 0.327)  # papel
+
+def sanita():
+    w = Part('v', 0xf0f0ee, angle=45)
+    w.lathe([(0.14, 0.0), (0.16, 0.05), (0.13, 0.2), (0.19, 0.33), (0.2, 0.4), (0.0, 0.4)], n=14, z=0.07)
+    w.box(0.42, 0.38, 0.17, 0, 0.6, -0.2, bev=0.03)
+    w.box(0.44, 0.03, 0.19, 0, 0.8, -0.2, bev=0.012)
+    s = Part('v', 0xe2e2de, angle=45)
+    s.torus(0.15, 0.025, 14, 5, 0, 0.415, 0.08, rx=math.pi / 2)
+    s.box(0.36, 0.02, 0.36, 0, 0.46, -0.07, rx=-1.35, bev=0.01)  # tampa levantada
+    m = Part('m', 0xb8bcc0, angle=30); m.box(0.06, 0.02, 0.03, 0.14, 0.76, -0.1)
+
+def lavatorio():
+    c = Part('v', 0xd8d4cc, angle=35)
+    c.box(0.55, 0.78, 0.45, 0, 0.4, 0, bev=0.012)
+    for sx in (-0.135, 0.135): c.box(0.25, 0.6, 0.015, sx, 0.4, 0.226, bev=0.005)
+    w = Part('v', 0xf0f0ee, angle=40)
+    w.box(0.56, 0.06, 0.46, 0, 0.82, 0.01, bev=0.02)
+    d = Part('v', 0xc8ccd0, angle=40); d.box(0.36, 0.015, 0.26, 0, 0.849, 0.04)  # bacia
+    m = Part('m', 0xb8bcc0, angle=30)
+    m.cyl(0.018, 0.018, 0.14, 8, 0, 0.92, -0.15); m.tube([(0, 0.98, -0.15), (0, 1.0, -0.1), (0, 0.97, -0.05)], 0.012, 6)
+    for sx in (-0.17, 0.17): m.box(0.012, 0.05, 0.012, sx, 0.4, 0.24)
+    mi = Part('win', 0x9ab0c0, angle=30); mi.box(0.5, 0.6, 0.02, 0, 1.4, -0.21)
+    fr = Part('v', 0xe8e6e0, angle=30); fr.box(0.54, 0.64, 0.015, 0, 1.4, -0.222, bev=0.005)
+
+def secretaria():
+    t = Part('v', 0x8a7a62, angle=35)
+    t.box(1.2, 0.04, 0.6, 0, 0.74, 0, bev=0.01)
+    l = Part('m', 0x5a5e62, angle=35)
+    for sx in (-0.55, 0.55): l.box(0.04, 0.72, 0.55, sx, 0.36, 0, bev=0.008)
+    l.box(1.06, 0.3, 0.02, 0, 0.55, -0.25)  # painel de trás
+    l.box(0.38, 0.5, 0.5, 0.33, 0.47, 0.02, bev=0.01)  # gavetas
+    k = Part('m', 0x8a8e92, angle=30)
+    for i in range(3): k.box(0.12, 0.015, 0.015, 0.33, 0.33 + i * 0.16, 0.275)
+    for i in range(3): k.box(0.36, 0.004, 0.012, 0.33, 0.4 + i * 0.16, 0.272)
+    pc = Part('v', 0x1a1c1e, angle=35)
+    pc.box(0.52, 0.32, 0.03, 0, 1.02, -0.15, rx=-0.08, bev=0.01)  # monitor
+    pc.box(0.05, 0.13, 0.05, 0, 0.83, -0.17); pc.box(0.2, 0.012, 0.14, 0, 0.765, -0.17, bev=0.005)
+    pc.box(0.42, 0.02, 0.14, 0, 0.77, 0.1, bev=0.005)  # teclado
+    pc.box(0.06, 0.02, 0.1, 0.32, 0.77, 0.12, bev=0.008)  # rato
+    sc = Part('v', 0x223040, angle=30); sc.box(0.48, 0.28, 0.005, 0, 1.023, -0.132, rx=-0.08)  # ecrã
+    kk = Part('v', 0x3a3c3e, angle=30)
+    for i in range(4): kk.box(0.38, 0.004, 0.022, 0, 0.782, 0.05 + i * 0.03)
+    pa = Part('v', 0xf2efe6, angle=30); pa.box(0.21, 0.006, 0.3, -0.38, 0.763, 0.05, ry=0.3)  # papéis
+    cu = Part('v', 0xd23a2e, angle=40); cu.cyl(0.04, 0.035, 0.1, 10, -0.48, 0.81, -0.15)  # caneca
+
+def tv():
+    m = Part('v', 0x4a3a2c, angle=35)
+    m.box(1.2, 0.42, 0.4, 0, 0.23, 0, bev=0.012)
+    for sx in (-0.3, 0.3): m.box(0.56, 0.3, 0.012, sx, 0.25, 0.2, bev=0.004)
+    k = Part('m', 0x8a8e92, angle=30)
+    for sx in (-0.05, 0.05): k.box(0.08, 0.012, 0.012, sx, 0.3, 0.212)
+    t = Part('v', 0x151618, angle=35)
+    t.box(1.0, 0.6, 0.05, 0, 0.8, -0.05, bev=0.012); t.box(0.3, 0.02, 0.18, 0, 0.45, -0.05); t.box(0.06, 0.1, 0.04, 0, 0.5, -0.06)
+    sc = Part('v', 0x1c2430, angle=30); sc.box(0.94, 0.54, 0.004, 0, 0.8, -0.024)
+
+def balcao():
+    # balcão de 1 x 1 (o jogo estica): rodapé recuado, corpo com portas, tampo com bordo
+    c = Part('v', tint=True, angle=35)
+    c.box(0.96, 0.86, 0.96, 0, 0.51, 0, bev=0.01)
+    k = Part('v', tint=True, shade=0.55, angle=35)
+    k.box(0.92, 0.08, 0.92, 0, 0.04, 0)
+    g = Part('v', tint=True, shade=0.8, angle=35)
+    g.box(0.965, 0.012, 0.965, 0, 0.72, 0)  # friso das gavetas
+    t = Part('v', 0xe8e4da, angle=35)
+    t.box(1.04, 0.05, 1.04, 0, 0.995, 0, bev=0.012)
+
+PROPS.update({'sofa': sofa, 'fogao': fogao, 'frigo': frigo, 'sanita': sanita, 'lavatorio': lavatorio, 'secretaria': secretaria, 'tv': tv, 'balcao': balcao})
