@@ -1898,7 +1898,7 @@ async function boot() {
       mats.sign.emissiveIntensity = 1.05 + 1.0 * (1 - D); mats.nwin.emissiveIntensity = 1.5 * (1 - D); mats.nwin2.emissiveIntensity = 1.1 * (1 - D); renderer.toneMappingExposure = 1.02 + 0.2 * (1 - D);
       const nt = 1 - D;
       // óculos de visão noturna: ligam sozinhos ao escurecer (mais luz e tudo em verde)
-      { const nv = p && p.alive && G.inv && G.inv.eq.eyes ? Math.max(0, Math.min(1, (nt - 0.3) / 0.35)) : 0; G.nv = nv;
+      { const nv = p && p.alive && G.inv && G.inv.eq.eyes && !G.nvOff ? Math.max(0, Math.min(1, (nt - 0.3) / 0.35)) : 0; G.nv = nv;
         G.eyeIn = (G.eyeIn || 0) + ((G.inside ? 1 : 0) - (G.eyeIn || 0)) * Math.min(1, dt * 1.2); renderer.toneMappingExposure *= 1 + 0.28 * G.eyeIn; hemi.intensity *= 1 + 0.35 * G.eyeIn; // dentro de casa os olhos habituam-se
         if (nv > 0) { hemi.intensity += 1.3 * nv; scene.environmentIntensity += 0.35 * nv; renderer.toneMappingExposure += 0.75 * nv; _fc.lerp(_rc.setRGB(0.15, 0.19, 0.16), 0.6 * nv); scene.fog.color.copy(_fc); scene.background.copy(_fc); }
         const on = nv > 0.5; if (on !== !!G.nvOn) { G.nvOn = on; renderer.domElement.classList.toggle('nvg', on); if (on && G.playing) G.ui.toast('Visão noturna ligada'); } }

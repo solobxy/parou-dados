@@ -164,7 +164,7 @@ svg{width:18px;height:18px;flex:none}
 /* a conduzir: pedais à esquerda, volante à direita (os botões grandes, para não falhar com o polegar) */
 .dv{--sz:84px;display:none}.dv svg{width:30px;height:30px}.dv.dn{--fill:#3b4046;--bd:rgba(230,226,218,.55)}
 body.driving.touch .dv{display:flex}body.driving .hv,body.driving.touch .hv{display:none}body.driving.touch.heliAir .hv{display:flex}.hv[aria-pressed=true]{--fill:#4a5a3a;--bd:rgba(200,230,170,.7)}body.driving .pad,body.driving #gL,body.driving #gR{display:none}
-body.driving #bottom,body.driving #tLight{display:none}body.driving #ammo{left:50%;right:auto;transform:translateX(-50%);bottom:calc(14px + var(--sb));max-width:none}
+body.driving #bottom,body.driving #tLight,body.driving #tNv{display:none}#tNv[hidden]{display:none}#tNv .nv0{display:none}#tNv:not(.on) .nv0{display:contents}#tNv:not(.on) .nv1{display:none}body.driving #ammo{left:50%;right:auto;transform:translateX(-50%);bottom:calc(14px + var(--sb));max-width:none}
 #tFire svg{width:28px;height:28px;color:var(--amb)}
 #tFire .ic-m,#tFire .ic-b,#tFire .ic-x{display:none}#tFire.boom .ic-g,#tFire.boom .ic-m{display:none}#tFire.boom .ic-x{display:block}#tFire.melee .ic-g{display:none}#tFire.melee .ic-m{display:block}#tFire.build .ic-g,#tFire.build .ic-m{display:none}#tFire.build .ic-b{display:block}
 #tFire em{color:#E8D9C2}
@@ -1019,6 +1019,7 @@ body.driving #dHov{right:calc(40px + var(--sr));bottom:calc(158px + var(--sb))}
     <button class="tb dv" id="dR" aria-label="Virar à direita">{{chevron-right}}</button>
     <button class="tb dv hv" id="dHov" aria-label="Pairar: o helicóptero fica parado no ar" aria-pressed="false">{{circle-pause}}<em>Pairar</em></button>
     <button class="tb" id="tLight" data-h="light" aria-label="Lanterna">{{flashlight}}<em>Luz</em></button>
+    <button class="tb on" id="tNv" aria-label="Ligar ou desligar a visão noturna" aria-pressed="true" hidden><span class="nv1">{{eye}}</span><span class="nv0">{{eye-off}}</span><em>Visão</em></button>
   </div>
   <div id="vit" data-h="vit"><div id="status"></div>
     <div class="vb hp">{{heart}}<span class="num" id="vHp">100</span><i><b id="bHp"></b></i></div>
@@ -1057,7 +1058,7 @@ body.driving #dHov{right:calc(40px + var(--sr));bottom:calc(158px + var(--sb))}
       <div class="fld" id="gPw"><label for="gP">Palavra-passe</label><input id="gP" type="password" maxlength="72" autocomplete="current-password"></div>
       <div class="pmsg" id="gM"></div><button class="gb pri wide" id="gOk" type="submit"><span>Entrar</span></button><p class="gf-n" id="gfN"></p></form>
   </div>
-  <div class="gt-foot"><span id="gVer">Protótipo 0.74</span><span>A sessão fica guardada neste aparelho</span></div>
+  <div class="gt-foot"><span id="gVer">Protótipo 0.75</span><span>A sessão fica guardada neste aparelho</span></div>
 </div>
 <div id="start" class="ov" hidden>
   <header class="lb-top">
@@ -1072,7 +1073,7 @@ body.driving #dHov{right:calc(40px + var(--sr));bottom:calc(158px + var(--sb))}
   <nav class="lb-right"><button class="lb-row" id="sLook"><b>Aparência</b>{{shirt}}</button><button class="lb-row" id="sProf"><b>Perfis</b>{{users}}</button><button class="lb-row" id="sAcc"><b id="sAccT">Conta</b>{{cloud}}</button></nav>
   <div class="mnote" id="mnote" hidden></div>
   <div class="lb-go"><div class="onl" id="sOnl" role="status"><i class="dot" aria-hidden="true"></i><span><em id="sOnT">A ver quem está a jogar…</em></span></div><button class="lb-play" id="sGo"><span>Jogar</span></button></div>
-  <div class="lb-foot"><span class="foot">Protótipo 0.74</span><a class="credit" href="https://dinissousa.pt" target="_blank" rel="noopener">feito por dinissousa.pt</a></div>
+  <div class="lb-foot"><span class="foot">Protótipo 0.75</span><a class="credit" href="https://dinissousa.pt" target="_blank" rel="noopener">feito por dinissousa.pt</a></div>
   <div id="sKeys" hidden></div><button id="sCont" hidden></button>
 </div>
 <div id="modes" class="ov" hidden><div class="md-h"><b class="cond">Escolhe o modo</b><button class="close" id="mdX" aria-label="Fechar">{{x}}</button></div>

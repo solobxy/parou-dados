@@ -477,6 +477,7 @@ export function initUI(G) {
   $('sHow').onclick = () => { audio.play('ui'); $('pfT').textContent = 'Como se joga'; pfm.classList.remove('wide', 'kpw'); pfB.innerHTML = `<div class="keys howk">${$('sKeys').innerHTML}</div><p class="note">Revista tudo, come e bebe, treina o corpo (perde-se ao morrer) e evita a cidade de noite. O melhor loot está no centro, onde há PvP.</p>`; pfm.hidden = false; };
   // ---------- novidades (as mais recentes primeiro; o ponto vermelho some depois de as abrires)
   const NEWS = [
+    { id: '0.75', d: '27/11/2026', t: 'Desligar a visão noturna', img: 'menu/push-sono.jpg', b: '<p>Com os óculos de visão noturna postos aparece o botão Visão, ao lado da Luz: toca para desligar o verde e ver a noite como ela é; toca outra vez para voltar a ligar.</p>' },
     { id: '0.74', d: '27/11/2026', t: 'Avisos com imagem', img: 'menu/push-sono.jpg', b: '<p>Os avisos no telemóvel passam a trazer uma imagem grande. Novo aviso quando atacam a tua personagem enquanto dormes, e outro se a matarem.</p><ul><li>O aviso de raide também tem imagem nova</li><li>Para ligar: Definições › Telemóvel › Avisos no telemóvel</li></ul>' },
     { id: '0.73', d: '27/11/2026', t: 'Árvores e erva novas', img: 'menu/n-arvores.jpg', b: '<p>As árvores agora têm folhas e ramos a sério, com casca no tronco e sombras recortadas no chão. Os pinheiros têm ramos em camadas e a erva tem lâminas.</p><ul><li>Ao longe as copas continuam com folhas, sem virar blocos</li></ul>' },
     { id: '0.72', d: '27/11/2026', t: 'Texturas nos objetos e paredes', img: 'menu/n-texturas.jpg', b: '<p>Caixotes, bancos, mesas e vedações têm madeira com veios e nós; bidões com ferrugem e escorridos; carros, máquinas, caixotes do lixo e postes com tinta gasta, riscos e lascas; paredes com betão, poros e manchas.</p>' },
@@ -578,6 +579,9 @@ export function initUI(G) {
   };
   const applyAll = () => { applyHud(); audio.vol(cfg.vol); if (G.applyGfx) G.applyGfx(cfg); saveCfg(); };
   // botões novos
+  // botão da visão noturna: à direita do da lanterna
+  const nvPos = () => { const b = $('tNv'), L = $('tLight'); if (!b || b.hidden || !L) return; const r = L.getBoundingClientRect(); if (!r.width) return; b.style.left = (r.right + 10) + 'px'; b.style.top = r.top + 'px'; b.style.bottom = 'auto'; b.style.transform = getComputedStyle(L).transform === 'none' ? '' : getComputedStyle(L).transform; b.style.transformOrigin = '0 0'; };
+  addEventListener('resize', () => setTimeout(nvPos, 60));
   const hold = (el, on, off) => { el.addEventListener('pointerdown', e => { e.stopPropagation(); e.preventDefault(); on(); }); const end = e => { e.stopPropagation(); off && off(); }; el.addEventListener('pointerup', end); el.addEventListener('pointercancel', end); el.addEventListener('pointerleave', end); };
   // botão de disparo: 1.º toque levanta a arma; depois dispara; arrastar a partir dele mexe na mira
   { const el = $('tFire'); let pid = null, lx = 0, ly = 0;
@@ -611,6 +615,7 @@ export function initUI(G) {
   hold($('tJump'), () => G.jump()); hold($('tCrouch'), () => G.stanceToggle(1)); hold($('tProne'), () => G.stanceToggle(2));
   hold($('tSprint'), () => G.setAuto(!G.autoRun));
   hold($('tLight'), () => G.toggleLight());
+  hold($('tNv'), () => { G.nvOff = !G.nvOff; G.ui.toast(G.nvOff ? 'Visão noturna desligada' : 'Visão noturna ligada'); }); // só aparece com os óculos postos
   // painel
   const setEl = $('set'), body = $('setBody');
   const row = (title, sub, ctl) => { const r = document.createElement('div'); r.className = 'srow'; r.innerHTML = `<div class="lab"><b>${title}</b>${sub ? `<span>${sub}</span>` : ''}</div>`; r.appendChild(ctl); return r; };
@@ -1115,6 +1120,7 @@ export function initUI(G) {
     if (toastT > 0) { toastT -= dt; if (toastT <= 0.3) toastEl.style.opacity = Math.max(0, toastT / 0.3); if (toastT <= 0) toastEl.hidden = true; }
     for (const o of SI) if (o.t > 0) { o.t -= dt; o.el.style.opacity = (Math.min(1, o.t / 0.4) * o.a).toFixed(2); }
     $('tLight').classList.toggle('on', G.car && G.carSeat === 0 && G.cars ? G.cars.isLit(G.car) : !!G.lightOn);
+    { const b = $('tNv'), has = !!(G.playing && G.inv && G.inv.eq && G.inv.eq.eyes && G.p && G.p.alive); if (b.hidden === has) { b.hidden = !has; nvPos(); } if (has) { const on = !G.nvOff; if (b.classList.contains('on') !== on) { b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); } } }
     for (let i = feeds.length - 1; i >= 0; i--) { const f = feeds[i]; f.t -= dt; if (f.t < 0.4) f.el.classList.add('out'); if (f.t <= 0) { f.el.remove(); feeds.splice(i, 1); } }
     mmT -= dt; if (mmT <= 0) { mmT = 0.12; drawMini(); }
     if (G.ARENA) { const pr = !!(G.p && G.p.alive && G.p.born != null && G.t - G.p.born < 2.5 && !(G.p.fireT > G.p.born)), el = $('aprot'); if (el.hidden === pr) el.hidden = !pr; if (pr) { const t = 'Protegido ' + (2.5 - (G.t - G.p.born)).toFixed(1).replace('.', ',') + ' s'; if (el.textContent !== t) el.textContent = t; } } // proteção ao nascer (acaba ao disparar)
