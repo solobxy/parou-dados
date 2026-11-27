@@ -901,6 +901,13 @@ body.driving #dHov{right:calc(40px + var(--sr));bottom:calc(158px + var(--sb))}
 .lb-av img{position:absolute;left:58%;top:0;width:640%;transform:translate(-50%,-6.5%);max-width:none}
 .lb-me{position:relative}.lb-lv{position:absolute;left:34px;top:30px;min-width:22px;height:22px;padding:0 4px;display:grid;place-items:center;background:var(--amb);color:#17130c;font:700 13px/1 "Roboto Condensed",sans-serif;font-style:normal;font-variant-numeric:tabular-nums;z-index:1}.lb-rq{position:absolute;left:44px;top:2px;width:10px;height:10px;border-radius:50%;background:var(--verm);z-index:1}
 .pfb:has(.pf-g){display:block}.pf-g{display:grid;grid-template-columns:1fr;gap:16px}.pf-c{display:flex;flex-direction:column;gap:10px;min-width:0}@media (min-width:640px){.pf-g{grid-template-columns:1fr 1fr;gap:22px}}@media (max-width:639px){.pf-g{display:flex;flex-direction:column;gap:10px}.pf-c{display:contents}.pf-g>.pf-c>.note{order:8}#pfAcc{order:9}}
+.sk-top{display:flex;align-items:center;justify-content:space-between;gap:10px}.sk-top p{font-size:13px!important;color:var(--tx2)!important}
+.sk-guns,.sk-pv,.sk-grid,.sk-top{flex:none}.sk-guns{display:flex;gap:2px;overflow-x:auto;background:#0b0c0e;padding:3px;scrollbar-width:none}.sk-guns::-webkit-scrollbar{display:none}.sk-guns button{flex:none;height:40px;padding:0 12px;font:600 14px "Roboto Condensed",sans-serif;letter-spacing:.05em;text-transform:uppercase;color:var(--tx2)}.sk-guns button.on{background:#3a3733;color:var(--tx)}
+.sk-pv{display:flex;align-items:center;justify-content:center;height:120px;background:radial-gradient(ellipse at 50% 60%,#2b2925,#141312 70%)}.sk-pv img{max-height:110px;max-width:92%}
+.sk-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(118px,1fr));gap:4px}
+.sk-t{position:relative;display:flex;flex-direction:column;align-items:stretch;gap:2px;padding:6px 8px 8px;background:#1a1d21;text-align:left;min-height:44px}.sk-t img{width:100%;height:52px;object-fit:contain}
+.sk-t b{font:700 14px "Roboto Condensed",sans-serif;letter-spacing:.04em}.sk-t em{font-style:normal;font-size:12px;color:var(--tx2)}.sk-t.on{box-shadow:inset 0 0 0 2px var(--amb)}
+.sk-t.lock img{opacity:.35;filter:grayscale(1)}.sk-t.lock b{color:var(--tx2)}.sk-t .lk{position:absolute;right:6px;top:6px;width:16px;height:16px;color:var(--tx2)}.sk-t .lk svg{width:16px;height:16px}
 .pf-top{display:flex;align-items:center;gap:14px}.pf-badge{flex:none;width:56px;height:56px;display:grid;place-items:center;background:var(--amb);color:#17130c;font:700 28px "Roboto Condensed",sans-serif;font-variant-numeric:tabular-nums}
 .pf-id{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}.pf-id b{font:700 20px "Roboto Condensed",sans-serif;letter-spacing:.04em;overflow:hidden;text-overflow:ellipsis}.pf-id em{font-style:normal;font-size:13px;color:var(--tx2)}
 .pf-bar{display:block;height:6px;background:#0b0c0e}.pf-bar i{display:block;height:100%;background:var(--amb)}
@@ -1074,7 +1081,7 @@ body.driving #dHov{right:calc(40px + var(--sr));bottom:calc(158px + var(--sb))}
       <div class="fld" id="gPw"><label for="gP">Palavra-passe</label><input id="gP" type="password" maxlength="72" autocomplete="current-password"></div>
       <div class="pmsg" id="gM"></div><button class="gb pri wide" id="gOk" type="submit"><span>Entrar</span></button><p class="gf-n" id="gfN"></p></form>
   </div>
-  <div class="gt-foot"><span id="gVer">Protótipo 0.81</span><span>A sessão fica guardada neste aparelho</span></div>
+  <div class="gt-foot"><span id="gVer">Protótipo 0.82</span><span>A sessão fica guardada neste aparelho</span></div>
 </div>
 <div id="start" class="ov" hidden>
   <header class="lb-top">
@@ -1086,10 +1093,10 @@ body.driving #dHov{right:calc(40px + var(--sr));bottom:calc(158px + var(--sb))}
     <button class="lb-card" id="sHow"><span class="lb-ct"><em>Como se joga</em><b>Controlos e dicas</b></span>{{chevron-right}}</button>
   </aside>
   <div class="lb-char" aria-hidden="true"><img id="lbChar" alt=""></div>
-  <nav class="lb-right"><button class="lb-row" id="sLook"><b>Aparência</b>{{shirt}}</button><button class="lb-row" id="sProf"><b>Perfis</b>{{users}}</button><button class="lb-row" id="sAcc"><b id="sAccT">Conta</b>{{cloud}}</button></nav>
+  <nav class="lb-right"><button class="lb-row" id="sLook"><b>Aparência</b>{{shirt}}</button><button class="lb-row" id="sSkins"><b>Skins</b>{{paintbrush}}</button><button class="lb-row" id="sProf"><b>Perfis</b>{{users}}</button><button class="lb-row" id="sAcc"><b id="sAccT">Conta</b>{{cloud}}</button></nav>
   <div class="mnote" id="mnote" hidden></div>
   <div class="lb-go"><div class="onl" id="sOnl" role="status"><i class="dot" aria-hidden="true"></i><span><em id="sOnT">A ver quem está a jogar…</em></span></div><button class="lb-play" id="sGo"><span>Jogar</span></button></div>
-  <div class="lb-foot"><span class="foot">Protótipo 0.81</span><a class="credit" href="https://dinissousa.pt" target="_blank" rel="noopener">feito por dinissousa.pt</a></div>
+  <div class="lb-foot"><span class="foot">Protótipo 0.82</span><a class="credit" href="https://dinissousa.pt" target="_blank" rel="noopener">feito por dinissousa.pt</a></div>
   <div id="sKeys" hidden></div><button id="sCont" hidden></button>
 </div>
 <div id="modes" class="ov" hidden><div class="md-h"><b class="cond">Escolhe o modo</b><button class="close" id="mdX" aria-label="Fechar">{{x}}</button></div>

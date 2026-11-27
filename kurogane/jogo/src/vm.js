@@ -1,3 +1,4 @@
+import { applySkin } from './skins.js';
 // Arma e braços na primeira pessoa: desenhados por cima do mundo. A apontar, o vidro da mira fica exatamente no centro;
 // a andar (sem apontar), a arma vai à anca, a arma branca na mão direita e, de mãos vazias, os punhos.
 // Os braços e as mãos são os do próprio corpo (mesma malha e cores), postos por IK em cada frame; as recargas mexem
@@ -64,7 +65,8 @@ export function makeVM() {
   const addPart = pk => { if (!W[pk]) return null; const p = partPivot(pk); if (!p) return null; const g = new THREE.Group(), inner = meshOf(W[pk]);
     if (pk.startsWith('bolt_')) p.set(WPUSH[0], WPUSH[1] + (GUNA(pk.slice(5)).boltc ? 0 : 0), p.z); // o ferrolho roda à volta do eixo do cano
     g.position.copy(p); inner.position.copy(p).negate(); g.add(inner); gun.add(g); return { g, p0: p.clone() }; };
-  const set = (k, att, look) => {
+  let skK = ''; const set = (k, att, look) => { set0(k, att, look); const sk = (att && att.skin) | 0, kk = cur + '|' + sk; if (kk !== skK) { skK = kk; if (gun) applySkin(gun, sk); } };
+  const set0 = (k, att, look) => {
     const lk = look.top + ':' + look.skin + ':' + look.legs; if (!arms) { arms = fpArms(look); rig.add(arms.mesh); armsLook = lk; } else if (lk !== armsLook) { arms.setColors(look); armsLook = lk; }
     const key = k + ':' + (att.scope || '') + ':' + (att.sup || '') + ':' + (att.light || '');
     att0 = att || {}; if (key === cur) return; cur = key; clear();

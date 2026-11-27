@@ -62,14 +62,14 @@ export function makeNet({ G, scene, mkRemote, audio, Conta, enc, dec, hurt, die,
       case 'adgive': G.gain(m.k, m.n); G.ui.toast('Recebeste ' + m.n + ' × ' + m.k); return;
       case 'lb': G.ui.lbShow && G.ui.lbShow(m); return;
       case 'pf': if (pfWait) { const f = pfWait; pfWait = null; f(m); } return;
-      case 'xp': N.xp = m; G.ui.xp && G.ui.xp(m); return;
+      case 'xp': N.xp = m; G.setLv && G.setLv(m.lv); if (m.up && G.refreshWeapon) G.refreshWeapon(); G.ui.xp && G.ui.xp(m); return;
       case 'frq': G.ui.toast(m.n + ' quer ser teu amigo. Aceita no menu, em Perfil.'); audio.play && audio.play('ui'); return;
       case 's': {
         const now = performance.now(), seen = new Set();
         for (const a of m.ps) { const r = R.get(a[0]); if (!r) continue; seen.add(r.id); if (r.s1 && (Math.hypot(a[1] - r.s1[1], a[2] - r.s1[2]) > 25 || a[4] !== r.s1[4])) r.T = track(); r.s1 = a; push(r.T, a[13] || now, now, { x: a[1], z: a[2], y: a[3], yaw: a[5], a });
           if (G.ARENA) r.b.setTeam(r.clan === 'arena-b' ? 1 : r.clan === 'arena-r' ? 0 : null);
           const ar = a[12] || [0, 0], gk = typeof a[14] === 'string' ? a[14] : null, ak = gk ?? ar.join(); if (ak !== r.ar) { r.ar = ak; if (gk != null) { const q = gk.split(','), e = {}; ['head', 'vest', 'suit', 'eyes', 'back'].forEach((s, i) => { if (q[i] && ITEMS[q[i]]) e[s] = { k: q[i] }; }); r.b.setGear(e); r.gh = !!e.suit; } else r.b.setGear({ head: ar[0] ? { k: 'capacete' } : null, vest: ar[1] ? { k: 'colete' } : null }); }
-          if (r.w !== a[8]) { r.w = a[8]; r.b.setWeapon(a[8] || null, {}); } }
+          if (r.w !== a[8]) { r.w = a[8]; const q = String(a[8] || '').split('~'); r.wi = q[0]; r.b.setWeapon(q[0] || null, { skin: q[1] | 0 }); } }
         for (const r of R.values()) if (!seen.has(r.id)) { r.s1 = null; r.T = track(); r.b.root.visible = false; r.el.style.display = 'none'; }
         if (m.zu) world.z.rows(m.zu); if (m.zg) world.z.gone(m.zg); if (m.cu) G.cars.rows(m.cu); if (m.cg) G.cars.gone(m.cg);
         return;
@@ -199,7 +199,7 @@ export function makeNet({ G, scene, mkRemote, audio, Conta, enc, dec, hurt, die,
       if (dying) { const k = Math.min(1, (now - r.deadT) / 600), e = k * k; r.b.root.rotation.set(-Math.PI / 2 * e, S.yaw, 0, 'YXZ'); r.b.root.position.y = y + 0.16 * e; if (r.w !== '') { r.w = ''; r.b.setWeapon(null, {}); } r.el.style.display = 'none'; r.b.stance = 0; r.b.pose(dt, 0, 'none'); continue; } // cai de costas e fica no chão até renascer
       const an = b[7] | 0; { r.wt = (r.wt || 0) - dt; if (r.wt <= 0 && G.wallAhead) { r.wt = 0.1; r.wk = Math.max(0, Math.min(1, (0.85 - G.wallAhead(x, z, S.yaw, b[4])) / 0.35)); } } // recarga, granada e ligadura dos outros: o progresso conta-se aqui desde que o sinal chega
       const nowS = now / 1000, edge = (bit, key) => { if (an & bit) { if (r[key] == null) r[key] = nowS; return nowS - r[key]; } r[key] = null; return -1; };
-      const rs = edge(16, 'rS'), ts = edge(32, 'tS'), us = edge(64, 'uS'), gd = ITEMS[r.w] && ITEMS[r.w].gun, rd = gd ? gd.reload : 2;
+      const rs = edge(16, 'rS'), ts = edge(32, 'tS'), us = edge(64, 'uS'), gd = ITEMS[r.wi] && ITEMS[r.wi].gun, rd = gd ? gd.reload : 2;
       r.sc = (r.sc || 0) + ((b[15] | 0) - (r.sc || 0)) * Math.min(1, dt * 7); r.b.stance = r.sc; /* postura dos outros: agachado ou deitado, suave */
       r.b.pose(dt, Math.min(b[6], r.spd / 3 + 0.03), MODES[an & 3], -1, 0, -(r.lr || 0), -1, r.step, (an & 4 ? 1 : 0.25) * (1 - 0.85 * (r.wk || 0)), us >= 0 ? { kind: 'heal', t: (us % 3) / 3 } : null, { rel: rs >= 0 ? Math.min(0.99, rs / rd) : -1, thr: ts >= 0 ? Math.min(0.99, ts / 0.7) : -1 });
       if (!lsee || (G.ARENA && !mate(r.clan)) || (r.gh && me && !mate(r.clan) && Math.hypot(x - me.x, z - me.z) > 12)) r.el.style.display = 'none'; else place(r.el, x, y + 2.05 - 0.5 * Math.min(1, r.sc || 0) - 0.95 * Math.max(0, (r.sc || 0) - 1), z); // de ghillie não se vê o nome ao longe

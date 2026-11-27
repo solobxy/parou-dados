@@ -1,3 +1,4 @@
+import { applySkin } from './skins.js';
 // Personagem do jogador (com equipamento visível) e zombies (desenhados todos de uma vez).
 import * as THREE from 'three';
 import { Builder, mat4, shade } from './builder.js';
@@ -394,7 +395,7 @@ export class Body {
   }
   setTeam(t) { const v = t == null ? null : t ? 'vest_tb' : 'vest_tr'; if (v !== this.teamV) { this.teamV = v; this.setGear(this._eq || {}); } } // arena: todos com o colete da equipa
   setGear(eq) { this._eq = eq; const on = gearKeys(eq); if (this.teamV) { for (const k of [...on]) if (k.startsWith('vest')) on.delete(k); on.add(this.teamV); } for (const k in this.gear) this.gear[k].visible = on.has(k); for (const g of this.suitX) g.visible = on.has('suit'); }
-  setWeapon(k, att = {}) { const sc = att.scope ? (att.scope === 'mira8' ? 'sc8_' : att.scope === 'reddot' ? 'rd_' : 'sc_') + k : null, sp = att.sup ? 'sup_' + k : null, lt = att.light ? 'lt_' + k : null; const vis = [sc, sp, lt, 'mag_' + k, 'bolt_' + k, 'pump_' + k].filter(w => w && this.weps[w]); this.wkMag = this.weps['mag_' + k] || null; this.wkPiv = this.wkMag ? partPivot('mag_' + k) : null; for (const w in this.weps) this.weps[w].visible = w === k || vis.includes(w); this.wk = k; this.wkAtt = vis; }
+  setWeapon(k, att = {}) { const sc = att.scope ? (att.scope === 'mira8' ? 'sc8_' : att.scope === 'reddot' ? 'rd_' : 'sc_') + k : null, sp = att.sup ? 'sup_' + k : null, lt = att.light ? 'lt_' + k : null; const vis = [sc, sp, lt, 'mag_' + k, 'bolt_' + k, 'pump_' + k].filter(w => w && this.weps[w]); this.wkMag = this.weps['mag_' + k] || null; this.wkPiv = this.wkMag ? partPivot('mag_' + k) : null; for (const w in this.weps) this.weps[w].visible = w === k || vis.includes(w); this.wk = k; this.wkAtt = vis; if (k && this.weps[k]) { const sk = att.skin | 0; for (const w of [k, ...vis]) applySkin(this.weps[w], sk); } }
   // um membro: coxa/braço (rotação x = para a frente/trás, z = abrir) e a dobra do joelho/cotovelo
   limb(g, rx, rz, bend, ry = 0) { g.quaternion.setFromEuler(_pe.set(rx, ry, rz, 'XYZ')); const k = g.userData.knee || g.userData.fore; k.rotation.set(bend, 0, 0); if (g.userData.hand) g.userData.hand.rotation.set(0, 0, 0); }
   // anim: mv (0..1.5), mode ('rifle','pistol','melee','none'), swing (0..1 ou -1), dt

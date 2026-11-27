@@ -22,12 +22,20 @@ server.listen(0, async () => {
     const A = await mk('Ana', 'pa'), B = await mk('Bruno', 'pb');
     // antes de jogar online: sem código, o perfil diz que ainda não jogou
     const n0 = await A.ev(() => G.net.pf()); ok(n0.none, 'sem jogar online: perfil vazio');
-    for (const P of [A, B]) await P.ev(() => G.net.start()); await W(4000);
+    for (const P of [A, B]) await P.ev(() => G.dbgKit()); await W(3000);
+    const spot = await A.ev(() => [G.p.x, G.p.z]); await A.ev(() => G.net.start()); await B.ev(s => { G.p.x = s[0] + 5; G.p.z = s[1]; G.net.start(); }, spot); await W(4000);
     ok(await A.ev(() => G.net.on) && await B.ev(() => G.net.on), 'os dois ligados');
     await A.ev(() => G.net.raw({ t: 'txp', g: 130 })); for (let i = 0; i < 20 && !(await A.ev(() => G.net.xp && G.net.xp.g)); i++) await W(300);
     const xa = await A.ev(() => G.net.xp); ok(xa && xa.lv === 2 && xa.at === 30 && xa.up, 'Ana ganha 130 XP e sobe ao nível 2 (' + JSON.stringify(xa) + ')');
     ok(await A.ev(() => { const e = document.getElementById('xpF'); return !!e && /\+130 XP/.test(e.textContent); }), 'aparece «+130 XP» no ecrã');
     await A.page.screenshot({ path: path.join(outDir, 'pf-xp.png') });
+    // skins: o Bruno vê a skin da Ana se o nível dela a abriu (Floresta, nível 2); a Tigre (nível 10) o servidor tira
+    await A.ev(() => { const it = G.inv.belt[0]; it.k = 'ak'; it.att = {}; G.select(1); G.select(0); G.setSkin('ak', 1); });
+    let wB = ''; for (let i = 0; i < 25 && !/~/.test(wB); i++) { await W(300); wB = await B.ev(() => { const r = [...G.net.R.values()].find(q => q.name === 'Ana'); return r ? String(r.w) : ''; }); }
+    ok(wB === 'ak~1', 'Bruno vê a AK da Ana com a skin Floresta (' + wB + ')');
+    await A.ev(() => { G.setLv(10); G.setSkin('ak', 5); }); await W(2500);
+    wB = await B.ev(() => { const r = [...G.net.R.values()].find(q => q.name === 'Ana'); return r ? String(r.w) : ''; }); ok(wB === 'ak', 'Tigre sem o nível no servidor: o Bruno vê a AK normal (' + wB + ')');
+    await A.ev(() => { G.setLv(2); G.setSkin('ak', 0); });
     let r = await A.ev(() => G.net.pf({ a: 'add', n: 'ninguem' })); ok(r.e && /Não há/.test(r.e), 'nome que não existe: aviso');
     await W(500); r = await A.ev(() => G.net.pf({ a: 'add', n: 'bruno' })); ok(r.ok && r.out.length === 1, 'pedido enviado ao Bruno: ' + r.ok);
     await W(600);

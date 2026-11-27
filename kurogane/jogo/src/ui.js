@@ -8,6 +8,7 @@ import { VT } from './vtypes.js';
 import { initArenaUI } from './arenaui.js';
 import { pager, fitDrop } from './pager.js';
 import { audio } from './audio.js';
+import { SKINS } from './skins.js';
 import { makeMusic } from './music.js';
 import * as THREE from 'three';
 import * as Conta from './conta.js';
@@ -440,10 +441,10 @@ export function initUI(G) {
   // ---------- lobby: perfil, personagem ao centro, atalhos, JOGAR. Quem já entrou neste aparelho vem direto para aqui
   let lookKey = '';
   const pfRender = () => {
-    const a = Conta.ativo(), c = Conta.conta();
+    const a = Conta.ativo(), c = Conta.conta(); if (G.skinsReload) G.skinsReload();
     $('lbName').textContent = a && a.nome ? a.nome : '—'; $('lbSub').textContent = c ? 'Conta ligada · na nuvem' : 'Só neste aparelho';
     $('sAccT').textContent = c ? 'Conta' : 'Criar conta';
-    const L = (a && a.look) || null, k = JSON.stringify(L || {}) + (a ? a.id : '');
+    const L = (a && a.look) || null, k = JSON.stringify(L || {}) + (a ? a.id : '') + '|' + (G.skinFor ? G.skinFor('ak') : 0);
     if (k !== lookKey && G.portraitBig) { lookKey = k; const u = G.portraitBig(L || undefined); $('lbChar').src = u; $('lbAv').src = u; }
     newsDot(); startLabels(); try { lvPaint(); pfFetch(); } catch (e) { }
   };
@@ -477,6 +478,7 @@ export function initUI(G) {
   $('sHow').onclick = () => { audio.play('ui'); $('pfT').textContent = 'Como se joga'; pfm.classList.remove('wide', 'kpw'); pfB.innerHTML = `<div class="keys howk">${$('sKeys').innerHTML}</div><p class="note">Revista tudo, come e bebe, treina o corpo (perde-se ao morrer) e evita a cidade de noite. O melhor loot está no centro, onde há PvP.</p>`; pfm.hidden = false; };
   // ---------- novidades (as mais recentes primeiro; o ponto vermelho some depois de as abrires)
   const NEWS = [
+    { id: '0.82', d: '27/11/2026', t: 'Skins de armas', img: 'menu/n-skins.jpg', b: '<p>No menu, em Skins, escolhe a pintura de cada arma: Floresta, Deserto, Urbano, Neve, Tigre, Carmesim e Ouro. Os outros jogadores também a veem.</p><ul><li>Cada skin abre num nível: a primeira no nível 2, o Ouro no 20</li><li>Podes usar a mesma skin em todas as armas de uma vez</li></ul>' },
     { id: '0.81', d: '27/11/2026', t: 'Nível e amigos', img: 'menu/n-perfil.jpg', b: '<p>Toca no teu nome, no menu, para veres o perfil: nível, zombies e jogadores que mataste, e os teus amigos.</p><ul><li>Ganhas experiência a jogar online: zombies, jogadores, objetos feitos e tempo vivo</li><li>Adiciona amigos pelo nome e vê quem está a jogar agora</li><li>Recebes aviso quando alguém te pede amizade</li></ul>' },
     { id: '0.80', d: '27/11/2026', t: 'Armas e equipamento com textura', img: 'menu/n-armas.jpg', b: '<p>As coronhas e os guarda-mãos de madeira ganham veios e nós, e as roupas, coletes e mochilas têm grão de tecido. O metal mantém os riscos e o brilho.</p>' },
     { id: '0.79', d: '27/11/2026', t: 'Neve no norte e chão misturado', img: 'menu/n-neve.jpg', b: '<p>O norte do mapa tem neve misturada com terra, e nos campos aparecem manchas de terra no meio da erva. Ao longe veem-se colinas e montanhas recortadas no horizonte.</p>' },
@@ -577,7 +579,7 @@ export function initUI(G) {
   // ---------- perfil: nível (experiência ganha online, contada pelo servidor) e amigos
   let PF = null, pfT0 = 0;
   const lvPaint = () => { const me = PF && PF.me, b = $('lbLv'), d = $('lbRq'); if (b) { b.hidden = !me; if (me) b.textContent = me.lv; } if (d) d.hidden = !(PF && PF.rq && PF.rq.length); };
-  const pfFetch = async (o, force) => { if (!G.net || !G.net.pf) return null; if (!o && !force && Date.now() - pfT0 < 45000) return PF; pfT0 = Date.now(); const m = await G.net.pf(o || {}); if (m && m.me) PF = m; lvPaint(); return m; };
+  const pfFetch = async (o, force) => { if (!G.net || !G.net.pf) return null; if (!o && !force && Date.now() - pfT0 < 45000) return PF; pfT0 = Date.now(); const m = await G.net.pf(o || {}); if (m && m.me) { PF = m; G.setLv && G.setLv(m.me.lv); } lvPaint(); return m; };
   const frRowH = (r, kind) => `<div class="fr-row"><i class="fr-on${r[3] ? ' on' : ''}" aria-label="${r[3] ? 'A jogar agora' : 'Fora do jogo'}"></i><span class="fr-n"><b>${esc(r[1])}</b><em>Nível ${r[2]}${r[3] ? ' · a jogar agora' : ''}</em></span>${kind === 'rq' ? `<button class="fr-b pri" data-a="ok" data-u="${r[0]}">Aceitar</button><button class="fr-b" data-a="no" data-u="${r[0]}">Recusar</button>` : kind === 'out' ? `<button class="fr-b" data-a="undo" data-u="${r[0]}">Cancelar</button>` : `<button class="fr-b" data-a="del" data-u="${r[0]}" aria-label="Remover ${esc(r[1])}">Remover</button>`}</div>`;
   const pfPaint = (m, note) => { if (pfm.hidden || $('pfT').textContent !== 'Perfil') return;
     if (!m || m.none || m.e === 'rede' && !m.me) { pfB.innerHTML = `<p>${m && m.none ? 'Ainda não jogaste online com este perfil. O nível e os amigos começam no primeiro jogo.' : 'Sem ligação ao servidor. Tenta outra vez daqui a pouco.'}</p><button class="btn big" id="pfAcc">Conta e nuvem</button>`; $('pfAcc').onclick = () => { audio.play('ui'); showAccount(); }; return; }
@@ -599,6 +601,23 @@ export function initUI(G) {
       b.disabled = true; pfPaint(await pfFetch({ a: b.dataset.a, u: b.dataset.u }, true)); }; };
   const showPerfil = async () => { $('pfT').textContent = 'Perfil'; pfm.classList.remove('kpw'); pfm.classList.add('wide'); pfB.onclick = null; pfB.innerHTML = '<p class="note">A carregar…</p>'; pfm.hidden = false; pfPaint(await pfFetch(null, true)); };
   G.ui_perfil = showPerfil;
+  // ---------- skins das armas: escolher uma por arma; as que o nível ainda não abriu ficam trancadas
+  let skGun = 'ak';
+  const showSkins = () => { $('pfT').textContent = 'Skins'; pfm.classList.remove('kpw'); pfm.classList.add('wide'); pfm.hidden = false; skPaint(); pfFetch().then(() => { if (!pfm.hidden && $('pfT').textContent === 'Skins') skPaint(); }); };
+  const skPaint = () => { const lv = G.myLv || 1, guns = Object.keys(ITEMS).filter(k => ITEMS[k].gun && ITEMS[k].icon), on = G.skinFor(skGun);
+    if (!guns.includes(skGun)) skGun = guns[0];
+    pfB.innerHTML = `<div class="sk-top"><p>Nível ${lv}. Cada skin abre num nível: ganhas experiência a jogar online.</p></div>
+      <div class="sk-guns" role="tablist">${guns.map(k => `<button role="tab" data-g="${k}" class="${k === skGun ? 'on' : ''}" aria-selected="${k === skGun}">${esc(ITEMS[k].s || ITEMS[k].n)}</button>`).join('')}</div>
+      <div class="sk-pv"><img alt="${esc(ITEMS[skGun].n)} com a skin ${esc(SKINS[on].n)}" src="${G.skinIcon(skGun, on, 480, 200)}"></div>
+      <div class="sk-grid">${SKINS.map((S, i) => { const lk = S.lv > lv; return `<button class="sk-t${i === on ? ' on' : ''}${lk ? ' lock' : ''}" data-s="${i}" aria-pressed="${i === on}"${lk ? ` aria-label="${esc(S.n)}, abre no nível ${S.lv}"` : ''}><img alt="" src="${G.skinIcon(skGun, i, 236, 104)}"><b>${esc(S.n)}</b><em>${lk ? 'Nível ' + S.lv : i === on ? 'Em uso' : 'Usar'}</em>${lk ? '<span class=lk>{{lock}}</span>' : ''}</button>`; }).join('')}</div>
+      ${on ? `<button class="btn big" id="skAll">Usar ${esc(SKINS[on].n)} em todas as armas</button>` : ''}`;
+    const tab = pfB.querySelector('.sk-guns .on'); if (tab) tab.scrollIntoView({ block: 'nearest', inline: 'center' });
+    pfB.onclick = e => { const g = e.target.closest('[data-g]'), t = e.target.closest('[data-s]'); if (!g && !t) return; e.stopPropagation(); audio.play('ui');
+      if (g) { skGun = g.dataset.g; skPaint(); return; }
+      const i = +t.dataset.s; if (SKINS[i].lv > lv) { toast('A skin ' + SKINS[i].n + ' abre no nível ' + SKINS[i].lv); return; } G.setSkin(skGun, i); pfRender(); skPaint(); };
+    if ($('skAll')) $('skAll').onclick = e => { e.stopPropagation(); audio.play('apanhar'); for (const k of guns) G.skins[k] = on; G.setSkin(skGun, on); pfRender(); skPaint(); toast('Skin ' + SKINS[on].n + ' em todas as armas'); }; };
+  $('sSkins').onclick = () => { audio.play('ui'); showSkins(); };
+  G.ui_skins = showSkins;
   // experiência ganha no jogo: «+10» discreto; ao subir de nível, aviso grande
   let xpEl = null, xpT = 0, xpSum = 0;
   const xpGain = m => { if (!xpEl) { xpEl = document.createElement('div'); xpEl.id = 'xpF'; xpEl.setAttribute('aria-hidden', 'true'); document.body.appendChild(xpEl); }

@@ -26,6 +26,7 @@ import { track, push, sample } from './interp.js';
 import { TRADERS, PRICE, SELL, TRADE_R } from './traders.js';
 import { initPWA } from './pwa.js';
 import { wear } from './wear.js';
+import { SKIN_LV, loadSkins, saveSkins } from './skins.js';
 import { makeSky } from './sky.js';
 import { broadTree, pineTree, grassTuft, whiteUV, bushTuft, rockGeo as rockShape } from './trees.js';
 import { ANK, ANBYK, ANLOOT, spawnAnimals, anHit, anPart, animalAI, Fauna } from './animals.js';
@@ -581,8 +582,9 @@ async function boot() {
   const I3 = makeIcons(2); const ICONS = {}, CELLPX = 46;
   for (const k in ITEMS) { const d = ITEMS[k]; ICONS[k] = I3.iconOf(d.icon, d.w * CELLPX + (d.w - 1) * 2, d.h * CELLPX + (d.h - 1) * 2, d.v || 'side', d.w === 1 && d.h === 1 ? 0.7 : 0.82, d.tint); }
   const ICONS_SQ = {}; for (const k in ITEMS) { const d = ITEMS[k]; if (d.w >= d.h * 2 && d.w >= 3) ICONS_SQ[k] = I3.iconOf(d.icon, 96, 96, 'side', 0.94, d.tint, -0.62); } G.ICONS_SQ = ICONS_SQ;
+  { const SC = {}; G.skinIcon = (k, sk, w = 240, h = 110) => SC[k + sk + 'x' + w] || (SC[k + sk + 'x' + w] = I3.skinIcon(ITEMS[k].icon, sk, w, h)); }
   G.ICONS = ICONS; G.portrait = eq => I3.portrait({ eq }, 160, 300); I3.setLook((Conta.ativo() || {}).look);
-  G.portraitLook = L => I3.portrait({}, 168, 252, L); G.LOOK_OPTS = LOOK_OPTS; G.dbgPortrait = (o, w, h) => I3.portrait(o, w, h); G.portraitBig = L => I3.portrait({ gun: 'ak', raise: 1, ry: -0.9 }, 520, 560, L); // a personagem grande no menu G.LOOK_OPTS = LOOK_OPTS;
+  G.portraitLook = L => I3.portrait({}, 168, 252, L); G.LOOK_OPTS = LOOK_OPTS; G.dbgPortrait = (o, w, h) => I3.portrait(o, w, h); G.portraitBig = L => I3.portrait({ gun: 'ak', skin: G.skinFor ? G.skinFor('ak') : 0, raise: 1, ry: -0.9 }, 520, 560, L); // a personagem grande no menu G.LOOK_OPTS = LOOK_OPTS;
   Object.defineProperty(G, 'body', { get: () => body, configurable: true });
   G.setLook = L => { myLook = lookCol(L); const o = body, nb = mkBody(L); nb.root.position.copy(o.root.position); nb.root.rotation.copy(o.root.rotation); nb.root.visible = o.root.visible; scene.remove(o.root); o.dispose(); body = nb; I3.setLook(L); if (G.p && G.inv) refresh(); G.lookV = (G.lookV || 0) + 1; };
 
@@ -592,7 +594,7 @@ async function boot() {
   const noise = (x, z, r) => { r *= 1 - 0.35 * (G.rain || 0); G.lastNoise = { x, z, r: r * 1.3, t: G.t }; for (const zb of G.zs) if (!zb.an && zb.state !== 'dead' && zb.state !== 'chase' && Math.hypot(zb.x - x, zb.z - z) < r) { zb.state = 'alert'; zb.tx = x + (Math.random() - 0.5) * 4; zb.tz = z + (Math.random() - 0.5) * 4; } };
   const vol = (x, z) => clamp(1 - Math.hypot(x - G.p.x, z - G.p.z) / 34, 0, 1);
   const GK = ['head', 'vest', 'suit', 'eyes', 'back']; // equipamento que os outros veem (chaves dos itens, pela mesma ordem do servidor)
-  const refresh = () => { body.setTeam(G.ARENA && G.arenaTeam != null ? G.arenaTeam | 0 : null); body.setGear(G.inv.eq); const d = heldDef(); body.setWeapon(held() ? (d.gun || d.melee ? held().k : null) : null, held() && held().att || {}); G.ui.refresh(); };
+  const refresh = () => { body.setTeam(G.ARENA && G.arenaTeam != null ? G.arenaTeam | 0 : null); body.setGear(G.inv.eq); const d = heldDef(); body.setWeapon(held() ? (d.gun || d.melee ? held().k : null) : null, { ...(held() && held().att || {}), skin: held() ? G.skinFor(held().k) : 0 }); G.ui.refresh(); };
   G.refresh = refresh; G.mkItem = mkItem; G.dbgBody = () => body; G.dbgNodes = () => nodes; /* testes */
   const select = i => { if (G.sel === i) return; G.sel = i; if (G.gch) { G.gch = null; }  if (G.aimEnd) G.aimEnd(); AIM.raise = 0; G.p.reload = 0; G.p.use = null; G.p.swing = -1; G.p.thrT = -1; G.p.thrIt = null; audio.play('ui'); refresh(); };
   G.select = select;
@@ -1280,6 +1282,11 @@ async function boot() {
   };
   // teste: um adereço do Blender à frente do jogador (para ver de perto)
   G.dbgProp = (name, tint = 0x3a5a3a, d = 2.2, ry = Math.PI, dy = 0) => { if (G._dbgPropG) scene.remove(G._dbgPropG); const p = G.p, bb = new Builder(0), x = p.x + Math.sin(p.yaw) * d, z = p.z + Math.cos(p.yaw) * d; const ok = bb.model(name, x, groundY(x, z, 0) + dy, z, p.yaw + ry, tint); const g = G._dbgPropG = new THREE.Group(); bb.build(g, wmats); scene.add(g); return ok ? g.children.length : 0; };
+  // skins das armas: a escolhida para cada arma, se o nível já a abriu (o nível vem do servidor e fica guardado neste aparelho)
+  { const pid = () => (Conta.ativo() || {}).id; G.skins = loadSkins(pid()); G.skinsReload = () => { G.skins = loadSkins(pid()); try { G.myLv = +localStorage.getItem('kg.lv.' + pid()) || 1; } catch (e) { G.myLv = 1; } }; G.skinsReload();
+    G.setLv = lv => { if (!lv) return; G.myLv = lv; try { localStorage.setItem('kg.lv.' + pid(), String(lv)); } catch (e) { } };
+    G.skinFor = k => { const i = (G.skins && G.skins[k]) | 0; return i && SKIN_LV[i] && SKIN_LV[i] <= (G.myLv || 1) ? i : 0; };
+    G.setSkin = (k, i) => { G.skins[k] = i; saveSkins(pid(), G.skins); refresh(); }; G.refreshWeapon = () => refresh(); }
   G.WV = WV; G.propStat = PSTAT; G.net = makeNet({ G, scene, mkRemote, bagMesh: bagM, audio, Conta, enc, dec, die, world: netWorld, WV,
     hurt: (dmg, by, zone, pop, cause) => {
       if (!G.p || !G.p.alive) return; if (cause === 'zombie') { hurtPlayer(dmg, 'zombie'); return; } G.killer = by; if (cause === 'carro') { hurtPlayer(dmg, 'carro', true); return; }
@@ -1868,7 +1875,7 @@ async function boot() {
       if (!best && p.alive && !G.car && !p.lv && p.water < 97 && (p.swim || W.wet(p.x, p.z, 1.4))) best = { label: 'Beber água', drink: true, x: p.x, z: p.z };
       G.prompt = best;
       if (G.net.on) { const d = heldDef(), it = held(), mode = d.gun ? (d.long ? 2 : 1) : d.melee && it ? 3 : 0, eq = G.inv.eq, lvl = s => eq[s] ? ITEMS[eq[s].k].lvl || 0 : 0;
-        G.net.frame(dt, { x: +p.x.toFixed(2), z: +p.z.toFixed(2), y: +(p.y - (p.swimY || 0)).toFixed(2), lv: p.lv || 0, yaw: +Math.atan2(Math.sin(p.root), Math.cos(p.root)).toFixed(2), mv: +Math.min(3, p.mv || 0).toFixed(2), an: (G.car && !G.leanOut ? 8 : mode + (AIM.on ? 4 : 0) + (p.reload > 0 ? 16 : 0) + (p.thrT >= 0 ? 32 : 0) + (p.use ? 64 : 0)), w: mode ? it.k : '', hp: Math.round(Math.max(0, p.hp)), al: p.alive ? 1 : 0, ar: [lvl('head'), lvl('vest')], gk: GK.map(s => eq[s] ? eq[s].k : '').join(), sc: p.stance | 0 }, o => (G.fp || FPF.on) ? sameLevel(p, o) : canSee(p, o), o => canSee(p, o)); /* na 1.ª pessoa o próprio 3D tapa quem está atrás de paredes (esconder pelo centro do corpo fazia desaparecer quem espreita de uma caixa) */ }
+        G.net.frame(dt, { x: +p.x.toFixed(2), z: +p.z.toFixed(2), y: +(p.y - (p.swimY || 0)).toFixed(2), lv: p.lv || 0, yaw: +Math.atan2(Math.sin(p.root), Math.cos(p.root)).toFixed(2), mv: +Math.min(3, p.mv || 0).toFixed(2), an: (G.car && !G.leanOut ? 8 : mode + (AIM.on ? 4 : 0) + (p.reload > 0 ? 16 : 0) + (p.thrT >= 0 ? 32 : 0) + (p.use ? 64 : 0)), w: mode ? it.k + (G.skinFor(it.k) ? '~' + G.skinFor(it.k) : '') : '', hp: Math.round(Math.max(0, p.hp)), al: p.alive ? 1 : 0, ar: [lvl('head'), lvl('vest')], gk: GK.map(s => eq[s] ? eq[s].k : '').join(), sc: p.stance | 0 }, o => (G.fp || FPF.on) ? sameLevel(p, o) : canSee(p, o), o => canSee(p, o)); /* na 1.ª pessoa o próprio 3D tapa quem está atrás de paredes (esconder pelo centro do corpo fazia desaparecer quem espreita de uma caixa) */ }
       if (G.box && (Math.hypot(G.box.x - p.x, G.box.z - p.z) > 2.6)) { G.box = null; if (G.invOpen) G.ui.openInv(null); }
       updZombies(dt); G.cars.update(dt);
       // sacos: os vazios desaparecem, os velhos também
@@ -1971,7 +1978,7 @@ async function boot() {
       cam.near = FPF.on ? 0.05 + 0.25 * a : 0.3; cam.far = FPF.on ? 142 + 758 * fa : 900; cam.aspect = innerWidth / innerHeight; cam.fov = FPF.on ? fF + ((scI && scI.rd ? Math.min(fS, fF / Math.max(1, scI.mag)) : fS) - fF) * a : fS; /* mira de ferro e ponto vermelho na vista livre: apontar nunca abre o campo (ao alto a fórmula da luneta dava mais do que a vista normal) */ cam.updateProjectionMatrix();
       { const e = cam.projectionMatrix.elements, af = a * (scI && scI.mag >= 2 ? 1 : 0); e[8] = -(SC.x / innerWidth * 2 - 1) * af; e[9] = -(1 - SC.y / innerHeight * 2) * af; /* só as lunetas vão para o meio da zona livre; mira de ferro e ponto vermelho ficam no meio do ecrã, onde estava a cruz */ cam.projectionMatrixInverse.copy(cam.projectionMatrix).invert(); } PROJ.mode = 'fp';
       // braços e o que tens na mão: na vista livre sempre (punhos de mãos vazias); a apontar só com mira de ferro ou ponto vermelho (a luneta tapa o ecrã)
-      { const it = held(), at = (it && it.att) || {}, k = it ? it.k : '', att = !at.scope && ironOk(it) ? { ...at, scope: 'iron' } : at, optic = !!(at.scope && at.scope !== 'reddot');
+      { const it = held(), at = (it && it.att) || {}, k = it ? it.k : '', att = { ...(!at.scope && ironOk(it) ? { ...at, scope: 'iron' } : at), skin: G.skinFor(k) }, optic = !!(at.scope && at.scope !== 'reddot');
         const show = FPF.on ? !(optic && AIM.adsT > 0.5) : !!(RDP[k] && (att.scope === 'reddot' || att.scope === 'iron'));
         const sm = (v, w) => v + (w - v) * Math.min(1, dt * 9); FPF.rel = sm(FPF.rel || 0, p.reload > 0 ? 1 : 0); FPF.spr = sm(FPF.spr || 0, p.sprint && Math.hypot(p.vx, p.vz) > 1 ? 1 : 0);
         const uu = p.use && ITEMS[p.use.it.k] && ITEMS[p.use.it.k].use, VD = G.vmDbg || {}, use = VD.use || (uu ? { kind: (uu.water || 0) > (uu.food || 0) ? 'drink' : uu.food ? 'eat' : 'heal', t: Math.min(1, p.use.t / p.use.dur) } : null), thr = VD.thr ?? (p.thrT >= 0 ? p.thrT : -1);
