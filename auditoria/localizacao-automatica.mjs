@@ -526,6 +526,34 @@ const comPosicao = () => window.__geo.entregues > 0 && ![...document.querySelect
   await ctx.close();
 }
 
+{ // Primeira visita (27/11/2026: 16 telemóveis novos ficaram no convite sem nunca tocar em «Ativar localização»): no fim das
+  // boas-vindas, «Finalizar» pede a localização no mesmo toque. «Saltar» não pede (a pessoa fechou).
+  for (const [nome, final] of [['Finalizar', true], ['Saltar', false]]) {
+    const { ctx, p, erros } = await contexto('prompt');
+    await p.addInitScript({ content: `try { localStorage.removeItem('parou_bemvindo'); } catch (e) {}
+      Object.defineProperty(Navigator.prototype, 'webdriver', { get: () => false, configurable: true });` });
+    await p.goto(BASE + '/', { waitUntil: 'load', timeout: 60000 });
+    const aberta = await p.waitForSelector('[role="dialog"] footer [data-avancar]', { timeout: 30000 }).then(() => true).catch(() => false);
+    if (final) {
+      for (let i = 0; i < 10 && (await p.locator('[role="dialog"] footer [data-avancar]').count()); i++) {
+        await p.locator('[role="dialog"] footer [data-avancar]').first().click();
+        await p.waitForTimeout(450);
+      }
+    } else {
+      await p.getByText('Saltar', { exact: true }).first().click().catch(() => {});
+      await p.waitForTimeout(450);
+    }
+    await p.waitForTimeout(1500);
+    const pedidos = await p.evaluate(() => window.__geo.pedidos);
+    const fechada = (await p.locator('[role="dialog"] footer [data-avancar]').count()) === 0;
+    await p.screenshot({ path: `${SAIDA}/localizacao-automatica-boas-vindas-${final ? 'finalizar' : 'saltar'}.png` });
+    if (final) ok('boas-vindas: «Finalizar» pede a localização no mesmo toque', aberta && fechada && pedidos >= 1, `aberta ${aberta} | fechada ${fechada} | ${pedidos} pedidos`);
+    else ok('boas-vindas: «Saltar» não pede a localização', aberta && fechada && pedidos === 0, `aberta ${aberta} | fechada ${fechada} | ${pedidos} pedidos`);
+    ok(`sem erros na página (boas-vindas, ${nome})`, erros.length === 0, erros.join(' | '));
+    await ctx.close();
+  }
+}
+
 { // nunca autorizou o site: a app não pergunta sozinha (a pergunta do browser só com um toque)
   const { ctx, p, erros } = await contexto('prompt');
   await p.goto(BASE + '/', { waitUntil: 'load', timeout: 60000 });
