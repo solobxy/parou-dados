@@ -128,7 +128,7 @@ def converter(corpo, hoje=None, dias=17, log=print):
                                    "stop_id": f"flix_{r['stop_id']}", "stop_sequence": n + 1})
                 paragens_usadas.add(r["stop_id"])
             rotas_usadas[t["route_id"]] = rota
-    routes = [{"route_id": f"flix_{rid}", "agency_id": "flixbus", "route_short_name": r.get("route_short_name") or "FlixBus",
+    routes = [{"route_id": f"flix_{rid}", "agency_id": "flixbus", "route_short_name": re.sub(r"^Flix(Bus|Train)\s*", "", r.get("route_short_name") or "").strip() or "Flix",
                "route_long_name": nome_pt(r.get("route_long_name") or ""), "route_type": r.get("route_type") or 3,
                "route_color": "73D700", "route_text_color": "FFFFFF", "route_url": "https://www.flixbus.pt"}
               for rid, r in rotas_usadas.items()]
