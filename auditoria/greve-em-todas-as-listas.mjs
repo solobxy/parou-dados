@@ -71,6 +71,23 @@ ok('[paragem] F (para Fânzeres, fora do troço) = sem serviço', g1.F?.estado =
 ok('[paragem] B para a Póvoa = só até à Senhora da Hora', g1.B?.estado === 'reduzido' && g1.B?.ate === 'Senhora da Hora', JSON.stringify(g1.B));
 ok('[paragem] A para Matosinhos = só até à Senhora da Hora', g1.A?.estado === 'reduzido' && g1.A?.ate === 'Senhora da Hora', JSON.stringify(g1.A));
 ok('[paragem] T (todo dentro do troço) = serviço reduzido, sem «só até»', g1.T?.estado === 'reduzido' && !g1.T?.ate, JSON.stringify(g1.T));
+// serviço de N em N minutos: as horas do horário normal não valem; uma partida por destino real (27/11/2026)
+{
+  const fq = GP.frequenciaNaHora;
+  const as = (h, m) => DateTime.fromObject({ year: 2026, month: 11, day: 27, hour: h, minute: m }, { zone: 'Europe/Lisbon' }).toMillis();
+  const F = '15 min (7h–20h) · 30 min (6h–7h, 20h–0h)';
+  ok('[frequência] 16h → 15 min; 6h30 → 30; 21h → 30; 3h → nada', fq(F, as(16, 0)) === 15 && fq(F, as(6, 30)) === 30 && fq(F, as(21, 0)) === 30 && fq(F, as(3, 0)) === undefined, [fq(F, as(16, 0)), fq(F, as(6, 30)), fq(F, as(21, 0)), fq(F, as(3, 0))].join(' '));
+  ok('[frequência] sem horas = o dia todo', fq('15 min', as(10, 0)) === 15);
+  const q = await LE.LinesEngine.getStopDepartures('metro_porto:ED', 20);
+  GP.marcarGrevesPorOrigem(db, q.departures, greves);
+  const visiveis = GP.semRepetidas(q.departures);
+  const paraSH = visiveis.filter((d) => d.greve?.estado === 'reduzido');
+  ok('[de 15 em 15] todas as partidas que funcionam levam «cada 15»', q.departures.filter((d) => d.greve?.estado === 'reduzido').every((d) => d.greve.cada === 15));
+  ok('[de 15 em 15] fica UMA partida para a Senhora da Hora (A, B e T juntas)', paraSH.length === 1, visiveis.map((d) => `${d.line_code}→${d.greve?.ate || d.destination}:${d.greve?.estado}${d.greve?.repetida ? '(rep)' : ''}`).join(' '));
+  ok('[de 15 em 15] as sem serviço: uma por linha e destino (riscada)', visiveis.filter((d) => d.greve?.estado === 'sem-servico').length === 1, String(visiveis.filter((d) => d.greve?.estado === 'sem-servico').length));
+  ok('[de 15 em 15] a lista original (cache) não perde partidas', q.departures.length > visiveis.length);
+}
+
 // sem greve: as marcas antigas saem (a resposta vem da cache)
 GP.marcarGrevesPorOrigem(db, p.departures, []);
 ok('[paragem] sem greve as marcas saem', p.departures.every((d) => !d.greve));

@@ -54,7 +54,7 @@ async function abrir({ largura = 390, altura = 844, tema = 'claro', abrirParagem
         const st = j.stops.find((x) => (x.nextDepartures || []).length >= 3);
         if (st) {
           const [a, b, c] = st.nextDepartures;
-          Object.assign(a, { greve: 'reduzido', greveAte: 'Senhora da Hora', destination: 'Fórum Maia', isRealtime: false, state: 'PROGRAMADO' });
+          Object.assign(a, { greve: 'reduzido', greveAte: 'Senhora da Hora', greveCada: 15, destination: 'Fórum Maia', isRealtime: false, state: 'PROGRAMADO' });
           Object.assign(b, { greve: 'sem-servico', isRealtime: false, state: 'PROGRAMADO' });
           Object.assign(c, { greve: 'reduzido', isRealtime: false, state: 'PROGRAMADO' });
           j.__cartao = st.id;
@@ -210,6 +210,7 @@ for (const tema of ['claro', 'escuro', 'ambar']) {
     const linhas = await cartao.locator('[data-teste="partida-perto"]').allInnerTexts().catch(() => []);
     const txt = linhas.map((x) => x.replace(/\s+/g, ' ').trim());
     ok(`[cartões ${tema}] a partida que só vai até à Senhora da Hora mostra «Senhora da Hora» e não «Fórum Maia»`, txt.some((x) => /Senhora da Hora/.test(x) && /Não vai até Fórum Maia \(greve\)/.test(x)) && !txt.some((x) => /^\S+ Fórum Maia/.test(x)), txt.join(' | '));
+    ok(`[cartões ${tema}] serviço de 15 em 15 min: no lugar da hora «de 15 em 15 min · sem hora certa»`, txt.some((x) => /Senhora da Hora/.test(x) && /de 15 em 15 min sem hora certa/.test(x)), txt.join(' | '));
     ok(`[cartões ${tema}] as que se realizam vêm primeiro; a sem serviço vai para o fim`, txt.length >= 2 && !txt.slice(0, -1).some((x) => /Sem serviço \(greve\)/.test(x)), txt.join(' | '));
     // etiqueta bem à vista: fundo de aviso (não transparente) e texto com contraste de pelo menos 4,5:1
     const cores = await cartao.locator('[data-teste="greve-partida"]').first().evaluate((e) => {
