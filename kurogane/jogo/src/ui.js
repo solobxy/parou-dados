@@ -129,7 +129,7 @@ export function initUI(G) {
   const fits = (g, it) => { const gd = ITEMS[g.k].gun, d = ITEMS[it.k]; if (!gd || !d.att || (g.att && g.att[d.att] === it.k)) return false; return d.att === 'sup' ? gd.sup === it.k : d.att === 'light' ? !!gd.light : d.rd ? !!(gd.scope || gd.rd) : !!gd.scope && (it.k !== 'mira8' || gd.scope >= 2); };
   // encaixes da arma (mira, cano, calha): cheio mostra a peça, vazio fica tracejado; o que vai receber o acessório escolhido acende
   const slotsHTML = (it, want) => { const gd = ITEMS[it.k].gun; if (!gd) return ''; let h = ''; for (const [s, ok] of [['scope', gd.scope || gd.rd], ['sup', gd.sup], ['light', gd.light]]) { if (!ok) continue; const a = it.att && it.att[s]; h += `<i class="${a ? 'on' : ''}${want === s ? ' tgt' : ''}" title="${{ scope: 'Mira', sup: 'Cano', light: 'Calha' }[s]}">${a ? `<img src="${G.ICONS[a]}" alt="">` : ''}</i>`; } return h ? `<span class="atts">${h}</span>` : ''; };
-  const itemHTML = (it, small, want) => { const d = ITEMS[it.k]; const ct = d.gun ? `<span class="ct am">${d.gun.clip && !it.mg ? '—' : it.ammo || 0}</span>` : d.clip ? `<span class="ct am">${it.am || 0}</span>` : it.n > 1 ? `<span class="ct">${it.n}</span>` : ''; return `<img src="${(small && G.ICONS_SQ && G.ICONS_SQ[it.k]) || G.ICONS[it.k]}" alt="">${small ? '' : `<span class="nm">${d.s}</span>`}${ct}${small ? '' : slotsHTML(it, want)}`; }; // nas casas quadradas (cinto, equipamento) as armas compridas vão na diagonal e ficam grandes
+  const itemHTML = (it, small, want) => { const d = ITEMS[it.k]; const ct = d.gun ? `<span class="ct am">${d.gun.clip && !it.mg ? '—' : it.ammo || 0}</span>` : d.clip ? `<span class="ct am">${it.am || 0}</span>` : it.n > 1 ? `<span class="ct">${it.n}</span>` : ''; return `<img src="${G.itemIcon ? G.itemIcon(it, small) : G.ICONS[it.k]}" alt="">${small ? '' : `<span class="nm">${d.s}</span>`}${ct}${small ? '' : slotsHTML(it, want)}`; }; // nas casas quadradas (cinto, equipamento) as armas compridas vão na diagonal e ficam grandes
   const renderGrid = (el, grid, rows, kind) => {
     el.innerHTML = ''; el.dataset.kind = kind; if (!grid) { el.style.width = el.style.height = '0px'; return; }
     const R = grid.rows; el.style.width = P(grid.cols) + 'px'; el.style.height = P(R) + 'px';
@@ -324,7 +324,7 @@ export function initUI(G) {
   };
   inv.addEventListener('pointermove', e => {
     if (!drag || drag.none || e.pointerId !== drag.pid) return;
-    if (!drag.moved && Math.hypot(e.clientX - drag.x, e.clientY - drag.y) > 7) { drag.moved = true; ghost.innerHTML = `<img src="${G.ICONS[drag.it.k]}" alt="">`; ghostDraw(); ghost.hidden = false; drag.el.classList.add('drag'); bar.hidden = true; if (!drag.el.classList.contains('item')) { drag.ox = drag.w / 2; drag.oy = drag.h / 2; } }
+    if (!drag.moved && Math.hypot(e.clientX - drag.x, e.clientY - drag.y) > 7) { drag.moved = true; ghost.innerHTML = `<img src="${G.itemIcon ? G.itemIcon(drag.it) : G.ICONS[drag.it.k]}" alt="">`; ghostDraw(); ghost.hidden = false; drag.el.classList.add('drag'); bar.hidden = true; if (!drag.el.classList.contains('item')) { drag.ox = drag.w / 2; drag.oy = drag.h / 2; } }
     if (!drag.moved) return;
     drag.lx = e.clientX; drag.ly = e.clientY; dragMove(e.clientX, e.clientY);
   });
@@ -478,6 +478,7 @@ export function initUI(G) {
   $('sHow').onclick = () => { audio.play('ui'); $('pfT').textContent = 'Como se joga'; pfm.classList.remove('wide', 'kpw'); pfB.innerHTML = `<div class="keys howk">${$('sKeys').innerHTML}</div><p class="note">Revista tudo, come e bebe, treina o corpo (perde-se ao morrer) e evita a cidade de noite. O melhor loot está no centro, onde há PvP.</p>`; pfm.hidden = false; };
   // ---------- novidades (as mais recentes primeiro; o ponto vermelho some depois de as abrires)
   const NEWS = [
+    { id: '0.83', d: '27/11/2026', t: 'A skin fica na arma', img: 'menu/n-skins2.jpg', b: '<p>A skin passa a ser da própria arma. Quando apanhas, fazes ou compras uma arma pela primeira vez, ela fica com a skin que escolheste para esse tipo de arma, para sempre.</p><ul><li>Se a largares ou deres, quem a apanhar fica com ela pintada assim</li><li>Funciona no survival e na arena</li><li>O ícone da arma no inventário mostra a skin</li></ul>' },
     { id: '0.82', d: '27/11/2026', t: 'Skins de armas', img: 'menu/n-skins.jpg', b: '<p>No menu, em Skins, escolhe a pintura de cada arma: Floresta, Deserto, Urbano, Neve, Tigre, Carmesim e Ouro. Os outros jogadores também a veem.</p><ul><li>Cada skin abre num nível: a primeira no nível 2, o Ouro no 20</li><li>Podes usar a mesma skin em todas as armas de uma vez</li></ul>' },
     { id: '0.81', d: '27/11/2026', t: 'Nível e amigos', img: 'menu/n-perfil.jpg', b: '<p>Toca no teu nome, no menu, para veres o perfil: nível, zombies e jogadores que mataste, e os teus amigos.</p><ul><li>Ganhas experiência a jogar online: zombies, jogadores, objetos feitos e tempo vivo</li><li>Adiciona amigos pelo nome e vê quem está a jogar agora</li><li>Recebes aviso quando alguém te pede amizade</li></ul>' },
     { id: '0.80', d: '27/11/2026', t: 'Armas e equipamento com textura', img: 'menu/n-armas.jpg', b: '<p>As coronhas e os guarda-mãos de madeira ganham veios e nós, e as roupas, coletes e mochilas têm grão de tecido. O metal mantém os riscos e o brilho.</p>' },
@@ -606,7 +607,7 @@ export function initUI(G) {
   const showSkins = () => { $('pfT').textContent = 'Skins'; pfm.classList.remove('kpw'); pfm.classList.add('wide'); pfm.hidden = false; skPaint(); pfFetch().then(() => { if (!pfm.hidden && $('pfT').textContent === 'Skins') skPaint(); }); };
   const skPaint = () => { const lv = G.myLv || 1, guns = Object.keys(ITEMS).filter(k => ITEMS[k].gun && ITEMS[k].icon), on = G.skinFor(skGun);
     if (!guns.includes(skGun)) skGun = guns[0];
-    pfB.innerHTML = `<div class="sk-top"><p>Nível ${lv}. Cada skin abre num nível: ganhas experiência a jogar online.</p></div>
+    pfB.innerHTML = `<div class="sk-top"><p>Nível ${lv}. A skin escolhida vai para as armas que encontrares a partir de agora e fica nelas para sempre, mesmo que as largues. Cada skin abre num nível.</p></div>
       <div class="sk-guns" role="tablist">${guns.map(k => `<button role="tab" data-g="${k}" class="${k === skGun ? 'on' : ''}" aria-selected="${k === skGun}">${esc(ITEMS[k].s || ITEMS[k].n)}</button>`).join('')}</div>
       <div class="sk-pv"><img alt="${esc(ITEMS[skGun].n)} com a skin ${esc(SKINS[on].n)}" src="${G.skinIcon(skGun, on, 480, 200)}"></div>
       <div class="sk-grid">${SKINS.map((S, i) => { const lk = S.lv > lv; return `<button class="sk-t${i === on ? ' on' : ''}${lk ? ' lock' : ''}" data-s="${i}" aria-pressed="${i === on}"${lk ? ` aria-label="${esc(S.n)}, abre no nível ${S.lv}"` : ''}><img alt="" src="${G.skinIcon(skGun, i, 236, 104)}"><b>${esc(S.n)}</b><em>${lk ? 'Nível ' + S.lv : i === on ? 'Em uso' : 'Usar'}</em>${lk ? '<span class=lk>{{lock}}</span>' : ''}</button>`; }).join('')}</div>
@@ -1077,8 +1078,8 @@ export function initUI(G) {
   const setB = (id, v) => { const k = id + 'b'; const r = Math.round(v); if (vals[k] === r) return; vals[k] = r; $(id).style.width = r + '%'; };
   let mmT = 0, beltKey = '';
   const refresh = light => {
-    const I = G.inv; const key = I.belt.map(b => b ? b.k + b.n + ':' + (b.ammo ?? '') : '-').join('|') + G.sel;
-    if (key !== beltKey) { beltKey = key; bs.forEach((b, i) => { const it = I.belt[i]; b.className = 'bs' + (i === G.sel ? ' on' : ''); b.innerHTML = `<span class="k">${i + 1}</span>` + (it ? `<img src="${G.ICONS[it.k]}" alt="">` + (ITEMS[it.k].gun ? `<span class="ct am">${it.ammo}</span>` : it.n > 1 ? `<span class="ct">${it.n}</span>` : '') : ''); }); }
+    const I = G.inv; const key = I.belt.map(b => b ? b.k + b.n + ':' + (b.ammo ?? '') + ':' + (b.sk | 0) : '-').join('|') + G.sel;
+    if (key !== beltKey) { beltKey = key; bs.forEach((b, i) => { const it = I.belt[i]; b.className = 'bs' + (i === G.sel ? ' on' : ''); b.innerHTML = `<span class="k">${i + 1}</span>` + (it ? `<img src="${G.itemIcon ? G.itemIcon(it) : G.ICONS[it.k]}" alt="">` + (ITEMS[it.k].gun ? `<span class="ct am">${it.ammo}</span>` : it.n > 1 ? `<span class="ct">${it.n}</span>` : '') : ''); }); }
     if (!light) render();
   };
   // barra de construção: com a planta escolhes a peça; com o martelo vês a peça e o custo de melhorar

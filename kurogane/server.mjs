@@ -91,6 +91,7 @@ const cleanIt = L => !Array.isArray(L) ? [] : L.slice(0, 80).filter(o => o && ty
   for (const f of ['ammo', 'am', 'zero']) if (typeof o[f] === 'number') r[f] = num(o[f], 0, 1000) | 0;
   for (const f of ['ak', 'mg', 'pref']) if (typeof o[f] === 'string' && ITK.test(o[f])) r[f] = o[f];
   if (o.att && typeof o.att === 'object') r.att = Object.fromEntries(Object.entries(o.att).filter(([a, v]) => ITK.test(a) && typeof v === 'string' && ITK.test(v)).slice(0, 6));
+  if (typeof o.sk === 'number') r.sk = num(o.sk, 0, 7) | 0; /* skin da arma: fica nela */
   if (o.r) r.r = 1; if (typeof o.x === 'number') r.x = num(o.x, 0, 30) | 0; if (typeof o.y === 'number') r.y = num(o.y, 0, 30) | 0;
   return r; });
 
@@ -406,7 +407,7 @@ const onMsg = (c, m) => {
       if (d > (inCar ? vt(inCar.k).vmax * 1.3 + 4 : 8) * dt + 4) { strike(c, p, 'salto ' + d.toFixed(1) + ' m em ' + dt.toFixed(2) + ' s'); send(c, { t: 'pos', x: p.x, z: p.z, lv: p.lv }); p.lastSt = now; return; } }
     if (p.alive && al0 && (p.lv | 0) === 0 && p.y < 3 && Math.hypot(nx - p.x, nz - p.z) < 8 && wallCross(p.x, p.z, nx, nz)) { p.wallN = (p.wallN || 0) + 1; if (p.wallN % 20 === 1) console.log('parede', p.name, p.wallN); send(c, { t: 'pos', x: p.x, z: p.z, lv: p.lv }); p.lastSt = now; return; } // atravessar paredes da base
     p.lastSt = now; p.x = nx; p.z = nz; p.y = num(m.y, -5, 40); p.lv = num(m.lv, 0, 6) | 0;
-    p.ts = num(m.ts, 0, 1e13, 0); p.yaw = num(m.yaw, -10, 10); p.mv = num(m.mv, 0, 3); p.an = num(m.an, 0, 127) | 0; p.w = typeof m.w === 'string' ? m.w.slice(0, 12) : ''; { const sk = /^([a-z0-9]+)~(\d)$/.exec(p.w); if (sk && !((SKIN_LV[+sk[2]] || 99) <= lvOf((S.stats[p.uid] || {}).x).lv)) p.w = sk[1]; } /* skin da arma: só a partir do nível dela */ p.sc = num(m.sc, 0, 2, 0) | 0;
+    p.ts = num(m.ts, 0, 1e13, 0); p.yaw = num(m.yaw, -10, 10); p.mv = num(m.mv, 0, 3); p.an = num(m.an, 0, 127) | 0; p.w = typeof m.w === 'string' ? m.w.slice(0, 12) : ''; p.sc = num(m.sc, 0, 2, 0) | 0;
     histPush(p, now); // onde esteve no último segundo, com a pose (para pôr o alvo onde quem disparou o via)
     const al = !!m.al, hp = num(m.hp, 0, 100, p.hp); if (al && !p.alive) { p.hp = hp; p.hd = p.vd = null; } else p.hp = Math.min(hp, p.hp + 3); p.alive = al; // a vida que o servidor tirou não volta de repente
     if (Array.isArray(m.ar)) { const a = [num(m.ar[0], 0, 4) | 0, num(m.ar[1], 0, 4) | 0]; if (a[0] !== p.ar[0]) p.hd = null; if (a[1] !== p.ar[1]) p.vd = null; p.ar = a; }
@@ -566,7 +567,6 @@ const clan = (c, m) => {
 // ---------- estatísticas (classificações)
 const stat = (p, k) => { if (!p || !p.uid) return; const s = S.stats[p.uid] || (S.stats[p.uid] = { n: p.name, k: 0, d: 0, z: 0 }); s.n = p.name; s[k] = (s[k] || 0) + 1; dirty = true; if (XPG[k]) addXP(p, XPG[k]); };
 // ---------- nível: experiência ganha a jogar online (contada aqui, não no aparelho). Do nível L para o L+1 são precisos 100·L
-const SKIN_LV = [1, 2, 3, 5, 7, 10, 14, 20]; // nível de cada skin das armas (igual a src/skins.js)
 const XPG = { z: 10, k: 50 }; // zombie morto, jogador morto (a fazer coisas: +2 por objeto feito, +3 por cada 2 minutos vivo)
 const lvOf = x => { let L = 1, need = 100; x = x || 0; while (x >= need && L < 99) { x -= need; L++; need = 100 * L; } return { lv: L, at: x, need }; };
 const connOf = p => { for (const o of players.values()) if (o.p === p) return o; return null; };

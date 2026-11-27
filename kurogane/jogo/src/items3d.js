@@ -201,6 +201,6 @@ export function makeIcons(DPR = 2) {
     const cam = new THREE.PerspectiveCamera(22, W / H, 0.1, 20); cam.position.set(0, 1.25, 5.4); cam.lookAt(0, 0.99, 0); // corpo inteiro, dos pés à cabeça
     ir.render(sc, cam); const url = ir.domElement.toDataURL('image/png'); b.dispose(); return url;
   };
-  const skinIcon = (icon, sk, w, h) => { SKN = sk | 0; try { return iconOf(icon, w, h, 'side', 0.9); } finally { SKN = 0; } };
+  const skinIcon = (icon, sk, w, h, view = 'side', pad = 0.9, tint, rz = 0) => { SKN = sk | 0; try { return iconOf(icon, w, h, view, pad, tint, rz); } finally { SKN = 0; } };
   return { IT, iconOf, skinIcon, portrait, setLook, dispose: () => { ir.dispose(); } };
 }

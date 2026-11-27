@@ -17,7 +17,9 @@ module.exports = async (page, shot) => {
   const u = await ev(() => G.dbgPortrait({ gun: 'ak', skin: 7, raise: 1, ry: -0.6 }, 900, 1000));
   await ev(u => { const i = document.createElement('img'); i.src = u; i.id = 'pv'; i.style.cssText = 'position:fixed;inset:0;margin:auto;height:100%;z-index:99999;background:#3a4048'; document.body.appendChild(i); }, u); await W(500); await shot('skin-retrato'); await ev(() => document.getElementById('pv').remove());
   await ev(() => G.dbgKit()); await W(800);
-  await ev(() => { G.setSkin('ak', 5); const it = G.inv.belt[0]; it.k = 'ak'; it.att = {}; G.select(1); G.select(0); const p = G.p; p.x = 60; p.z = 1.5; p.yaw = p.root = 2.2; G.aimS.fy = 2.2; G.aimS.fpit = 0.05; }); await W(2500); await shot('skin-fp');
-  const w = await ev(() => G.net && G.net.R ? 1 : 0);
+  await ev(() => { G.setSkin('ak', 5); const it = G.inv.belt[0]; it.k = 'ak'; it.att = {}; delete it.sk; G.select(1); G.select(0); const p = G.p; p.x = 60; p.z = 1.5; p.yaw = p.root = 2.2; G.aimS.fy = 2.2; G.aimS.fpit = 0.05; }); await W(2500); await shot('skin-fp');
+  const fp = await ev(() => G.inv.belt[0].sk); console.log((fp === 5 ? 'OK   ' : 'FALHA') + ' AK nova na mão leva a Tigre (' + fp + ')');
+  await ev(() => { G.ui.openInv && G.ui.openInv(); }); await W(1200); await shot('skin-inv');
+  const ic = await ev(() => { const im = [...document.querySelectorAll('#hud img, .bs img')].map(i => i.src); return im.some(u => u === G.itemIcon(G.inv.belt[0])) && G.itemIcon(G.inv.belt[0]) !== G.ICONS.ak; }); console.log((ic ? 'OK   ' : 'FALHA') + ' o ícone da AK no cinto mostra a skin');
   console.log((errs.length ? 'FALHA' : 'OK   ') + ' shaders sem erros ' + errs.join(' | '));
 };

@@ -29,12 +29,13 @@ server.listen(0, async () => {
     const xa = await A.ev(() => G.net.xp); ok(xa && xa.lv === 2 && xa.at === 30 && xa.up, 'Ana ganha 130 XP e sobe ao nível 2 (' + JSON.stringify(xa) + ')');
     ok(await A.ev(() => { const e = document.getElementById('xpF'); return !!e && /\+130 XP/.test(e.textContent); }), 'aparece «+130 XP» no ecrã');
     await A.page.screenshot({ path: path.join(outDir, 'pf-xp.png') });
-    // skins: o Bruno vê a skin da Ana se o nível dela a abriu (Floresta, nível 2); a Tigre (nível 10) o servidor tira
-    await A.ev(() => { const it = G.inv.belt[0]; it.k = 'ak'; it.att = {}; G.select(1); G.select(0); G.setSkin('ak', 1); });
+    // skins na própria arma: a AK nova (nunca encontrada) leva a skin escolhida (Floresta); mudar a escolha depois não a muda; o Bruno vê-a
+    await A.ev(() => { G.setSkin('ak', 1); const it = G.inv.belt[0]; it.k = 'ak'; it.att = {}; delete it.sk; G.select(1); G.select(0); });
     let wB = ''; for (let i = 0; i < 25 && !/~/.test(wB); i++) { await W(300); wB = await B.ev(() => { const r = [...G.net.R.values()].find(q => q.name === 'Ana'); return r ? String(r.w) : ''; }); }
-    ok(wB === 'ak~1', 'Bruno vê a AK da Ana com a skin Floresta (' + wB + ')');
-    await A.ev(() => { G.setLv(10); G.setSkin('ak', 5); }); await W(2500);
-    wB = await B.ev(() => { const r = [...G.net.R.values()].find(q => q.name === 'Ana'); return r ? String(r.w) : ''; }); ok(wB === 'ak', 'Tigre sem o nível no servidor: o Bruno vê a AK normal (' + wB + ')');
+    ok(wB === 'ak~1', 'AK encontrada leva a Floresta e o Bruno vê-a (' + wB + ')');
+    const kept = await A.ev(() => { G.setLv(10); G.setSkin('ak', 5); G.select(1); G.select(0); return G.inv.belt[0].sk; }); await W(1500);
+    wB = await B.ev(() => { const r = [...G.net.R.values()].find(q => q.name === 'Ana'); return r ? String(r.w) : ''; }); ok(kept === 1 && wB === 'ak~1', 'mudar a escolha não muda a AK que já era dela (' + kept + ', ' + wB + ')');
+    const rt = await A.ev(() => { const L = JSON.parse(JSON.stringify(G.invLayout())); G.loadInv(L); return G.inv.belt[0].sk; }); ok(rt === 1, 'a skin fica guardada na arma (gravar e carregar)');
     await A.ev(() => { G.setLv(2); G.setSkin('ak', 0); });
     let r = await A.ev(() => G.net.pf({ a: 'add', n: 'ninguem' })); ok(r.e && /Não há/.test(r.e), 'nome que não existe: aviso');
     await W(500); r = await A.ev(() => G.net.pf({ a: 'add', n: 'bruno' })); ok(r.ok && r.out.length === 1, 'pedido enviado ao Bruno: ' + r.ok);
