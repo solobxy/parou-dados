@@ -123,17 +123,26 @@ for (const largura of [390, 320]) {
     await p.waitForTimeout(600);
 
     // ---- percurso → horário do dia
-    await p.locator('.painel-paragem [role="button"][aria-label^="Ver o percurso da linha"]:visible').first().click({ timeout: 15000 });
-    await p.waitForSelector('[data-teste="percurso-linha"]:visible', { timeout: 15000 });
-    await p.locator('[data-teste="horario-linha-paragem"]:visible').click();
-    await p.waitForSelector('[data-teste="horario-dia"]:visible', { timeout: 15000 }).catch(() => {});
+    // a primeira partida pode ser de uma linha da noite sem horário para hoje: tenta as seguintes até haver horário
+    for (let i = 0; i < 5; i++) {
+      await p.locator('.painel-paragem [role="button"][aria-label^="Ver o percurso da linha"]:visible').nth(i).click({ timeout: 15000 });
+      await p.waitForSelector('[data-teste="percurso-linha"]:visible', { timeout: 15000 });
+      await p.locator('[data-teste="horario-linha-paragem"]:visible').click();
+      const tem = await p.waitForSelector('[data-teste="horario-dia"]:visible', { timeout: 10000 }).then(() => true).catch(() => false);
+      if (tem) break;
+      await p.locator('[data-teste="horario-linha-paragem"]:visible').click().catch(() => {});
+      await p.getByRole('button', { name: /Partidas/ }).first().click({ timeout: 5000 }).catch(() => {});
+      await p.waitForTimeout(600);
+    }
     const avisoD = (await textos(p, '[data-teste="horario-dia"] [data-teste="greve-horario"]'))[0] || '';
     ok(`[${largura}] horário do dia: aviso da véspera com a hora a que acaba o serviço`, /Véspera da greve na Metro do Porto/.test(avisoD) && /acaba por volta das 23:00/.test(avisoD), avisoD);
     const legenda = (await textos(p, '[data-teste="legenda-greve"]'))[0] || '';
     ok(`[${largura}] horário do dia: legenda (riscado = sem serviço, sublinhado = pode não se realizar)`, /sem serviço/.test(legenda) && /pode não se realizar/.test(legenda), legenda);
     const estilos = await p.$$eval('[data-teste="horario-dia"] [data-greve]', (els) => els.map((e) => `${e.getAttribute('data-greve')}:${getComputedStyle(e).textDecorationLine}:${getComputedStyle(e).textDecorationStyle}`));
-    ok(`[${largura}] horário do dia: minutos sem serviço riscados e os incertos sublinhados a pontinhos`, estilos.length === 4
-      && estilos.filter((x) => x.startsWith('sem-servico:line-through')).length === 2 && estilos.filter((x) => x.startsWith('incerta:underline:dotted')).length === 2, estilos.join(' '));
+    // (o teste marca as 2 últimas como sem serviço e as 2 anteriores como incertas; linhas com menos partidas têm menos marcas)
+    ok(`[${largura}] horário do dia: minutos sem serviço riscados e os incertos sublinhados a pontinhos`, estilos.length >= 3
+      && estilos.filter((x) => x.startsWith('sem-servico')).every((x) => x.startsWith('sem-servico:line-through')) && estilos.filter((x) => x.startsWith('sem-servico')).length === 2
+      && estilos.filter((x) => x.startsWith('incerta')).every((x) => x.startsWith('incerta:underline:dotted')) && estilos.some((x) => x.startsWith('incerta')), estilos.join(' '));
     const leitor = await p.$$eval('[data-teste="horario-dia"] [data-greve="sem-servico"] .sr-only', (els) => els.map((e) => e.textContent));
     ok(`[${largura}] horário do dia: leitor de ecrã ouve «sem serviço» em cada minuto riscado`, leitor.length === 2 && leitor.every((x) => /Sem serviço/.test(x || '')), JSON.stringify(leitor));
     const lateral = await p.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
