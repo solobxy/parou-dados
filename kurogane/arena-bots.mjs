@@ -256,7 +256,9 @@ export function makeBots(A) {
     if (now < b.lookT && b.st !== 'fight') face = b.lookY;
     if (face != null) p.yaw += clamp(angD(face, p.yaw), -turn, turn);
     // andar sem atravessar nada (desliza ao longo das paredes)
-    if (spd > 0) { const nx = p.x + vx * dt, nz = p.z + vz * dt; if (free(nx, nz)) { p.x = nx; p.z = nz; } else if (free(nx, p.z)) p.x = nx; else if (free(p.x, nz)) p.z = nz; else { b.path = null; b.chase = null; b.sdir = -b.sdir; } }
+    // velocidade com aceleração (arranca e trava como uma pessoa, sem saltos)
+    { const k = Math.min(1, dt * 9); b.vx = (b.vx || 0) + (vx - (b.vx || 0)) * k; b.vz = (b.vz || 0) + (vz - (b.vz || 0)) * k; vx = b.vx; vz = b.vz; spd = Math.hypot(vx, vz); }
+    if (spd > 0.05) { const nx = p.x + vx * dt, nz = p.z + vz * dt; if (free(nx, nz)) { p.x = nx; p.z = nz; } else if (free(nx, p.z)) { p.x = nx; b.vz *= 0.3; } else if (free(p.x, nz)) { p.z = nz; b.vx *= 0.3; } else { b.vx = b.vz = 0; b.path = null; b.chase = null; if (b.st === 'fight') { b.still = true; b.strafeT = now + 400; } } }
     // preso: volta a calcular o caminho
     if (now - (b.lpT || 0) > 1500) { if (spd > 0 && Math.hypot(p.x - b.lp[0], p.z - b.lp[1]) < 0.4) { b.path = null; b.chase = null; b.sdir = -b.sdir; } b.lp = [p.x, p.z]; b.lpT = now; }
     p.mv = Math.min(3, Math.hypot(vx, vz) / 3);
@@ -272,7 +274,7 @@ export function makeBots(A) {
     const now = Date.now(), dt = Math.min(0.1, (now - lastT) / 1000); lastT = now;
     if (now - lastBal > 1000) { lastBal = now; balance(); }
     for (const c of bots()) {
-      const p = c.p, b = c.bot;
+      const p = c.p, b = c.bot; p.ts = now - T0; // a hora vai sempre para a frente, também morto (senão o jogo ignora as imagens repetidas e o corpo não cai)
       if (!p.alive) { if (!b.dead) b.dead = now; if (now - b.dead > 5200) { b.dead = 0; spawn(c); } continue; }
       if (now >= b.thinkT) { b.thinkT = now + 100; think(c, now); }
       step(c, dt, now); fire(c, now);

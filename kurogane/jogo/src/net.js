@@ -8,6 +8,7 @@ const MODES = ['none', 'pistol', 'rifle', 'melee'];
 // som do tiro dos outros pelo calibre (gravações reais)
 const AMSND = { a9: 'pistola', a9s: 'pistola', a556: 'm4', a762: 'ak', a308: 'caca', a357: 'revolver', c12: 'cacadeira', c12s: 'cacadeira', a408: 'pesado', a50: 'pesado', a754: 'ak' };
 
+const angD = (a, b) => { let d = a - b; while (d > Math.PI) d -= 2 * Math.PI; while (d < -Math.PI) d += 2 * Math.PI; return d; };
 export function makeNet({ G, scene, mkRemote, audio, Conta, enc, dec, hurt, die, wallEnd, world, WV }) {
   let ws = null, tok = null, sendT = 0, invT = 0, retry = 0, want = false, off = 0, cyc0 = 0, cur = null, psT = 0, zT = 0; const zdQ = [];
   const R = new Map(), sleepers = new Map();
@@ -169,7 +170,7 @@ export function makeNet({ G, scene, mkRemote, audio, Conta, enc, dec, hurt, die,
     for (const r of R.values()) {
       if (!r.s1) continue; const S = sample(r.T, now, r.o); if (!S) continue; const b = S.s.a, x = S.x, z = S.z, y = S.y;
       const dd = Math.hypot(x - r.x, z - r.z); r.spd += (Math.min(9, dd / Math.max(dt, 1e-3)) - r.spd) * Math.min(1, dt * 8);
-      r.step += dd * 2.6; r.x = x; r.z = z; r.y = y;
+      { if (dd > 0.003) r.my = Math.atan2(x - r.x, z - r.z); const rel = r.my == null ? 0 : angD(r.my, S.yaw); r.back = r.spd > 0.6 && Math.abs(rel) > 1.95; r.step += dd * 2.6 * (r.back ? -1 : 1); } r.x = x; r.z = z; r.y = y; // a andar para trás, as pernas andam ao contrário
       // passos dos outros: ouve-se quem anda perto (a correr de mais longe), mesmo sem o ver
       if (me && r.spd > 0.9 && r.spd < 7.5 && !b[11] && b[10]) { const run = r.spd > 3.5; r.sd = (r.sd || 0) + dd; if (r.sd >= (run ? 1.7 : 1.15)) { r.sd = 0; const d = Math.hypot(x - me.x, z - me.z), q = 1 - d / (run ? 34 : 18); if (q > 0 && audio.sample) audio.sample('passo-' + (G.W.paved && G.W.paved(x, z) ? 'betao' : 'relva'), q * q * (run ? 0.8 : 0.45), { vary: 0.12, lp: d > 9 ? 2200 : 0, pan: Math.max(-0.8, Math.min(0.8, (x - me.x) / 14)) }); } }
       // arena: radar (colegas sempre; inimigos quando disparam ou um colega os vê, a aparecer e a desaparecer devagar) e o corpo de quem morre cai
@@ -178,13 +179,14 @@ export function makeNet({ G, scene, mkRemote, audio, Conta, enc, dec, hurt, die,
       const vis = !b[11] && (b[10] || dying) && !((b[7] | 0) & 8) && (b[4] || 0) === lv && see({ x, z, lv: b[4] || 0 });
       r.seen = !!(vis && al);
       r.b.root.visible = vis; if (!vis) { r.el.style.display = 'none'; continue; }
-      r.b.root.position.set(x, y, z); r.b.root.rotation.set(0, S.yaw, 0);
+      { const lw = r.spd > 0.6 && r.my != null && (r.sc || 0) < 1.5 ? Math.max(-1, Math.min(1, r.back ? angD(r.my + Math.PI, S.yaw) : angD(r.my, S.yaw))) : 0; r.lr = (r.lr || 0) + (lw - (r.lr || 0)) * Math.min(1, dt * 8); } // de lado: as pernas viram-se para onde anda e o tronco continua a apontar
+      r.b.root.position.set(x, y, z); r.b.root.rotation.set(0, S.yaw + r.lr, 0);
       if (dying) { const k = Math.min(1, (now - r.deadT) / 600), e = k * k; r.b.root.rotation.set(-Math.PI / 2 * e, S.yaw, 0, 'YXZ'); r.b.root.position.y = y + 0.16 * e; if (r.w !== '') { r.w = ''; r.b.setWeapon(null, {}); } r.el.style.display = 'none'; r.b.stance = 0; r.b.pose(dt, 0, 'none'); continue; } // cai de costas e fica no chão até renascer
       const an = b[7] | 0; { r.wt = (r.wt || 0) - dt; if (r.wt <= 0 && G.wallAhead) { r.wt = 0.1; r.wk = Math.max(0, Math.min(1, (0.85 - G.wallAhead(x, z, S.yaw, b[4])) / 0.35)); } } // recarga, granada e ligadura dos outros: o progresso conta-se aqui desde que o sinal chega
       const nowS = now / 1000, edge = (bit, key) => { if (an & bit) { if (r[key] == null) r[key] = nowS; return nowS - r[key]; } r[key] = null; return -1; };
       const rs = edge(16, 'rS'), ts = edge(32, 'tS'), us = edge(64, 'uS'), gd = ITEMS[r.w] && ITEMS[r.w].gun, rd = gd ? gd.reload : 2;
       r.sc = (r.sc || 0) + ((b[15] | 0) - (r.sc || 0)) * Math.min(1, dt * 7); r.b.stance = r.sc; /* postura dos outros: agachado ou deitado, suave */
-      r.b.pose(dt, Math.min(b[6], r.spd / 3 + 0.03), MODES[an & 3], -1, 0, 0, -1, r.step, (an & 4 ? 1 : 0.25) * (1 - 0.85 * (r.wk || 0)), us >= 0 ? { kind: 'heal', t: (us % 3) / 3 } : null, { rel: rs >= 0 ? Math.min(0.99, rs / rd) : -1, thr: ts >= 0 ? Math.min(0.99, ts / 0.7) : -1 });
+      r.b.pose(dt, Math.min(b[6], r.spd / 3 + 0.03), MODES[an & 3], -1, 0, -(r.lr || 0), -1, r.step, (an & 4 ? 1 : 0.25) * (1 - 0.85 * (r.wk || 0)), us >= 0 ? { kind: 'heal', t: (us % 3) / 3 } : null, { rel: rs >= 0 ? Math.min(0.99, rs / rd) : -1, thr: ts >= 0 ? Math.min(0.99, ts / 0.7) : -1 });
       if ((G.ARENA && !mate(r.clan)) || (r.gh && me && !mate(r.clan) && Math.hypot(x - me.x, z - me.z) > 12)) r.el.style.display = 'none'; else place(r.el, x, y + 2.05 - 0.5 * Math.min(1, r.sc || 0) - 0.95 * Math.max(0, (r.sc || 0) - 1), z); // de ghillie não se vê o nome ao longe
     }
     for (const s of sleepers.values()) {

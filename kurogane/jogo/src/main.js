@@ -1268,6 +1268,7 @@ async function boot() {
         const up = e => { if (!drag) return; const dx = e.clientX - drag.x, dtm = Math.max(16, performance.now() - drag.t); spin = Math.max(-6, Math.min(6, dx / dtm * 6)); drag = null; }; canvas.addEventListener('pointerup', up); canvas.addEventListener('pointercancel', up);
         if (!raf) raf = requestAnimationFrame(loop); },
       team(t) { if (b) b.setTeam(t == null ? null : t | 0); },
+      dbgAng(a) { ang = a; spin = 0; drag = { x: 0, a, t: 0 }; }, dbgFree() { drag = null; },
       set(gun, att) { if (!b) return; const d = ITEMS[gun]; mode = d && d.gun ? (d.long ? 'rifle' : 'pistol') : 'none'; b.setWeapon(gun || '', att || {}); spin = 3; },
       look(L) { if (!sc) return; sc.remove(b.root); b = new Body(mats, lookCol(L)); b.forceNear = true; sc.add(b.root); },
       stop() { if (raf) cancelAnimationFrame(raf); raf = 0; }, start() { if (R && !raf) raf = requestAnimationFrame(loop); },

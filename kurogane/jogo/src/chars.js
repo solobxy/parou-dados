@@ -232,7 +232,8 @@ function ik2(upper, fore, sh, target, pole, a = UPPER, b2 = 0.31) {
   y.copy(u).negate(); z.crossVectors(h, y).normalize(); m.makeBasis(h, y, z); upper.quaternion.setFromRotationMatrix(m);
   fore.rotation.set(-(Math.PI - be), 0, 0);
 }
-const _t2 = new THREE.Vector3(), _t3 = new THREE.Vector3(), _t4 = new THREE.Vector3();
+const LRP = [-0.16, 0, -0.2, 0.9, 0.35, -0.25]; // arma comprida em baixo: deslocamento (x, y, z) e rotação (x, y, z) por unidade de «em baixo»
+const _t2 = new THREE.Vector3(), _t3 = new THREE.Vector3(), _t4 = new THREE.Vector3(), _t5 = new THREE.Vector3();
 const _t = new THREE.Vector3(), _sh = new THREE.Vector3(), _pl = new THREE.Vector3(), _rx = new THREE.Matrix4(), _hq = new THREE.Quaternion(), _hq2 = new THREE.Quaternion();
 // onde pegam as mãos em cada arma comprida (no espaço da arma, antes do empurrão para o ombro): punho e guarda-mão
 const GRIP = { m4: [[0, -0.1, -0.02], [0, -0.04, 0.36]], ak: [[0, -0.09, -0.06], [0, -0.035, 0.34]], smg: [[0, -0.07, 0.04], [0, -0.03, 0.26]], cacadeira: [[0, -0.06, 0.0], [0, -0.04, 0.36]], caca: [[0, -0.06, -0.12], [0, -0.03, 0.3]],
@@ -428,7 +429,8 @@ export class Body {
     const re = rl >= 0 ? Math.min(1, rl * 8, (1 - rl) * 8) : 0, sm = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
     const magOff = rl < 0 ? 0 : rl < 0.12 ? 0 : rl < 0.3 ? sm(0.12, 0.3, rl) * 0.3 : rl < 0.5 ? 0.3 : rl < 0.66 ? 0.3 * (1 - sm(0.5, 0.66, rl)) : 0;
     const wp = this._wp || (this._wp = new THREE.Vector3()); { const th = -1.47 * pr, P = SHY - HIP - 0.12; wp.set(0, P * (1 - Math.cos(th)), -P * Math.sin(th)); } // deitado: a arma roda à volta do ombro e fica à frente da cara
-    if (wk && LONG.includes(this.wk)) { const rx = lo * 0.62 * (1 - pr) + 0.18 * re - 1.47 * pr, rz = -0.45 * re, ry = 0.15 * re; wk.rotation.set(rx, ry, rz); wk.position.copy(wp); for (const a of this.wkAtt || []) if (a) { this.weps[a].rotation.set(rx, ry, rz); this.weps[a].position.copy(wp); }
+    const lr = lo * (1 - pr), LP = (typeof window !== 'undefined' && window.__lr) || LRP; if (wk && LONG.includes(this.wk)) wp.add(_t5.set(LP[0] * lr, LP[1] * lr, LP[2] * lr)); // em baixo e pronta: a coronha encosta ao corpo e os cotovelos dobram (não fica de braços esticados)
+    if (wk && LONG.includes(this.wk)) { const rx = lo * LP[3] * (1 - pr) + 0.18 * re - 1.47 * pr, rz = -0.45 * re + LP[5] * lr, ry = 0.15 * re + LP[4] * lr; wk.rotation.set(rx, ry, rz); wk.position.copy(wp); for (const a of this.wkAtt || []) if (a) { this.weps[a].rotation.set(rx, ry, rz); this.weps[a].position.copy(wp); }
       if (this.wkMag) { this.wkMag.position.set(0, -magOff, 0).applyEuler(wk.rotation).add(wp); this.wkMag.visible = wk.visible && !(rl > 0.28 && rl < 0.46); } }
     else if (this.wkMag) { this.wkMag.position.set(0, 0.53, -magOff * 0.8); this.wkMag.visible = !(rl > 0.28 && rl < 0.46); }
     // braços a balançar (sem arma na mão): opostos às pernas, cotovelo dobra mais a correr
