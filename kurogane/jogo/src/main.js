@@ -18,6 +18,7 @@ import { makeNav } from './nav.js';
 import { makeNet } from './net.js';
 import { ARENA, arenaSpawns, ARENA_KITS, inArena } from './arena.js';
 import { capsules, hitCapsules } from './hitbox.js';
+import { flashSprite } from './flash.js';
 import { makeCars } from './cars.js';
 import { makeVM } from './vm.js';
 import { track, push, sample } from './interp.js';
@@ -62,6 +63,7 @@ async function boot() {
     g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); sky.add(new THREE.Mesh(g, new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.BackSide })));
     scene.environment = pm.fromScene(sky, 0.03).texture; scene.environmentIntensity = 0.5; pm.dispose(); }
   const flash = new THREE.PointLight(0xffc070, 0, 12, 1.5); scene.add(flash);
+  const MZP = []; for (let i = 0; i < 8; i++) { const sp = flashSprite(THREE, 0.5); scene.add(sp); MZP.push({ s: sp, t: 0 }); } // clarões dos outros
   // chuva: riscos desenhados na placa gráfica, presos ao mundo (não «nadam» quando a câmara anda)
   const RAIN = (() => { const N = TOUCH ? 1100 : 2000, B = 30, H = 20; const pos = new Float32Array(N * 6), seed = new Float32Array(N * 6), end = new Float32Array(N * 2);
     for (let i = 0; i < N; i++) { const a = Math.random(), b = Math.random(), c = Math.random(); for (let k = 0; k < 2; k++) { seed.set([a, b, c], (i * 2 + k) * 3); end[i * 2 + k] = k; } }
@@ -522,7 +524,7 @@ async function boot() {
   const GK = ['head', 'vest', 'suit', 'eyes', 'back']; // equipamento que os outros veem (chaves dos itens, pela mesma ordem do servidor)
   const refresh = () => { body.setTeam(G.ARENA && G.arenaTeam != null ? G.arenaTeam | 0 : null); body.setGear(G.inv.eq); const d = heldDef(); body.setWeapon(held() ? (d.gun || d.melee ? held().k : null) : null, held() && held().att || {}); G.ui.refresh(); };
   G.refresh = refresh; G.mkItem = mkItem; G.dbgBody = () => body; G.dbgNodes = () => nodes; /* testes */
-  const select = i => { if (G.sel === i) return; G.sel = i; if (G.aimEnd) G.aimEnd(); AIM.raise = 0; G.p.reload = 0; G.p.use = null; G.p.swing = -1; G.p.thrT = -1; G.p.thrIt = null; audio.play('ui'); refresh(); };
+  const select = i => { if (G.sel === i) return; G.sel = i; if (G.gch) { G.gch = null; }  if (G.aimEnd) G.aimEnd(); AIM.raise = 0; G.p.reload = 0; G.p.use = null; G.p.swing = -1; G.p.thrT = -1; G.p.thrIt = null; audio.play('ui'); refresh(); };
   G.select = select;
   // ---------- treino: o corpo habitua-se ao que fazes. Cada ganho é proporcional ao que falta (sobe depressa no início, devagar perto do máximo); perde-se tudo ao morrer
   // resistência (a correr): ~20 min de corrida para metade; pontaria (disparos e acertos): ~120 acertos para metade; recolha (golpes em árvores e rochas): ~90 golpes para metade
@@ -722,7 +724,7 @@ async function boot() {
     // som: o silenciador abafa o disparo; com bala subsónica quase não se ouve; supersónica ainda estala
     const ss = v0 > 343, nr = sup ? g.noise * (ss ? 0.5 : 0.2) : g.noise;
     const mx = MZ ? MZ.x : p.x + Math.sin(p.yaw) * 0.85, my = MZ ? MZ.y : p.y + 1.3, mz = MZ ? MZ.z : p.z + Math.cos(p.yaw) * 0.85;
-    vm.fire(); flash.position.set(mx, my, mz); flash.intensity = sup ? 0 : 6 + 14 * (1 - (G.day ?? 1)); G.flashT = 0.06; G.buzz(n > 1 ? 30 : 10);
+    vm.fire(sup); flash.position.set(mx, my, mz); flash.intensity = sup ? 0 : 6 + 14 * (1 - (G.day ?? 1)); G.flashT = 0.06; G.buzz(n > 1 ? 30 : 10);
     if (sup) audio.play('abafado', ss ? 0.85 : 0.5); else if (!audio.shot(GSND[it.k] || 'pistola', 1, 0, { vary: 0.04 })) audio.play(ITEMS[it.k].heavy ? 'grosso' : g.auto ? 'm4' : 'pistola', it.k === 'cacadeira' || it.k === 'caca' ? 1.3 : 1);
     noise(p.x, p.z, nr);
     if (G.net && G.net.on) { const far = G.net.near(O.x, O.z, 420), Ls = ds.map(di => far ? stopAt(O, di, B.bp ?? B.pen) : 420); G.net.shot(O, dir, it.ak, n, Math.max(...Ls), sup, ds, Ls); }
@@ -768,12 +770,28 @@ async function boot() {
   // a explosão de outro jogador: tira a granada ou o C4 que se estava a ver
   const ghostGone = (k, x, z) => { let bi = -1, bd = 5; BOOMS.forEach((B, i) => { if (!B.ghost || B.k !== k) return; const d = Math.hypot(B.P.x - x, B.P.z - z); if (d < bd) { bd = d; bi = i; } }); if (bi >= 0) { scene.remove(BOOMS[bi].m); BOOMS.splice(bi, 1); } };
   // lançar: o braço vai atrás e a granada sai a meio do gesto
-  const throwGrenade = it => { const p = G.p; if (p.cd > 0 || p.thrT >= 0) return; p.cd = 0.8; p.thrT = 0; p.thrIt = it; };
+  // granada: carregar e segurar enche a força (mais tempo = mais longe, de 4 a 22 m) e mostra por onde vai; ao largar, lança
+  const GMIN = 4, GMAX = 22, GFULL = 1.1;
+  const grenDir = () => { const p = G.p; if (G.fp || FPF.on) { const l = Math.hypot(AIM.dir.x, AIM.dir.z) || 1; return [AIM.dir.x / l, AIM.dir.z / l]; } const tx = AIM.on && AIM.Aw ? AIM.Aw.x : p.x + Math.sin(p.yaw) * 10, tz = AIM.on && AIM.Aw ? AIM.Aw.z : p.z + Math.cos(p.yaw) * 10; const dx = tx - p.x, dz = tz - p.z, l = Math.hypot(dx, dz) || 1; return [dx / l, dz / l]; };
+  const grenLaunch = d => { const p = G.p, [dx, dz] = grenDir(), T = 0.55 + d / 22 * 0.75, h0 = 1.4 - 0.07, vy = (4.9 * T * T - h0) / T, dd = d * 0.88; return { P: new THREE.Vector3(p.x + dx * 0.5 - dz * 0.2, p.y + 1.4, p.z + dz * 0.5 + dx * 0.2), V: new THREE.Vector3(dx * dd / T, vy, dz * dd / T) }; };
+  const grenPow = () => G.gch ? Math.min(1, (G.t - G.gch.t0) / GFULL) : 0;
+  // linha da trajetória (a mesma física da granada: gravidade, ressalto nas paredes e no chão)
+  /* pontos em vez de linha: no telemóvel e na 1.ª pessoa leem-se melhor e diminuem com a distância */
+  const GTN = 48, trDots = new THREE.InstancedMesh(new THREE.SphereGeometry(0.05, 8, 6), new THREE.MeshBasicMaterial({ color: 0xffe2a0, transparent: true, opacity: 0.9, depthTest: false }), GTN); trDots.renderOrder = 998; trDots.frustumCulled = false; trDots.visible = false; trDots.count = 0; scene.add(trDots); const _tm = new THREE.Matrix4();
+  const trEnd = new THREE.Mesh(new THREE.RingGeometry(0.55, 0.75, 32), new THREE.MeshBasicMaterial({ color: 0xffb040, transparent: true, opacity: 0.85, depthTest: false, side: THREE.DoubleSide })); trEnd.rotation.x = -Math.PI / 2; trEnd.renderOrder = 998; trEnd.visible = false; scene.add(trEnd);
+  const _tq = new THREE.Vector3();
+  const grenPreview = () => { const p = G.p; if (!G.gch || !p || !p.alive) { trDots.visible = trEnd.visible = false; return; }
+    const d = GMIN + (GMAX - GMIN) * grenPow(), { P, V } = grenLaunch(d), lv = p.lv || 0, dt = 1 / 30; let n = 0, rest = 0;
+    for (let i = 0; i < 90 && n < GTN; i++) { V.y -= 9.8 * dt; _tq.copy(P).addScaledVector(V, dt); if (wallHit(P, _tq) < 1) { V.x *= -0.35; V.z *= -0.35; _tq.copy(P); } const gy = (p.base || 0) + groundY(_tq.x, _tq.z, lv) + 0.07; if (_tq.y < gy) { _tq.y = gy; V.y = Math.abs(V.y) * 0.3; V.x *= 0.55; V.z *= 0.55; if (Math.abs(V.y) < 0.6) V.y = 0; rest++; } P.copy(_tq); if (i % 2 === 1 && n < GTN && P.distanceToSquared(cam.position) > 6.25) { const sc = 1 + n * 0.02; _tm.makeScale(sc, sc, sc).setPosition(P.x, P.y, P.z); trDots.setMatrixAt(n++, _tm); } if (rest > 2 && V.lengthSq() < 0.3) break; }
+    trDots.count = n; trDots.instanceMatrix.needsUpdate = true; trDots.visible = n > 0; trEnd.position.set(P.x, P.y + 0.02, P.z); trEnd.visible = true; trEnd.scale.setScalar(0.8 + 0.4 * grenPow()); };
+  const throwGrenade = (it, d) => { const p = G.p; if (p.cd > 0 || p.thrT >= 0) return; p.cd = 0.8; p.thrT = 0; p.thrIt = it; p.thrD = d; };
+  G.grenStart = it => { const p = G.p; if (p.cd > 0 || p.thrT >= 0) return; G.gch = { it, t0: G.t }; };
+  G.grenEnd = () => { const g = G.gch; G.gch = null; trDots.visible = trEnd.visible = false; if (!g || !G.p.alive) return; throwGrenade(g.it, GMIN + (GMAX - GMIN) * Math.min(1, (G.t - g.t0) / GFULL)); };
+  G.grenPow = grenPow; G.dbgGrenEnd = () => [trEnd.position.x, trEnd.position.z];
   const releaseGrenade = it => { const p = G.p; const lv = p.lv || 0;
-    const tx = AIM.on && AIM.Aw ? AIM.Aw.x : p.x + Math.sin(p.yaw) * 10, tz = AIM.on && AIM.Aw ? AIM.Aw.z : p.z + Math.cos(p.yaw) * 10;
-    let dx = tx - p.x, dz = tz - p.z; const d = Math.min(22, Math.max(3, Math.hypot(dx, dz))); const l = Math.hypot(dx, dz) || 1; dx /= l; dz /= l;
-    const T = 0.55 + d / 22 * 0.75, h0 = 1.5 - 0.07, vy = (4.9 * T * T - h0) / T, dd = d * 0.88; const m = new THREE.Mesh(gGeo, gMat); m.castShadow = true; scene.add(m);
-    const B1 = { k: 'gran', P: new THREE.Vector3(p.x + dx * 0.5, p.y + 1.5, p.z + dx * 0 + dz * 0.5), V: new THREE.Vector3(dx * dd / T, vy, dz * dd / T), t: 3.0, m, lv, base: p.base || 0 }; BOOMS.push(B1);
+    const d = p.thrD != null ? p.thrD : (() => { const tx = AIM.on && AIM.Aw ? AIM.Aw.x : p.x + Math.sin(p.yaw) * 10, tz = AIM.on && AIM.Aw ? AIM.Aw.z : p.z + Math.cos(p.yaw) * 10; return Math.min(GMAX, Math.max(3, Math.hypot(tx - p.x, tz - p.z))); })(); p.thrD = null;
+    const L0 = grenLaunch(d); const m = new THREE.Mesh(gGeo, gMat); m.castShadow = true; scene.add(m);
+    const B1 = { k: 'gran', P: L0.P, V: L0.V, t: 3.0, m, lv, base: p.base || 0 }; BOOMS.push(B1);
     if (G.net.world) G.net.raw({ t: 'thr', k: 'gran', P: [B1.P.x, B1.P.y, B1.P.z].map(v => +v.toFixed(2)), V: [B1.V.x, B1.V.y, B1.V.z].map(v => +v.toFixed(2)), lv, base: B1.base });
     useOne(it); audio.play('swing', 0.7); G.ui.toast('Granada! Afasta-te'); };
   const plantC4 = it => { const p = G.p; if (p.cd > 0) return; p.cd = 0.6; const lv = p.lv || 0, fx = p.x + Math.sin(p.yaw) * 0.9, fz = p.z + Math.cos(p.yaw) * 0.9;
@@ -1061,9 +1079,11 @@ async function boot() {
       if (G.playing && z.state === 'chase' && dMe < 16 && dMe > 2.5 && z.v > 1) { z.stepT = (z.stepT || 0) - dt; if (z.stepT <= 0) { z.stepT = 0.8; G.ui.sound(z.x, z.z, 'p', dMe); } }
     }
   };
+  // estremecer ao levar um tiro: a vista salta um pouco para cima e para o lado e volta (como nos jogos de tiros)
+  const PUNCH = { x: 0, y: 0 }; const flinch = d => { const k = Math.min(1.4, 0.35 + d / 45); PUNCH.x += 0.045 * k; PUNCH.y += (Math.random() - 0.5) * 0.05 * k; G.buzz && G.buzz(40); };
   const hurtPlayer = (dmg, cause, raw) => {
     const p = G.p; if (!p || !p.alive || (G.admF && G.admF.god)) return; if ((cause === 'zombie' || cause === 'lobo' || cause === 'javali') && G.car && VT[G.car.k].fly) return; G.combatT = G.t; let arm = 0; if (!raw) for (const s in G.inv.eq) if (G.inv.eq[s]) arm += ITEMS[G.inv.eq[s].k].armor || 0;
-    const real = dmg * (1 - Math.min(0.6, arm)); p.hp -= real; p.hurtT = 0.4; p.hitAt = G.t; if (cause !== 'queda') dmgLog.push({ t: G.t, d: dmg }); audio.play('dor'); G.ui.damage(); G.buzz(60);
+    const real = dmg * (1 - Math.min(0.6, arm)); p.hp -= real; p.hurtT = 0.4; p.hitAt = G.t; if (cause !== 'queda') dmgLog.push({ t: G.t, d: dmg }); audio.play('dor'); if (cause !== 'pvp') { G.ui.damage(real); flinch(real); } G.buzz(60);
     if (Math.random() < 0.12 && !p.bleed) { p.bleed = 1; G.ui.toast('Estás a sangrar. Usa uma ligadura.'); }
     burst(p.x, 1.2, p.z, 5, 0x7a0e0a, 2.2);
     if (p.hp <= 0) die(cause);
@@ -1185,9 +1205,16 @@ async function boot() {
     hurt: (dmg, by, zone, pop, cause) => {
       if (!G.p || !G.p.alive) return; if (cause === 'zombie') { hurtPlayer(dmg, 'zombie'); return; } G.killer = by; if (cause === 'carro') { hurtPlayer(dmg, 'carro', true); return; }
       if (pop) { const s = pop === 'head' ? 'head' : 'vest'; if (G.inv.eq[s]) { G.inv.eq[s] = null; refresh(); G.ui.toast(s === 'head' ? 'O teu capacete partiu-se' : 'O teu colete partiu-se'); } }
+      { // de onde veio: o arco aponta para quem disparou (em relação para onde estás a olhar)
+        let ang = null; const sh = G.net && G.net.R ? [...G.net.R.values()].find(r => r.name === by) : null;
+        if (sh && G.p) { const fy = Math.atan2(AIM.dir.x, AIM.dir.z), a = Math.atan2(sh.x - G.p.x, sh.z - G.p.z); let d = fy - a; while (d > Math.PI) d -= 2 * Math.PI; while (d < -Math.PI) d += 2 * Math.PI; ang = d; }
+        G.ui.damage(dmg, ang); flinch(dmg * (zone === 'head' ? 1.8 : 1)); }
       hurtPlayer(dmg, 'pvp', true); if (zone === 'head') G.shakeT = Math.max(G.shakeT || 0, 0.25);
     },
     give: L => { let n = 0, chao = 0; for (const it of L) { const left = G.inv.give(it); n++; if (left) { it.n = left; G.dropItem(it); chao++; } } audio.play('apanhar'); refresh(); G.ui.toast(!n ? 'Já alguém levou esta mochila' : chao ? 'Apanhaste a mochila (o que não coube ficou no chão)' : 'Apanhaste a mochila'); },
+    // clarão no cano de quem dispara (os outros jogadores e os bots): vês que te estão a disparar e de onde
+    muzzle: (o, d, sup, id) => { if (sup || !G.p) return; const dist = Math.hypot(o[0] - G.p.x, o[2] - G.p.z); if (dist > 160) return; const r = G.net && G.net.R && G.net.R.get(id); if (r && !r.b.root.visible) return;
+      const F = MZP.find(f => f.t <= 0) || MZP[0]; const k = 0.75; F.s.position.set(o[0] + d[0] * k, o[1] + d[1] * k - 0.04, o[2] + d[2] * k); F.s.material.rotation = Math.random() * 6.28; F.s.scale.setScalar((0.42 + Math.random() * 0.18) * (1 + Math.min(1.5, dist / 60))); F.s.visible = true; F.t = 0.055; G.dbgMz = (G.dbgMz || 0) + 1; },
     wallEnd: (o, d) => { _wa.set(o[0], o[1], o[2]); _wb.copy(_wa).addScaledVector(_wb.set(d[0], d[1], d[2]), 300); const t = wallHit(_wa, _wb); const E = _wb.sub(_wa).multiplyScalar(t).add(_wa); tracer(o[0], o[1], o[2], E.x, E.y, E.z); if (G.p && Math.hypot(o[0] - G.p.x, o[2] - G.p.z) < 60) { flash.position.set(o[0], o[1], o[2]); flash.intensity = 5 + 12 * (1 - (G.day ?? 1)); G.flashT = 0.06; } } });
   const decG = (L, g, rows) => { for (const o of L || []) { const it = dec(o); if (!it) continue; if (g.fits(it, o.x, o.y, rows)) g.add(it, o.x, o.y); else g.insert(it, rows); } return g; };
   // online o mundo (e as bases) é do servidor: aqui não se grava
@@ -1482,14 +1509,14 @@ async function boot() {
   G.fireDown = () => { if (G.car && (!G.carSeat || G.car.hp <= 0)) return; // de passageiro dispara-se da janela; quem conduz não
     const p = G.p; if (!G.playing || !p.alive || G.invOpen) return; const d = heldDef();
     if (G.base.placing()) { G.base.placeNow(); return; } // baú, fornalha, cama…: põe onde está o fantasma
-    { const it = held(); if (it && it.k === 'planta') { G.base.place(); return; } if (it && it.k === 'martelo') { G.base.upgrade(); return; } if (it && it.k === 'granada') { throwGrenade(it); return; } if (it && it.k === 'c4') { plantC4(it); return; } }
+    { const it = held(); if (it && it.k === 'planta') { G.base.place(); return; } if (it && it.k === 'martelo') { G.base.upgrade(); return; } if (it && it.k === 'granada') { G.grenStart(it); return; } if (it && it.k === 'c4') { plantC4(it); return; } }
     if (!d.gun) { G.fireHeld = true; G.holdT0 = G.t; G.tapAttack(); return; }
     G.fireHeld = true; AIM.idle = 0;
     if (!AIM.on) { aimStart(); if (G.cfg.quick || FPF.on) AIM.pend = true; return; }
     if (AIM.raise < 1) { AIM.pend = true; return; }
     tryFire();
   };
-  G.fireUp = () => { G.fireHeld = false; }; // um toque enquanto a arma sobe não se perde: dispara quando estiver levantada
+  G.fireUp = () => { G.fireHeld = false; if (G.gch) G.grenEnd(); }; // um toque enquanto a arma sobe não se perde: dispara quando estiver levantada
   G.breath = on => { AIM.breathOn = !!on && AIM.scope; };
   canvas.addEventListener('wheel', e => { if (G.fp && G.aimS.scope) { e.preventDefault(); G.zeroAdj(e.deltaY < 0 ? 1 : -1); } }, { passive: false });
   canvas.addEventListener('pointermove', e => { if (e.pointerType !== 'mouse') return; if ((G.fp && AIM.on) || FPF.on) { if (FPF.on && !document.pointerLockElement && !AIM.on) { mouse.x = e.clientX; mouse.y = e.clientY; mouse.has = true; return; } G.aimDrag(e.movementX || 0, e.movementY || 0); return; } mouse.x = e.clientX; mouse.y = e.clientY; mouse.has = true; });
@@ -1499,7 +1526,7 @@ async function boot() {
     if (e.button === 2) { AIM.rmb = true; aimStart(!FPF.on || !!scopeItem()); return; }
     if (e.button !== 0) return; mouse.down = true;
     if (G.base.placing()) { G.base.pin(G.groundAt(e.clientX, e.clientY)); G.base.placeNow(); return; } // no PC: clica onde queres pôr
-    if (heldDef().gun) G.fireDown(); else { G.fireHeld = true; G.holdT0 = G.t; attack(); }
+    { const hk = held() && held().k; if (heldDef().gun || hk === 'granada' || hk === 'c4') G.fireDown(); else { G.fireHeld = true; G.holdT0 = G.t; attack(); } }
   });
   addEventListener('pointerup', e => { if (e.pointerType !== 'mouse') return; if (e.button === 0) { mouse.down = false; G.fireUp(); } if (e.button === 2) { AIM.rmb = false; if (AIM.on) aimEnd(); } });
   canvas.addEventListener('contextmenu', e => e.preventDefault());
@@ -1762,7 +1789,7 @@ async function boot() {
       if (!best && p.alive && !G.car && !p.lv && p.water < 97 && (p.swim || W.wet(p.x, p.z, 1.4))) best = { label: 'Beber água', drink: true, x: p.x, z: p.z };
       G.prompt = best;
       if (G.net.on) { const d = heldDef(), it = held(), mode = d.gun ? (d.long ? 2 : 1) : d.melee && it ? 3 : 0, eq = G.inv.eq, lvl = s => eq[s] ? ITEMS[eq[s].k].lvl || 0 : 0;
-        G.net.frame(dt, { x: +p.x.toFixed(2), z: +p.z.toFixed(2), y: +(p.y - (p.swimY || 0)).toFixed(2), lv: p.lv || 0, yaw: +Math.atan2(Math.sin(p.root), Math.cos(p.root)).toFixed(2), mv: +Math.min(3, p.mv || 0).toFixed(2), an: (G.car && !G.leanOut ? 8 : mode + (AIM.on ? 4 : 0) + (p.reload > 0 ? 16 : 0) + (p.thrT >= 0 ? 32 : 0) + (p.use ? 64 : 0)), w: mode ? it.k : '', hp: Math.round(Math.max(0, p.hp)), al: p.alive ? 1 : 0, ar: [lvl('head'), lvl('vest')], gk: GK.map(s => eq[s] ? eq[s].k : '').join(), sc: p.stance | 0 }, o => canSee(p, o)); }
+        G.net.frame(dt, { x: +p.x.toFixed(2), z: +p.z.toFixed(2), y: +(p.y - (p.swimY || 0)).toFixed(2), lv: p.lv || 0, yaw: +Math.atan2(Math.sin(p.root), Math.cos(p.root)).toFixed(2), mv: +Math.min(3, p.mv || 0).toFixed(2), an: (G.car && !G.leanOut ? 8 : mode + (AIM.on ? 4 : 0) + (p.reload > 0 ? 16 : 0) + (p.thrT >= 0 ? 32 : 0) + (p.use ? 64 : 0)), w: mode ? it.k : '', hp: Math.round(Math.max(0, p.hp)), al: p.alive ? 1 : 0, ar: [lvl('head'), lvl('vest')], gk: GK.map(s => eq[s] ? eq[s].k : '').join(), sc: p.stance | 0 }, o => (G.fp || FPF.on) ? sameLevel(p, o) : canSee(p, o), o => canSee(p, o)); /* na 1.ª pessoa o próprio 3D tapa quem está atrás de paredes (esconder pelo centro do corpo fazia desaparecer quem espreita de uma caixa) */ }
       if (G.box && (Math.hypot(G.box.x - p.x, G.box.z - p.z) > 2.6)) { G.box = null; if (G.invOpen) G.ui.openInv(null); }
       updZombies(dt); G.cars.update(dt);
       // sacos: os vazios desaparecem, os velhos também
@@ -1824,7 +1851,7 @@ async function boot() {
     if (p) for (const z of G.zs) { _sph.center.set(z.x, (z.y || 0) + 0.9, z.z); const inF = _frus.intersectsSphere(_sph); if (!inF || z.sink >= 0.6) { z.hide = true; continue; } if (G.fp) { z.hide = false; continue; } const zl = z.lv || 0; z.losT = (z.losT || 0) - dt; if (z.losT <= 0) { z.losT = 0.12; z.vis = seen(z.x, z.z, zl); } z.hide = (zl > 0 && !!z.bld && !(z.bld.g[zl] && z.bld.g[zl].visible) && !stairVis(p, z)) || !z.vis; }
     for (const b of G.bags) b.mesh.visible = G.fp || seen(b.x, b.z, b.lv);
     // efeitos
-    G.flashT = (G.flashT || 0) - dt; if (G.flashT <= 0) flash.intensity = 0;
+    grenPreview(); G.flashT = (G.flashT || 0) - dt; if (G.flashT <= 0) flash.intensity = 0; for (const F of MZP) if (F.t > 0) { F.t -= dt; if (F.t <= 0) F.s.visible = false; }
     for (let i = pl.length - 1; i >= 0; i--) { const o = pl[i]; o.t -= dt; if (o.t <= 0 || o.y < 0) { pl.splice(i, 1); continue; } o.vy -= 9 * dt; o.x += o.vx * dt; o.y += o.vy * dt; o.z += o.vz * dt; }
     pl.forEach((o, i) => { parts.setMatrixAt(i, mat4(o.x, o.y, o.z, o.t * 9, o.t * 7)); parts.setColorAt(i, o.c); }); parts.count = pl.length; parts.instanceMatrix.needsUpdate = true; if (parts.instanceColor) parts.instanceColor.needsUpdate = true;
     { const pa = trGeo.attributes.position, ca = trGeo.attributes.color; for (let i = 0; i < TRN; i++) { const o = trl[i]; if (o) { o.t -= dt; const f = Math.max(0, o.t / 0.07) * o.k; pa.setXYZ(i * 2, ...o.a); pa.setXYZ(i * 2 + 1, ...o.b); ca.setXYZ(i * 2, 0.6 * f, 0.45 * f, 0.2 * f); ca.setXYZ(i * 2 + 1, 1.6 * f, 1.3 * f, 0.7 * f); } else { pa.setXYZ(i * 2, 0, -9, 0); pa.setXYZ(i * 2 + 1, 0, -9, 0); } } pa.needsUpdate = true; ca.needsUpdate = true; while (trl.length && trl[0].t <= 0) trl.shift(); }
@@ -1849,7 +1876,7 @@ async function boot() {
       cam.position.set(c.x + bx * G.chD, gy + h, c.z + bz * G.chD); cam.lookAt(c.x - bx * 3.2, gy + 0.9 + alt, c.z - bz * 3.2);
       if (G.shakeT > 0) { G.shakeT -= dt; const a = Math.min(1, G.shakeT) * 0.25; cam.position.x += (Math.random() - 0.5) * a; cam.position.y += (Math.random() - 0.5) * a * 0.5; }
     } else if ((G.fp || FPF.on) && p) {
-      cam.position.copy(AIM.eye); cam.lookAt(_c.copy(AIM.eye).add(AIM.dir)); if (AIM.lean) cam.rotateZ(-AIM.lean * 0.12);
+      cam.position.copy(AIM.eye); cam.lookAt(_c.copy(AIM.eye).add(AIM.dir)); { const f = Math.exp(-dt * 10); PUNCH.x *= f; PUNCH.y *= f; if (Math.abs(PUNCH.x) + Math.abs(PUNCH.y) > 1e-4) { cam.rotateX(PUNCH.x); cam.rotateY(PUNCH.y); } }; if (AIM.lean) cam.rotateZ(-AIM.lean * 0.12);
       // a luneta mostra sempre o mesmo ângulo, em qualquer ecrã; o centro fica no meio da zona livre. Sem apontar (vista livre): campo largo, centro no meio do ecrã
       const a = FPF.on ? AIM.adsT * AIM.adsT * (3 - 2 * AIM.adsT) : 1, scI = scopeItem(), fa = a * (scI && scI.mag >= 2 ? 1 : 0); FPF.fa = FPF.on ? fa : 1;
       const S = G.ui.scopeR(), SC = G.ui.scopeC(), sf = THREE.MathUtils.degToRad(scopeFov()), fS = THREE.MathUtils.radToDeg(2 * Math.atan(Math.tan(sf / 2) * innerHeight / (2 * S))), fF = fpFov();

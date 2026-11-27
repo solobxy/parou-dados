@@ -3,6 +3,7 @@
 // Os braços e as mãos são os do próprio corpo (mesma malha e cores), postos por IK em cada frame; as recargas mexem
 // as peças soltas de cada arma (carregador, ferrolho, bomba), e há gestos para a ligadura, comer, beber e lançar granadas.
 import * as THREE from 'three';
+import { flashSprite } from './flash.js';
 import { Builder } from './builder.js';
 import { weaponGeos, RDP, WPUSH, LONG, fpArms, partPivot } from './chars.js';
 import { GUNA } from './guns.js';
@@ -48,6 +49,7 @@ export function makeVM() {
   M.v.color.setScalar(1.7); M.m.color.setScalar(2.4);
   M.vf = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.8, flatShading: true }); M.vf.color.setScalar(1.5);
   const rig = new THREE.Group(); scene.add(rig);
+  const FL = flashSprite(THREE, 0.16); scene.add(FL); let flT = 0; const _fl = new THREE.Vector3(); // clarão do cano na arma que tens na mão
   const W = weaponGeos(); let cur = '', kind = '', gun = null, piv = null, hold = null, wk = '', HH = null, parts = {}, A = null;
   const meshOf = geos => { const g = new THREE.Group(); for (const k in geos) g.add(new THREE.Mesh(geos[k], M[k] || M.v)); return g; };
   // modelos "na mão" do boneco vêm virados para o antebraço: aqui desfaz-se essa volta (cabo na origem, ponta para +z)
@@ -107,13 +109,14 @@ export function makeVM() {
     scene, cam, set, dbg: () => ({ arms, rig, piv, gun, props, D: G_DBG, scene, cam }),
     get on() { return !!kind; },
     get kind() { return kind; },
-    fire() { kick = 1; },
+    fire(sup) { kick = 1; if (!sup && gun && A && A.muzzle && (kind === 'long' || kind === 'pistol')) { flT = 0.05; FL.material.rotation = Math.random() * Math.PI * 2; FL.scale.setScalar((kind === 'long' ? 0.17 : 0.12) * (0.85 + Math.random() * 0.3)); } },
     // ponta do cano no ecrã (coordenadas -1..1 da câmara das mãos): para o rasto da bala e o clarão saírem dali
     muzzleNDC(out) { if (!gun || !A || !A.muzzle || (kind !== 'long' && kind !== 'pistol')) return null; rig.updateWorldMatrix(true, true); const L = kind === 'long', sz = att0.sup ? 0.13 : 0; _mz.set(L ? WPUSH[0] : 0, (L ? WPUSH[1] : 0) + A.muzzle[0], (L ? WPUSH[2] : 0) + A.muzzle[1] + sz); /* as espingardas têm o desvio da mão (WPUSH) na geometria; com silenciador a ponta vai mais à frente */ gun.localToWorld(_mz); cam.updateMatrixWorld(); _mz.project(cam); return out.set(_mz.x, _mz.y); },
     // a mesma projeção da câmara do mundo (o centro fica onde está a mira), luz do dia/noite, recuo, balanço, golpes e recarregar
     // o: { day, nv, mv (0..1 a andar), ads (0 à anca .. 1 a apontar), sw (golpe 0..1 ou −1), rel (a recarregar 0..1, suave), rp (progresso da recarga 0..1 ou −1),
     //      rm ('swap' troca de carregador, 'fill' balas à mão), spr (a correr), up (a entrar na 1.ª pessoa 0..1), raise (arma levantada 0..1), use ({ kind, t }), thr (lançar 0..1 ou −1) }
     update(dt, main, o) {
+      if (flT > 0 && gun && A && A.muzzle) { if (!(globalThis.G && G.dbgFlashHold)) flT -= dt; const L = kind === 'long'; _fl.set(L ? WPUSH[0] : 0, (L ? WPUSH[1] : 0) + A.muzzle[0], (L ? WPUSH[2] : 0) + A.muzzle[1] + 0.03); rig.updateWorldMatrix(true, true); gun.localToWorld(_fl); FL.position.copy(_fl); FL.visible = flT > 0; } else FL.visible = false;
       for (const k in props) props[k].visible = false;
       if (!kind) { if (arms) arms.mesh.visible = false; return; }
       arms.mesh.visible = true; tt += dt;

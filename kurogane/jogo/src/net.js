@@ -9,7 +9,7 @@ const MODES = ['none', 'pistol', 'rifle', 'melee'];
 const AMSND = { a9: 'pistola', a9s: 'pistola', a556: 'm4', a762: 'ak', a308: 'caca', a357: 'revolver', c12: 'cacadeira', c12s: 'cacadeira', a408: 'pesado', a50: 'pesado', a754: 'ak' };
 
 const angD = (a, b) => { let d = a - b; while (d > Math.PI) d -= 2 * Math.PI; while (d < -Math.PI) d += 2 * Math.PI; return d; };
-export function makeNet({ G, scene, mkRemote, audio, Conta, enc, dec, hurt, die, wallEnd, world, WV }) {
+export function makeNet({ G, scene, mkRemote, audio, Conta, enc, dec, hurt, die, wallEnd, muzzle, world, WV }) {
   let ws = null, tok = null, sendT = 0, invT = 0, retry = 0, want = false, off = 0, cyc0 = 0, cur = null, psT = 0, zT = 0; const zdQ = [];
   const R = new Map(), sleepers = new Map();
   const tags = document.createElement('div'); tags.id = 'tags'; { const h = document.getElementById('hud'); if (h && h.parentNode) h.parentNode.insertBefore(tags, h); else document.body.appendChild(tags); } // por baixo do HUD e dos ecrãs por cima
@@ -75,7 +75,7 @@ export function makeNet({ G, scene, mkRemote, audio, Conta, enc, dec, hurt, die,
         const p = G.p, d = p ? Math.hypot(m.o[0] - p.x, m.o[2] - p.z) : 99;
         { const v = Math.max(0.04, 1 - d / (m.sup ? 70 : m.hv ? 480 : 320)) * (m.sup ? 0.6 : 1), far = Math.max(0, Math.min(1, (d - 35) / 220));
           if (m.sup) audio.play('abafado', v); else if (!audio.shot(AMSND[m.k] || (m.hv ? 'pesado' : 'pistola'), v, far)) audio.play(m.hv ? 'grosso' : 'pistola', v); }
-        wallEnd(m.o, m.d); if (G.noise) G.noise(m.o[0], m.o[2], m.sup ? 12 : 34); if (G.heardShot && d < 300) G.heardShot(); if (p && d > 2.5) G.ui.sound(m.o[0], m.o[2], 't', d); return;
+        wallEnd(m.o, m.d); if (muzzle) muzzle(m.o, m.d, m.sup, m.id); if (G.noise) G.noise(m.o[0], m.o[2], m.sup ? 12 : 34); if (G.heardShot && d < 300) G.heardShot(); if (p && d > 2.5) G.ui.sound(m.o[0], m.o[2], 't', d); return;
       }
       case 'hit': hurt(m.dmg, m.by, m.zone, m.pop, m.car ? 'carro' : null); return;
       case 'hitc': { if (m.zone === 'car') { G.ui.hit(false, 'car', true, null); return; } const r = m.on != null ? R.get(m.on) : null; G.ui.hit(!!m.kill, m.zone, false, r ? new THREE.Vector3(r.x, (r.y || 0) + (m.zone === 'head' ? 1.6 : 1.1), r.z) : null); G.buzz && G.buzz(m.kill ? [25, 40, 35] : 14); if (m.kill) G.ui.toast('Abateste ' + (m.name || 'um jogador')); return; }
@@ -158,7 +158,7 @@ export function makeNet({ G, scene, mkRemote, audio, Conta, enc, dec, hurt, die,
   // cada imagem: o teu estado para o servidor (10 por segundo) e os outros no sítio certo, 100 ms atrás (para andarem suaves)
   const _v = new THREE.Vector3();
   const place = (el, x, y, z) => { _v.set(x, y, z); const q = G.proj(_v); if (!q.ok) { el.style.display = 'none'; return; } el.style.display = ''; el.style.transform = `translate(${q.x.toFixed(0)}px,${q.y.toFixed(0)}px) translate(-50%,-100%)`; };
-  N.frame = (dt, me, see) => {
+  N.frame = (dt, me, see, los) => {
     if (!N.on) return; const now = performance.now();
     { const hide = G.mapOpen || G.invOpen || G.paused || !G.playing; if (tags.hidden !== hide) tags.hidden = hide; }
     if (me && now - sendT >= 32) { sendT = now; /* 30 vezes por segundo: os outros veem-te com menos atraso */ send({ t: 'st', ...me, ts: Math.round(now) }); if (N.world) { const ca = G.cars.up(); if (ca) send({ t: 'cu', L: [ca] }); } }
@@ -178,7 +178,8 @@ export function makeNet({ G, scene, mkRemote, audio, Conta, enc, dec, hurt, die,
       const al = !!b[10]; if (G.ARENA) { if (!al && r.al !== false) r.deadT = now; if (al && r.al === false) { r.deadT = 0; r.w = undefined; } r.al = al; const sp = !!(b[16] || (r.s1 && r.s1[16])) && al; r.spA = (r.spA || 0) + ((sp ? 1 : 0) - (r.spA || 0)) * Math.min(1, dt * (sp ? 6 : 1.6)); }
       const dying = G.ARENA && !al && r.deadT && now - r.deadT < 20000;
       const vis = !b[11] && (b[10] || dying) && !((b[7] | 0) & 8) && (b[4] || 0) === lv && see({ x, z, lv: b[4] || 0 });
-      r.seen = !!(vis && al);
+      const lsee = vis && (!los || los({ x, z, lv: b[4] || 0 })); /* o 3D desenha-o, mas o nome e o radar dos colegas só com linha de vista */
+      r.seen = !!(lsee && al);
       r.b.root.visible = vis; if (!vis) { r.el.style.display = 'none'; continue; }
       { const lw = r.spd > 0.6 && r.my != null && (r.sc || 0) < 1.5 ? Math.max(-1, Math.min(1, r.back ? angD(r.my + Math.PI, S.yaw) : angD(r.my, S.yaw))) : 0; r.lr = (r.lr || 0) + (lw - (r.lr || 0)) * Math.min(1, dt * 8); } // de lado: as pernas viram-se para onde anda e o tronco continua a apontar
       r.b.root.position.set(x, y, z); r.b.root.rotation.set(0, S.yaw + r.lr, 0);
@@ -188,7 +189,7 @@ export function makeNet({ G, scene, mkRemote, audio, Conta, enc, dec, hurt, die,
       const rs = edge(16, 'rS'), ts = edge(32, 'tS'), us = edge(64, 'uS'), gd = ITEMS[r.w] && ITEMS[r.w].gun, rd = gd ? gd.reload : 2;
       r.sc = (r.sc || 0) + ((b[15] | 0) - (r.sc || 0)) * Math.min(1, dt * 7); r.b.stance = r.sc; /* postura dos outros: agachado ou deitado, suave */
       r.b.pose(dt, Math.min(b[6], r.spd / 3 + 0.03), MODES[an & 3], -1, 0, -(r.lr || 0), -1, r.step, (an & 4 ? 1 : 0.25) * (1 - 0.85 * (r.wk || 0)), us >= 0 ? { kind: 'heal', t: (us % 3) / 3 } : null, { rel: rs >= 0 ? Math.min(0.99, rs / rd) : -1, thr: ts >= 0 ? Math.min(0.99, ts / 0.7) : -1 });
-      if ((G.ARENA && !mate(r.clan)) || (r.gh && me && !mate(r.clan) && Math.hypot(x - me.x, z - me.z) > 12)) r.el.style.display = 'none'; else place(r.el, x, y + 2.05 - 0.5 * Math.min(1, r.sc || 0) - 0.95 * Math.max(0, (r.sc || 0) - 1), z); // de ghillie não se vê o nome ao longe
+      if (!lsee || (G.ARENA && !mate(r.clan)) || (r.gh && me && !mate(r.clan) && Math.hypot(x - me.x, z - me.z) > 12)) r.el.style.display = 'none'; else place(r.el, x, y + 2.05 - 0.5 * Math.min(1, r.sc || 0) - 0.95 * Math.max(0, (r.sc || 0) - 1), z); // de ghillie não se vê o nome ao longe
     }
     for (const s of sleepers.values()) {
       const vis = me && (s.lv || 0) === lv && Math.hypot(s.x - me.x, s.z - me.z) < 45 && see({ x: s.x, z: s.z, lv: s.lv || 0 });

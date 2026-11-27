@@ -40,6 +40,7 @@ server.listen(0, async () => {
     }
     console.log('trajeto do bot:', JSON.stringify(trail.filter((_, i) => i % 3 === 0)));
     ok(hitAt > 0, 'o bot encontra a Ana e acerta-lhe (sem a ver de início)');
+    { const mz = await A.ev(() => G.dbgMz || 0); ok(mz > 0, 'vê-se o clarão do cano quando o bot dispara (' + mz + ')'); }
     await A.page.screenshot({ path: path.join(outDir, 'bots-tiro.png') });
     // a Ana mata o bot (com a pontaria de teste); daqui para a frente a Ana não morre (o bot responde aos tiros)
     await A.ev(() => { G.p.hp = 100; if (!G.p.alive) G.arenaRespawn(); }); await W(3000); await A.ev(() => G.net.raw({ t: 'tgod', on: 1 }));

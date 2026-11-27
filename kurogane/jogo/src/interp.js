@@ -5,7 +5,7 @@ const MAX = 48, WIN = 90; // até 48 imagens guardadas; a rede mede-se nas últi
 export const track = () => ({ buf: [], off: null, jit: 25, delay: 110, os: [] });
 // ts: hora de envio (ms, relógio de quem mandou); recv: hora de chegada (ms, o nosso relógio)
 export const push = (T, ts, recv, s) => {
-  const B = T.buf; if (B.length) { const last = B[B.length - 1].ts; if (ts < last - 1000 || ts - last > 5000) { B.length = 0; T.off = null; T.os.length = 0; } else if (ts <= last) return false; } // relógio novo ou parado há muito: recomeça; repetida ou fora de ordem: fora
+  const B = T.buf; if (B.length) { const last = B[B.length - 1].ts; if (ts < last - 1000 || ts - last > 5000) { B.length = 0; T.off = null; T.offS = null; T.os.length = 0; } else if (ts <= last) return false; } // relógio novo ou parado há muito: recomeça; repetida ou fora de ordem: fora
   const o = recv - ts, O = T.os; O.push(o); if (O.length > WIN) O.shift();
   // diferença de relógios = a chegada mais rápida da janela; o solavanco = quanto as outras chegam depois dessa (90.º percentil)
   let mn = Infinity; for (const v of O) if (v < mn) mn = v; T.off = mn;
@@ -20,7 +20,9 @@ export const sample = (T, now, out) => {
   // atraso: o necessário para quase nunca ficar sem imagem seguinte (antes ficava fixo em 110 ms e com rede móvel saltava)
   const want = Math.min(350, Math.max(70, 45 + T.jit * 1.15)), lt = T.lt ?? now, dtm = Math.min(100, now - lt); T.lt = now;
   T.delay += Math.max(-dtm * 0.05, Math.min(dtm * 0.25, (want - T.delay) * Math.min(1, dtm / 400))); // sobe depressa, desce devagar (sem dar saltos no tempo)
-  const rt = now - T.off - T.delay; out.rt = rt;
+  // a diferença de relógios também muda devagar (a mínima da janela salta quando sai da janela: antes isso fazia o boneco saltar para trás)
+  if (T.offS == null) T.offS = T.off; else T.offS += Math.max(-dtm * 0.08, Math.min(dtm * 0.08, T.off - T.offS));
+  const rt = now - T.offS - T.delay; out.rt = rt;
   let a = B[0], b = null;
   if (rt <= a.ts) { out.x = a.x; out.z = a.z; out.y = a.y; out.yaw = a.yaw; out.s = a; out.lag = 0; return out; }
   for (let i = B.length - 1; i >= 0; i--) if (B[i].ts <= rt) { a = B[i]; b = B[i + 1] || null; break; }

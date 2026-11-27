@@ -61,6 +61,7 @@ export async function sincronizar() {
   const c = conta(); if (!c) return 'sem conta';
   const j = await rpc('kg_carregar', { p_token: c.token });
   const local = lerPersonagem(), lq = Math.max(local ? local.when || 0 : 0, (lerMundo() || {}).when || 0);
+  { const lc = LS.get('kurogane-cfg-v1'), nc = j && j.dados && j.dados.cfg; if (nc && nc.v && (nc.ts || 0) > ((lc && lc.ts) || 0)) { LS.set('kurogane-cfg-v1', nc); try { window.G && G.ui && G.ui.cfgCloud && G.ui.cfgCloud(); } catch (e) { } } } // definições da nuvem se forem mais recentes
   if (j && j.dados && (j.quando || 0) > lq) { if (j.dados.char) gravarPersonagem(j.dados.char); else apagarPersonagem(); if (j.dados.world) gravarMundo(j.dados.world); return 'nuvem'; }
   if (lq) { await enviar(true); return 'aparelho'; }
   return 'vazio';
@@ -69,7 +70,7 @@ let ultimo = 0, pendente = null;
 export async function enviar(ja = false, keepalive = false) {
   const c = conta(); if (!c) return;
   const now = Date.now(); if (!ja && now - ultimo < 30000) { if (!pendente) pendente = setTimeout(() => { pendente = null; enviar(true); }, 30000 - (now - ultimo)); return; }
-  ultimo = now; const ch = lerPersonagem(), w = lerMundo(), dados = { char: ch, world: w }, quando = Math.max(ch ? ch.when || 0 : 0, w ? w.when || 0 : 0) || now;
+  ultimo = now; const ch = lerPersonagem(), w = lerMundo(), cfg = LS.get('kurogane-cfg-v1'), dados = { char: ch, world: w, cfg }, quando = Math.max(ch ? ch.when || 0 : 0, w ? w.when || 0 : 0, cfg ? cfg.ts || 0 : 0) || now; // as definições também vão para a nuvem
   const body = { p_token: c.token, p_dados: dados, p_quando: quando };
   if (keepalive && JSON.stringify(body).length > 60000) keepalive = false;
   try { await rpc('kg_guardar', body, keepalive); return true; } catch (e) { if (e.message === 'sessao') { const P = perfis(), a = P.lista.find(p => p.id === P.ativo); if (a) { delete a.conta; guardaP(P); } } return false; }

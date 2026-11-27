@@ -364,7 +364,7 @@ export function initUI(G) {
   if (!cfg.autoV) { cfg.autoV = 1; if (cfg.hud && cfg.hud.sprint) cfg.hud.sprint.on = 1; } // o botão de correr sempre passa a aparecer
   if (!cfg.q2) { cfg.q2 = 1; cfg.quick = true; } // 0.22: o botão grande passa a disparar logo (antes o 1.º toque só levantava a arma)
   G.cfg = cfg; G.FP_ONLY = true; G.fpFree = G.FP_ONLY || !!cfg.fpView; // teste: o jogo só em 1.ª pessoa (a 3.ª continua para os outros te verem) // a vista escolhida fica guardada
-  const saveCfg = () => { try { localStorage.setItem('kurogane-cfg-v1', JSON.stringify(cfg)); } catch (e) { } };
+  const saveCfg = () => { cfg.ts = Date.now(); try { localStorage.setItem('kurogane-cfg-v1', JSON.stringify(cfg)); } catch (e) { } try { Conta.enviar(); } catch (e) { } }; // fica no aparelho e, com conta, na nuvem (volta ao entrar noutro aparelho ou se o browser apagar os dados)
 
   // ---------- música do menu: começa no primeiro toque (os browsers não deixam antes), entra e sai devagar
   // música: menu; em jogo a de fundo (baixa) e, em perigo, uma das de tensão com fade
@@ -519,7 +519,7 @@ export function initUI(G) {
   const posOf = k => { const h = cfg.hud[k] || (cfg.hud[k] = { on: 1 }); return h[OR()] || (h[OR()] = { dx: 0, dy: 0, s: 1 }); };
   const applyHud = () => {
     for (const el of hudEls()) { const k = el.dataset.h, h = cfg.hud[k] || { on: 1 }, q = h[OR()] || {}; el.style.translate = `${q.dx || 0}px ${q.dy || 0}px`; el.style.scale = String((q.s || 1) * (BTN.includes(k) ? cfg.btn : 1)); el.classList.toggle('hoff', !h.on); }
-    $('hud').style.opacity = cfg.op; $('fps').hidden = !cfg.fps; document.body.classList.toggle('mir', !!cfg.mirror);
+    $('hud').style.opacity = ''; $('hud').style.setProperty('--hop', cfg.op); $('hud').classList.toggle('hop', cfg.op < 0.995); // só os botões e o mapa ficam transparentes; vida, fome, sede, mira, marcas de acerto e o vermelho do dano ficam sempre a 100% $('fps').hidden = !cfg.fps; document.body.classList.toggle('mir', !!cfg.mirror);
   };
   const applyAll = () => { applyHud(); audio.vol(cfg.vol); if (G.applyGfx) G.applyGfx(cfg); saveCfg(); };
   // botões novos
@@ -886,7 +886,10 @@ export function initUI(G) {
   let hitAt = null;
   const hit = (kill, zone, stop, at) => { hitAt = at || null; hm.className = (kill ? 'kill ' : '') + (zone === 'head' && !stop ? 'head ' : '') + (stop ? 'stop' : ''); hm.hidden = false; hitT = zone === 'head' && kill ? 0.4 : 0.22; if (zone === 'head' && kill && !stop) feedTxt('Na cabeça'); else if (stop && zone !== 'car') feedTxt(zone === 'head' ? 'O capacete travou' : 'O colete travou'); };
   let ftT = 0; const feedTxt = m => { if (ftT > 0 && toastEl.textContent === m) return; toast(m); toastT = 1.1; ftT = 1; };
-  const damage = () => { const d = $('dmg'); d.classList.add('on'); requestAnimationFrame(() => requestAnimationFrame(() => d.classList.remove('on'))); };
+  // levar dano: as bordas ficam vermelhas (mais com mais dano) e um arco mostra de onde veio; fica um instante e apaga devagar
+  let dmgT = 0, dirT = 0;
+  const damage = (amt = 25, ang = null) => { const d = $('dmg'); d.style.setProperty('--dk', Math.min(1, 0.45 + amt / 60).toFixed(2)); d.classList.add('on'); clearTimeout(dmgT); dmgT = setTimeout(() => d.classList.remove('on'), 140);
+    if (ang != null) { const e = $('dmgDir'); e.style.transform = 'rotate(' + ang.toFixed(3) + 'rad)'; e.classList.add('on'); clearTimeout(dirT); dirT = setTimeout(() => e.classList.remove('on'), 500); } };
   // morte: onde morreste, as tuas camas no mapa e escolher em qual renasces (como no Rust)
   let dTick = null, dSure = null;
   const mmss = ms => { const t = Math.ceil(ms / 1000); return Math.floor(t / 60) + ':' + String(t % 60).padStart(2, '0'); };
@@ -1062,6 +1065,7 @@ export function initUI(G) {
   fitDrop(pfm, ['.pfb > p', '.pfb .note', '.pfb label small'], () => pfm.querySelector('.pfbox'));
   pager($('recipes'), ':scope > *'); pager($('skl'), ':scope > *'); pager(trB, ':scope > *'); pager(lbB, ':scope > p, .lbt > div:not(.h)');
   return {
+    cfgCloud: () => { try { const c = JSON.parse(localStorage.getItem("kurogane-cfg-v1") || "null"); if (c && c.v === cfg.v) { Object.assign(cfg, c); applyAll(); } } catch (e) { } }, // definições que vieram da nuvem
     refresh, openInv, closeInv, toast, note: t => mnote(t), saveCfg, feed, hit, damage, death, toggleMap, frame, resize, safe, scopeR, scopeC,
     arenaAtt: k => AUI.attOf(k), arenaDeath: o => AUI.death(o), arenaFeed: m => AUI.feed(m), arenaScore: m => AUI.score(m), arenaHide: () => AUI.hide(), arenaMenu: () => AUI.menu(), arenaShow: m => AUI.show(m),
     closeDeath: () => { $('dead').hidden = true; clearInterval(dTick); }, sound, bedMenu, codeAsk, codeErr, codeDone, lockMenu, admRole, admList, admOpen, lbShow, lbOpen, trOpen, trRender, trOpenNow: () => !!trT, trWho: () => trT, trClose: () => { trEl.hidden = true; trT = null; },

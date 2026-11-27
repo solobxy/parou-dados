@@ -137,8 +137,13 @@ svg{width:18px;height:18px;flex:none}
 #scope.vm .hole,#scope.vm .rdf,#scope.vm .rdg{display:none}
 #scope.rd .rdot{display:block;fill:#ff3b2f;stroke:none}#scope.rd .rdg{display:block;fill:rgba(255,60,40,.22);stroke:none}#scope .breath i{display:block;height:100%;width:100%;background:#A9C46E}
 #scope.ir .rdot{fill:rgba(240,236,226,.9)}#scope.ir .rdg{display:none}#scope.ir .rdf{display:none}#scope.ir .hole{display:none}
-#dmg{position:fixed;inset:0;z-index:120;pointer-events:none;background:radial-gradient(ellipse at center,rgba(0,0,0,0) 45%,rgba(160,20,10,.55) 100%);opacity:0;transition:opacity .45s}
-#dmg.on{opacity:1;transition:none}
+#dmg{position:fixed;inset:0;z-index:120;pointer-events:none;background:radial-gradient(ellipse at center,rgba(0,0,0,0) 52%,rgba(150,10,6,.32) 78%,rgba(190,16,10,.72) 100%);opacity:0;transition:opacity .6s ease-out}
+#dmg.on{opacity:var(--dk,1);transition:none}
+/* de onde veio o tiro: um arco vermelho na borda, virado para quem disparou */
+#dmgDir{position:fixed;left:50%;top:50%;width:0;height:0;z-index:121;pointer-events:none;opacity:0;transition:opacity .9s ease-out}
+#dmgDir.on{opacity:1;transition:none}
+#dmgDir i{position:absolute;left:-26vmin;top:-40vmin;width:52vmin;height:14vmin;border-radius:50% 50% 0 0/100% 100% 0 0;border-top:5px solid rgba(255,48,32,.95);filter:drop-shadow(0 0 6px rgba(255,30,20,.8))}
+@media (prefers-reduced-motion:reduce){#dmg,#dmgDir{transition:opacity .2s}}
 #lowhp{position:fixed;inset:0;z-index:119;pointer-events:none;background:radial-gradient(ellipse at center,rgba(0,0,0,0) 55%,rgba(120,10,6,.35) 100%);opacity:0;transition:opacity 1s}
 /* ---------- controlos tácteis: octógonos de ferro com legenda */
 #touch{position:absolute;inset:0;pointer-events:none;z-index:1}
@@ -864,11 +869,12 @@ body.driving #dHov{right:calc(40px + var(--sr));bottom:calc(158px + var(--sb))}
 #inv.short #cBelt .ph{display:none}#inv.short .slot .lb{font-size:8.5px;letter-spacing:0}
 @media (orientation:landscape) and (max-height:520px){.pfb:has(input)>.ptabs{grid-column:1/-1}} @media (orientation:landscape) and (max-height:360px){.pfb .fld input{height:40px}.ptabs button{height:34px}.pfbox{gap:6px}.pfb:has(input){row-gap:6px}} /* conta ao deitado: separadores em cima, nome e palavra-passe lado a lado, aviso e botão por baixo */
 @media (orientation:landscape) and (max-width:720px){#adm .adh,#set .sett{display:none}} /* administração estreita: o selo ADMIN já diz onde estás */
+#hud.hop .tb,#hud.hop .dv,#hud.hop #tr,#hud.hop #tl,#hud.hop #cmp,#hud.hop #belt,#hud.hop #ammo,#hud.hop .pad,#hud.hop .ghost{filter:opacity(var(--hop,1))}
 </style>
 </head>
 <body>
 <canvas id="c"></canvas><div id="vig" aria-hidden="true"></div>
-<div id="dmg" aria-hidden="true"></div><div id="lowhp" aria-hidden="true"></div>
+<div id="dmg" aria-hidden="true"></div><div id="dmgDir" aria-hidden="true"><i></i></div><div id="lowhp" aria-hidden="true"></div>
 <div id="hud" hidden>
   <div id="asc" hidden></div><div id="aprot" hidden>Protegido</div><div id="akf" aria-live="polite"></div><div id="cmp" data-h="cmp" aria-hidden="true"><canvas id="cmpc"></canvas><b id="cmpt"></b></div><div id="tl"><div id="mm" data-h="mm" title="Abrir mapa"><canvas id="mmc"></canvas></div><div id="zone" data-h="zone"><b>—</b><span></span></div></div>
   <div id="tr" data-h="tr"><button class="hb" id="bAr" aria-label="Arena: equipa e kit" hidden>{{swords}}<span class="lab">Arena</span></button><button class="hb" id="bAdm" aria-label="Administração" hidden>{{shield}}</button><button class="hb" id="bSet" aria-label="Definições">{{settings}}</button><button class="hb" id="bMap" aria-label="Mapa">{{map}}<span class="lab">Mapa</span><kbd>M</kbd></button><button class="hb" id="bInv" aria-label="Inventário">{{backpack}}<span class="lab">Inventário</span><kbd>Tab</kbd></button></div>
@@ -937,7 +943,7 @@ body.driving #dHov{right:calc(40px + var(--sr));bottom:calc(158px + var(--sb))}
   <nav class="menu"><button class="mi pri" id="sCont" hidden><b>Continuar</b><em>Voltas onde ficaste</em></button><button class="mi pri" id="sPlay"><b>Survival</b><em>Continuas onde ficaste, ou começas perto de uma vila</em></button><button class="mi" id="sArena"><b>Arena</b><em>PvP em Tóquio · Vermelha contra Azul · 5 kits</em></button><button class="mi" id="sSet"><b>Definições</b><em>Controlos, imagem e som</em></button></nav>
   <div class="onl" id="sOnl" role="status"><i class="dot" aria-hidden="true"></i><span><b>Servidor</b><em id="sOnT">A ver quem está a jogar…</em></span></div>
   <div class="keys" id="sKeys"></div>
-  <div class="foot">Protótipo 0.60 · um servidor para todos · quem sai fica a dormir no mundo</div>
+  <div class="foot">Protótipo 0.61 · um servidor para todos · quem sai fica a dormir no mundo</div>
 </div><button id="sMus" aria-label="Música do menu"><span class="on">{{volume-2}}</span><span class="off">{{volume-x}}</span></button><a class="credit" href="https://dinissousa.pt" target="_blank" rel="noopener">feito por dinissousa.pt</a></div>
 <div id="arw" class="ov" hidden></div>
 <div id="pfm" class="ov" hidden><div class="pfbox"><div class="pfh"><b id="pfT"></b><button class="close" id="pfX" aria-label="Fechar">{{x}}</button></div><div id="pfB" class="pfb"></div></div></div>
