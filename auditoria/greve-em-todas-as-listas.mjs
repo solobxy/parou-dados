@@ -109,9 +109,16 @@ ok('[servidor] todas as chamadas que dão partidas marcam a greve', semMarca.len
 const perto = fs.readFileSync(path.join(APP, 'src/components/PertoView.tsx'), 'utf8');
 const lc = fs.readFileSync(path.join(APP, 'src/components/LineCard.tsx'), 'utf8');
 const ldm = fs.readFileSync(path.join(APP, 'src/components/LineDetailModal.tsx'), 'utf8');
-ok('[ecrã] cartões do Perto: as sem serviço vão para o fim e mostram o texto da greve', /partidasDoCartao\(stopDeps\)/.test(perto) && (perto.match(/textoGreveDaPartida\(dep\.greve, dep\.greveAte\)/g) || []).length >= 3);
-ok('[ecrã] cartão de linha (Horários/Favoritos) mostra a greve', /textoGreveDaPartida\(greve\.estado, greve\.ate\)/.test(lc));
-ok('[ecrã] partidas no detalhe da linha mostram a greve', /textoGreveDaPartida\(dep\.greve\.estado, dep\.greve\.ate\)/.test(ldm));
+ok('[ecrã] cartões do Perto: as sem serviço vão para o fim; destino real e etiqueta da greve nas 3 listas', /partidasDoCartao\(stopDeps\)/.test(perto) && (perto.match(/etiquetaGreve\(dep, destination\)/g) || []).length >= 3 && (perto.match(/destinoReal\(dep, destination\)/g) || []).length >= 3);
+ok('[ecrã] cartão de linha (Horários/Favoritos): destino real e etiqueta da greve', /<EtiquetaGreve estado=\{greveProxima\.estado\}/.test(lc) && /greveProxima\.ate \? formatTransitName\(greveProxima\.ate\)/.test(lc));
+ok('[ecrã] partidas no detalhe da linha: destino real e etiqueta da greve', /<EtiquetaGreve estado=\{dep\.greve\.estado\}/.test(ldm) && /dep\.greve\.ate \? formatTransitName\(dep\.greve\.ate\)/.test(ldm));
+// texto da etiqueta: «Não vai até <destino de sempre> (greve)»
+const GN = await import(path.join(APP, 'src/components/GreveNoHorario.tsx')).catch((e) => ({ erro: String(e) }));
+if (GN.textoGreveDaPartida) {
+  ok('[ecrã] texto: «Não vai até Fórum Maia (greve)»', GN.textoGreveDaPartida('reduzido', 'Senhora da Hora', 'Fórum Maia') === 'Não vai até Fórum Maia (greve)', GN.textoGreveDaPartida('reduzido', 'Senhora da Hora', 'Fórum Maia'));
+  ok('[ecrã] texto: sem serviço', GN.textoGreveDaPartida('sem-servico') === 'Sem serviço (greve)');
+  ok('[ecrã] destino real: Senhora da Hora em vez de Fórum Maia', GN.destinoNaGreve('reduzido', 'Senhora da Hora', 'Fórum Maia') === 'Senhora da Hora' && GN.destinoNaGreve(undefined, undefined, 'Fórum Maia') === 'Fórum Maia');
+} else console.log('NOTA    não deu para importar o componente aqui:', GN.erro);
 
 console.log(falhas ? `${falhas} FALHOU` : 'Tudo OK');
 process.exit(falhas ? 1 : 0);

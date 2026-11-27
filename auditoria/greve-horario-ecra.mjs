@@ -29,10 +29,10 @@ const GREVE = { titulo: 'Greve reduz serviço do Metro esta sexta-feira', url: U
   funciona: ['Senhora da Hora – Estádio do Dragão', 'Hospital São João – Santo Ovídio'], frequencia: '15 min (7h–20h) · 30 min (6h–7h, 20h–0h)' };
 const VESPERA = { titulo: GREVE.titulo, url: URL_AVISO, operador: 'Metro do Porto', dia: AMANHA, vespera: true, fimVespera: '23:00' };
 const ESTADOS = ['sem-servico', 'incerta', 'reduzido'];
-const modo = { diaTodoIncerto: false };
+const modo = { diaTodoIncerto: false, cartoes: false };
 
 const browser = await chromium.launch(process.env.CHROME ? { executablePath: process.env.CHROME, args: ['--no-sandbox'] } : {});
-async function abrir({ largura = 390, altura = 844, tema = 'claro' } = {}) {
+async function abrir({ largura = 390, altura = 844, tema = 'claro', abrirParagem = true } = {}) {
   const ctx = await browser.newContext({
     viewport: { width: largura, height: altura }, hasTouch: true, isMobile: true, locale: 'pt-PT', timezoneId: 'Europe/Lisbon', serviceWorkers: 'block',
     geolocation: CAMPANHA, permissions: ['geolocation'],
@@ -49,6 +49,17 @@ async function abrir({ largura = 390, altura = 844, tema = 'claro' } = {}) {
       const r = await rt.fetch({ headers });
       const j = await r.json().catch(() => null);
       if (j && Array.isArray(j.stops)) for (const st of j.stops) for (const d of st.nextDepartures || []) { delete d.greve; delete d.greveAte; }
+      // cartões do Perto em greve: a 1.ª paragem com as três marcas (como o C do Dragão «só até à Senhora da Hora»)
+      if (modo.cartoes && j && Array.isArray(j.stops)) {
+        const st = j.stops.find((x) => (x.nextDepartures || []).length >= 3);
+        if (st) {
+          const [a, b, c] = st.nextDepartures;
+          Object.assign(a, { greve: 'reduzido', greveAte: 'Senhora da Hora', destination: 'Fórum Maia', isRealtime: false, state: 'PROGRAMADO' });
+          Object.assign(b, { greve: 'sem-servico', isRealtime: false, state: 'PROGRAMADO' });
+          Object.assign(c, { greve: 'reduzido', isRealtime: false, state: 'PROGRAMADO' });
+          j.__cartao = st.id;
+        }
+      }
       return rt.fulfill({ status: r.status(), contentType: 'application/json', body: JSON.stringify(j) });
     }
     // partidas de uma paragem: as três primeiras levam cada uma das marcas, e o aviso vai por cima
@@ -89,6 +100,7 @@ async function abrir({ largura = 390, altura = 844, tema = 'claro' } = {}) {
   await p.waitForSelector('[data-teste="paragem-perto"]:visible', { timeout: 45000 });
   const fechar = p.locator('[data-teste="ponto-diario-fechar"]');
   if (await fechar.count()) await fechar.first().click({ timeout: 2000 }).catch(() => {});
+  if (!abrirParagem) return { ctx, p, erros };
   await p.locator('[data-teste="paragem-perto"]:visible').first().locator('h2').first().click({ timeout: 8000 });
   await p.waitForSelector('[data-teste="greve-partida"]:visible', { timeout: 20000 }).catch(() => {});
   return { ctx, p, erros };
@@ -182,6 +194,34 @@ for (const tema of ['escuro', 'ambar']) {
     ok(`[${tema}] sem erros na página`, erros.length === 0, erros.join(' | '));
   } catch (e) {
     ok(`[${tema}] o ecrã funcionou`, false, String(e).slice(0, 200));
+  }
+  await ctx.close();
+}
+
+// ---- cartões do Perto (27/11/2026: «não faz sentido aparecer Fórum Maia quando não vai até lá» e «quase nem se percebe»)
+modo.cartoes = true;
+for (const tema of ['claro', 'escuro', 'ambar']) {
+  const { ctx, p, erros } = await abrir({ tema, abrirParagem: false });
+  try {
+    await p.waitForSelector('[data-teste="paragem-perto"]:visible [data-teste="greve-partida"]', { timeout: 20000 }).catch(() => {});
+    const cartao = p.locator('[data-teste="paragem-perto"]:visible', { has: p.locator('[data-teste="greve-partida"]') }).first();
+    const linhas = await cartao.locator('[data-teste="partida-perto"]').allInnerTexts().catch(() => []);
+    const txt = linhas.map((x) => x.replace(/\s+/g, ' ').trim());
+    ok(`[cartões ${tema}] a partida que só vai até à Senhora da Hora mostra «Senhora da Hora» e não «Fórum Maia»`, txt.some((x) => /Senhora da Hora/.test(x) && /Não vai até Fórum Maia \(greve\)/.test(x)) && !txt.some((x) => /^\S+ Fórum Maia/.test(x)), txt.join(' | '));
+    ok(`[cartões ${tema}] as que se realizam vêm primeiro; a sem serviço vai para o fim`, txt.length >= 2 && !txt.slice(0, -1).some((x) => /Sem serviço \(greve\)/.test(x)), txt.join(' | '));
+    // etiqueta bem à vista: fundo de aviso (não transparente) e texto com contraste de pelo menos 4,5:1
+    const cores = await cartao.locator('[data-teste="greve-partida"]').first().evaluate((e) => {
+      const cs = getComputedStyle(e); return { fundo: cs.backgroundColor, cor: cs.color, peso: cs.fontWeight, tam: cs.fontSize };
+    });
+    const rgb = (x) => (x.match(/[\d.]+/g) || []).slice(0, 3).map(Number);
+    const lum = ([r, g, b]) => { const f = (v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; }; return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b); };
+    const [l1, l2] = [lum(rgb(cores.fundo)), lum(rgb(cores.cor))].sort((a, b) => b - a);
+    const contraste = (l1 + 0.05) / (l2 + 0.05);
+    ok(`[cartões ${tema}] etiqueta da greve com fundo de aviso e contraste ≥ 4,5:1`, !/rgba\(0, 0, 0, 0\)|transparent/.test(cores.fundo) && contraste >= 4.5 && Number(cores.peso) >= 600, `${JSON.stringify(cores)} contraste ${contraste.toFixed(1)}`);
+    await cartao.screenshot({ path: `${SAIDA}/greve-cartao-perto_390_${tema}.png` });
+    ok(`[cartões ${tema}] sem erros na página`, erros.length === 0, erros.join(' | '));
+  } catch (e) {
+    ok(`[cartões ${tema}] o ecrã funcionou`, false, String(e).slice(0, 200));
   }
   await ctx.close();
 }
