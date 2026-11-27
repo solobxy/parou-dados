@@ -155,7 +155,7 @@ jobs:
         working-directory: app
         run: |
           mkdir -p ../res
-          for t in pesquisa-locais cache-limitada cache-linhas-perto idioma-aparelho caminho-a-pe convite-instalar nomes-paragens ilhas fuso-ilhas horario-dia greves-avisos ttsl-fonte cidades-margens desenho-alternativo encaixe-desenho tml-alertas fontes-oficiais historico-arquivo contactos cp-greve-servicos relatorios greve-horario greves-pais ocorrencias-posicao cp-servicos-minimos plenarios avisos-tub avisos-servico-operadores avisos-nos-horarios favoritos-sentido greve-em-todas-as-listas avisos-ao-arrancar traducoes-avisos painel-fixo stcp-fantasmas; do
+          for t in pesquisa-locais cache-limitada cache-linhas-perto idioma-aparelho caminho-a-pe convite-instalar nomes-paragens ilhas fuso-ilhas horario-dia greves-avisos ttsl-fonte cidades-margens desenho-alternativo encaixe-desenho tml-alertas fontes-oficiais historico-arquivo contactos cp-greve-servicos relatorios greve-horario greves-pais ocorrencias-posicao cp-servicos-minimos plenarios avisos-tub avisos-servico-operadores avisos-nos-horarios favoritos-sentido greve-em-todas-as-listas avisos-ao-arrancar traducoes-avisos painel-fixo stcp-fantasmas cartaz-aviso; do
             echo "== $t"
             APP=$PWD node --import tsx ../auditoria/$t.mjs 2>&1 | grep -v "Experimental\|trace-warnings" | tee ../res/$t.txt | tail -40
           done
@@ -296,6 +296,14 @@ jobs:
         run: |
           mkdir -p ../res
           SAIDA=../res timeout 400 node greve-horario-ecra.mjs 2>&1 | tee ../res/greve-horario-ecra.txt | tail -40
+          exit ${PIPESTATUS[0]}
+
+      - name: Testar as imagens dos avisos do canal (desenhadas no browser)
+        continue-on-error: true
+        working-directory: auditoria
+        run: |
+          mkdir -p ../res
+          APP=$PWD/../app SAIDA=../res timeout 200 node cartaz-aviso-ecra.mjs 2>&1 | tee ../res/cartaz-aviso-ecra.txt | tail -40
           exit ${PIPESTATUS[0]}
 
       - name: Testar a versão nova com a app aberta (recarrega ao voltar à app)
