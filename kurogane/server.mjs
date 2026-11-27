@@ -41,7 +41,7 @@ const send = (c, o) => { if (c.dead) return; const b = Buffer.from(JSON.stringif
 const ARENA = makeArena({ send });
 const bcast = (o, pred = () => true) => { for (const c of players.values()) if (c.p && pred(c)) send(c, o); };
 const srv = http.createServer((req, res) => {
-  if (req.url === '/saude') { res.writeHead(200, { 'content-type': 'application/json', 'access-control-allow-origin': '*', 'cache-control': 'no-store' }); res.end(JSON.stringify({ ok: true, arena: ARENA.count(), arenaN: ARENA.counts(), jogadores: [...players.values()].filter(c => c.p).length, a_dormir: Object.keys(S.sleepers).length, mochilas: Object.keys(S.bags).length, clas: Object.keys(S.clans).length, zombies: S.w.zs.filter(z => z.st !== 3).length, caixas: Object.keys(S.w.ct).length, carros: Object.keys(S.w.cars).length, mapa: mapOk(), equipa: Object.keys(S.roles).length, admin_cod: !!ADMH })); return; }
+  if (req.url === '/saude') { res.writeHead(200, { 'content-type': 'application/json', 'access-control-allow-origin': '*', 'cache-control': 'no-store' }); res.end(JSON.stringify({ ok: true, arena: ARENA.count(), arenaN: ARENA.counts(), arenaB: ARENA.bots(), jogadores: [...players.values()].filter(c => c.p).length, a_dormir: Object.keys(S.sleepers).length, mochilas: Object.keys(S.bags).length, clas: Object.keys(S.clans).length, zombies: S.w.zs.filter(z => z.st !== 3).length, caixas: Object.keys(S.w.ct).length, carros: Object.keys(S.w.cars).length, mapa: mapOk(), equipa: Object.keys(S.roles).length, admin_cod: !!ADMH })); return; }
   res.writeHead(404); res.end();
 });
 srv.on('upgrade', (req, sock) => {

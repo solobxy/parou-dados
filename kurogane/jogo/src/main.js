@@ -16,7 +16,7 @@ import { initUI } from './ui.js';
 import { makeBase } from './base.js';
 import { makeNav } from './nav.js';
 import { makeNet } from './net.js';
-import { arenaSpawns, ARENA_KITS, inArena } from './arena.js';
+import { ARENA, arenaSpawns, ARENA_KITS, inArena } from './arena.js';
 import { makeCars } from './cars.js';
 import { makeVM } from './vm.js';
 import { track, push, sample } from './interp.js';
@@ -1357,6 +1357,8 @@ async function boot() {
   G.dbgSpawn = () => spawnPoint(false);
   G.wallAhead = (x, z, yaw, lv) => ray(x, z, Math.sin(yaw), Math.cos(yaw), 1.0, null, 's', lv || 0, 1.2);
   G.dbgRay = (sx, sy) => { const rc = new THREE.Raycaster(), v = new THREE.Vector2(sx / innerWidth * 2 - 1, -(sy / innerHeight) * 2 + 1); rc.setFromCamera(v, cam); const h = rc.intersectObjects(scene.children, true).slice(0, 3); return h.map(o => [o.object.name || o.object.type, +o.distance.toFixed(2), o.object.parent && (o.object.parent.name || o.object.parent.type)]); };
+  G.dbgArenaCols = () => { const A = ARENA, ins = (x0, z0, x1, z1) => x1 > A.x - A.hw - 2 && x0 < A.x + A.hw + 2 && z1 > A.z - A.hd - 2 && z0 < A.z + A.hd + 2, f = v => +v.toFixed(3); /* colisões da arena para os bots do servidor */
+    return { rects: W.rects.filter(r => ins(r.x0, r.z0, r.x1, r.z1)).map(r => [f(r.x0), f(r.z0), f(r.x1), f(r.z1), f(r.h), r.lv | 0, r.k, r.door ? 1 : 0, r.win ? 1 : 0]), circ: W.circles.filter(c => ins(c.x, c.z, c.x, c.z)).map(c => [f(c.x), f(c.z), f(c.r), c.k]), steps: W.steps.filter(s => ins(s.x0, s.z0, s.x1, s.z1)).map(s => [f(s.x0), f(s.z0), f(s.x1), f(s.z1), f(s.y)]) }; };
   G.dbg = { vis: () => [+(VIS.ms || 0).toFixed(2), VIS.n || 0], pick: (x, y) => { const r = pick(x, y, 1); return [r.zone || null, !!r.pl, +r.point.x.toFixed(2), +r.point.y.toFixed(2), +r.point.z.toFixed(2)]; }, plHit: (a, b) => plHit(new THREE.Vector3(...a), new THREE.Vector3(...b), true), cam: () => [cam.position.x, cam.position.y, cam.position.z], cols: (x, z, r) => { const out = []; near(x - r, z - r, x + r, z + r, R => { out.push(['r', R.k, +R.x0.toFixed(2), +R.z0.toFixed(2), +R.x1.toFixed(2), +R.z1.toFixed(2), R.h, R.yb || 0]); }, C => { out.push(['c', +C.x.toFixed(2), +C.z.toFixed(2), C.r, C.node ? C.node.kind + ':' + C.node.alive : (C.k || C.kind || '?'), C.on]); }); return out; }, scr: (x, y, z) => { const q = toScreen(new THREE.Vector3(x, y, z)); return [q.x, q.y, q.ok]; }, shoulder: () => { const p = G.p; return [p.x + Math.sin(p.yaw) * 0.15, p.y + 1.35, p.z + Math.cos(p.yaw) * 0.15]; }, aimA: () => [AIM.A.x, AIM.A.y, AIM.A.z, AIM.zone, !!AIM.lock], wallHit: (a, b) => wallHit(new THREE.Vector3(...a), new THREE.Vector3(...b)), item: (k, n) => mkItem(k, n), deplete: n => { n.hp = 0; n.alive = false; n.col.on = false; n.respawn = G.t + 180; hideNode(n); if (G.net.on && n.key) G.net.node(n.key); }, nodes: () => nodes, fire: () => { const it = held(), g = it && ITEMS[it.k].gun; return g ? fire(it, g) : false; }, canSee: (a, b) => canSee(a, b), clearShot: z => clearShot(z), zoneHit: (z, P, Q, k) => zoneHit(z, P, Q, k), horde: () => horde, hurt: (d, c) => hurtPlayer(d, c || 'zombie'), hitZ: (z, zone, k) => { const B = ITEMS[k].bal; hitZombie(z, zone, { dmg: B.dmg, pen: B.pen, pel: B.pel, v: new THREE.Vector3(B.v, 0, 0), v0: B.v, dist: 10, fall: B.fall || 1 }, { x: z.x, y: 1.3, z: z.z }); } }; G.V3 = THREE.Vector3; G.M4 = THREE.Matrix4; G.RC = new THREE.Raycaster();
   const lockable = z => { if (!inView(z) || !G.p) return false; if (z._lkT > G.t) return z._lk; z._lkT = G.t + 0.12; return (z._lk = canSee(G.p, z) && clearShot(z)); };
   const bestTarget = () => { const p = G.p, d = heldDef(), range = d.gun ? Math.min(d.gun.rng, 40) : 3; let best = null, bs = 1e9; for (const z of G.zs) { if (!inView(z)) continue; const dd = Math.hypot(z.x - p.x, z.z - p.z); if (dd > range) continue; const a = Math.abs(angDiff(Math.atan2(z.x - p.x, z.z - p.z), p.yaw)); if (dd > 3 && a > 1.25) continue; if (!lockable(z)) continue; const sc = dd + a * 3; if (sc < bs) { bs = sc; best = z; } } return best; };
@@ -1726,7 +1728,7 @@ async function boot() {
       if (best && best.table === 'bomba' && held() && held().k === 'galaoV') best = { label: 'Encher o galão', pumpFill: true, x: best.x, z: best.z };
       if (G.car) best = { label: (G.car.alt || 0) > 0.8 ? 'Aterra para sair' : VT[G.car.k].two ? 'Descer' : 'Sair', carExit: true, x: p.x, z: p.z };
       if (G.car && G.carSeat === 0 && VT[G.car.k].tank && Math.abs(G.car.v) < 0.5 && G.car.fuel < VT[G.car.k].tank - 1 && W.containers.some(c => c.table === 'bomba' && Math.hypot(c.x - G.car.x, c.z - G.car.z) < 6)) best = { label: 'Abastecer na bomba', carPump: true, x: p.x, z: p.z };
-      else if (p.alive && !p.climb && !p.lv) { const c = G.cars.nearest(p); if (c) { const cd = Math.hypot(c.x - p.x, c.z - p.z) - 1.2, h = held();
+      else if (!G.car && p.alive && !p.climb && !p.lv) { const c = G.cars.nearest(p); if (c) { const cd = Math.hypot(c.x - p.x, c.z - p.z) - 1.2, h = held();
           const T = VT[c.k], nm = T.n.toLowerCase();
           if (!best || cd < bd) best = h && h.k === 'gasolina' && T.tank ? { label: 'Pôr gasolina (' + Math.round(c.fuel) + ' de ' + T.tank + ' L)', car: c, fuel: true, x: c.x, z: c.z } : G.cars.seatFree(c) < 0 ? { label: 'Não há lugar', car: c, full: true, x: c.x, z: c.z } : { label: c.seats[0] ? (T.two ? 'Ir à pendura' : 'Entrar (passageiro)') : c.k === 'bike' ? 'Pedalar' : c.k === 'moto' ? 'Conduzir a mota' : 'Conduzir · ' + nm, car: c, x: c.x, z: c.z }; } }
       // comerciante a menos de 2,6 m
@@ -1815,7 +1817,18 @@ async function boot() {
     Body.cam = cam.position; Body.nearD = (G.fp || FPF.on) ? 22 : 45; // corpos longe: versão leve
     if (G.p) for (const N of npcs) { const dx = G.p.x - N.T.x, dz = G.p.z - N.T.z, d = Math.hypot(dx, dz); if (d > 90) { N.b.root.visible = false; continue; } N.b.root.visible = true; const want = d < 7 ? Math.atan2(dx, dz) : N.T.yaw; N.yaw += angDiff(want, N.yaw) * Math.min(1, dt * 3); N.b.root.rotation.y = N.yaw; N.b.pose(dt, 0, 0); if (G.ui.trOpenNow() && G.ui.trWho && G.ui.trWho() === N.T && d > TRADE_R + 2) G.ui.trClose(); }
     // câmara e sol
-    if ((G.fp || FPF.on) && p) {
+    if (G.car && G.carSeat === 0 && p && p.alive && !G.dbgTopCar) { // a conduzir: câmara atrás do carro, perto, que acompanha as curvas devagar
+      vm.set('', {}, myLook); const c = G.car, T = VT[c.k], L = T.len || 4, fly = !!T.fly, alt = c.alt || 0;
+      if (PROJ.mode !== 'chase') { PROJ.mode = 'chase'; PROJ.dirty = true; G.chY = c.yaw; }
+      cam.near = 0.2; cam.far = 520; cam.aspect = innerWidth / innerHeight; cam.fov = innerHeight > innerWidth ? 72 : 60; cam.updateProjectionMatrix();
+      const back = c.v < -1.5 ? Math.PI : 0; G.chY += angDiff(c.yaw + back, G.chY) * Math.min(1, dt * (3.8 + Math.min(3, Math.abs(c.v) / 5)));
+      const sv = Math.abs(c.v), want = (fly ? L * 1.6 + 4 : L * 0.9 + 3.2) + Math.min(1.4, sv / 15), h = (fly ? 3.4 : 2.35 + L * 0.08) + alt + Math.min(0.4, sv / 35);
+      const bx = -Math.sin(G.chY), bz = -Math.cos(G.chY), gy = c.y || 0; let dist = want;
+      { const free = ray(c.x, c.z, bx, bz, want + 0.4, null, 's', 0, Math.max(1.2, h - 0.4)); if (free < want + 0.4) dist = Math.max(L * 0.55, free - 0.4); } // parede atrás: a câmara chega-se ao carro
+      G.chD = G.chD ?? dist; G.chD += (dist - G.chD) * Math.min(1, dt * (dist < G.chD ? 12 : 3));
+      cam.position.set(c.x + bx * G.chD, gy + h, c.z + bz * G.chD); cam.lookAt(c.x - bx * 3.2, gy + 0.9 + alt, c.z - bz * 3.2);
+      if (G.shakeT > 0) { G.shakeT -= dt; const a = Math.min(1, G.shakeT) * 0.25; cam.position.x += (Math.random() - 0.5) * a; cam.position.y += (Math.random() - 0.5) * a * 0.5; }
+    } else if ((G.fp || FPF.on) && p) {
       cam.position.copy(AIM.eye); cam.lookAt(_c.copy(AIM.eye).add(AIM.dir)); if (AIM.lean) cam.rotateZ(-AIM.lean * 0.12);
       // a luneta mostra sempre o mesmo ângulo, em qualquer ecrã; o centro fica no meio da zona livre. Sem apontar (vista livre): campo largo, centro no meio do ecrã
       const a = FPF.on ? AIM.adsT * AIM.adsT * (3 - 2 * AIM.adsT) : 1, scI = scopeItem(), fa = a * (scI && scI.mag >= 2 ? 1 : 0); FPF.fa = FPF.on ? fa : 1;
@@ -1837,7 +1850,7 @@ async function boot() {
       cam.position.copy(v3b).add(camOff((1 - 0.72 * e) * (G.car ? 1 + 0.35 * Math.min(1, Math.abs(G.car.v) / 17) + (G.car.alt || 0) / 26 : 1))); if (G.shakeT > 0) { G.shakeT -= dt; const a = Math.min(1, G.shakeT) * 0.9; cam.position.x += (Math.random() - 0.5) * a; cam.position.z += (Math.random() - 0.5) * a; cam.position.y += (Math.random() - 0.5) * a * 0.5; } cam.lookAt(v3b.x, v3b.y + 1.0, v3b.z);
     }
     // troca de vista: da câmara de antes para a de agora, em ~0,34 s (posição, rotação e projeção)
-    if (FPF.t < 1 && p) { const e = FPF.t * FPF.t * (3 - 2 * FPF.t); cam.position.lerpVectors(FPF.P, cam.position, e); _qF.copy(cam.quaternion); cam.quaternion.copy(FPF.Q).slerp(_qF, e); const A0 = FPF.M.elements, B0 = cam.projectionMatrix.elements; for (let i = 0; i < 16; i++) B0[i] = A0[i] + (B0[i] - A0[i]) * e; cam.projectionMatrixInverse.copy(cam.projectionMatrix).invert(); PROJ.dirty = true; }
+    if (FPF.t < 1 && p && PROJ.mode !== 'chase') { const e = FPF.t * FPF.t * (3 - 2 * FPF.t); cam.position.lerpVectors(FPF.P, cam.position, e); _qF.copy(cam.quaternion); cam.quaternion.copy(FPF.Q).slerp(_qF, e); const A0 = FPF.M.elements, B0 = cam.projectionMatrix.elements; for (let i = 0; i < 16; i++) B0[i] = A0[i] + (B0[i] - A0[i]) * e; cam.projectionMatrixInverse.copy(cam.projectionMatrix).invert(); PROJ.dirty = true; }
     cam.updateMatrixWorld();
     { const fa = G.fp ? FPF.fa ?? 1 : 0; scene.fog.near = G.fp ? 40 + 260 * fa : 62; scene.fog.far = G.fp ? 138 + 712 * fa : 150; } // vista livre: neblina aos ~140 m (poupa o telemóvel: o que está para lá não se desenha)
     { const sc0 = G.fp ? _c.copy(AIM.eye).addScaledVector(AIM.dir, Math.min(AIM.dist || 30, 60)) : camT; const tx = Math.round(sc0.x / 0.5) * 0.5, tz = Math.round(sc0.z / 0.5) * 0.5, ty = G.fp ? 0 : camT.y;

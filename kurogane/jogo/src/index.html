@@ -849,6 +849,17 @@ body:not(.touch) .hb{border-radius:21px}
  body.touch #tProne{right:calc(74px + var(--sr));bottom:calc(160px + var(--sb))}
 }
 @media (orientation:landscape) and (max-height:360px){body.touch #tUse{bottom:calc(84px + var(--sb))}body.touch #tReload{bottom:calc(84px + var(--sb))}}
+
+/* condução no telemóvel: virar à esquerda e à direita no polegar esquerdo, acelerar e travar no direito (como nos jogos de carros), longe dos cantos e maiores; faróis no botão Luz */
+body.driving.touch #tJump,body.driving.touch #tFire,body.driving.touch #tCrouch,body.driving.touch #tProne,body.driving.touch #tSprint,body.driving.touch #tAds,body.driving.touch #tReload,body.driving.touch #tLower,body.driving.touch #tBreath{display:none!important}
+body.driving.touch #tLight{display:flex}body.driving #vit{bottom:calc(74px + var(--sb))}
+.dv{--sz:64px}.dv svg{width:26px;height:26px}
+body.driving #dL{left:calc(34px + var(--sl));right:auto;bottom:calc(30px + var(--sb))}
+body.driving #dR{left:calc(118px + var(--sl));right:auto;bottom:calc(30px + var(--sb))}
+body.driving #dUp{right:calc(34px + var(--sr));left:auto;bottom:calc(64px + var(--sb));--sz:76px}
+body.driving #dDn{right:calc(124px + var(--sr));left:auto;bottom:calc(30px + var(--sb))}
+body.driving #dHov{right:calc(40px + var(--sr));bottom:calc(158px + var(--sb))}
+@media (orientation:portrait){body.driving #dL{bottom:calc(120px + var(--sb))}body.driving #dR{bottom:calc(120px + var(--sb))}body.driving #dUp{bottom:calc(150px + var(--sb))}body.driving #dDn{bottom:calc(120px + var(--sb))}body.driving #dHov{bottom:calc(244px + var(--sb))}body.driving.touch #tLight{bottom:calc(206px + var(--sb))}}
 </style>
 </head>
 <body>
@@ -922,7 +933,7 @@ body:not(.touch) .hb{border-radius:21px}
   <nav class="menu"><button class="mi pri" id="sCont" hidden><b>Continuar</b><em>Voltas onde ficaste</em></button><button class="mi pri" id="sPlay"><b>Survival</b><em>Continuas onde ficaste, ou começas perto de uma vila</em></button><button class="mi" id="sArena"><b>Arena</b><em>PvP em Tóquio · Vermelha contra Azul · 5 kits</em></button><button class="mi" id="sSet"><b>Definições</b><em>Controlos, imagem e som</em></button></nav>
   <div class="onl" id="sOnl" role="status"><i class="dot" aria-hidden="true"></i><span><b>Servidor</b><em id="sOnT">A ver quem está a jogar…</em></span></div>
   <div class="keys" id="sKeys"></div>
-  <div class="foot">Protótipo 0.54 · um servidor para todos · quem sai fica a dormir no mundo</div>
+  <div class="foot">Protótipo 0.55 · um servidor para todos · quem sai fica a dormir no mundo</div>
 </div><button id="sMus" aria-label="Música do menu"><span class="on">{{volume-2}}</span><span class="off">{{volume-x}}</span></button><a class="credit" href="https://dinissousa.pt" target="_blank" rel="noopener">feito por dinissousa.pt</a></div>
 <div id="arw" class="ov" hidden></div>
 <div id="pfm" class="ov" hidden><div class="pfbox"><div class="pfh"><b id="pfT"></b><button class="close" id="pfX" aria-label="Fechar">{{x}}</button></div><div id="pfB" class="pfb"></div></div></div>
