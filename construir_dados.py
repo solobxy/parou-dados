@@ -158,6 +158,28 @@ SEED_FEEDS = [
     # Pedido de GTFS feito ao operador a 24/11/2026; quando houver ficheiro oficial, passa a ser esse.
     {"id": "barraqueiro_oeste", "operator_name": "Barraqueiro Oeste (TUT Torres Vedras)", "mode": "Autocarro",
      "formato": "pdf_barraqueiro", "url": barraqueiro_oeste.PAGINA},
+    # Redes intermunicipais publicadas no Ponto de Acesso Nacional (NAP Portugal, nap-portugal.imt-ip.pt), verificadas a
+    # 27/11/2026. Em ficheiros com a rede de paragens da região inteira, «agencias» deixa só as paragens que as linhas usam.
+    {"id": "sit_coimbra", "operator_name": "SIT Metropolitano (Região de Coimbra)", "mode": "Autocarro",
+     "url": "https://gtfs.itbusway.eu/GTFS_SIT_Metropolitano.zip",
+     "mirror": "https://busway-cira.pt/it-stock-manager/GTFS/GTFS_SIT_Metropolitano.zip"},
+    {"id": "busway_aveiro", "operator_name": "Busway (Região de Aveiro)", "mode": "Autocarro",
+     "url": "https://gtfs.itbusway.eu/GTFS_CIRA.zip",
+     "mirror": "https://busway-cira.pt/it-stock-manager/GTFS/GTFS_CIRA.zip"},
+    {"id": "ave_mobilidade", "operator_name": "Ave Mobilidade (CIM do Ave)", "mode": "Autocarro", "agencias": ["43"],
+     "ckan_apis": ["https://map.mobility.ubiwhere.com/api/3/action/package_show?id=transporte-publico-cim-ave"],
+     "url": "https://minhoaccesspoint.eu/dataset/d4d6e951-1fb5-45f7-a36f-5484cc79a95d/resource/6c0214b5-cd48-40dd-b62e-47fcacce2af9/download/gtfs_ave_v9.13_20261103-2.zip"},
+    {"id": "mov_cavado", "operator_name": "Mov Cávado (CIM do Cávado)", "mode": "Autocarro", "agencias": ["79"],
+     "url": "https://minhoaccesspoint.eu/dataset/332cc43a-5567-4521-88aa-6a0fc8d11eaa/resource/b42515d8-f6c6-44dd-bba4-1756d675340a/download/gtfs_cav_9.4.2_20251120_l1.zip"},
+    {"id": "transdev_cavado", "operator_name": "Transdev & Avic Cávado (CIM do Cávado)", "mode": "Autocarro", "agencias": ["80"],
+     "url": "https://minhoaccesspoint.eu/dataset/332cc43a-5567-4521-88aa-6a0fc8d11eaa/resource/655b4bec-3a0b-45ee-9805-89c0d9cacaab/download/gtfs_cav_v9.4.1_20251120_l2.zip"},
+    {"id": "flaviamobil", "operator_name": "Flaviamobil (Alto Tâmega e Barroso)", "mode": "Autocarro",
+     "url": "https://go.tmlmobilidade.pt/hub/api/v1/QCY2N/plans/gtfs"},
+    {"id": "cim_ttm", "operator_name": "Terras de Trás-os-Montes (rede regular)", "mode": "Autocarro",
+     "url": "https://transporte-regular.cim-ttm.pt/MobilityHub.Api/api/Gtfs"},
+    # Tâmega e Sousa: o ficheiro traz também os comboios da CP (agência 1094_CP), que já vêm da CP: ficam só os autocarros
+    {"id": "tamega_sousa", "operator_name": "Tâmega e Sousa (Transdev e outros)", "mode": "Autocarro", "agencias": ["1", "2", "3", "4"],
+     "url": "https://transportes.cimtamegaesousa.pt/Servico/services/consultas.svc/Feed/OpenGTFS"},
 ]
 
 # Feeds do catalogo que NAO se carregam automaticamente (ja estao acima,
@@ -169,7 +191,7 @@ DISCOVERY_SKIP = [
     "guimabus", "tuba", "mobiave", "smtuc", "transportes urbanos de coimbra", "vamus",
     "proximo", "giro", "sobe e desce", "horarios do funchal", "flixbus",
     "metropolitanos de lisboa", "metro mondego", "rodoeste", "rede siga", "companhia de autocarros da madeira",
-    "barraqueiro",
+    "barraqueiro", "busway", "sit metropolitano", "ave mobilidade", "cavado", "flaviamobil", "tras-os-montes", "tamega",
 ]
 
 # Só se guardam viagens que funcionam entre ontem e daqui a WINDOW_DAYS dias
