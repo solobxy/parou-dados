@@ -230,11 +230,11 @@ export function buildWorld(scene, mats, A, opt = {}) {
         b.box(1.25, 0.05, 0.18, 0, 0.03, 0, 0xb8bcbc, { mat: 'm' });
         if (on) b.cyl(0.022, 0.022, 1.15, 6, 0, -0.01, 0, TUBE, { mat: 'lit', rz: Math.PI / 2 });
         else b.cyl(0.022, 0.022, 1.15, 6, 0.3, -0.32, 0, 0x8a908a, { rz: Math.PI / 2 - 0.55 }); // partida: pendurada de um lado
-        b.pop(); C.lamps.push({ x, y: yb + h - drop - 0.1, z, lv: L, s: st, k: 't' }); }
+        b.pop(); C.lamps.push({ x, y: yb + h - drop - 0.1, z, lv: L, s: st, k: 't', cy: yb + h, fy: yb }); }
       else { const drop = 0.35 + h2 * 0.35; b.push(x, h, z, 0);
         b.cyl(0.05, 0.05, 0.03, 8, 0, -0.015, 0, 0xd8d4ca); b.box(0.008, drop, 0.008, 0, -drop / 2, 0, 0x1d1d1d); b.cyl(0.02, 0.026, 0.06, 8, 0, -drop - 0.02, 0, 0x2a2b2c);
         b.sph(0.045, 0, -drop - 0.075, 0, on ? BULB : 0x6a6a60, { mat: on ? 'lit' : 'v', ws: 8, hs: 6 });
-        b.pop(); C.lamps.push({ x, y: yb + h - drop - 0.1, z, lv: L, s: st, k: 'b' }); } } };
+        b.pop(); C.lamps.push({ x, y: yb + h - drop - 0.1, z, lv: L, s: st, k: 'b', cy: yb + h, fy: yb }); } } };
   const shell = (x0, z0, x1, z1, o = {}) => {
     const id = 'e' + (eid++), h = o.h ?? 3.4, t = 0.22, wall = o.wall ?? 0xd9d4ca, cutY = 1.1, trim = o.trim ?? 0x6a6e72, doorC = o.doorC ?? 0x6a4a32;
     const n = o.floors ?? 1, fh = h + 0.3;
@@ -336,6 +336,7 @@ export function buildWorld(scene, mats, A, opt = {}) {
       b.box(x1 - x0 + 0.1, 0.12, z1 - z0 + 0.1, cx, h + 0.06, cz, wall);
     } else {
       b.box(x1 - x0 + 0.2, 0.28, z1 - z0 + 0.2, (x0 + x1) / 2, h + 0.14, (z0 + z1) / 2, o.roofC ?? 0x8f8b84);
+      b.box(x1 - x0 - 2 * t, 0.02, z1 - z0 - 2 * t, (x0 + x1) / 2, h - 0.01, (z0 + z1) / 2, o.ceilC ?? 0xdcd8d0); // teto por dentro (estuque claro; antes via-se a cor escura do telhado)
       if (!o.upper) { C.roofY = top + 0.28; if (x1 - x0 > 7) roofKit(x0, z0, x1, z1, h + 0.28, { lv: n, yb: C.roofY }); } // telhado plano: dá para estar lá em cima (o helicóptero aterra)
     }
     if (o.upper) {

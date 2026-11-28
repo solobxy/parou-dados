@@ -60,7 +60,7 @@ async function boot() {
   const FOG = 0xb7a991; scene.background = new THREE.Color(FOG); scene.fog = new THREE.Fog(FOG, 62, 150);
   const SUNDIR = new THREE.Vector3(-58, 40, 30).normalize();
   const SKY = makeSky(); scene.add(SKY.mesh); const SUNV = new THREE.Vector3(); // céu com sol, lua, estrelas e nuvens
-  const hemi = new THREE.HemisphereLight(0xa8bde0, 0x5b4a3a, 0.62); scene.add(hemi);
+  const hemi = new THREE.HemisphereLight(0xa8bde0, 0x5b4a3a, 0.62), _hgIn = new THREE.Color(0xa89880); scene.add(hemi);
   const sun = new THREE.DirectionalLight(0xffc896, 3.0); sun.castShadow = true;
   const SH = 24, SMAP = TOUCH ? 1024 : 2048; sun.shadow.mapSize.set(SMAP, SMAP);
   Object.assign(sun.shadow.camera, { left: -SH, right: SH, top: SH, bottom: -SH, near: 1, far: 160 }); sun.shadow.camera.updateProjectionMatrix();
@@ -583,6 +583,15 @@ float terH(vec2 p) { if (uTerP.w < 0.5) return 0.0; vec2 f = clamp((p + uTerP.x)
   // manchas de luz dos candeeiros do mapa (uma só malha com todas)
   let lampPools = null; { const L = W.lamps; if (L.length) { const m = new THREE.InstancedMesh(new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ map: G.poolTex, color: 0xffc27a, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending }), L.length); const o = new THREE.Object3D();
     L.forEach((l, i) => { const r = l[1] > 9 ? 40 : 13; o.position.set(l[0], 0.06, l[2]); o.scale.set(r, 1, r); o.updateMatrix(); m.setMatrixAt(i, o.matrix); }); m.renderOrder = 3; m.frustumCulled = false; scene.add(m); lampPools = m; } }
+  // lâmpadas do teto dos prédios: todas as acesas brilham (halo no teto e mancha de luz no chão), numa malha só; as 3 mais perto também dão luz a sério
+  const inGlow = (() => { const mk = rx => { const m = new THREE.InstancedMesh(new THREE.PlaneGeometry(1, 1).rotateX(rx), new THREE.MeshBasicMaterial({ map: G.poolTex, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }), 360); m.count = 0; m.visible = false; m.renderOrder = 3; m.frustumCulled = false; m.setColorAt(0, new THREE.Color()); scene.add(m); return m; }; return { c: mk(Math.PI / 2), f: mk(-Math.PI / 2), o: new THREE.Object3D(), k: new THREE.Color() }; })();
+  const inGlowFill = (cx, cz, IN, ilv) => { const { c: mc, f: mf, o, k } = inGlow; let n = 0;
+    for (const c of W.cuts) { if (!c.shell || !c.lamps || !c.lamps.length) continue; if (IN ? c !== IN : cx < c.x0 - 60 || cx > c.x1 + 60 || cz < c.z0 - 60 || cz > c.z1 + 60) continue; const lv = IN ? ilv : 0;
+      for (const l of c.lamps) { if (l.s === 'off' || l.lv !== lv || l.cy == null || n >= 360) continue; const t = l.k === 't'; k.setRGB(t ? 0.62 : 0.85, t ? 0.78 : 0.6, t ? 0.68 : 0.34);
+        o.position.set(l.x, l.cy - 0.06, l.z); o.scale.set(t ? 3.6 : 2.8, 1, t ? 3.6 : 2.8); o.updateMatrix(); mc.setMatrixAt(n, o.matrix); mc.setColorAt(n, k);
+        o.position.set(l.x, l.fy + 0.06, l.z); o.scale.set(t ? 5 : 4, 1, t ? 5 : 4); o.updateMatrix(); mf.setMatrixAt(n, o.matrix); mf.setColorAt(n, k); n++; } }
+    for (const m of [mc, mf]) { m.count = n; m.visible = n > 0; m.instanceMatrix.needsUpdate = true; m.instanceColor.needsUpdate = true; } };
+  G.dbgInGlow = () => inGlow.c.count; /* testes */
   G.base = makeBase({ scene, W, G, audio, addRect, removeRect, visDirty, inCity, toast: m => G.ui && G.ui.toast(m) });
   G.doorAt = doorAt;
   const newPlayer = (x, z) => ({ x, z, y: TER.at(x, z) + 0.03, lv: 0, h: 0, vy: 0, base: 0, onGround: true, climb: null, root: Math.atan2(-x, -z), aim: Math.atan2(-x, -z), vx: 0, vz: 0, yaw: Math.atan2(-x, -z), hp: 100, food: 82, water: 78, stam: 100, sk: { res: 0, mira: 0, rec: 0 }, bleed: 0, alive: true, cd: 0, swing: -1, swingHit: false, recoil: 0, reload: 0, use: null, kills: 0, born: G.t, mv: 0, hurtT: 0, sprint: false, cause: '' });
@@ -1983,7 +1992,7 @@ float terH(vec2 p) { if (uTerP.w < 0.5) return 0.0; vec2 f = clamp((p + uTerP.x)
       const nt = 1 - D;
       // óculos de visão noturna: ligam sozinhos ao escurecer (mais luz e tudo em verde)
       { const nv = p && p.alive && G.inv && G.inv.eq.eyes && !G.nvOff ? Math.max(0, Math.min(1, (nt - 0.3) / 0.35)) : 0; if ((nv > 0) !== ((G.nv || 0) > 0) && G.playing) audio.play(nv > 0 ? 'nv-liga' : 'nv-desliga', 0.85); G.nv = nv; /* óculos de visão noturna: clique e assobio a ligar/desligar */
-        G.eyeIn = (G.eyeIn || 0) + ((G.inside ? 1 : 0) - (G.eyeIn || 0)) * Math.min(1, dt * 1.2); renderer.toneMappingExposure *= 1 + 0.28 * G.eyeIn; hemi.intensity *= 1 + 0.35 * G.eyeIn; // dentro de casa os olhos habituam-se
+        G.eyeIn = (G.eyeIn || 0) + ((G.inside ? 1 : 0) - (G.eyeIn || 0)) * Math.min(1, dt * 1.2); renderer.toneMappingExposure *= 1 + 0.28 * G.eyeIn; hemi.intensity *= 1 + 0.35 * G.eyeIn; hemi.groundColor.setHex(0x5b4a3a).lerp(_hgIn, 0.55 * G.eyeIn); /* dentro, os tetos recebem a luz que bate no chão (antes ficavam pretos) */ // dentro de casa os olhos habituam-se
         if (nv > 0) { hemi.intensity += 1.3 * nv; scene.environmentIntensity += 0.35 * nv; renderer.toneMappingExposure += 0.75 * nv; _fc.lerp(_rc.setRGB(0.15, 0.19, 0.16), 0.6 * nv); scene.fog.color.copy(_fc); scene.background.copy(_fc); }
         const on = nv > 0.5; if (on !== !!G.nvOn) { G.nvOn = on; renderer.domElement.classList.toggle('nvg', on); if (on && G.playing) G.ui.toast('Visão noturna ligada'); } }
       if (p && G.playing && p.alive) {
@@ -1999,6 +2008,7 @@ float terH(vec2 p) { if (uTerP.w < 0.5) return 0.0; vec2 f = clamp((p + uTerP.x)
       if (G.lampT <= 0) { G.lampT = 0.5; const cx = camT.x, cz = camT.z; const bl = G.base.lights().map(l => [l, (l[0] - cx) ** 2 + (l[2] - cz) ** 2]).filter(a => a[1] < 1600).sort((a, b) => a[1] - b[1]);
         baseL.forEach((L, i) => { const q = bl[i]; if (q) { L.position.set(q[0][0], q[0][1], q[0][2]); L.userData.on = 1; L.userData.fire = q[0].fire; } else L.userData.on = 0; });
         const IN = G.inside, ilv = p.st && p.st.b === IN ? p.st.lv : (p.lv || 0), il = IN && IN.lamps ? IN.lamps.filter(l => l.lv === ilv && l.s !== 'off').map(l => [l, (l.x - p.x) ** 2 + (l.z - p.z) ** 2]).sort((a, b) => a[1] - b[1]).slice(0, lampL.length) : [];
+        inGlowFill(cx, cz, IN, ilv);
         if (!IN && p.alive) { for (const c of W.cuts) { if (!c.shell || !c.lamps || !c.lamps.length || p.x < c.x0 - 14 || p.x > c.x1 + 14 || p.z < c.z0 - 14 || p.z > c.z1 + 14) continue; for (const l of c.lamps) if (l.s !== 'off' && l.lv === (p.lv || 0)) { const d = (l.x - p.x) ** 2 + (l.z - p.z) ** 2; if (d < 196) il.push([l, d]); } } il.sort((a, b) => a[1] - b[1]); il.length = Math.min(il.length, 2); } // de fora também se veem as casas por dentro (as 2 lâmpadas mais perto)
         { const nS = IN ? 0 : lampL.length - il.length, near3 = nS > 0 ? W.lamps.concat(bl.slice(baseL.length).map(a => a[0])).map(l => [l, (l[0] - cx) ** 2 + (l[2] - cz) ** 2]).filter(a => a[1] < 1600).sort((a, b) => a[1] - b[1]).slice(0, nS) : [];
           lampL.forEach((L, i) => { if (i < il.length) { const q = il[i]; L.userData.ind = 1; L.position.set(q[0].x, q[0].y, q[0].z); L.userData.on = 1; L.userData.lk = q[0]; return; } // lâmpadas do teto (dentro: as do teu piso; fora: as das casas mesmo ao lado)
@@ -2009,7 +2019,7 @@ float terH(vec2 p) { if (uTerP.w < 0.5) return 0.0; vec2 f = clamp((p + uTerP.x)
           L.color.setHex(tube ? 0xcfe8c8 : 0xffa860); L.intensity = u.on ? (tube ? 7 : 5.5) * f * (0.75 + 0.25 * nt) : 0; L.distance = tube ? 9 : 7.5; L.decay = 1.7; }
         else { L.color.setHex(0xffc27a); L.decay = 1.6; L.intensity = u.on ? nt * (u.big ? 200 : 26) : 0; L.distance = u.big ? 48 : u.base ? 4 : 20; } });
       { const shOn = renderer.shadowMap.enabled; baseL.forEach((L, i) => { const f = L.userData.fire ? 0.85 + 0.1 * Math.sin(G.t * 11 + i) + 0.06 * Math.sin(G.t * 23.7 + i * 2) : 1; L.intensity = L.userData.on ? (L.userData.fire ? 0.1 + 0.9 * nt : 0.35 + 0.65 * nt) * 16 * f * (L.userData.fire || 1) : 0; L.color.setHex(L.userData.fire ? 0xff8a3a : 0xffc27a); L.distance = shOn ? (L.userData.fire ? 6.5 : 9) : (L.userData.fire ? 2.4 : 3); L.castShadow = shOn; L.shadow.autoUpdate = L.intensity > 0; }); torch.shadow.autoUpdate = torch.intensity > 0; } // sem sombras: alcance curto para não iluminar o lado de fora; as sombras só se calculam com a luz acesa (poupa o telemóvel)
-      G.base.night(nt); if (lampPools) lampPools.material.opacity = nt * 0.5;
+      G.base.night(nt); if (lampPools) lampPools.material.opacity = nt * 0.5; inGlow.c.material.opacity = 0.9; inGlow.f.material.opacity = 0.3 + 0.35 * nt;
       G.ambT = (G.ambT || 0) - dt; if (G.ambT <= 0) { G.ambT = 0.5; audio.ambience(G.playing && p && p.alive ? D : 0, !!G.inside || !!G.car, 0.25 + 0.5 * (G.rain || 0)); } // pássaros de dia, grilos à noite, vento
     }
     // os zombies de pisos que não estás a ver não aparecem (a não ser que se vejam pelas escadas)

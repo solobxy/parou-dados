@@ -1,11 +1,9 @@
-module.exports = async (page, shot) => {
+// imagem limpa das novidades: terminal do aeroporto com as luzes acesas, sem o HUD
+module.exports = async (page) => {
   const ev = (f, a) => page.evaluate(f, a), W = ms => page.waitForTimeout(ms);
-  await ev(() => { G.showMenu(); document.getElementById('sNews').click(); }); await W(800);
-  const r = await ev(() => { const L = document.querySelector('.nw-list'), D = document.querySelector('.nw-d'); const mk = (el) => { const t = new Touch({ identifier: 1, target: el, clientX: 100, clientY: 200 }); el.dispatchEvent(new TouchEvent('touchstart', { touches: [t], targetTouches: [t], changedTouches: [t], bubbles: true, cancelable: true })); const t2 = new Touch({ identifier: 1, target: el, clientX: 100, clientY: 150 }); const m = new TouchEvent('touchmove', { touches: [t2], targetTouches: [t2], changedTouches: [t2], bubbles: true, cancelable: true }); el.dispatchEvent(m); return m.defaultPrevented; };
-    return { list: [L.scrollHeight, L.clientHeight, getComputedStyle(L).flexDirection], det: [D.scrollHeight, D.clientHeight], prevList: mk(L.querySelector('.nw-it')), prevDet: mk(D.querySelector('p') || D), prevGame: mk(document.getElementById('start')) }; });
-  console.log(JSON.stringify(r));
-  console.log((r.list[0] > r.list[1] && !r.prevList ? 'OK   ' : 'FALHA') + ' a lista das novidades desliza com o dedo');
-  console.log((!r.prevDet ? 'OK   ' : 'FALHA') + ' o texto da novidade desliza com o dedo');
-  console.log((r.prevGame ? 'OK   ' : 'FALHA') + ' fora das listas o ecrã não se mexe');
-  await shot('news');
+  await ev(() => G.dbgKit()); await W(1200);
+  await ev(() => { const p = G.p; p.x = 2575; p.z = -2590; p.lv = 0; }); await W(8000);
+  await ev(() => { const p = G.p; p.yaw = p.root = Math.PI / 2 + 0.25; G.aimS.fy = p.yaw; G.aimS.fpit = 0.2; G.cyc = 1650; G.dbgHideVM && G.dbgHideVM(); }); await W(3000);
+  await page.addStyleTag({ content: 'body > *:not(canvas){visibility:hidden!important}' }); await W(400);
+  await page.screenshot({ path: '/tmp/kg/news.png' });
 };

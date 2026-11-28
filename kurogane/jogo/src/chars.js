@@ -589,7 +589,7 @@ export class ZHorde {
   // a textura chegou depois de criar os materiais: passa-a às cópias
   setMaps(map, nmap) { for (const L of this.lods) { L.m.map = map; L.m.normalMap = nmap; L.m.color.set(0xffffff); L.m.needsUpdate = true; } }
   update(list, fr, near) {
-    const sp = this._sp || (this._sp = new THREE.Sphere(new THREE.Vector3(), 3.5)), n = [0, 0], K = this.seg, P = this.M; let nh = 0, nv = 0;
+    const sp = this._sp || (this._sp = new THREE.Sphere(new THREE.Vector3(), 3.5)), n = [0, 0, 0], K = this.seg, P = this.M; let nh = 0, nv = 0;
     for (const z of list) {
       if (z.hide || z.an) continue;
       if (fr) { sp.center.set(z.x, (z.base || 0) + 1, z.z); if (!fr.intersectsSphere(sp)) continue; }
