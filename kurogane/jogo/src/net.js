@@ -66,6 +66,7 @@ export function makeNet({ G, scene, mkRemote, audio, Conta, enc, dec, hurt, die,
       case 'xp': N.xp = m; G.setLv && G.setLv(m.lv); if (m.up && G.refreshWeapon) G.refreshWeapon(); G.ui.xp && G.ui.xp(m); return;
       case 'frq': G.ui.toast(m.n + ' quer ser teu amigo. Aceita no menu, em Perfil.'); audio.play && audio.play('ui'); return;
       case 's1': rowIn(m.p, performance.now()); return;
+      case 'po': { const r = performance.now() - m.c; if (r >= 0 && r < 5000) N.ping = N.ping == null ? r : N.ping + (r - N.ping) * 0.3; return; } // ping (ida e volta ao servidor)
       case 's': {
         const now = performance.now(), seen = new Set();
         for (const a of m.ps) { const r = rowIn(a, now); if (r) seen.add(r.id); }
@@ -173,14 +174,18 @@ export function makeNet({ G, scene, mkRemote, audio, Conta, enc, dec, hurt, die,
   let invSig = ''; N.sendInv = () => { if (!G.invLayout || !G.inv) return; if (cur && cur.open && cur.c && cur.c.grid) { const s0 = sigOf(cur.c); if (s0 !== cur.sig) { cur.sig = s0; send({ t: 'ps', c: cur.key, it: world.encG(cur.c.grid) }); } } const L = G.invLayout(), sg = JSON.stringify(L); if (sg === invSig) return; invSig = sg; send({ t: 'inv', ...L }); };
   N.near = (x, z, r) => { for (const o of R.values()) if (o.s1 && Math.hypot(o.s1[1] - x, o.s1[2] - z) < r) return true; for (const s of sleepers.values()) if (Math.hypot(s.x - x, s.z - z) < r) return true; return false; };
   // cada imagem: o teu estado para o servidor (10 por segundo) e os outros no sítio certo, 100 ms atrás (para andarem suaves)
-  const _v = new THREE.Vector3();
+  const _v = new THREE.Vector3(); let lastMe = null, carT = 0, pingT = 0;
   const place = (el, x, y, z) => { _v.set(x, y, z); const q = G.proj(_v); if (!q.ok) { el.style.display = 'none'; return; } el.style.display = ''; el.style.transform = `translate(${q.x.toFixed(0)}px,${q.y.toFixed(0)}px) translate(-50%,-100%)`; };
   N.frame = (dt, me, see, los) => {
     if (!N.on) return; const now = performance.now();
     { const hide = G.mapOpen || G.invOpen || G.paused || !G.playing; if (tags.hidden !== hide) tags.hidden = hide; }
-    if (me && now - sendT >= 32) { sendT = now; /* 30 vezes por segundo: os outros veem-te com menos atraso */ send({ t: 'st', ...me, ts: Math.round(now) }); if (N.world) { const ca = G.cars.up(); if (ca) send({ t: 'cu', L: [ca] }); } }
+    if (me && now - sendT >= 15) { // até 60 vezes por segundo enquanto te mexes (uma por imagem); parado, 5 por segundo (poupa dados móveis)
+      const L = lastMe, mv = !L || Math.abs(me.x - L.x) > 0.004 || Math.abs(me.z - L.z) > 0.004 || Math.abs(me.y - L.y) > 0.01 || me.yaw !== L.yaw || me.an !== L.an || me.w !== L.w || me.hp !== L.hp || me.al !== L.al || me.sc !== L.sc || me.lv !== L.lv || me.gk !== L.gk || me.mv !== L.mv;
+      if (mv || now - sendT >= 200) { sendT = now; lastMe = me; send({ t: 'st', ...me, ts: Math.round(now) }); }
+      if (N.world && now - carT >= 15) { const ca = G.cars.up(); if (ca) { carT = now; send({ t: 'cu', L: [ca] }); } } }
     if (zdQ.length) { send({ t: 'zd', L: zdQ.splice(0, 40) }); }
-    zT -= dt; if (zT <= 0 && N.world) { zT = 0.066; const L = world.z.up(); if (L.length) send({ t: 'zu', L, ts: Math.round(now) }); }
+    if (now - pingT > 2000) { pingT = now; send({ t: 'pi', c: Math.round(now) }); }
+    zT -= dt; if (zT <= 0 && N.world) { zT = 0.033; /* zombies que simulas: 30 vezes por segundo (antes 15) */ const L = world.z.up(); if (L.length) send({ t: 'zu', L, ts: Math.round(now) }); }
     if (cur) { if (cur.open && G.box !== cur.c) closeBox(); else if (cur.open) { psT -= dt; if (psT <= 0) { psT = 0.4; const sg = sigOf(cur.c); if (sg !== cur.sig) { cur.sig = sg; send({ t: 'ps', c: cur.key, it: world.encG(cur.c.grid) }); } } } else if (performance.now() - cur.t > 4000) cur = null; }
     invT -= dt; if (invT <= 0) { invT = 3; N.sendInv(); }
     const lv = me ? me.lv : 0;

@@ -65,7 +65,7 @@ const frame = c => {
   if (len > 65536 || !masked) return false; if (b.length < o + 4 + len) return null;
   const mk = b.subarray(o, o + 4), data = Buffer.from(b.subarray(o + 4, o + 4 + len)); for (let i = 0; i < len; i++) data[i] ^= mk[i & 3]; c.buf = b.subarray(o + 4 + len);
   if (op === 8) return false; if (op === 9) { try { c.sock.write(Buffer.concat([Buffer.from([0x8a, data.length]), data])); } catch (e) { } return true; } if (op !== 1) return true;
-  const now = Date.now(); if (now - c.rt > 1000) { c.rt = now; c.rate = 0; } if (++c.rate > 200) return true; // demasiadas mensagens: ignora (30 posições + 30 do carro + tiros + zombies por segundo cabem à vontade)
+  const now = Date.now(); if (now - c.rt > 1000) { c.rt = now; c.rate = 0; } if (++c.rate > 400) return true; // demasiadas mensagens: ignora (60 posições + 60 do carro + 30 dos zombies + tiros por segundo cabem à vontade)
   let m; try { m = JSON.parse(data.toString('utf8')); } catch (e) { return true; } try { if (c.arena) ARENA.msg(c, m); else onMsg(c, m); } catch (e) { console.error('msg', e.message); } return true;
 };
 const drop = c => {
@@ -360,6 +360,7 @@ const zHit = (c, p, m, now) => { const z = S.w.zs[m.i | 0]; if (!z || z.st === 3
 // ---------- mensagens
 const onMsg = (c, m) => {
   if (!m || typeof m.t !== 'string') return;
+  if (m.t === 'pi') { send(c, { t: 'po', c: num(m.c, 0, 1e13, 0) }); return; } // ping: volta logo, para o jogo medir o tempo de ida e volta
   // perfil e amigos, também a partir do menu (sem personagem no mundo): o código da personagem prova quem é
   if (m.t === 'pf') { const tok = typeof m.tok === 'string' && m.tok.length === 32 && S.tokens[m.tok] ? m.tok : (c.p ? c.p.tok : null); if (!tok) return send(c, { t: 'pf', none: true }); friends(c, uidOf(tok), S.tokens[tok].name, m); return; }
   if (m.t === 'hi') {
@@ -657,7 +658,7 @@ const relay = c => { const p = c.p, row = plRow(c, false); let msg = null;
   for (const o of players.values()) { if (o === c || !o.p || o.dead || (p.invis && !S.roles[o.p.uid])) continue; if (Math.abs(o.p.x - p.x) > 320 || Math.abs(o.p.z - p.z) > 320 || Math.hypot(o.p.x - p.x, o.p.z - p.z) > 320) continue;
     send(o, msg || (msg = { t: 's1', p: row })); } };
 setInterval(() => {
-  const L = [...players.values()].filter(c => c.p), full = (++tickN % 2) === 0; // jogadores 30 vezes por segundo (e cada um logo que chega); zombies e carros 15
+  const L = [...players.values()].filter(c => c.p), full = true; ++tickN; // jogadores ~33 vezes por segundo (e cada um logo que chega, até 60 por segundo); zombies e carros também ~33 (antes 15)
   for (const c of L) {
     const out = [], staff = !!S.roles[c.p.uid]; for (const o of L) { if (o === c || (o.p.invis && !staff)) continue; const d = Math.hypot(o.p.x - c.p.x, o.p.z - c.p.z), mate = c.p.clan && o.p.clan === c.p.clan; if (d > 320 && !mate && !(staff && c.p.esp)) continue; out.push(plRow(o, d > 320)); }
     const msg = { t: 's', ps: out };
@@ -671,7 +672,7 @@ setInterval(() => {
       const g = []; for (const id of c.cc.keys()) if (!seen.has(id)) { c.cc.delete(id); g.push(id); } if (u.length) msg.cu = u; if (g.length) msg.cg = g; }
     send(c, msg);
   }
-}, 33);
+}, 30);
 // quem simula cada zombie: o jogador mais perto (até 100 m), e só muda quando outro fica bem mais perto
 setInterval(() => {
   const L = [...players.values()].filter(c => c.p); const now = Date.now();

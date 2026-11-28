@@ -69,6 +69,7 @@ export function makeArena({ send: send0 }) {
     }
   };
   const msg = (c, m) => {
+    if (m.t === 'pi') { send(c, { t: 'po', c: num(m.c, 0, 1e13, 0) }); return; } // ping
     if (m.t === 'hi') {
       if (c.p) return; const name = String(m.name || ''); if (!NAME.test(name)) return send(c, { t: 'erro', e: 'nome' });
       if ((m.pv | 0) < 4) return send(c, { t: 'erro', e: 'versao' });

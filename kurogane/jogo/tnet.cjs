@@ -44,7 +44,7 @@ server.listen(0, async () => {
     const hps = [];
     for (let i = 0; i < 4; i++) {
       await A.ev(() => { const r = [...G.net.R.values()][0]; G.fp = false; G.aimS.Aw = new G.V3(r.x, (r.y || 0) + 1.42, r.z); G.p.reload = 0; G.p.cd = 0; const it = G.inv.belt[G.sel]; it.ammo = Math.max(it.ammo, 5); G.p.yaw = Math.atan2(r.x - G.p.x, r.z - G.p.z); return G.dbg.fire(); });
-      await W(700); hps.push(await B.ev(() => Math.round(G.p.hp) + (G.p.alive ? '' : ' morto')));
+      const h0 = await B.ev(() => G.p.hp); for (let k = 0; k < 40 && (await B.ev(h => G.p.hp === h, h0)); k++) await W(100); /* espera que o tiro chegue (no servidor de testes as páginas estão lentas) */ hps.push(await B.ev(() => Math.round(G.p.hp) + (G.p.alive ? '' : ' morto')));
     }
     console.log('vida do Bruno depois de cada tiro:', hps.join(', ')); ok(/morto/.test(hps[2]) && !/morto/.test(hps[1]), 'morre ao 3.º tiro no peito');
     { const hp = await A.ev(() => window.__hp); const bp = await A.ev(() => { const r = [...G.net.R.values()][0]; return r ? [r.x, r.y || 0, r.z] : null; }); const g = hp.filter(Boolean); console.log('hitmarkers em', JSON.stringify(g.map(q => q.map(v => +v.toFixed(2)))), 'Bruno em', JSON.stringify(bp && bp.map(v => +v.toFixed(2)))); ok(g.length >= 1 && bp && g.every(q => Math.hypot(q[0] - bp[0], q[2] - bp[2]) < 0.6 && q[1] - bp[1] > 0.6 && q[1] - bp[1] < 1.9), 'o hitmarker aparece onde a bala entrou (no peito, à frente do corpo)'); }

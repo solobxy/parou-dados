@@ -1,8 +1,8 @@
 // movimento suave dos outros (jogadores e carros): cada imagem traz a hora de quem a mandou.
 // A hora a que chega varia (rede do telemóvel, espera no servidor); a hora a que saiu não. Desenha-se um pouco atrás,
 // entre as duas imagens certas, e o atraso ajusta-se sozinho à rede de cada um (mais atraso quando a rede dá solavancos).
-const MAX = 48, WIN = 90; // até 48 imagens guardadas; a rede mede-se nas últimas 90 (3 s a 30 por segundo)
-export const track = () => ({ buf: [], off: null, jit: 25, delay: 80, os: [] });
+const MAX = 64, WIN = 120; // até 64 imagens guardadas; a rede mede-se nas últimas 120 (2 s a 60 por segundo)
+export const track = () => ({ buf: [], off: null, jit: 20, delay: 60, os: [], gap: 33 });
 // ts: hora de envio (ms, relógio de quem mandou); recv: hora de chegada (ms, o nosso relógio)
 export const push = (T, ts, recv, s) => {
   const B = T.buf; if (B.length) { const last = B[B.length - 1].ts; if (ts < last - 1000 || ts - last > 5000) { B.length = 0; T.off = null; T.offS = null; T.os.length = 0; } else if (ts <= last) return false; } // relógio novo ou parado há muito: recomeça; repetida ou fora de ordem: fora
@@ -10,6 +10,7 @@ export const push = (T, ts, recv, s) => {
   // diferença de relógios = a chegada mais rápida da janela; o solavanco = quanto as outras chegam depois dessa (90.º percentil)
   let mn = Infinity; for (const v of O) if (v < mn) mn = v; T.off = mn;
   if (O.length >= 8) { const d = O.map(v => v - mn).sort((a, b) => a - b); T.jit = d[Math.min(d.length - 1, Math.floor(d.length * 0.9))]; } else T.jit = Math.max(T.jit, o - mn);
+  if (B.length) { const g = ts - B[B.length - 1].ts; if (g > 0 && g < 120) T.gap += (g - T.gap) * 0.1; } // de quanto em quanto tempo chegam imagens (60 por segundo a andar)
   s.ts = ts; B.push(s); if (B.length > MAX) B.shift();
   return true;
 };
@@ -18,7 +19,8 @@ const angLerp = (a, b, f) => { let d = b - a; while (d > Math.PI) d -= 2 * Math.
 export const sample = (T, now, out) => {
   const B = T.buf; if (!B.length) return null;
   // atraso: o necessário para quase nunca ficar sem imagem seguinte (antes ficava fixo em 110 ms e com rede móvel saltava)
-  const want = Math.min(350, Math.max(48, 36 + T.jit * 1.15)), lt = T.lt ?? now, dtm = Math.min(100, now - lt); T.lt = now;
+  // atraso = uma imagem de folga + o solavanco da rede (com rede boa ~30–40 ms; no Oxide são ~100 ms)
+  const want = Math.min(350, Math.max(22, T.gap * 1.1 + T.jit * 1.05 + 4)), lt = T.lt ?? now, dtm = Math.min(100, now - lt); T.lt = now;
   T.delay += Math.max(-dtm * 0.05, Math.min(dtm * 0.25, (want - T.delay) * Math.min(1, dtm / 400))); // sobe depressa, desce devagar (sem dar saltos no tempo)
   // a diferença de relógios também muda devagar (a mínima da janela salta quando sai da janela: antes isso fazia o boneco saltar para trás)
   if (T.offS == null) T.offS = T.off; else T.offS += Math.max(-dtm * 0.08, Math.min(dtm * 0.08, T.off - T.offS));
