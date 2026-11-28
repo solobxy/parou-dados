@@ -572,6 +572,7 @@ float terH(vec2 p) { if (uTerP.w < 0.5) return 0.0; vec2 f = clamp((p + uTerP.x)
     cam, renderer, scene, camT, YAW,
   };
   G.dbgDrive = () => ({ xray: !!(G0.xray && G0.xray.visible), visK: VU.uVisK.value }); /* testes */
+  G.dbgCamPos = () => [cam.position.x, cam.position.y, cam.position.z]; /* testes */
   G.dbgW = W; G.dbgScene = scene; G.dbgSky = SKY; G.dbgFlame = (x, y, z, sz = 1) => { const F = makeFire(sz); F.g.position.set(x, y, z); scene.add(F.g); if (F.set) F.set(true); return F; }; G.dbgNewBody = L => mkRemote(L); G.dbgRay = ray; G.dbgCanvas = renderer.domElement; G.dbgMuz = (o, d) => { const F = MZP.find(f => !f.keep) || MZP[0]; F.s.position.set(o[0] + d[0] * 0.05, o[1] + d[1] * 0.05, o[2] + d[2] * 0.05); F.s.material.rotation = Math.random() * 6.28; F.s.scale.setScalar(0.75); F.s.visible = true; F.keep = true; F.t = 1; return F; }; G.dbgOl = () => ({ n: OL.objs.length, key: !!OL.key, lbl: G.prompt && G.prompt.label }); G.olRefresh = () => { OL.wm = null; for (const c of W.containers) c._olg = undefined; OL.key = null; };
   G.dbgNav = { nav, walkLine: (a, b, c, d, lv) => walkLine(a, b, c, d, lv || 0), find: (a, b, c, d, lv) => nav.find(a, b, c, d, lv || 0) };
   // bases construídas pelo jogador
@@ -2019,14 +2020,14 @@ float terH(vec2 p) { if (uTerP.w < 0.5) return 0.0; vec2 f = clamp((p + uTerP.x)
     // câmara e sol
     if (G.car && G.carSeat === 0 && p && p.alive && !G.dbgTopCar) { // a conduzir: câmara atrás do carro, perto, que acompanha as curvas devagar
       vm.set('', {}, myLook); const c = G.car, T = VT[c.k], L = T.len || 4, fly = !!T.fly, alt = c.alt || 0;
-      if (PROJ.mode !== 'chase') { PROJ.mode = 'chase'; PROJ.dirty = true; G.chY = c.yaw; }
+      if (PROJ.mode !== 'chase') { PROJ.mode = 'chase'; PROJ.dirty = true; G.chY = c.yaw; G.chH = null; }
       cam.near = 0.2; cam.far = 520; cam.aspect = innerWidth / innerHeight; cam.fov = innerHeight > innerWidth ? 72 : 60; cam.updateProjectionMatrix();
       const back = c.v < -1.5 ? Math.PI : 0; G.chY += angDiff(c.yaw + back, G.chY) * Math.min(1, dt * (3.8 + Math.min(3, Math.abs(c.v) / 5)));
       const sv = Math.abs(c.v), want = (fly ? L * 1.6 + 4 : L * 0.9 + 3.2) + Math.min(1.4, sv / 15), h = (fly ? 3.4 : 2.35 + L * 0.08) + alt + Math.min(0.4, sv / 35);
-      const bx = -Math.sin(G.chY), bz = -Math.cos(G.chY), gy = c.y || 0; let dist = want;
+      const bx = -Math.sin(G.chY), bz = -Math.cos(G.chY), gy = groundY(c.x, c.z, 0); let dist = want; /* nas colinas: a câmara vai à altura do chão onde está o carro (antes ficava sempre a 0 e entrava dentro do monte) */
       { const free = ray(c.x, c.z, bx, bz, want + 0.4, null, 's', 0, Math.max(1.2, h - 0.4)); if (free < want + 0.4) dist = Math.max(L * 0.55, free - 0.4); } // parede atrás: a câmara chega-se ao carro
       G.chD = G.chD ?? dist; G.chD += (dist - G.chD) * Math.min(1, dt * (dist < G.chD ? 12 : 3));
-      cam.position.set(c.x + bx * G.chD, gy + h, c.z + bz * G.chD); cam.lookAt(c.x - bx * 3.2, gy + 0.9 + alt, c.z - bz * 3.2);
+      { const cx = c.x + bx * G.chD, cz = c.z + bz * G.chD; G.chH = G.chH ?? gy + h; const tgt = Math.max(gy + h, groundY(cx, cz, 0) + 1.2); G.chH += (tgt - G.chH) * Math.min(1, dt * 8); if (G.chH < groundY(cx, cz, 0) + 0.9) G.chH = groundY(cx, cz, 0) + 0.9; cam.position.set(cx, G.chH, cz); } cam.lookAt(c.x - bx * 3.2, gy + 0.9 + alt, c.z - bz * 3.2); /* nunca abaixo do monte atrás do carro */
       if (G.shakeT > 0) { G.shakeT -= dt; const a = Math.min(1, G.shakeT) * 0.25; cam.position.x += (Math.random() - 0.5) * a; cam.position.y += (Math.random() - 0.5) * a * 0.5; }
     } else if ((G.fp || FPF.on) && p) {
       cam.position.copy(AIM.eye); cam.lookAt(_c.copy(AIM.eye).add(AIM.dir)); { const f = Math.exp(-dt * 10); PUNCH.x *= f; PUNCH.y *= f; if (Math.abs(PUNCH.x) + Math.abs(PUNCH.y) > 1e-4) { cam.rotateX(PUNCH.x); cam.rotateY(PUNCH.y); } }; if (AIM.lean) cam.rotateZ(-AIM.lean * 0.12);
