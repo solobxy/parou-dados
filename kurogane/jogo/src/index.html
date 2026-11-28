@@ -293,8 +293,8 @@ canvas.nvg{filter:grayscale(1) sepia(1) hue-rotate(50deg) saturate(2.4) brightne
 .item.sel{box-shadow:inset 0 0 0 2px var(--amb)}
 .item.drag{opacity:.35}
 .t-w{background:#3a2420}.t-a{background:#3a3420}.t-m{background:#1f3428}.t-f{background:#3a2a1c}.t-r{background:#2a2c2f}.t-g{background:#1e2a3a}
-.item.rare{box-shadow:inset 0 0 0 1.5px rgba(169,123,230,.8)}
-.item.rare.sel{box-shadow:inset 0 0 0 2px var(--amb)}
+.item.r1{box-shadow:inset 0 0 0 1.5px rgba(126,190,110,.75)}.item.r2{box-shadow:inset 0 0 0 1.5px rgba(96,156,232,.85)}.item.r3{box-shadow:inset 0 0 0 1.5px rgba(169,123,230,.9)}.item.r4{box-shadow:inset 0 0 0 1.5px rgba(232,180,72,.95),inset 0 0 14px rgba(232,180,72,.18)}
+.item.r1.sel,.item.r2.sel,.item.r3.sel,.item.r4.sel{box-shadow:inset 0 0 0 2px var(--amb)}
 .prev{position:absolute;pointer-events:none;z-index:3;border-radius:2px}
 .prev.ok{background:rgba(169,196,110,.22);box-shadow:inset 0 0 0 2px rgba(169,196,110,.9)}
 .prev.no{background:rgba(229,83,63,.2);box-shadow:inset 0 0 0 2px rgba(229,83,63,.9)}
@@ -309,7 +309,7 @@ canvas.nvg{filter:grayscale(1) sepia(1) hue-rotate(50deg) saturate(2.4) brightne
 #iBar .tt{flex:1;min-width:0;padding-top:4px}
 #iBar b{display:block;font:700 19px/1.1 "Roboto Condensed",sans-serif;letter-spacing:.02em}
 #iBar .cat{display:block;margin-top:3px;font:600 11px "Roboto Condensed",sans-serif;letter-spacing:.08em;text-transform:uppercase;color:var(--tx2)}
-#iBar .cat.rare{color:var(--purple)}
+#iBar .cat.r1{color:#8CC47A}#iBar .cat.r2{color:#7AB0F0}#iBar .cat.r3{color:var(--purple)}#iBar .cat.r4{color:#E8B448}
 #iBar .close{flex:none;width:44px;height:44px;margin:-4px -4px 0 0}
 #iBar p{margin:0;padding-right:4px;color:#C9C3B8;font-size:13.5px;line-height:1.4;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:4;overflow:hidden}
 #iBar p.open{display:block;-webkit-line-clamp:unset}
@@ -720,8 +720,7 @@ button:focus-visible{outline:2px solid #E6E2DA}
 .cell{background:rgba(255,250,240,.04);border-radius:1px}
 .item{border-radius:1px;box-shadow:none}
 .item .nm{font:500 11px/1.05 "Roboto Condensed",sans-serif;color:rgba(230,226,218,.78);text-shadow:0 1px 2px rgba(0,0,0,.9)}
-.item.sel,.item.rare.sel{box-shadow:inset 0 0 0 2px #E6E2DA}
-.item.rare{box-shadow:inset 0 0 0 1.5px rgba(155,130,207,.7)}
+.item.sel,.item.r1.sel,.item.r2.sel,.item.r3.sel,.item.r4.sel{box-shadow:inset 0 0 0 2px #E6E2DA}
 .slot{background:rgba(255,250,240,.055);border-radius:1px}.slot.sel{box-shadow:inset 0 0 0 2px #E6E2DA}
 .slot .lb{font:500 10px "Roboto Condensed",sans-serif;letter-spacing:.06em;color:rgba(158,153,143,.8)}
 #iBar{background:#1d1c1a;border:1px solid rgba(255,250,240,.08);border-radius:2px;box-shadow:0 16px 40px rgba(0,0,0,.55)}
@@ -1092,7 +1091,7 @@ body.driving #dHov{right:calc(40px + var(--sr));bottom:calc(158px + var(--sb))}
       <div class="fld" id="gPw"><label for="gP">Palavra-passe</label><input id="gP" type="password" maxlength="72" autocomplete="current-password"></div>
       <div class="pmsg" id="gM"></div><button class="gb pri wide" id="gOk" type="submit"><span>Entrar</span></button><p class="gf-n" id="gfN"></p></form>
   </div>
-  <div class="gt-foot"><span id="gVer">Protótipo 0.99</span><span>A sessão fica guardada neste aparelho</span></div>
+  <div class="gt-foot"><span id="gVer">Protótipo 1.00</span><span>A sessão fica guardada neste aparelho</span></div>
 </div>
 <div id="start" class="ov" hidden>
   <header class="lb-top">
@@ -1107,7 +1106,7 @@ body.driving #dHov{right:calc(40px + var(--sr));bottom:calc(158px + var(--sb))}
   <nav class="lb-right"><button class="lb-row" id="sLook"><b>Aparência</b>{{shirt}}</button><button class="lb-row" id="sSkins"><b>Skins</b>{{paintbrush}}</button><button class="lb-row" id="sProf"><b>Perfis</b>{{users}}</button><button class="lb-row" id="sAcc"><b id="sAccT">Conta</b>{{cloud}}</button></nav>
   <div class="mnote" id="mnote" hidden></div>
   <div class="lb-go"><div class="onl" id="sOnl" role="status"><i class="dot" aria-hidden="true"></i><span><em id="sOnT">A ver quem está a jogar…</em></span></div><button class="lb-play" id="sGo"><span>Jogar</span></button></div>
-  <div class="lb-foot"><span class="foot">Protótipo 0.99</span><a class="credit" href="https://dinissousa.pt" target="_blank" rel="noopener">feito por dinissousa.pt</a></div>
+  <div class="lb-foot"><span class="foot">Protótipo 1.00</span><a class="credit" href="https://dinissousa.pt" target="_blank" rel="noopener">feito por dinissousa.pt</a></div>
   <div id="sKeys" hidden></div><button id="sCont" hidden></button>
 </div>
 <div id="modes" class="ov" hidden><div class="md-h"><b class="cond">Escolhe o modo</b><button class="close" id="mdX" aria-label="Fechar">{{x}}</button></div>

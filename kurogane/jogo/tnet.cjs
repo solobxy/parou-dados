@@ -43,7 +43,7 @@ server.listen(0, async () => {
     console.log('arma do A:', gun);
     const hps = [];
     for (let i = 0; i < 4; i++) {
-      await A.ev(() => { const r = [...G.net.R.values()][0]; G.fp = false; G.aimS.Aw = new G.V3(r.x, (r.y || 0) + 1.42, r.z); G.p.reload = 0; G.p.cd = 0; const it = G.inv.belt[G.sel]; it.ammo = Math.max(it.ammo, 5); G.p.yaw = Math.atan2(r.x - G.p.x, r.z - G.p.z); return G.dbg.fire(); });
+      await A.ev(() => { const r = [...G.net.R.values()][0]; G.fp = false; G.dbgSpread = 0.05; /* o teste verifica a contagem, não a pontaria */ G.aimS.Aw = new G.V3(r.x, (r.y || 0) + 1.42, r.z); G.p.reload = 0; G.p.cd = 0; const it = G.inv.belt[G.sel]; it.ammo = Math.max(it.ammo, 5); G.p.yaw = Math.atan2(r.x - G.p.x, r.z - G.p.z); return G.dbg.fire(); });
       const h0 = await B.ev(() => G.p.hp); for (let k = 0; k < 40 && (await B.ev(h => G.p.hp === h, h0)); k++) await W(100); /* espera que o tiro chegue (no servidor de testes as páginas estão lentas) */ hps.push(await B.ev(() => Math.round(G.p.hp) + (G.p.alive ? '' : ' morto')));
     }
     console.log('vida do Bruno depois de cada tiro:', hps.join(', ')); ok(/morto/.test(hps[2]) && !/morto/.test(hps[1]), 'morre ao 3.º tiro no peito');

@@ -4,7 +4,7 @@
 const NAME = /^[A-Za-z0-9_À-ÖØ-öø-ÿ-]{3,16}$/;
 const AX = 3650, AZ = 3650, HW = 52, HD = 35; // limites da arena (com folga)
 // munições: [velocidade, dano, penetração, arrasto] (iguais às do mundo)
-const AM = { a9: [360, 30, 1.5, 0.0018], a9s: [300, 27, 1.3, 0.002], a556: [940, 34, 2.8, 0.0012], a762: [715, 40, 2.6, 0.0011], a308: [850, 95, 3.4, 0.0007], a357: [440, 48, 2, 0.0016], c12: [400, 16, 1, 0.004, 8], c12s: [490, 85, 2.2, 0.0022], a408: [900, 140, 4, 0.0005], a50: [850, 175, 5, 0.0004], a754: [825, 44, 3, 0.001] };
+const AM = { a9: [360, 30, 1.5, 0.0018], a9s: [300, 27, 1.3, 0.002], a556: [940, 34, 2.8, 0.0012], a762: [715, 40, 2.6, 0.0011], a308: [850, 95, 3.4, 0.0007], a357: [440, 48, 2, 0.0016], c12: [400, 16, 1, 0.004, 8], c12s: [490, 70, 2.2, 0.0022], a408: [900, 140, 4, 0.0005], a50: [850, 175, 5, 0.0004], a754: [825, 44, 3, 0.001] };
 const HEAVY = new Set(['a408', 'a50']);
 const TEAMS = [{ id: 'arena-r', nome: 'Equipa Vermelha' }, { id: 'arena-b', nome: 'Equipa Azul' }];
 const KITS = ['atirador', 'assalto', 'sniper', 'pesado', 'apoio'];
@@ -58,7 +58,7 @@ export function makeArena({ send: send0 }) {
       const hh = hitTest(O, d, k, Li, tgt); if (!hh) continue; const T = hh.T, v = T.c.p; if (!v.alive) continue;
       let dmg = hh.dmg * (n > 1 ? Math.min(1, Math.max(0.25, 1 - hh.dist / 35)) : Math.max(0.3, Math.pow(hh.v, 1.5))) * (0.9 + Math.random() * 0.2);
       const [helm, vest] = v.ar || [0, 0]; let pop = null;
-      if (hh.zone === 'head') { if (helm && hh.pen <= helm) { v.hd = (v.hd ?? 20) - dmg; dmg *= 0.8; if (v.hd <= 0) { pop = 'head'; v.ar[0] = 0; v.hd = null; } } else dmg = n > 1 ? dmg * 2.5 : 999; }
+      if (hh.zone === 'head') { if (helm && hh.pen <= helm) { v.hd = (v.hd ?? 20) - dmg; dmg *= 0.8; if (v.hd <= 0) { pop = 'head'; v.ar[0] = 0; v.hd = null; } } else dmg = n > 1 ? dmg * 2.5 : Math.max(dmg * 3, hh.dmg >= 34 ? 120 : 0); } /* cabeça sem capacete: espingarda mata com uma; pistola de 9 mm precisa de duas (antes qualquer bala matava) */
       else if (hh.zone === 'body') { dmg *= 1.2; if (vest && hh.pen <= vest) { v.vd = (v.vd ?? (vest >= 3 ? 50 : 25)) - dmg; dmg *= 0.8; if (v.vd <= 0) { pop = 'vest'; v.ar[1] = 0; v.vd = null; } } else if (vest) dmg *= 0.85; }
       else if (hh.zone === 'arms') dmg *= 1.2; // braços: contam como o tronco (como no CS), mas o colete não os protege
       else dmg *= 0.6;

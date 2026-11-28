@@ -17,7 +17,7 @@ import { makeTerrain, terrainInput } from './jogo/src/terrain.js';
 const PORT = +process.env.PORT || 3190, DIR = process.env.STATE_DIRECTORY || path.join(process.cwd(), 'dados');
 const FILE = path.join(DIR, 'estado.json'), SLEEP_MS = 72 * 3600e3, BAG_MS = 45 * 60e3, MAXP = 60;
 // munições: velocidade (m/s), dano, perfuração, arrasto, bagos
-const AM = { a9: [360, 30, 1.5, 0.0018], a9s: [300, 27, 1.3, 0.002], a556: [940, 34, 2.8, 0.0012], a762: [715, 40, 2.6, 0.0011], a308: [850, 95, 3.4, 0.0007], a357: [440, 48, 2, 0.0016], c12: [400, 16, 1, 0.004, 8], c12s: [490, 85, 2.2, 0.0022], a408: [900, 140, 4, 0.0005], a50: [850, 175, 5, 0.0006], a754: [825, 58, 3.2, 0.0008] };
+const AM = { a9: [360, 30, 1.5, 0.0018], a9s: [300, 27, 1.3, 0.002], a556: [940, 34, 2.8, 0.0012], a762: [715, 40, 2.6, 0.0011], a308: [850, 95, 3.4, 0.0007], a357: [440, 48, 2, 0.0016], c12: [400, 16, 1, 0.004, 8], c12s: [490, 70, 2.2, 0.0022], a408: [900, 140, 4, 0.0005], a50: [850, 175, 5, 0.0006], a754: [825, 52, 3.2, 0.0008] };
 const GKS = ['head', 'vest', 'suit', 'eyes', 'back']; // equipamento à vista (ghillie e visão noturna incluídos)
 const HEAVY = new Set(['a408', 'a50']), CARX = { a50: 3, a408: 1.4 }; // calibres grossos: som próprio; a .50 desfaz veículos
 const NAME = /^[A-Za-z0-9_À-ÖØ-öø-ÿ-]{3,16}$/;
@@ -551,7 +551,7 @@ const shot = (c, m) => {
     if (T.sl) { const s = S.sleepers[T.sl]; if (!s) continue; s.hp = (s.hp ?? 100) - dmg; try { sleepAlarm(T.sl, p.name, s.hp <= 0); } catch (e) { console.error('sleepAlarm', e && e.message); } if (s.hp <= 0) { stat(p, 'k'); const vu = uidOf(T.sl); S.stats[vu] = S.stats[vu] || { n: s.name, k: 0, d: 0, z: 0 }; S.stats[vu].d++; delete S.sleepers[T.sl]; if (S.tokens[T.sl]) S.tokens[T.sl].killed = true; if (S.led[T.sl]) { S.led[T.sl].T = {}; S.led[T.sl].inv = null; } mkBag(s.x, s.z, s.y || 0, s.lv || 0, s.inv, { body: 1, name: s.name }); bcast({ t: 'sleep', list: sleepList() }); send(c, { t: 'hitc', zone: h.zone, kill: true, name: s.name }); } else send(c, { t: 'hitc', zone: h.zone }); dirty = true; continue; }
     // como nos zombies: a proteção trava a bala (ainda magoa) e gasta-se até partir. Pistola: 1–2 tiros na cabeça, 3 no peito (4 com colete)
     const v = T.c.p, [helm, vest] = v.ar || [0, 0]; let pop = null;
-    if (h.zone === 'head') { if (helm && h.pen <= helm) { v.hd = (v.hd ?? 20) - dmg; dmg *= 0.8; if (v.hd <= 0) { pop = 'head'; v.ar[0] = 0; v.hd = null; } } else dmg = n > 1 ? dmg * 2.5 : 999; }
+    if (h.zone === 'head') { if (helm && h.pen <= helm) { v.hd = (v.hd ?? 20) - dmg; dmg *= 0.8; if (v.hd <= 0) { pop = 'head'; v.ar[0] = 0; v.hd = null; } } else dmg = n > 1 ? dmg * 2.5 : Math.max(dmg * 3, h.dmg >= 34 ? 120 : 0); } /* cabeça sem capacete: espingarda mata com uma; pistola de 9 mm precisa de duas (antes qualquer bala matava) */
     else if (h.zone === 'body') { dmg *= 1.2; if (vest && h.pen <= vest) { v.vd = (v.vd ?? (vest >= 3 ? 50 : 25)) - dmg; dmg *= 0.8; if (v.vd <= 0) { pop = 'vest'; v.ar[1] = 0; v.vd = null; } } else if (vest) dmg *= 0.85; }
     else if (h.zone === 'arms') dmg *= 1.2; // braços: contam como o tronco (como no CS), mas o colete não os protege
     else dmg *= 0.6;
