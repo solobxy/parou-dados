@@ -10,6 +10,7 @@ const AMSND = { a9: 'pistola', a9s: 'pistola', a556: 'm4', a762: 'ak', a308: 'ca
 
 const angD = (a, b) => { let d = a - b; while (d > Math.PI) d -= 2 * Math.PI; while (d < -Math.PI) d += 2 * Math.PI; return d; };
 export function makeNet({ G, scene, mkRemote, audio, Conta, enc, dec, hurt, die, wallEnd, muzzle, world, WV }) {
+  G.dbgPvp = (d, z) => hurt(d, 'teste', z, null, null); /* testes */
   let ws = null, tok = null, sendT = 0, invT = 0, retry = 0, want = false, off = 0, cyc0 = 0, cur = null, psT = 0, zT = 0; const zdQ = [];
   const R = new Map(), sleepers = new Map();
   const tags = document.createElement('div'); tags.id = 'tags'; { const h = document.getElementById('hud'); if (h && h.parentNode) h.parentNode.insertBefore(tags, h); else document.body.appendChild(tags); } // por baixo do HUD e dos ecrãs por cima
@@ -79,7 +80,7 @@ export function makeNet({ G, scene, mkRemote, audio, Conta, enc, dec, hurt, die,
         wallEnd(m.o, m.d); if (muzzle) muzzle(m.o, m.d, m.sup, m.id); if (G.noise) G.noise(m.o[0], m.o[2], m.sup ? 12 : 34); if (G.heardShot && d < 300) G.heardShot(); if (p && d > 2.5) G.ui.sound(m.o[0], m.o[2], 't', d); return;
       }
       case 'hit': hurt(m.dmg, m.by, m.zone, m.pop, m.car ? 'carro' : null); return;
-      case 'hitc': { if (m.zone === 'car') { G.ui.hit(false, 'car', true, null); return; } const r = m.on != null ? R.get(m.on) : null; G.ui.hit(!!m.kill, m.zone, false, r ? new THREE.Vector3(r.x, (r.y || 0) + (m.zone === 'head' ? 1.6 : 1.1), r.z) : null); G.buzz && G.buzz(m.kill ? [25, 40, 35] : 14); if (m.kill) G.ui.toast('Abateste ' + (m.name || 'um jogador')); return; }
+      case 'hitc': { if (m.zone === 'car') { G.ui.hit(false, 'car', true, null); return; } const r = m.on != null ? R.get(m.on) : null; if (Array.isArray(m.p) && m.p.length === 3) { G.ui.hit(!!m.kill, m.zone, false, new THREE.Vector3(m.p[0], m.p[1], m.p[2])); return; } /* onde a bala entrou */ G.ui.hit(!!m.kill, m.zone, false, r ? new THREE.Vector3(r.x, (r.y || 0) + (m.zone === 'head' ? 1.6 : 1.1), r.z) : null); G.buzz && G.buzz(m.kill ? [25, 40, 35] : 14); if (m.kill) G.ui.toast('Abateste ' + (m.name || 'um jogador')); return; }
       case 'sleep': setSleepers(m.list); return;
       case 'dr': world.door(m.i, m.o); return;
       case 'nd': world.node(m.k, m.ms); return;
@@ -187,7 +188,7 @@ export function makeNet({ G, scene, mkRemote, audio, Conta, enc, dec, hurt, die,
     for (const r of R.values()) {
       if (!r.s1) continue; const S = sample(r.T, now, r.o); if (!S) continue; const b = S.s.a, x = S.x, z = S.z, y = S.y; r.rt = S.rt; r.an = b[7] | 0; r.mvS = b[6] || 0;
       const dd = Math.hypot(x - r.x, z - r.z); r.spd += (Math.min(9, dd / Math.max(dt, 1e-3)) - r.spd) * Math.min(1, dt * 8);
-      { if (dd > 0.003) r.my = Math.atan2(x - r.x, z - r.z); const rel = r.my == null ? 0 : angD(r.my, S.yaw); r.back = r.spd > 0.6 && Math.abs(rel) > 1.95; r.step += dd * 2.6 * (r.back ? -1 : 1); } r.x = x; r.z = z; r.y = y; // a andar para trás, as pernas andam ao contrário
+      { if (dd > 0.003) r.my = Math.atan2(x - r.x, z - r.z); const rel = r.my == null ? 0 : angD(r.my, S.yaw); r.back = r.spd > 0.6 && Math.abs(rel) > 1.95; r.step = Math.min(dd, 1.2) * (r.back ? -1 : 1); } /* passo deste frame (antes somava-se tudo e as pernas aceleravam sem parar) */ r.x = x; r.z = z; r.y = y; // a andar para trás, as pernas andam ao contrário
       // passos dos outros: ouve-se quem anda perto (a correr de mais longe), mesmo sem o ver
       if (me && r.spd > 0.9 && r.spd < 7.5 && !b[11] && b[10]) { const run = r.spd > 3.5; r.sd = (r.sd || 0) + dd; if (r.sd >= (run ? 1.7 : 1.15)) { r.sd = 0; const d = Math.hypot(x - me.x, z - me.z), q = 1 - d / (run ? 34 : 18); if (q > 0 && audio.sample) audio.sample('passo-' + (G.W.paved && G.W.paved(x, z) ? 'betao' : G.surfAt ? G.surfAt(x, z) : 'relva'), q * q * (run ? 0.8 : 0.45), { vary: 0.12, lp: d > 9 ? 2200 : 0, pan: Math.max(-0.8, Math.min(0.8, (x - me.x) / 14)) }); } }
       // arena: radar (colegas sempre; inimigos quando disparam ou um colega os vê, a aparecer e a desaparecer devagar) e o corpo de quem morre cai

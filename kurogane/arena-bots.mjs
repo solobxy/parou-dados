@@ -117,7 +117,7 @@ export function makeBots(A) { // A: { players, add, remove, shot, kill, teamId, 
   const adj = [0, 0]; // ajuste de nível por equipa (sobe quando os bots morrem, desce quando matam)
   const bots = () => [...A.players.values()].filter(c => c.bot);
   const humans = () => [...A.players.values()].filter(c => c.p && !c.bot);
-  const level = t => { const H = humans().filter(c => c.p.team !== t); const base = H.length ? H.reduce((s, c) => s + humanSkill(c.p), 0) / H.length : 0.35; return clamp(base * 0.92 + adj[t], 0.08, 0.86); };
+  const level = t => { const H = humans().filter(c => c.p.team !== t); const base = H.length ? H.reduce((s, c) => s + humanSkill(c.p), 0) / H.length : 0.35; return clamp(base * 0.8 + adj[t], 0.06, 0.74); }; /* um pouco abaixo do nível dos humanos (estavam fortes demais) */
   const freeName = () => { const used = new Set([...A.players.values()].filter(c => c.p).map(c => c.p.name.toLowerCase().replace(' · bot', ''))); const L = NAMES.filter(n => !used.has(n.toLowerCase())); return L.length ? pick(L) : 'Jogador' + Math.floor(100 + Math.random() * 900); };
 
   const spawn = c => { const p = c.p, b = c.bot, now = Date.now();
@@ -170,7 +170,7 @@ export function makeBots(A) { // A: { players, add, remove, shot, kill, teamId, 
     const foes = [...A.players.values()].filter(o => o.p && o.p.alive && o.p.team !== p.team && (o.p.lv || 0) === 0); // outro piso não se vê (como para os jogadores)
     const vis = new Set();
     for (const o of foes) { const q = o.p; const fov = b.tgt === o.id ? -0.2 : 0.42; if (!canSee(p, q, fov)) { b.seen.delete(o.id); continue; } vis.add(o.id);
-      if (!b.seen.has(o.id)) { const d = Math.hypot(q.x - p.x, q.z - p.z), react = (520 - 300 * S) + d * (5 - 3 * S) + Math.random() * 180 + (q.sc === 2 ? 250 : q.sc === 1 ? 90 : 0); b.seen.set(o.id, now + react); }
+      if (!b.seen.has(o.id)) { const d = Math.hypot(q.x - p.x, q.z - p.z), react = (640 - 300 * S) + d * (5.5 - 3 * S) + Math.random() * 180 + (q.sc === 2 ? 250 : q.sc === 1 ? 90 : 0); b.seen.set(o.id, now + react); }
       b.known.set(o.id, { x: q.x, z: q.z, t: now }); }
     p.vis = new Set([...vis].filter(id => (b.seen.get(id) || 1e15) <= now)); p.visT = now; // os colegas veem no radar o que o bot viu
     // o radar da equipa: inimigos que dispararam ou que um colega está a ver (o mesmo que os jogadores têm no ecrã)
@@ -179,7 +179,7 @@ export function makeBots(A) { // A: { players, add, remove, shot, kill, teamId, 
     for (const [id, k] of b.known) if (now - k.t > 9000) b.known.delete(id);
     // alvo: o mais perto já reconhecido (fica com o atual se ainda o vê)
     let tgt = null, td = 1e9; for (const o of foes) { const r = b.seen.get(o.id); if (r == null || r > now) continue; const d = Math.hypot(o.p.x - p.x, o.p.z - p.z) - (o.id === b.tgt ? 6 : 0); if (d < td) { td = d; tgt = o; } }
-    if (tgt && tgt.id !== b.tgt) { b.tgt = tgt.id; b.err = [gauss() * (0.09 - 0.06 * S) + (Math.random() < 0.5 ? -1 : 1) * 0.03 * (1 - S), gauss() * (0.05 - 0.03 * S)]; b.burst = 0; b.nextShot = Math.max(b.nextShot, now + 60 + Math.random() * 120); b.aimHead = Math.random() < 0.08 + 0.22 * S; }
+    if (tgt && tgt.id !== b.tgt) { b.tgt = tgt.id; b.err = [gauss() * (0.11 - 0.06 * S) + (Math.random() < 0.5 ? -1 : 1) * 0.04 * (1 - S), gauss() * (0.06 - 0.03 * S)]; b.burst = 0; b.nextShot = Math.max(b.nextShot, now + 60 + Math.random() * 120); b.aimHead = Math.random() < 0.05 + 0.16 * S; }
     if (!tgt) { b.tgt = null; tryGrenade(c, now); }
     b.cur = tgt;
     const K = KITB[p.kit], g = ITEMS[K.w].gun;
@@ -243,7 +243,7 @@ export function makeBots(A) { // A: { players, add, remove, shot, kill, teamId, 
     const lag = (q.hist && q.hist.length > 1) ? q.hist[Math.max(0, q.hist.length - 4)] : null; const lx = lag ? (lag[1] - q.x) * (0.5 - 0.35 * S) : 0, lz = lag ? (lag[3] - q.z) * (0.5 - 0.35 * S) : 0;
     let yaw = Math.atan2(dx + lx, dz + lz), pit = Math.asin(clamp(dy / d, -1, 1));
     const rec = b.burst * (g.auto ? (K.w === 'm249' ? 0.0045 : 0.0035) : 0.002) * (1.2 - 0.6 * S);
-    yaw += b.err[0] + gauss() * (0.006 + 0.012 * (1 - S)) + gauss() * rec; pit += b.err[1] + gauss() * (0.004 + 0.008 * (1 - S)) + rec * 0.8;
+    yaw += b.err[0] + gauss() * (0.008 + 0.014 * (1 - S)) + gauss() * rec; pit += b.err[1] + gauss() * (0.004 + 0.008 * (1 - S)) + rec * 0.8;
     const spr = (g.acc ?? g.spread * 0.3) * (b.still ? 1 : 2.2) * (p.mv > 0.5 ? 1.6 : 1);
     const D = [Math.sin(yaw) * Math.cos(pit), Math.sin(pit), Math.cos(yaw) * Math.cos(pit)];
     const O = [ex, ey, ez]; const L0 = 300, fr = rayFrac(ex, ey, ez, ex + D[0] * L0, ey + D[1] * L0, ez + D[2] * L0), L = Math.max(0.5, fr * L0);
@@ -251,7 +251,7 @@ export function makeBots(A) { // A: { players, add, remove, shot, kill, teamId, 
     A.shot(c, { o: O, d: ds[0], ds, n, k: K.k, L, sup: false });
     b.mag--; b.burst++; p.lastShot = now;
     // o erro inicial vai-se corrigindo a cada tiro (mais nos bons)
-    const k2 = 0.55 + 0.3 * S; b.err[0] *= 1 - k2 * 0.6; b.err[1] *= 1 - k2 * 0.6;
+    const k2 = 0.45 + 0.28 * S; b.err[0] *= 1 - k2 * 0.6; b.err[1] *= 1 - k2 * 0.6;
     // rajadas: curtas de longe, mais longas de perto; pausa entre elas
     const dist = Math.hypot(q.x - p.x, q.z - p.z);
     if (g.auto) { const maxB = dist > 30 ? 3 + Math.floor(S * 2) : dist > 14 ? 5 + Math.floor(S * 3) : 9; if (b.burst >= maxB + Math.floor(Math.random() * 3)) { b.burst = 0; b.nextShot = now + 180 + Math.random() * 320 + (1 - S) * 200; } else b.nextShot = now + g.cd * 1000 * (1.02 + Math.random() * 0.08); }

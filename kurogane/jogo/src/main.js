@@ -1205,7 +1205,7 @@ float terH(vec2 p) { if (uTerP.w < 0.5) return 0.0; vec2 f = clamp((p + uTerP.x)
   const PUNCH = { x: 0, y: 0 }; const flinch = d => { const k = Math.min(1.4, 0.35 + d / 45); PUNCH.x += 0.045 * k; PUNCH.y += (Math.random() - 0.5) * 0.05 * k; G.buzz && G.buzz(40); };
   const hurtPlayer = (dmg, cause, raw) => {
     const p = G.p; if (!p || !p.alive || (G.admF && G.admF.god)) return; if ((cause === 'zombie' || cause === 'lobo' || cause === 'javali') && G.car && VT[G.car.k].fly) return; G.combatT = G.t; let arm = 0; if (!raw) for (const s in G.inv.eq) if (G.inv.eq[s]) arm += ITEMS[G.inv.eq[s].k].armor || 0;
-    const real = dmg * (1 - Math.min(0.6, arm)); p.hp -= real; p.hurtT = 0.4; p.hitAt = G.t; if (cause !== 'queda') dmgLog.push({ t: G.t, d: dmg }); audio.play('dor'); if (cause !== 'pvp') { G.ui.damage(real); flinch(real); } G.buzz(60);
+    const real = dmg * (1 - Math.min(0.6, arm)); p.hp -= real; p.hurtT = 0.4; p.hitAt = G.t; if (cause !== 'queda') dmgLog.push({ t: G.t, d: dmg }); if (G.t - (p.dorT ?? -9) > 0.8) { p.dorT = G.t; audio.play('dor', 0.8); } /* o gemido não se repete a cada bala */ if (cause !== 'pvp') { G.ui.damage(real); flinch(real); } G.buzz(60);
     if (Math.random() < 0.12 && !p.bleed) { p.bleed = 1; G.ui.toast('Estás a sangrar. Usa uma ligadura.'); }
     burst(p.x, 1.2, p.z, 5, 0x7a0e0a, 2.2);
     if (p.hp <= 0) die(cause);
@@ -1349,7 +1349,7 @@ float terH(vec2 p) { if (uTerP.w < 0.5) return 0.0; vec2 f = clamp((p + uTerP.x)
         let ang = null; const sh = G.net && G.net.R ? [...G.net.R.values()].find(r => r.name === by) : null;
         if (sh && G.p) { const fy = Math.atan2(AIM.dir.x, AIM.dir.z), a = Math.atan2(sh.x - G.p.x, sh.z - G.p.z); let d = fy - a; while (d > Math.PI) d -= 2 * Math.PI; while (d < -Math.PI) d += 2 * Math.PI; ang = d; }
         G.ui.damage(dmg, ang); flinch(dmg * (zone === 'head' ? 1.8 : 1)); }
-      hurtPlayer(dmg, 'pvp', true); if (zone === 'head') G.shakeT = Math.max(G.shakeT || 0, 0.25);
+      audio.play('levar', zone === 'head' ? 1 : 0.85); hurtPlayer(dmg, 'pvp', true); if (zone === 'head') G.shakeT = Math.max(G.shakeT || 0, 0.25);
     },
     give: L => { let n = 0, chao = 0; for (const it of L) { const left = G.inv.give(it); n++; if (left) { it.n = left; G.dropItem(it); chao++; } } audio.play('apanhar'); refresh(); G.ui.toast(!n ? 'Já alguém levou esta mochila' : chao ? 'Apanhaste a mochila (o que não coube ficou no chão)' : 'Apanhaste a mochila'); },
     // clarão no cano de quem dispara (os outros jogadores e os bots): vês que te estão a disparar e de onde

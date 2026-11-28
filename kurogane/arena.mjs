@@ -65,7 +65,7 @@ export function makeArena({ send: send0 }) {
       if (v.god) dmg = 0;
       v.hp = Math.max(0, v.hp - dmg); const kl = v.hp <= 0; if (kl) { v.alive = false; v.deadT = now; kill(p, v, k); }
       send(T.c, { t: 'hit', by: p.name, dmg: +dmg.toFixed(1), zone: hh.zone, hp: v.hp, pop });
-      send(c, { t: 'hitc', on: T.c.id, zone: hh.zone, kill: kl, name: v.name }); if (!hitAny && !c.bot) { hitAny = true; p.hN = (p.hN || 0) + 1; }
+      send(c, { t: 'hitc', on: T.c.id, zone: hh.zone, kill: kl, name: v.name, p: [0, 1, 2].map(j => +(O[j] + d[j] * hh.dist).toFixed(2)) }); if (!hitAny && !c.bot) { hitAny = true; p.hN = (p.hN || 0) + 1; }
     }
   };
   const msg = (c, m) => {

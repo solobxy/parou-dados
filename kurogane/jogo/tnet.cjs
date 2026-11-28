@@ -36,6 +36,7 @@ server.listen(0, async () => {
     await A.page.screenshot({ path: path.join(outDir, 'net-ver.png') });
     // A dispara 3 tiros de pistola ao peito do Bruno (sem colete): morre ao 3.º
     await B.ev(() => { G.inv.eq.vest = null; G.inv.eq.head = null; G.p.hp = 100; });
+    const bpos = await B.ev(() => [G.p.x, G.p.y || 0, G.p.z]); await A.ev(() => { const h0 = G.ui.hit; window.__hp = []; G.ui.hit = (...a) => { __hp.push(a[3] ? [a[3].x, a[3].y, a[3].z] : null); return h0(...a); }; });
     await W(400);
     console.log('DBG', await A.ev(() => { const r = [...G.net.R.values()][0], T = G.TER; return JSON.stringify({ a: [G.p.x, G.p.y, G.p.z, T.at(G.p.x, G.p.z)], b: r && [r.x, r.y, r.z, T.at(r.x, r.z)], mid: r && T.at((r.x + G.p.x) / 2, (r.z + G.p.z) / 2) }); }));
     const gun = await A.ev(() => { for (let i = 0; i < 6; i++) if (G.inv.belt[i] && /pistola/.test(G.inv.belt[i].k)) { G.sel = i; return G.inv.belt[i].k + ' ' + G.inv.belt[i].ak; } return null; });
@@ -46,6 +47,7 @@ server.listen(0, async () => {
       await W(700); hps.push(await B.ev(() => Math.round(G.p.hp) + (G.p.alive ? '' : ' morto')));
     }
     console.log('vida do Bruno depois de cada tiro:', hps.join(', ')); ok(/morto/.test(hps[2]) && !/morto/.test(hps[1]), 'morre ao 3.º tiro no peito');
+    { const hp = await A.ev(() => window.__hp); const bp = await A.ev(() => { const r = [...G.net.R.values()][0]; return r ? [r.x, r.y || 0, r.z] : null; }); const g = hp.filter(Boolean); console.log('hitmarkers em', JSON.stringify(g.map(q => q.map(v => +v.toFixed(2)))), 'Bruno em', JSON.stringify(bp && bp.map(v => +v.toFixed(2)))); ok(g.length >= 1 && bp && g.every(q => Math.hypot(q[0] - bp[0], q[2] - bp[2]) < 0.6 && q[1] - bp[1] > 0.6 && q[1] - bp[1] < 1.9), 'o hitmarker aparece onde a bala entrou (no peito, à frente do corpo)'); }
     await W(1800);
     const dtx = await B.ev(() => document.getElementById('dCause').textContent); console.log('ecrã de morte:', dtx); ok(/Ana matou-te/.test(dtx), 'diz quem te matou');
     await B.page.screenshot({ path: path.join(outDir, 'net-morte.png') });

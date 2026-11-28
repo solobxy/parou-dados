@@ -556,7 +556,7 @@ const shot = (c, m) => {
     else dmg *= 0.6;
     if (v.god) dmg = 0; v.hp = Math.max(0, v.hp - dmg); const kill = v.hp <= 0; if (kill) { v.alive = false; stat(p, 'k'); stat(v, 'd'); }
     send(T.c, { t: 'hit', by: p.name, dmg: +dmg.toFixed(1), zone: h.zone, hp: v.hp, pop });
-    send(c, { t: 'hitc', on: T.c.id, zone: h.zone, kill, name: v.name });
+    send(c, { t: 'hitc', on: T.c.id, zone: h.zone, kill, name: v.name, p: [0, 1, 2].map(j => +(O[j] + d[j] * h.dist).toFixed(2)) }); /* onde a bala entrou: o hitmarker aparece ali */
   }
 };
 
