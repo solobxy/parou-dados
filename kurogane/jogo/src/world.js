@@ -154,7 +154,7 @@ export function buildWorld(scene, mats, A, opt = {}) {
     b.push(x, y0 + h / 2, z, ry); b.box(0.16, h + 0.1, w + 0.1, 0, 0, 0, 0x2a2b2c);
     b.plane(w, h, 0.085, 0, 0, 0xffffff, { mat: 'sign', uv: s, ry: Math.PI / 2 }); b.plane(w, h, -0.085, 0, 0, 0xffffff, { mat: 'sign', uv: s, ry: -Math.PI / 2 }); b.pop();
   };
-  const hsign = (x, y, z, text, bg, fg, w = 3, h = 0.8, o = {}) => { const s = A.sign(text, { w: 320, h: Math.max(48, Math.round(320 * h / w)), bg, fg, pad: 0.12, sub: o.sub, font: o.font, weight: o.weight }); b.box(w + 0.1, h + 0.1, 0.12, x, y, z, 0x2a2b2c); b.plane(w, h, x, y, z + 0.065, 0xffffff, { mat: o.dim ? 'paint' : 'sign', uv: s, ry: o.ry || 0 }); };
+  const hsign = (x, y, z, text, bg, fg, w = 3, h = 0.8, o = {}) => { const s = A.sign(text, { w: 320, h: Math.max(48, Math.round(320 * h / w)), bg, fg, pad: 0.12, sub: o.sub, font: o.font, weight: o.weight }); const ry = o.ry || 0; b.box(w + 0.1, h + 0.1, 0.12, x, y, z, 0x2a2b2c, { ry }); b.plane(w, h, x + Math.sin(ry) * 0.065, y, z + Math.cos(ry) * 0.065, 0xffffff, { mat: o.dim ? 'paint' : 'sign', uv: s, ry }); }; // a placa fica à frente da caixa, para o lado para onde está virada
   const PAL = [0xd9d4ca, 0xc9c2b4, 0xb8b3aa, 0xe2ddd2, 0x9fa3a6, 0xcdb9a0, 0xa8a094, 0x8c8f92, 0xd7cdbb];
 
   // torre não enterável (a parte de cima some se tapar o jogador)
@@ -219,20 +219,21 @@ export function buildWorld(scene, mats, A, opt = {}) {
   let eid = 0;
   // luzes do teto dentro dos prédios: lâmpadas nuas de fio ou calhas fluorescentes; umas acesas, outras a piscar, outras partidas
   // (escolha por um sorteio próprio pela posição: não mexe nos sorteios do mapa). O jogo acende as mais perto de ti (main.js)
-  const BULB = new THREE.Color(1.9, 1.45, 0.85), TUBE = new THREE.Color(1.35, 1.6, 1.45);
+  const BULB = new THREE.Color(1.9, 1.45, 0.85), TUBE = new THREE.Color(1.35, 1.6, 1.45), SHADE = new THREE.Color(1.25, 0.95, 0.6);
   const ceilLamps = (C, L, ax, az, bx, bz, h, yb) => { const W2 = bx - ax, D2 = bz - az; if (W2 < 2 || D2 < 2) return; const big = W2 * D2 > 70;
     const nx = Math.max(1, Math.round(W2 / 5.5)), nz = Math.max(1, Math.round(D2 / 5.5)); C.lamps = C.lamps || [];
     for (let i = 0; i < nx; i++) for (let j = 0; j < nz; j++) { const x = ax + (i + 0.5) * W2 / nx, z = az + (j + 0.5) * D2 / nz;
       const hs = Math.abs(Math.sin(x * 12.9898 + z * 78.233 + L * 37.719) * 43758.5453) % 1, h2 = Math.abs(Math.sin(x * 4.1 + z * 9.7 + L * 3.3) * 9631.17) % 1;
-      const st = hs < 0.2 ? 'off' : hs < 0.48 ? 'flick' : 'on', tube = big ? h2 < 0.8 : h2 < 0.25, on = st !== 'off';
+      const st = hs < 0.2 ? 'off' : hs < 0.48 ? 'flick' : 'on', tube = big ? h2 < 0.45 : h2 < 0.25, on = st !== 'off';
       if (tube) { const ry = W2 >= D2 ? 0 : Math.PI / 2, drop = 0.42; b.push(x, h - drop, z, ry);
         for (const sx of [-0.45, 0.45]) b.box(0.008, drop, 0.008, sx, drop / 2, 0, 0x2a2b2c);
         b.box(1.25, 0.05, 0.18, 0, 0.03, 0, 0xb8bcbc, { mat: 'm' });
         if (on) b.cyl(0.022, 0.022, 1.15, 6, 0, -0.01, 0, TUBE, { mat: 'lit', rz: Math.PI / 2 });
         else b.cyl(0.022, 0.022, 1.15, 6, 0.3, -0.32, 0, 0x8a908a, { rz: Math.PI / 2 - 0.55 }); // partida: pendurada de um lado
         b.pop(); C.lamps.push({ x, y: yb + h - drop - 0.1, z, lv: L, s: st, k: 't', cy: yb + h, fy: yb }); }
-      else { const drop = 0.35 + h2 * 0.35; b.push(x, h, z, 0);
+      else { const drop = 0.35 + h2 * 0.35, shade = big || h2 > 0.6; b.push(x, h, z, 0);
         b.cyl(0.05, 0.05, 0.03, 8, 0, -0.015, 0, 0xd8d4ca); b.box(0.008, drop, 0.008, 0, -drop / 2, 0, 0x1d1d1d); b.cyl(0.02, 0.026, 0.06, 8, 0, -drop - 0.02, 0, 0x2a2b2c);
+        if (shade) { b.cyl(0.05, 0.21, 0.12, 14, 0, -drop - 0.02, 0, h2 > 0.8 ? 0x5a4a3a : 0x34383c, { mat: 'm' }); if (on) b.cyl(0.19, 0.19, 0.008, 14, 0, -drop - 0.083, 0, SHADE, { mat: 'lit' }); } // candeeiro industrial com abajur de metal (por baixo, o abajur brilha)
         b.sph(0.045, 0, -drop - 0.075, 0, on ? BULB : 0x6a6a60, { mat: on ? 'lit' : 'v', ws: 8, hs: 6 });
         b.pop(); C.lamps.push({ x, y: yb + h - drop - 0.1, z, lv: L, s: st, k: 'b', cy: yb + h, fy: yb }); } } };
   const shell = (x0, z0, x1, z1, o = {}) => {

@@ -55,10 +55,18 @@ async function boot() {
   const PR = Math.min(devicePixelRatio || 1, TOUCH ? 1.5 : 2);
   renderer.setPixelRatio(PR); renderer.setSize(innerWidth, innerHeight, false);
   renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFShadowMap;
-  renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.02; renderer.outputColorSpace = THREE.SRGBColorSpace;
+  // cor de cinema (como nas imagens de referência): ACES, depois sombras um pouco frias e luzes quentes, contraste suave e cor um pouco menos saturada. Faz-se na mesma conta do tone mapping: não custa nada a mais
+  THREE.ShaderChunk.tonemapping_pars_fragment = THREE.ShaderChunk.tonemapping_pars_fragment.replace('vec3 CustomToneMapping( vec3 color ) { return color; }', `vec3 CustomToneMapping( vec3 color ) {
+    vec3 c = ACESFilmicToneMapping( color );
+    float l = dot( c, vec3( 0.2126, 0.7152, 0.0722 ) );
+    c *= mix( vec3( 0.92, 0.99, 1.07 ), vec3( 1.045, 1.0, 0.93 ), smoothstep( 0.015, 0.4, l ) );
+    l = dot( c, vec3( 0.2126, 0.7152, 0.0722 ) ); c = mix( vec3( l ), c, 0.88 );
+    vec3 g = sqrt( max( c, 0.0 ) ); g = mix( g, g * g * ( 3.0 - 2.0 * g ), 0.32 );
+    return saturate( g * g ); }`);
+  renderer.toneMapping = THREE.CustomToneMapping; renderer.toneMappingExposure = 1.02; renderer.outputColorSpace = THREE.SRGBColorSpace;
   const scene = new THREE.Scene();
   const FOG = 0xb7a991; scene.background = new THREE.Color(FOG); scene.fog = new THREE.Fog(FOG, 62, 150);
-  const SUNDIR = new THREE.Vector3(-58, 40, 30).normalize();
+  const SUNDIR = new THREE.Vector3(-58, 40, 30).normalize(), _shU = new THREE.Vector3(), _shV = new THREE.Vector3(), _shY = new THREE.Vector3(0, 1, 0);
   const SKY = makeSky(); scene.add(SKY.mesh); const SUNV = new THREE.Vector3(); // céu com sol, lua, estrelas e nuvens
   const hemi = new THREE.HemisphereLight(0xa8bde0, 0x5b4a3a, 0.62), _hgIn = new THREE.Color(0xa89880); scene.add(hemi);
   const sun = new THREE.DirectionalLight(0xffc896, 3.0); sun.castShadow = true;
@@ -173,8 +181,8 @@ float terH(vec2 p) { if (uTerP.w < 0.5) return 0.0; vec2 f = clamp((p + uTerP.x)
       float wTexR = 0.0;
       { vec3 an = abs( vDetN ); bool up = an.y > 0.6; vec2 du = up ? vDetP.xz : ( an.x > an.z ? vDetP.zy : vDetP.xy );
         vec4 d1 = texture2D( uDet, du * 0.21 ), d2 = texture2D( uDet, du * 1.37 );
-        float k = ( d1.r - 0.5 ) * 0.34 + ( d2.g - 0.5 ) * 0.22;
-        if ( !up ) { k -= smoothstep( 0.55, 0.95, texture2D( uDet, vec2( du.x * 0.35, du.y * 0.02 ) ).b ) * 0.12; k -= ( 1.0 - smoothstep( 0.0, 0.55, vDetP.y ) ) * 0.14; } // escorridos e sujidade junto ao chão
+        float k = ( d1.r - 0.5 ) * 0.44 + ( d2.g - 0.5 ) * 0.24 + ( texture2D( uDet, du * 0.055 + 0.21 ).r - 0.5 ) * 0.3; // manchas de humidade grandes, como nas paredes velhas das imagens
+        if ( !up ) { k -= smoothstep( 0.5, 0.95, texture2D( uDet, vec2( du.x * 0.35, du.y * 0.02 ) ).b ) * 0.2; k -= ( 1.0 - smoothstep( 0.0, 0.85, vDetP.y ) ) * 0.24; } // escorridos e sujidade junto ao chão (também faz de sombra de contacto)
         else { k = ( d1.r - 0.5 ) * 0.14 + ( d2.g - 0.5 ) * 0.16 + ( d2.r - 0.5 ) * 0.08; // chão: menos manchas
           vec3 c0 = diffuseColor.rgb; float lum = dot( c0, vec3( 0.299, 0.587, 0.114 ) ), sat = max( c0.r, max( c0.g, c0.b ) ) - min( c0.r, min( c0.g, c0.b ) );
           { // chãos dos prédios: mosaico nos claros, tábuas nos castanhos
@@ -585,11 +593,17 @@ float terH(vec2 p) { if (uTerP.w < 0.5) return 0.0; vec2 f = clamp((p + uTerP.x)
     L.forEach((l, i) => { const r = l[1] > 9 ? 40 : 13; o.position.set(l[0], 0.06, l[2]); o.scale.set(r, 1, r); o.updateMatrix(); m.setMatrixAt(i, o.matrix); }); m.renderOrder = 3; m.frustumCulled = false; scene.add(m); lampPools = m; } }
   // lâmpadas do teto dos prédios: todas as acesas brilham (halo no teto e mancha de luz no chão), numa malha só; as 3 mais perto também dão luz a sério
   const inGlow = (() => { const mk = rx => { const m = new THREE.InstancedMesh(new THREE.PlaneGeometry(1, 1).rotateX(rx), new THREE.MeshBasicMaterial({ map: G.poolTex, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }), 360); m.count = 0; m.visible = false; m.renderOrder = 3; m.frustumCulled = false; m.setColorAt(0, new THREE.Color()); scene.add(m); return m; }; return { c: mk(Math.PI / 2), f: mk(-Math.PI / 2), o: new THREE.Object3D(), k: new THREE.Color() }; })();
-  const inGlowFill = (cx, cz, IN, ilv) => { const { c: mc, f: mf, o, k } = inGlow; let n = 0;
+  // brilho à volta das lâmpadas (como a luz «a sangrar» nas fotografias): pontos com uma mancha redonda, uma só chamada de desenho para todas
+  const halo = (() => { const mk = sz => { const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(480 * 3), 3)); g.setAttribute('color', new THREE.BufferAttribute(new Float32Array(480 * 3), 3)); g.setDrawRange(0, 0); g.boundingSphere = new THREE.Sphere(new THREE.Vector3(), 1e7);
+      const m = new THREE.Points(g, new THREE.PointsMaterial({ map: G.poolTex, size: sz, sizeAttenuation: true, vertexColors: true, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending })); m.frustumCulled = false; m.renderOrder = 4; m.visible = false; scene.add(m); return m; };
+    return { i: mk(0.75), s: mk(2.6), f: mk(0.5) }; })();
+  const haloSet = (H, L) => { const P = H.geometry.attributes.position, C = H.geometry.attributes.color, n = Math.min(L.length, 480); for (let i = 0; i < n; i++) { const q = L[i]; P.setXYZ(i, q[0], q[1], q[2]); C.setXYZ(i, q[3], q[4], q[5]); } H.geometry.setDrawRange(0, n); H.visible = n > 0; P.needsUpdate = C.needsUpdate = true; };
+  const inGlowFill = (cx, cz, IN, ilv) => { const { c: mc, f: mf, o, k } = inGlow; let n = 0; const HL = [];
     for (const c of W.cuts) { if (!c.shell || !c.lamps || !c.lamps.length) continue; if (IN ? c !== IN : cx < c.x0 - 60 || cx > c.x1 + 60 || cz < c.z0 - 60 || cz > c.z1 + 60) continue; const lv = IN ? ilv : 0;
       for (const l of c.lamps) { if (l.s === 'off' || l.lv !== lv || l.cy == null || n >= 360) continue; const t = l.k === 't'; k.setRGB(t ? 0.62 : 0.85, t ? 0.78 : 0.6, t ? 0.68 : 0.34);
         o.position.set(l.x, l.cy - 0.06, l.z); o.scale.set(t ? 3.6 : 2.8, 1, t ? 3.6 : 2.8); o.updateMatrix(); mc.setMatrixAt(n, o.matrix); mc.setColorAt(n, k);
-        o.position.set(l.x, l.fy + 0.06, l.z); o.scale.set(t ? 5 : 4, 1, t ? 5 : 4); o.updateMatrix(); mf.setMatrixAt(n, o.matrix); mf.setColorAt(n, k); n++; } }
+        o.position.set(l.x, l.fy + 0.06, l.z); o.scale.set(t ? 5 : 4, 1, t ? 5 : 4); o.updateMatrix(); mf.setMatrixAt(n, o.matrix); mf.setColorAt(n, k); n++; HL.push(t ? [l.x, l.y + 0.09, l.z, 0.42, 0.52, 0.46] : [l.x, l.y + 0.03, l.z, 0.75, 0.52, 0.3]); } }
+    haloSet(halo.i, HL);
     for (const m of [mc, mf]) { m.count = n; m.visible = n > 0; m.instanceMatrix.needsUpdate = true; m.instanceColor.needsUpdate = true; } };
   G.dbgInGlow = () => inGlow.c.count; /* testes */
   G.base = makeBase({ scene, W, G, audio, addRect, removeRect, visDirty, inCity, toast: m => G.ui && G.ui.toast(m) });
@@ -2009,6 +2023,7 @@ float terH(vec2 p) { if (uTerP.w < 0.5) return 0.0; vec2 f = clamp((p + uTerP.x)
         baseL.forEach((L, i) => { const q = bl[i]; if (q) { L.position.set(q[0][0], q[0][1], q[0][2]); L.userData.on = 1; L.userData.fire = q[0].fire; } else L.userData.on = 0; });
         const IN = G.inside, ilv = p.st && p.st.b === IN ? p.st.lv : (p.lv || 0), il = IN && IN.lamps ? IN.lamps.filter(l => l.lv === ilv && l.s !== 'off').map(l => [l, (l.x - p.x) ** 2 + (l.z - p.z) ** 2]).sort((a, b) => a[1] - b[1]).slice(0, lampL.length) : [];
         inGlowFill(cx, cz, IN, ilv);
+        { const HS = []; if (nt > 0.05) for (const l of W.lamps) { const d = (l[0] - cx) ** 2 + (l[2] - cz) ** 2; if (d < 160 * 160) HS.push([l[0], l[1] + 0.1, l[2], 0.85, 0.62, 0.36]); } haloSet(halo.s, HS); const HF = []; for (const l of W.festoon || []) if ((l[0] - cx) ** 2 + (l[2] - cz) ** 2 < 120 * 120) HF.push([l[0], l[1], l[2], 0.9, 0.6, 0.3]); haloSet(halo.f, HF); } // candeeiros da rua (só de noite) e grinaldas das lojas
         if (!IN && p.alive) { for (const c of W.cuts) { if (!c.shell || !c.lamps || !c.lamps.length || p.x < c.x0 - 14 || p.x > c.x1 + 14 || p.z < c.z0 - 14 || p.z > c.z1 + 14) continue; for (const l of c.lamps) if (l.s !== 'off' && l.lv === (p.lv || 0)) { const d = (l.x - p.x) ** 2 + (l.z - p.z) ** 2; if (d < 196) il.push([l, d]); } } il.sort((a, b) => a[1] - b[1]); il.length = Math.min(il.length, 2); } // de fora também se veem as casas por dentro (as 2 lâmpadas mais perto)
         { const nS = IN ? 0 : lampL.length - il.length, near3 = nS > 0 ? W.lamps.concat(bl.slice(baseL.length).map(a => a[0])).map(l => [l, (l[0] - cx) ** 2 + (l[2] - cz) ** 2]).filter(a => a[1] < 1600).sort((a, b) => a[1] - b[1]).slice(0, nS) : [];
           lampL.forEach((L, i) => { if (i < il.length) { const q = il[i]; L.userData.ind = 1; L.position.set(q[0].x, q[0].y, q[0].z); L.userData.on = 1; L.userData.lk = q[0]; return; } // lâmpadas do teto (dentro: as do teu piso; fora: as das casas mesmo ao lado)
@@ -2019,7 +2034,7 @@ float terH(vec2 p) { if (uTerP.w < 0.5) return 0.0; vec2 f = clamp((p + uTerP.x)
           L.color.setHex(tube ? 0xcfe8c8 : 0xffa860); L.intensity = u.on ? (tube ? 7 : 5.5) * f * (0.75 + 0.25 * nt) : 0; L.distance = tube ? 9 : 7.5; L.decay = 1.7; }
         else { L.color.setHex(0xffc27a); L.decay = 1.6; L.intensity = u.on ? nt * (u.big ? 200 : 26) : 0; L.distance = u.big ? 48 : u.base ? 4 : 20; } });
       { const shOn = renderer.shadowMap.enabled; baseL.forEach((L, i) => { const f = L.userData.fire ? 0.85 + 0.1 * Math.sin(G.t * 11 + i) + 0.06 * Math.sin(G.t * 23.7 + i * 2) : 1; L.intensity = L.userData.on ? (L.userData.fire ? 0.1 + 0.9 * nt : 0.35 + 0.65 * nt) * 16 * f * (L.userData.fire || 1) : 0; L.color.setHex(L.userData.fire ? 0xff8a3a : 0xffc27a); L.distance = shOn ? (L.userData.fire ? 6.5 : 9) : (L.userData.fire ? 2.4 : 3); L.castShadow = shOn; L.shadow.autoUpdate = L.intensity > 0; }); torch.shadow.autoUpdate = torch.intensity > 0; } // sem sombras: alcance curto para não iluminar o lado de fora; as sombras só se calculam com a luz acesa (poupa o telemóvel)
-      G.base.night(nt); if (lampPools) lampPools.material.opacity = nt * 0.5; inGlow.c.material.opacity = 0.9; inGlow.f.material.opacity = 0.3 + 0.35 * nt;
+      G.base.night(nt); if (lampPools) lampPools.material.opacity = nt * 0.5; inGlow.c.material.opacity = 0.9; inGlow.f.material.opacity = 0.3 + 0.35 * nt; halo.i.material.opacity = 0.55 + 0.35 * nt; halo.s.material.opacity = Math.min(1, nt * 1.2); halo.f.material.opacity = 0.35 + 0.65 * nt;
       G.ambT = (G.ambT || 0) - dt; if (G.ambT <= 0) { G.ambT = 0.5; audio.ambience(G.playing && p && p.alive ? D : 0, !!G.inside || !!G.car, 0.25 + 0.5 * (G.rain || 0)); } // pássaros de dia, grilos à noite, vento
     }
     // os zombies de pisos que não estás a ver não aparecem (a não ser que se vejam pelas escadas)
@@ -2080,8 +2095,12 @@ float terH(vec2 p) { if (uTerP.w < 0.5) return 0.0; vec2 f = clamp((p + uTerP.x)
     if (FPF.t < 1 && p && PROJ.mode !== 'chase') { const e = FPF.t * FPF.t * (3 - 2 * FPF.t); cam.position.lerpVectors(FPF.P, cam.position, e); _qF.copy(cam.quaternion); cam.quaternion.copy(FPF.Q).slerp(_qF, e); const A0 = FPF.M.elements, B0 = cam.projectionMatrix.elements; for (let i = 0; i < 16; i++) B0[i] = A0[i] + (B0[i] - A0[i]) * e; cam.projectionMatrixInverse.copy(cam.projectionMatrix).invert(); PROJ.dirty = true; }
     cam.updateMatrixWorld();
     { const fa = G.fp ? FPF.fa ?? 1 : 0; scene.fog.near = G.ARENA ? 600 : G.fp ? 40 + 260 * fa : 62; scene.fog.far = G.ARENA ? 1200 : G.fp ? 138 + 712 * fa : 150; } // a arena é pequena: sem neblina // vista livre: neblina aos ~140 m (poupa o telemóvel: o que está para lá não se desenha)
-    { const sc0 = G.fp ? _c.copy(AIM.eye).addScaledVector(AIM.dir, Math.min(AIM.dist || 30, 60)) : camT; const tx = Math.round(sc0.x / 0.5) * 0.5, tz = Math.round(sc0.z / 0.5) * 0.5, ty = G.fp ? 0 : camT.y;
-      sun.target.position.set(tx, ty, tz); sun.position.set(tx, ty, tz).addScaledVector(SUNDIR, 70); sun.target.updateMatrixWorld(); }
+    { // sombras: na 1.ª pessoa a zona de sombras cobre de ~12 m atrás até ~70 m à frente (antes ia até 60 m à frente e o que estava ao pé de ti ficava sem sombra); o centro anda aos saltos de 1 texel no plano da luz, por isso as sombras não tremem ao andar
+      const SHk = G.fp ? 40 : 24, sc = sun.shadow.camera; if (sc.right !== SHk) { sc.left = sc.bottom = -SHk; sc.right = sc.top = SHk; sc.updateProjectionMatrix(); }
+      if (G.fp) { const hx = AIM.dir.x, hz = AIM.dir.z, hl = Math.hypot(hx, hz) || 1; _c.set(AIM.eye.x + hx / hl * 28, AIM.eye.y - 1.4, AIM.eye.z + hz / hl * 28); } else _c.copy(camT);
+      _shU.crossVectors(_shY, SUNDIR); if (_shU.lengthSq() < 1e-6) _shU.set(1, 0, 0); _shU.normalize(); _shV.crossVectors(SUNDIR, _shU);
+      const tx0 = 2 * SHk / sun.shadow.mapSize.x, u = Math.round(_c.dot(_shU) / tx0) * tx0, v = Math.round(_c.dot(_shV) / tx0) * tx0, w = _c.dot(SUNDIR);
+      sun.target.position.copy(SUNDIR).multiplyScalar(w).addScaledVector(_shU, u).addScaledVector(_shV, v); sun.position.copy(sun.target.position).addScaledVector(SUNDIR, 70); sun.target.updateMatrixWorld(); }
     // círculo de visão
     // máscara da linha de vista (refeita quando te mexes ou uma porta muda)
     if (p && G.playing && p.alive && !G.fp && !G.car) { VU.uVisK.value = 0.06 + 0.03 * (G.day ?? 1); VIS.t -= dt; const dk = W.doors.reduce((a, D) => a + (D.rc.off ? 1 : 0), 0) + ':' + p.lv + ':' + Math.round((AIM.lean || 0) * 4); VIS.cd = (VIS.cd || 0) - dt; const lo = (AIM.lean || 0) * LEAN, vcx = p.x + Math.cos(p.yaw) * lo, vcz = p.z - Math.sin(p.yaw) * lo; if (Math.hypot(vcx - VIS.x, vcz - VIS.z) > 0.002 || dk !== VIS.key || VIS.t <= 0) { VIS.x = vcx; VIS.z = vcz; VIS.key = dk; VIS.t = 0.5; drawVis(vcx, vcz, p.lv, p.bld && p.lv > 0 ? p.bld : null); } }

@@ -68,14 +68,24 @@ export function buildTowns(H) {
     { const [x, z] = pp(Wd / 2 - 0.6, -0.15); b.box(0.5, 0.55, 0.3, x, 1.0, z, 0xdcdad4, { ry: face }); }
     mp(X0, Z0, X1, Z1, 'rgba(110,104,92,.35)');
   };
+  // grinalda de lâmpadas (fio a cair entre dois pontos); as lâmpadas ficam em W.festoon para o brilho de noite
+  const FEST = new THREE.Color(1.9, 1.35, 0.7);
+  const festoon = (ax, az, bx, bz, y, sag) => { const L = Math.hypot(bx - ax, bz - az), n = Math.max(4, Math.round(L / 0.55)); let px = 0, py = 0, pz = 0;
+    for (let i = 0; i <= n; i++) { const t = i / n, x = ax + (bx - ax) * t, z = az + (bz - az) * t, yy = y - sag * 4 * t * (1 - t);
+      if (i) { const dx = x - px, dy = yy - py, dz = z - pz, l = Math.hypot(dx, dy, dz); b.box(0.012, 0.012, l, (x + px) / 2, (yy + py) / 2, (z + pz) / 2, 0x1a1a1a, { ry: Math.atan2(dx, dz), rx: -Math.atan2(dy, Math.hypot(dx, dz)) }); }
+      if (i && i < n) { b.box(0.012, 0.05, 0.012, x, yy - 0.025, z, 0x1a1a1a); b.sph(0.038, x, yy - 0.07, z, FEST, { mat: 'lit', ws: 6, hs: 4 }); (W.festoon || (W.festoon = [])).push([x, yy - 0.07, z]); }
+      px = x; py = yy; pz = z; } };
   const shop = (cx, cz, w, d, door, jp, pt) => {
     const x0 = cx - w / 2, x1 = cx + w / 2, z0 = cz - d / 2, z1 = cz + d / 2, along = door === 'n' || door === 's';
     const ops = { n: [], s: [], e: [], w: [] }; const mid = along ? cx : cz;
     ops[door] = [{ at: mid - 2.2, w: 2.2, k: 'w' }, { at: mid, w: 1.6, k: 'd' }, { at: mid + 2.2, w: 2.2, k: 'w' }];
     ops[{ s: 'n', n: 's', e: 'w', w: 'e' }[door]] = [{ at: mid + (along ? w : d) / 4, w: 1.2, k: 'd' }];
     shell(x0, z0, x1, z1, { name: pt, wall: 0xe4e2dc, floor: 0xd8dad6, h: 3.2, mapc: '#9aa7a3', ops, roofC: 0x8f8b84, trim: 0x6a6e72 });
-    if (door === 's' || door === 'n') { const z = door === 's' ? z1 : z0; hsign(cx, 3.5, door === 's' ? z1 + 0.02 : z0 - 0.15, jp, '#f4f2ea', '#c8321e', Math.min(w - 1, 4.5), 0.75, { sub: pt.toUpperCase() }); b.box(w - 0.6, 0.12, 1.0, cx, 2.85, door === 's' ? z1 + 0.5 : z0 - 0.5, 0xc8321e, { rx: door === 's' ? 0.18 : -0.18 }); }
+    if (door === 's' || door === 'n') { const z = door === 's' ? z1 : z0; hsign(cx, 3.5, door === 's' ? z1 + 0.17 : z0 - 0.17, jp, '#f4f2ea', '#c8321e', Math.min(w - 1, 4.5), 0.75, { sub: pt.toUpperCase(), ry: door === 's' ? 0 : Math.PI }); /* à frente da beira do telhado (antes a beira tapava a 2.ª linha) e virada para a rua */ b.box(w - 0.6, 0.12, 1.0, cx, 2.85, door === 's' ? z1 + 0.5 : z0 - 0.5, 0xc8321e, { rx: door === 's' ? 0.18 : -0.18 }); }
     else { const s = A.sign(jp, { w: 96, h: 320, bg: '#f4f2ea', fg: '#c8321e', vertical: true }); const x = door === 'e' ? x1 + 0.1 : x0 - 0.1; b.box(0.12, 2.4, 0.8, x, 1.9, z1 - 0.6, 0x2a2b2c); b.plane(0.7, 2.2, x + (door === 'e' ? 0.07 : -0.07), 1.9, z1 - 0.6, 0xffffff, { mat: 'sign', uv: s, ry: door === 'e' ? Math.PI / 2 : -Math.PI / 2 }); }
+    if (along) { const fz = door === 's' ? z1 + 1.06 : z0 - 1.06, wz = door === 's' ? z1 - 0.2 : z0 + 0.2, ry = door === 's' ? 0 : Math.PI;
+      festoon(x0 + 0.25, fz, x1 - 0.25, fz, 2.78, 0.28); // grinalda de lâmpadas à frente da loja
+      const s = A.sign('営業中', { w: 192, h: 72, bg: '#140806', fg: '#ff6a2a', pad: 0.12 }); b.plane(0.72, 0.27, cx - 2.75, 1.85, wz, 0xffffff, { mat: 'sign', uv: s, ry }); } // letreiro aceso na montra
     const sx = (x0 + x1) / 2, sz = (z0 + z1) / 2;
     if (along) { shelf(sx - w / 4, sz, w / 2 - 1.2, 0); shelf(sx + w / 4, sz, w / 2 - 1.2, 0); fridge(sx - w / 4, door === 's' ? z0 + 0.62 : z1 - 0.62, w / 2 - 1); counter(sx + w / 2 - 2.6, door === 's' ? z1 - 1.6 : z0 + 0.8, sx + w / 2 - 0.4, door === 's' ? z1 - 0.8 : z0 + 1.6, 0xd8dad6); container(sx + w / 2 - 1.5, door === 's' ? z1 - 1.9 : z0 + 1.9, 'Revistar caixa registadora', 'casa', { y: 1.0 }); }
     else { shelf(sx, sz - d / 4, d / 2 - 1.2, Math.PI / 2); shelf(sx, sz + d / 4, d / 2 - 1.2, Math.PI / 2); }
