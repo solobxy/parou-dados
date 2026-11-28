@@ -571,7 +571,7 @@ float terH(vec2 p) { if (uTerP.w < 0.5) return 0.0; vec2 f = clamp((p + uTerP.x)
     p: null, inv: new Inv(), sel: 0, zs: [], bags: [], box: null, prompt: null,
     cam, renderer, scene, camT, YAW,
   };
-  G.dbgDrive = () => ({ xray: !!(G0.xray && G0.xray.visible), visK: VU.uVisK.value }); /* testes */
+  G.dbgView = () => ({ xray: !!(G0.xray && G0.xray.visible), visK: VU.uVisK.value }); /* testes */
   G.dbgCamPos = () => [cam.position.x, cam.position.y, cam.position.z]; /* testes */
   G.dbgW = W; G.dbgScene = scene; G.dbgSky = SKY; G.dbgFlame = (x, y, z, sz = 1) => { const F = makeFire(sz); F.g.position.set(x, y, z); scene.add(F.g); if (F.set) F.set(true); return F; }; G.dbgNewBody = L => mkRemote(L); G.dbgRay = ray; G.dbgCanvas = renderer.domElement; G.dbgMuz = (o, d) => { const F = MZP.find(f => !f.keep) || MZP[0]; F.s.position.set(o[0] + d[0] * 0.05, o[1] + d[1] * 0.05, o[2] + d[2] * 0.05); F.s.material.rotation = Math.random() * 6.28; F.s.scale.setScalar(0.75); F.s.visible = true; F.keep = true; F.t = 1; return F; }; G.dbgOl = () => ({ n: OL.objs.length, key: !!OL.key, lbl: G.prompt && G.prompt.label }); G.olRefresh = () => { OL.wm = null; for (const c of W.containers) c._olg = undefined; OL.key = null; };
   G.dbgNav = { nav, walkLine: (a, b, c, d, lv) => walkLine(a, b, c, d, lv || 0), find: (a, b, c, d, lv) => nav.find(a, b, c, d, lv || 0) };

@@ -73,7 +73,7 @@ const drop = c => {
   for (const [k, L] of LK) if (L.c === c.id) LK.delete(k);
   for (const z of S.w.zs) if (z.o === c.id) z.o = 0;
   for (const car of Object.values(S.w.cars)) { const i = car.s.indexOf(c.id); if (i >= 0) { car.s[i] = 0; if (i === 0) { car.v = 0; car.alt = vt(car.k).fly ? (car.pad || 0) : 0; } } } /* helicóptero num telhado fica lá */
-  const p = c.p; if (!p) return; if (S.tokens[p.tok]) S.tokens[p.tok].t = Date.now();
+  const p = c.p; if (!p) return; if (S.tokens[p.tok]) { S.tokens[p.tok].t = Date.now(); if (p.alive) S.tokens[p.tok].lp = [Math.round(p.x), Math.round(p.z)]; } /* última posição: o admin pode ir lá mesmo com o jogador desligado */
   // quem sai fica a dormir onde estava (com o que tinha), a não ser que já estivesse morto
   if (p.alive && p.tok) { S.sleepers[p.tok] = { x: p.x, z: p.z, y: p.y, lv: p.lv, yaw: p.yaw, name: p.name, look: p.look, inv: p.inv || [], hp: p.hp, ar: p.ar, clan: p.clan || null, t: Date.now(), hid: p.invis ? 1 : 0 }; dirty = true; bcast({ t: 'sleep', list: sleepList() }); }
   if (!p.invis) bcast({ t: 'left', id: c.id });
@@ -601,7 +601,7 @@ const lboard = c => { const now = Date.now(); if (now - (c.lbT || 0) < 1500) ret
   send(c, { t: 'lb', pvp: L.filter(([, s]) => s.k || s.d).sort((a, b) => b[1].k - a[1].k || a[1].d - b[1].d).slice(0, 20).map(([, s]) => [s.n, s.k || 0, s.d || 0]), z: L.filter(([, s]) => s.z).sort((a, b) => b[1].z - a[1].z).slice(0, 20).map(([, s]) => [s.n, s.z]), clans, me: [me.k || 0, me.d || 0, me.z || 0], name: c.p.name }); };
 // ---------- administração: o Dinis (admin) e moderadores. Tudo confirmado aqui; o cliente só pede
 let ADMH = null; try { ADMH = JSON.parse(fs.readFileSync(new URL('./admin.json', import.meta.url), 'utf8')).h; } catch (e) { }
-const MODA = new Set(['list', 'goto', 'gopt', 'spec', 'inv', 'kick', 'ban', 'unban', 'freeze']);
+const MODA = new Set(['list', 'goto', 'gopt', 'spec', 'inv', 'kick', 'ban', 'unban', 'freeze', 'esp']);
 const CLAIM = new Map(); // tentativas do código de administrador por IP
 const onlineBy = uid => [...players.values()].find(o => o.p && o.p.uid === uid) || null;
 const tokOf = uid => Object.keys(S.tokens).find(t => uidOf(t) === uid) || null;
@@ -609,9 +609,9 @@ const baseOf = () => { const B = {}; for (const [k, P] of Object.entries(S.w.bas
 const tp = (c, x, z) => { const p = c.p; p.x = num(x, -3990, 3990); p.z = num(z, -3990, 3990); p.lv = 0; p.lastSt = Date.now(); p.hist = []; send(c, { t: 'pos', x: p.x, z: p.z, lv: 0, tp: 1 }); };
 const admList = c => { const now = Date.now(), B = baseOf(), on = new Set(), cn = id => (S.clans[id] || {}).nome || null;
   const online = [...players.values()].filter(o => o.p).map(o => { on.add(o.p.uid); return { uid: o.p.uid, n: o.p.name, on: 1, x: Math.round(o.p.x), z: Math.round(o.p.z), hp: Math.round(o.p.hp), al: o.p.alive ? 1 : 0, cl: cn(o.p.clan), r: S.roles[o.p.uid] || null, f: o.p.frozen ? 1 : 0, i: o.p.invis ? 1 : 0, g: o.p.god ? 1 : 0, b: B[o.p.uid] || null }; });
-  const off = Object.entries(S.tokens).map(([t, T]) => [uidOf(t), t, T]).filter(([u]) => !on.has(u)).sort((a, b) => (b[2].t || 0) - (a[2].t || 0)).slice(0, 150).map(([u, t, T]) => { const sl = S.sleepers[t]; return { uid: u, n: T.name, on: 0, t: T.t || 0, sl: sl ? [Math.round(sl.x), Math.round(sl.z)] : null, cl: cn(T.clan), r: S.roles[u] || null, b: B[u] || null, ban: S.bans[u] ? (S.bans[u].until || 0) : null }; });
+  const off = Object.entries(S.tokens).map(([t, T]) => [uidOf(t), t, T]).filter(([u]) => !on.has(u)).sort((a, b) => (b[2].t || 0) - (a[2].t || 0)).slice(0, 150).map(([u, t, T]) => { const sl = S.sleepers[t]; return { uid: u, n: T.name, on: 0, t: T.t || 0, sl: sl ? [Math.round(sl.x), Math.round(sl.z)] : null, cl: cn(T.clan), r: S.roles[u] || null, b: B[u] || null, ban: S.bans[u] ? (S.bans[u].until || 0) : null, lp: T.lp || null }; });
   send(c, { t: 'adm', list: { online, off, bans: Object.entries(S.bans).map(([u, b]) => ({ uid: u, n: b.n, until: b.until || 0, why: b.why || '', by: b.by || '', t: b.t || 0 })), clans: Object.entries(S.clans).map(([id, C]) => ({ id, n: C.nome, cod: C.codigo, m: C.membros })), now } }); };
-const admFlags = c => send(c, { t: 'admf', r: S.roles[c.p.uid] || null, inv: c.p.invis ? 1 : 0, god: c.p.god ? 1 : 0, spec: c.p.spec ? 1 : 0 });
+const admFlags = c => send(c, { t: 'admf', r: S.roles[c.p.uid] || null, inv: c.p.invis ? 1 : 0, god: c.p.god ? 1 : 0, spec: c.p.spec ? 1 : 0, esp: c.p.esp ? 1 : 0 });
 const setInv = (c, on) => { const p = c.p;  if (!!p.invis === on) return; p.invis = on ? 1 : 0; if (on) bcast({ t: 'left', id: c.id, quiet: 1 }, o => o !== c && !S.roles[o.p.uid]); else bcast({ t: 'join', id: c.id, name: p.name, look: p.look, clan: p.clan, quiet: 1 }, o => o !== c && !S.roles[o.p.uid]); };
 const wipeBase = uid => { const out = [], outd = []; for (const [k, P] of Object.entries(S.w.base.p)) if (P.u === uid) pDel(k, out); for (const [id, d] of Object.entries(S.w.base.d)) if (d.u === uid) dDel(id, outd); if (out.length || outd.length) bb({ rp: out, rd: outd }); return out.length + outd.length; };
 const adm = (c, m) => { const p = c.p, now = Date.now();
@@ -622,9 +622,10 @@ const adm = (c, m) => { const p = c.p, now = Date.now();
   const uid = typeof m.uid === 'string' ? m.uid.slice(0, 16) : '', o = uid ? onlineBy(uid) : null, tok = uid ? tokOf(uid) : null, tn = (o && o.p.name) || (tok && S.tokens[tok].name) || '?';
   if (a !== 'list') { S.admLog.push([now, p.name, a, tn]); if (S.admLog.length > 300) S.admLog.splice(0, 100); dirty = true; }
   if (a === 'list') return admList(c);
-  if (a === 'goto') { const B = baseOf(); const P = m.w === 'b' ? B[uid] : o ? [o.p.x, o.p.z] : tok && S.sleepers[tok] ? [S.sleepers[tok].x, S.sleepers[tok].z] : B[uid]; if (!P) return send(c, { t: 'admno', e: 'Não sei onde está' }); tp(c, P[0] + 1.2, P[1] + 1.2); return; }
+  if (a === 'goto') { const B = baseOf(); const P = m.w === 'b' ? B[uid] : o ? [o.p.x, o.p.z] : tok && S.sleepers[tok] ? [S.sleepers[tok].x, S.sleepers[tok].z] : B[uid] || (tok && S.tokens[tok].lp); if (!P) return send(c, { t: 'admno', e: 'Não sei onde está' }); tp(c, P[0] + 1.2, P[1] + 1.2); return; }
   if (a === 'gopt') { tp(c, m.x, m.z); return; }
   if (a === 'bring') { if (!o) return send(c, { t: 'admno', e: 'Não está ligado' }); tp(o, p.x + 1.2, p.z + 1.2); send(o, { t: 'admmsg', e: 'Um administrador trouxe-te' }); return; }
+  if (a === 'esp') { p.esp = m.on ? 1 : 0; return admFlags(c); } // ver todos os jogadores através das paredes (só a equipa do jogo)
   if (a === 'spec' || a === 'inv' || a === 'god') { const on = !!m.on; if (a === 'god') p.god = on ? 1 : 0; else if (a === 'inv') setInv(c, on); else { p.spec = on ? 1 : 0; setInv(c, on); p.god = on ? 1 : p.god && !on ? 0 : p.god; } return admFlags(c); }
   if (a === 'kick') { if (!o) return send(c, { t: 'admno', e: 'Não está ligado' }); if (S.roles[uid] === 'admin' && r !== 'admin') return send(c, { t: 'admno', e: 'Sem permissão' }); send(o, { t: 'erro', e: 'expulso', why: String(m.why || '').slice(0, 120) }); setTimeout(() => drop(o), 300); return admList(c); }
   if (a === 'ban') { if (!uid || uid === p.uid || S.roles[uid] === 'admin') return send(c, { t: 'admno', e: 'Não podes banir este jogador' }); const h = num(m.h, 0, 24 * 3650, 0); S.bans[uid] = { n: tn, until: h ? now + h * 3600e3 : 0, why: String(m.why || '').slice(0, 120), by: p.name, t: now, ip: o ? o.ip : (S.bans[uid] || {}).ip || null }; dirty = true;
@@ -657,7 +658,7 @@ const relay = c => { const p = c.p, row = plRow(c, false); let msg = null;
 setInterval(() => {
   const L = [...players.values()].filter(c => c.p), full = (++tickN % 2) === 0; // jogadores 30 vezes por segundo (e cada um logo que chega); zombies e carros 15
   for (const c of L) {
-    const out = [], staff = !!S.roles[c.p.uid]; for (const o of L) { if (o === c || (o.p.invis && !staff)) continue; const d = Math.hypot(o.p.x - c.p.x, o.p.z - c.p.z), mate = c.p.clan && o.p.clan === c.p.clan; if (d > 320 && !mate) continue; out.push(plRow(o, d > 320)); }
+    const out = [], staff = !!S.roles[c.p.uid]; for (const o of L) { if (o === c || (o.p.invis && !staff)) continue; const d = Math.hypot(o.p.x - c.p.x, o.p.z - c.p.z), mate = c.p.clan && o.p.clan === c.p.clan; if (d > 320 && !mate && !(staff && c.p.esp)) continue; out.push(plRow(o, d > 320)); }
     const msg = { t: 's', ps: out };
     // zombies: só os que mudaram desde a última vez (e os que saíram de perto)
     if (full && c.zc) { const u = [], seen = new Set(); const zs = S.w.zs;

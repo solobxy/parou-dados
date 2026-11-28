@@ -15,9 +15,9 @@ module.exports = async (page) => {
   console.log((!/Conduzir|Entrar|pendura|Pedalar|mota/.test(back) ? 'OK   ' : 'FALHA') + ' com a parede pelo meio não aparece «entrar no carro»');
   console.log((/Conduzir|Entrar|pendura|Pedalar|mota|lugar|gasolina/.test(front) ? 'OK   ' : 'FALHA') + ' do lado do carro aparece');
   // a conduzir: sem os contornos das portas e janelas (raio-x) nem a sombra de «fora da vista»
-  await ev(() => { G.playing = true; G.fp = false; }); await W(1500); const before = await ev(() => ({ playing: G.playing, fp: G.fp, ...G.dbgDrive() }));
+  await ev(() => { G.playing = true; G.fp = false; }); await W(1500); const before = await ev(() => ({ playing: G.playing, fp: G.fp, ...G.dbgView() }));
   await ev(() => { const c = G.prompt && G.prompt.car; if (c) G.cars.enter(c); }); await W(2500);
-  const drv = await ev(() => ({ car: !!G.car, ...G.dbgDrive() }));
+  const drv = await ev(() => ({ car: !!G.car, ...G.dbgView() }));
   console.log('a pé:', JSON.stringify(before), '· a conduzir:', JSON.stringify(drv));
   console.log((drv.car && !drv.xray && drv.visK === 1 ? 'OK   ' : 'FALHA') + ' a conduzir não há raio-x nem sombras de fora da vista');
 };
