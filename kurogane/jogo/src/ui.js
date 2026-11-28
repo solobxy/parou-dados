@@ -243,8 +243,12 @@ export function initUI(G) {
       ['rec', 'Treina-se a cortar árvores e a partir rochas.', x => `+${pc(0.5 * x)}% de madeira, pedra e minério por golpe.`]];
     $('skl').innerHTML = L.map(([k, how, fx]) => { const x = v(k), n = Math.floor(x * 10 + 0.05); return `<div class="sk"><div class="t"><b>${G.SKN[k]}</b><span class="lv">${n}<small> / 10</small></span></div><div class="bar"><i style="width:${(x * 100).toFixed(1)}%"></i></div><p>${fx(x)}</p><p class="how">${how}</p></div>`; }).join('');
   };
-  const renderCraft = () => {
-    const el = $('recipes'); el.innerHTML = ''; const bn = G.base ? G.base.benchNear() : 0;
+  // só se refaz quando muda alguma coisa que conta (recursos ou bancada perto); antes refazia-se a cada meio segundo e a lista saltava e piscava
+  let craftSig = '';
+  const renderCraft = (force = true) => {
+    const bn = G.base ? G.base.benchNear() : 0, sig = bn + '|' + RECIPES.map(r => Object.keys(r.need).map(k => G.inv.count(k)).join(',')).join(';');
+    if (!force && sig === craftSig) return; craftSig = sig;
+    const el = $('recipes'); el.innerHTML = '';
     const head = t => { const h = document.createElement('div'); h.className = 'rhead'; h.textContent = t; el.appendChild(h); };
     let last = -1; const can = r => Object.entries(r.need).every(([k, n]) => G.inv.count(k) >= n) ? 1 : 0;
     // em cada nível, primeiro o que já dá para fazer
@@ -487,6 +491,7 @@ export function initUI(G) {
   $('sHow').onclick = () => { audio.play('ui'); $('pfT').textContent = 'Como se joga'; pfm.classList.remove('wide', 'kpw'); pfB.innerHTML = `<div class="keys howk">${$('sKeys').innerHTML}</div><p class="note">Revista tudo, come e bebe, treina o corpo (perde-se ao morrer) e evita a cidade de noite. O melhor loot está no centro, onde há PvP.</p>`; pfm.hidden = false; };
   // ---------- novidades (as mais recentes primeiro; o ponto vermelho some depois de as abrires)
   const NEWS = [
+    { id: '0.96', d: '28/11/2026', t: 'Construir na 1.ª pessoa e abrir pela mira', img: 'menu/n-construirfp.jpg', b: '<p>Mudanças pedidas pelos jogadores.</p><ul><li>A construir (planta, martelo, baús, camas…) ficas na 1.ª pessoa e a peça vai para onde aponta a mira</li><li>Na 1.ª pessoa abre-se o que tens debaixo da mira (caixas, portas, carros, corpos, plantas), dentro de uma distância curta, e não o que está mais perto do corpo</li><li>A conduzir, as casas já não desaparecem</li><li>O menu de fabrico já não salta nem pisca sozinho</li></ul>' },
     { id: '0.95', d: '28/11/2026', t: 'Arena com sombras e sem neblina', img: 'menu/n-arenasombra.jpg', b: '<p>A arena é pequena, por isso deixou de ter neblina: vê-se tudo até ao fim. E já tem sombras como o survival (antes os prédios à volta tapavam o sol à praça inteira).</p>' },
     { id: '0.94', d: '28/11/2026', t: 'Os carros voltam a andar', img: 'menu/n-conduzir.jpg', b: '<p>Corrigido: desde a versão 0.91 os carros, as motas e o helicóptero não respondiam ao acelerador. Já se conduz outra vez em todo o lado, também nas colinas.</p>' },
     { id: '0.93', d: '28/11/2026', t: 'Conduzir nas colinas', img: 'menu/n-colinacarro.jpg', b: '<p>Corrigido: a conduzir carros ou o helicóptero nas colinas, a câmara ficava dentro do monte e via-se tudo ao contrário. Agora acompanha a altura do chão e nunca fica por baixo dele.</p>' },
@@ -1210,7 +1215,7 @@ export function initUI(G) {
     mmT -= dt; if (mmT <= 0) { mmT = 0.12; drawMini(); }
     if (G.ARENA) { const pr = !!(G.p && G.p.alive && G.p.born != null && G.t - G.p.born < 2.5 && !(G.p.fireT > G.p.born)), el = $('aprot'); if (el.hidden === pr) el.hidden = !pr; if (pr) { const t = 'Protegido ' + (2.5 - (G.t - G.p.born)).toFixed(1).replace('.', ',') + ' s'; if (el.textContent !== t) el.textContent = t; } } // proteção ao nascer (acaba ao disparar)
     if (cmpC && G.p && G.playing) { const a = G.fpv && G.fpv.on && G.aimS && G.aimS.fy != null ? G.aimS.fy : G.p.yaw, hd = bearing(Math.sin(a), Math.cos(a)); const h = drawCompass(cmpC, hd, G.p, G.net && G.net.on ? G.net.mates() : null); if (h !== undefined && h !== cmpLast) { cmpLast = h; cmpT.textContent = String(h).padStart(3, '0') + '° ' + cardOf(h) + ' · ' + gridName(G.p.x, G.p.z); } }
-    if (G.invOpen) { G.invT = (G.invT || 0) - dt; if (G.invT <= 0) { G.invT = 0.5; if (tab === 'craft') renderCraft(); } }
+    if (G.invOpen) { G.invT = (G.invT || 0) - dt; if (G.invT <= 0) { G.invT = 0.5; if (tab === 'craft') renderCraft(false); } }
   };
   let lastOr = OR();
   const resize = () => { if (OR() !== lastOr) { lastOr = OR(); applyHud(); } if (G.invOpen) { layout(); render(); } };

@@ -55,7 +55,7 @@ server.listen(0, async () => {
     console.log('mochilas que o A vê:', bagA.join(' | ')); ok(bagA.length === 1, 'a mochila do Bruno aparece no mundo para o A');
     // A vai à mochila e apanha
     const before = await A.ev(() => G.inv.all().length);
-    await A.ev(() => { const b = G.bags[0]; G.p.x = b.x + 0.8; G.p.z = b.z; });
+    await A.ev(() => { const b = G.bags[0]; G.p.x = b.x + 0.8; G.p.z = b.z; const a = Math.atan2(b.x - G.p.x, b.z - G.p.z); G.aimS.fy = a; G.aimS.fpit = -0.9; G.p.yaw = G.p.root = a; }); /* na 1.ª pessoa abre-se o que está debaixo da mira */
     await W(900);
     const pr = await A.ev(() => G.prompt && G.prompt.label); console.log('prompt do A:', pr); ok(/corpo de Bruno/.test(pr || ''), 'aparece «Revistar o corpo de Bruno»');
     await A.ev(() => G.interact()); await W(1200); await A.ev(() => { document.getElementById('takeAll').click(); G.ui.closeInv(); }); await W(1200);

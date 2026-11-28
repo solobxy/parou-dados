@@ -1512,7 +1512,9 @@ float terH(vec2 p) { if (uTerP.w < 0.5) return 0.0; vec2 f = clamp((p + uTerP.x)
   const FPF = G.fpv = { on: false, t: 1, P: new THREE.Vector3(), Q: new THREE.Quaternion(), M: new THREE.Matrix4() };
   G.FP_ONLY = true; G.fpFree = true; // teste: só 1.ª pessoa
   G.viewToggle = () => { if (G.FP_ONLY) return; G.fpFree = !G.fpFree; if (G.cfg) G.cfg.fpView = G.fpFree; try { G.ui.saveCfg && G.ui.saveCfg(); } catch (e) { } audio.play('ui'); if (!G.fpFree && AIM.scope) { AIM.scope = false; AIM.reseed = true; } if (G.fpFree && !TOUCH) lockPtr(); else if (!G.fpFree) try { if (document.pointerLockElement) document.exitPointerLock(); } catch (e) { } };
-  const fpBuild = () => G.buildK === 'planta' || G.buildK === 'martelo' || G.base.placing(); // a construir volta à vista de cima (o fantasma da peça põe-se a ver de cima)
+  const fpBuild = () => G.buildK === 'planta' || G.buildK === 'martelo' || G.base.placing(); // a construir: vista na 1.ª pessoa, a peça vai para onde aponta a mira
+  // ponto do chão debaixo da mira (1.ª pessoa), entre 1 m e maxD à tua frente; a olhar para cima, fica a maxD
+  G.aimGround = (maxD = 5) => { const p = G.p; if (!p || !(G.fp || FPF.on) || !AIM.eye || !AIM.dir) return null; const e = AIM.eye, d = AIM.dir, hz = Math.hypot(d.x, d.z) || 1e-3; let t = d.y < -0.02 ? (e.y - (p.y || 0)) / -d.y : 1e9; let h = Math.min(maxD, Math.max(1, t * hz)); return [p.x + d.x / hz * h, p.z + d.z / hz * h]; };
   // lanterna: a de mão no inventário, ou a montada na arma que tens na mão
   const gunLight = () => { const it = held(); return !!(it && it.att && it.att.light); };
   const hasLight = () => G.inv.count('lanterna') > 0 || gunLight();
@@ -1785,7 +1787,7 @@ float terH(vec2 p) { if (uTerP.w < 0.5) return 0.0; vec2 f = clamp((p + uTerP.x)
       AIM.gasp = Math.max(0, (AIM.gasp || 0) - dt); AIM.kick *= Math.exp(-dt * 7);
       // entrar e sair da mira em primeira pessoa (a câmara desce até ao ombro e a mira abre)
       // vista na 1.ª pessoa à vontade: não no carro, nem morto, nem a construir. A troca guarda a câmara de agora para passar suave
-      { const want = !!G.fpFree && p.alive && !G.car && !fpBuild();
+      { const want = (!!G.fpFree || fpBuild()) && p.alive && !G.car;
         if (want !== FPF.on) { FPF.on = want; FPF.t = 0; FPF.P.copy(cam.position); FPF.Q.copy(cam.quaternion); FPF.M.copy(cam.projectionMatrix);
           if (want) { if (!AIM.scope) { AIM.fy = p.aim ?? p.yaw; AIM.fpit = -0.06; } AIM.lock = null; } else { if (AIM.scope) { AIM.scope = false; AIM.reseed = true; } AIM.fpT = 0; AIM.adsT = 0; if (!AIM.rmb) try { if (document.pointerLockElement) document.exitPointerLock(); } catch (e) { } } }
         FPF.t = Math.min(1, FPF.t + dt / 0.34); }
@@ -1915,23 +1917,34 @@ float terH(vec2 p) { if (uTerP.w < 0.5) return 0.0; vec2 f = clamp((p + uTerP.x)
       glowBags();
       // interagir
       let best = null, bd = 1.9;
-      if (p.alive && !p.climb && p.h < 0.6) for (const c of [...W.containers, ...G.bags]) { if ((c.lv || 0) !== p.lv) continue; const d = Math.hypot(c.x - p.x, c.z - p.z); if (d < bd && los(p.x, p.z, c.x, c.z, [c.x, c.z], 'sg', p.lv, 0.5)) { best = c; bd = d; } }
-      const dn = p.alive && !p.climb && p.h < 0.6 ? G.doorAt(p) : null;
+      // 1.ª pessoa: abre-se o que está debaixo da mira (o mais centrado), até ao alcance de cada coisa; não o que está mais perto do corpo
+      const fpI = (G.fp || FPF.on) && p.alive && !p.climb && !G.car && p.h < 0.6 && AIM.eye && AIM.dir;
+      if (fpI) { let aimS = 1e9; const E = AIM.eye, Dv = AIM.dir, gy = (x, z) => p.lv ? (p.base || 0) : groundY(x, z, 0);
+        const aimAt = (x, y, z, r, reach) => { if (Math.hypot(x - p.x, z - p.z) > reach) return null; const dx = x - E.x, dy = y - E.y, dz = z - E.z, d = Math.hypot(dx, dy, dz) || 1e-3, ang = Math.acos(Math.min(1, (dx * Dv.x + dy * Dv.y + dz * Dv.z) / d)), tol = Math.atan2(r, Math.max(0.35, d)) + 0.04; return ang <= tol ? ang / tol : null; };
+        const offer = (sc, mk) => { if (sc != null && sc < aimS) { aimS = sc; best = mk(); } };
+        for (const c of [...W.containers, ...G.bags]) { if ((c.lv || 0) !== p.lv || Math.abs(c.x - p.x) > 3 || Math.abs(c.z - p.z) > 3) continue; const cy = c.bag ? (c.mesh ? c.mesh.position.y + 0.15 : gy(c.x, c.z) + 0.2) : gy(c.x, c.z) + Math.min(1.2, c.y ?? 0.8), sc = aimAt(c.x, cy, c.z, c.bag ? 0.45 : c.own ? 0.6 : 0.65, 2.6); if (sc != null && los(p.x, p.z, c.x, c.z, [c.x, c.z], 'sg', p.lv, 0.5)) offer(sc, () => c); }
+        for (const D of W.doors) { if (D.lv !== (p.lv || 0) || Math.abs(D.x - p.x) > 3 || Math.abs(D.z - p.z) > 3) continue; offer(aimAt(D.x, gy(D.x, D.z) + 1.05, D.z, D.w / 2 + 0.15, 2.3), () => (!cfg.autoDoor || Math.hypot(p.vx, p.vz) < 0.5 || !D.auto) ? { door: D, label: D.lock && D.lock.hp > 0 ? 'Porta trancada' : D.target ? 'Fechar porta' : 'Abrir porta', x: D.x, z: D.z } : best); }
+        if (!p.lv) { const c = G.cars.nearest(p, 3.8); if (c && los(p.x, p.z, c.x, c.z, [c.x, c.z], 's', 0, 0.9)) { const T = VT[c.k], nm = T.n.toLowerCase(), h = held(); offer(aimAt(c.x, groundY(c.x, c.z, 0) + (c.alt || 0) + 0.8, c.z, T.two ? 0.7 : 1.5, 3.8), () => h && h.k === 'gasolina' && T.tank ? { label: 'Pôr gasolina (' + Math.round(c.fuel) + ' de ' + T.tank + ' L)', car: c, fuel: true, x: c.x, z: c.z } : G.cars.seatFree(c) < 0 ? { label: 'Não há lugar', car: c, full: true, x: c.x, z: c.z } : { label: c.seats[0] ? (T.two ? 'Ir à pendura' : 'Entrar (passageiro)') : c.k === 'bike' ? 'Pedalar' : c.k === 'moto' ? 'Conduzir a mota' : 'Conduzir · ' + nm, car: c, x: c.x, z: c.z }); }
+          for (const N of npcs) offer(aimAt(N.T.x, gy(N.T.x, N.T.z) + 1.2, N.T.z, 0.5, 2.8), () => ({ label: 'Negociar com ' + N.T.n, trader: N.T, x: N.T.x, z: N.T.z }));
+          for (const n of nodes) { if (!n.pick || !n.alive || Math.abs(n.x - p.x) + Math.abs(n.z - p.z) > 3) continue; offer(aimAt(n.x, groundY(n.x, n.z, 0) + 0.12, n.z, 0.45, 2.2), () => ({ label: n.kind === 'seixo' ? 'Apanhar pedra' : 'Colher planta (tecido)', pickN: n, x: n.x, z: n.z })); }
+          for (const o of G.zs) { if (o.an !== 'cao' || o.state === 'dead' || Math.abs(o.x - p.x) > 3 || Math.abs(o.z - p.z) > 3) continue; offer(aimAt(o.x, (o.y || 0) + 0.4, o.z, 0.55, 2.4), () => { const mine = o.pet && o.pet === (G.net.world ? G.net.uid : 'local'); if (mine) return { label: o.stay ? 'Cão: anda comigo' : 'Cão: fica aqui', dog: o, x: o.x, z: o.z }; if (o.pet) return best; const food = DOGFOOD.find(k => G.inv.count(k) > 0); return { label: food ? 'Dar ' + ITEMS[food].s.toLowerCase() + ' ao cão' : 'Cão vadio · precisa de comida', dog: o, food, x: o.x, z: o.z }; }); } } }
+      if (!fpI && p.alive && !p.climb && p.h < 0.6) for (const c of [...W.containers, ...G.bags]) { if ((c.lv || 0) !== p.lv) continue; const d = Math.hypot(c.x - p.x, c.z - p.z); if (d < bd && los(p.x, p.z, c.x, c.z, [c.x, c.z], 'sg', p.lv, 0.5)) { best = c; bd = d; } }
+      const dn = !fpI && p.alive && !p.climb && p.h < 0.6 ? G.doorAt(p) : null;
       if (dn && (!best || dn.d < bd - 0.2) && (!cfg.autoDoor || Math.hypot(p.vx, p.vz) < 0.5 || !dn.D.auto)) best = { door: dn.D, label: dn.D.lock && dn.D.lock.hp > 0 ? 'Porta trancada' : dn.D.target ? 'Fechar porta' : 'Abrir porta', x: dn.D.x, z: dn.D.z };
       { const T = best && best.door && best.door.base ? { door: best.door.base } : best && best.dep && (best.dep.k === 'bau' || best.dep.k === 'bauG') ? { dep: best.dep } : null; G.lockT = T; // fechadura: porta ou baú da base à tua frente
         if (T) { const h = held(), cl = G.base.lockOf(T); if (h && h.k === 'fechadura' && !cl) best = { ...(T.door ? { door: best.door } : {}), label: 'Pôr fechadura', lockPut: true, x: best.x, z: best.z }; else if (cl === 1 && G.net.world && !G.base.lockMine(T)) best = T.door ? { ...best, label: best.door.target ? 'Fechar porta' : 'Abrir porta · código' } : best; } }
       if (best && best.table === 'bomba' && held() && held().k === 'galaoV') best = { label: 'Encher o galão', pumpFill: true, x: best.x, z: best.z };
       if (G.car) best = { label: (G.car.alt || 0) > 0.8 ? 'Aterra para sair' : VT[G.car.k].two ? 'Descer' : 'Sair', carExit: true, x: p.x, z: p.z };
       if (G.car && G.carSeat === 0 && VT[G.car.k].tank && Math.abs(G.car.v) < 0.5 && G.car.fuel < VT[G.car.k].tank - 1 && W.containers.some(c => c.table === 'bomba' && Math.hypot(c.x - G.car.x, c.z - G.car.z) < 6)) best = { label: 'Abastecer na bomba', carPump: true, x: p.x, z: p.z };
-      else if (!G.car && p.alive && !p.climb && !p.lv) { const c = G.cars.nearest(p); if (c && los(p.x, p.z, c.x, c.z, [c.x, c.z], 's', 0, 0.9)) { /* com uma parede pelo meio não se entra */ const cd = Math.hypot(c.x - p.x, c.z - p.z) - 1.2, h = held();
+      else if (!fpI && !G.car && p.alive && !p.climb && !p.lv) { const c = G.cars.nearest(p); if (c && los(p.x, p.z, c.x, c.z, [c.x, c.z], 's', 0, 0.9)) { /* com uma parede pelo meio não se entra */ const cd = Math.hypot(c.x - p.x, c.z - p.z) - 1.2, h = held();
           const T = VT[c.k], nm = T.n.toLowerCase();
           if (!best || cd < bd) best = h && h.k === 'gasolina' && T.tank ? { label: 'Pôr gasolina (' + Math.round(c.fuel) + ' de ' + T.tank + ' L)', car: c, fuel: true, x: c.x, z: c.z } : G.cars.seatFree(c) < 0 ? { label: 'Não há lugar', car: c, full: true, x: c.x, z: c.z } : { label: c.seats[0] ? (T.two ? 'Ir à pendura' : 'Entrar (passageiro)') : c.k === 'bike' ? 'Pedalar' : c.k === 'moto' ? 'Conduzir a mota' : 'Conduzir · ' + nm, car: c, x: c.x, z: c.z }; } }
       // comerciante a menos de 2,6 m
-      if (p.alive && !G.car && !p.lv) for (const N of npcs) { const d = Math.hypot(N.T.x - p.x, N.T.z - p.z); if (d < 2.6 && (!best || d < 1.6)) best = { label: 'Negociar com ' + N.T.n, trader: N.T, x: N.T.x, z: N.T.z }; }
+      if (!fpI && p.alive && !G.car && !p.lv) for (const N of npcs) { const d = Math.hypot(N.T.x - p.x, N.T.z - p.z); if (d < 2.6 && (!best || d < 1.6)) best = { label: 'Negociar com ' + N.T.n, trader: N.T, x: N.T.x, z: N.T.z }; }
       // pedra solta ou planta de fibra a menos de 1,6 m
-      if (!best && p.alive && !G.car && !p.lv) { let bn = null, bdn = 1.6; for (const n of nodes) { if (!n.pick || !n.alive) continue; const d = Math.abs(n.x - p.x) + Math.abs(n.z - p.z); if (d > 3) continue; const q = Math.hypot(n.x - p.x, n.z - p.z); if (q < bdn) { bdn = q; bn = n; } } if (bn) best = { label: bn.kind === 'seixo' ? 'Apanhar pedra' : 'Colher planta (tecido)', pickN: bn, x: bn.x, z: bn.z }; }
+      if (!fpI && !best && p.alive && !G.car && !p.lv) { let bn = null, bdn = 1.6; for (const n of nodes) { if (!n.pick || !n.alive) continue; const d = Math.abs(n.x - p.x) + Math.abs(n.z - p.z); if (d > 3) continue; const q = Math.hypot(n.x - p.x, n.z - p.z); if (q < bdn) { bdn = q; bn = n; } } if (bn) best = { label: bn.kind === 'seixo' ? 'Apanhar pedra' : 'Colher planta (tecido)', pickN: bn, x: bn.x, z: bn.z }; }
       // cães: dar comida a um vadio para o adotar; ao teu, dizer para ficar ou vir
-      if (p.alive && !G.car && !p.lv && (!best || !best.door || true)) { let dz = null, dd = best ? 1.5 : 2.4; for (const o of G.zs) if (o.an === 'cao' && o.state !== 'dead') { const d = Math.hypot(o.x - p.x, o.z - p.z); if (d < dd) { dd = d; dz = o; } }
+      if (!fpI && p.alive && !G.car && !p.lv && (!best || !best.door || true)) { let dz = null, dd = best ? 1.5 : 2.4; for (const o of G.zs) if (o.an === 'cao' && o.state !== 'dead') { const d = Math.hypot(o.x - p.x, o.z - p.z); if (d < dd) { dd = d; dz = o; } }
         if (dz) { const mine = dz.pet && dz.pet === (G.net.world ? G.net.uid : 'local'); if (mine) best = { label: dz.stay ? 'Cão: anda comigo' : 'Cão: fica aqui', dog: dz, x: dz.x, z: dz.z };
           else if (!dz.pet) { const food = DOGFOOD.find(k => G.inv.count(k) > 0); best = { label: food ? 'Dar ' + ITEMS[food].s.toLowerCase() + ' ao cão' : 'Cão vadio · precisa de comida', dog: dz, food, x: dz.x, z: dz.z }; } } }
       if (!best && p.alive && !G.car && !p.lv && p.water < 97 && (p.swim || W.wet(p.x, p.z, 1.4))) best = { label: 'Beber água', drink: true, x: p.x, z: p.z };
@@ -2071,7 +2084,7 @@ float terH(vec2 p) { if (uTerP.w < 0.5) return 0.0; vec2 f = clamp((p + uTerP.x)
     // vidros guardam a opacidade própria (o0): o desvanecer multiplica-a em vez de a substituir
     const fade = (c, L, f) => { c.fv[L] = f; for (const m of c.mats[L]) { m.opacity = f * m.userData.o0; const tr = m.userData.t0 || f < 0.995; if (m.transparent !== tr) { m.transparent = tr; m.needsUpdate = true; } } };
     // telhados e andares de cima: somem quando estás lá dentro ou quando te tapam; ao subir as escadas o piso de cima vai aparecendo
-    if (p && G.playing && G.fp) { G.inside = null; for (const c of W.cuts) { if (!c.shell) { c.group.visible = true; continue; } if (!G.inside && inShell(c, p.x, p.z) && (p.lv === 0 || p.bld === c || (p.st && p.st.b === c))) G.inside = c; for (let L = 0; L < c.n; L++) { c.gt[L].visible = true; if (L) { c.g[L].visible = true; if (c.fv[L] < 1) fade(c, L, 1); } } c.gR.visible = true; } } // na 1.ª pessoa também se sabe se estás dentro (luzes do teto, som, olhos)
+    if (p && G.playing && (G.fp || G.car)) { G.inside = null; for (const c of W.cuts) { /* a conduzir a câmara vai atrás do carro: as casas ficam inteiras (nada desaparece) */ if (!c.shell) { c.group.visible = true; continue; } if (!G.inside && inShell(c, p.x, p.z) && (p.lv === 0 || p.bld === c || (p.st && p.st.b === c))) G.inside = c; for (let L = 0; L < c.n; L++) { c.gt[L].visible = true; if (L) { c.g[L].visible = true; if (c.fv[L] < 1) fade(c, L, 1); } } c.gR.visible = true; } } // na 1.ª pessoa também se sabe se estás dentro (luzes do teto, som, olhos)
     else if (p && G.playing) {
       v3a.copy(cam.position);
       const occ = c => { if (!(Math.abs(c.x0 + c.x1 - 2 * p.x) < (c.x1 - c.x0) + 30 && p.z < c.z1 + 2 && p.z > c.z0 - 40)) return false; v3b.set(p.x, p.y + 1.1, p.z); if (box3(v3a, v3b, c)) return true; v3b.set(p.x, p.y + 0.3, p.z); return box3(v3a, v3b, c); };

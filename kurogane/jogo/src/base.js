@@ -153,7 +153,7 @@ export function makeBase({ scene, W, G, audio, addRect, removeRect, visDirty, in
   const costTxt = need => Object.entries(need).map(([k, n]) => n + ' ' + ITEMS[k].s.toLowerCase()).join(' + ');
 
   // ---------- onde vai a peça (à frente da personagem)
-  const front = (d = 2.4) => { const p = G.p; return [p.x + Math.sin(p.yaw) * d, p.z + Math.cos(p.yaw) * d]; };
+  const front = (d = 2.4) => { const g = G.aimGround && G.aimGround(Math.max(4, d + 2.5)); if (g) return g; const p = G.p; return [p.x + Math.sin(p.yaw) * d, p.z + Math.cos(p.yaw) * d]; }; // na 1.ª pessoa: onde a mira aponta no chão
   const target = mode => {
     const p = G.p; if ((p.lv || 0) !== 0) return { bad: 'Só no chão' };
     if (mode === 'fund') { const [fx, fz] = front(2.6); const i = Math.floor(fx / CELL), j = Math.floor(fz / CELL), x0 = i * CELL, z0 = j * CELL;
@@ -254,7 +254,7 @@ export function makeBase({ scene, W, G, audio, addRect, removeRect, visDirty, in
     return null; };
   const placeCheck = () => { const it = PL.it, p = G.p; if (!it) return; const k = ITEMS[it.k].deploy, D = DEPLOY[k];
     if (PL.pin && Math.hypot(PL.pin.x - p.x, PL.pin.z - p.z) > PIN_R + 1) PL.pin = null;
-    let x, z; if (PL.pin) { x = PL.pin.x; z = PL.pin.z; } else { const dist = 0.9 + Math.max(D.r[0], D.r[1]) / 2; x = p.x + Math.sin(p.yaw) * dist; z = p.z + Math.cos(p.yaw) * dist; }
+    let x, z; if (PL.pin) { x = PL.pin.x; z = PL.pin.z; } else { const dist = 0.9 + Math.max(D.r[0], D.r[1]) / 2, g = G.aimGround && G.aimGround(Math.max(3, dist + 1.5)); if (g && Math.hypot(g[0] - p.x, g[1] - p.z) >= dist * 0.8) { x = g[0]; z = g[1]; } else { x = p.x + Math.sin(p.yaw) * dist; z = p.z + Math.cos(p.yaw) * dist; } }
     const face = Math.atan2(p.x - x, p.z - z), yaw = Math.round(face / (Math.PI / 2)) * (Math.PI / 2);
     PL.x = x; PL.z = z; PL.yaw = yaw; PL.why = placeWhy(k, x, z, yaw) || ''; PL.ok = !PL.why; };
   const showPlace = () => { const it = PL.it; const D = DEPLOY[ITEMS[it.k].deploy]; ghost.visible = true; ghost.material = GHOST[PL.ok ? 0 : 1]; ghost.scale.set(D.r[0], Math.max(0.15, D.h), D.r[1]); ghost.rotation.set(0, PL.yaw, 0); ghost.position.set(PL.x, PL.y + depLv(PL.x, PL.z) + Math.max(0.15, D.h) / 2, PL.z); };
