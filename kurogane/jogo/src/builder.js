@@ -141,7 +141,7 @@ export class Builder {
   _mesh(key, g, parent, mats, cuts, out) {
     const parts = key.split('|'), thin = parts[parts.length - 1] === 't'; if (thin) parts.pop(); const mat = parts[parts.length - 1];
     g.computeBoundingSphere(); g.computeBoundingBox();
-    const m = new THREE.Mesh(g, mats[mat]);
+    const m = new THREE.Mesh(g, mats[mat]); m.name = key; // a chave (material e corte) ajuda a saber de onde vem cada malha
     const sh = !['gl', 'lit', 'sign', 'decal'].includes(mat);
     m.castShadow = sh && mat !== 'water' && mat !== 'asph' && mat !== 'tile' && mat !== 'grass' && mat !== 'dirt'; m.receiveShadow = mat !== 'lit' && mat !== 'sign';
     if (mat === 'gl') m.renderOrder = 2;

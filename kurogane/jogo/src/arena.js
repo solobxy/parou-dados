@@ -32,10 +32,12 @@ export function buildArena(T) {
   const VERM = 0xc8321e, DARK = 0x24262b, WOOD = 0x6a4a32, STONE = 0x9a968c;
   W.zones.push({ name: 'Arena de Tóquio', jp: '東京', x: X, z: Z, r: 40, kind: 'city', sub: 'PvP · Vermelha contra Azul', arena: true });
   // chão: betão, praça de ladrilho ao meio, terra batida no parque
-  b.floor(X - HW - 6, Z - HD - 6, X + HW + 6, Z + HD + 6, 0.02, 0xffffff, 'conc'); mp(X - HW, Z - HD, X + HW, Z + HD, '#8e8a82');
+  // o betão não passa por baixo da terra do parque: as duas camadas a 5 mm uma da outra piscavam e a de baixo aparecia por cima ao longe
+  for (const [x0, z0, x1, z1] of [[X - HW - 6, Z - HD - 6, X + HW + 6, Z + 13], [X - HW - 6, Z + HD - 1, X + HW + 6, Z + HD + 6], [X - HW - 6, Z + 13, X - 30, Z + HD - 1], [X + 30, Z + 13, X + HW + 6, Z + HD - 1]]) b.floor(x0, z0, x1, z1, 0.02, 0xffffff, 'conc');
+  mp(X - HW, Z - HD, X + HW, Z + HD, '#8e8a82');
   b.floor(X - 22, Z - 9, X + 22, Z + 9, 0.03, 0xd6cfc0, 'tile'); mp(X - 22, Z - 9, X + 22, Z + 9, '#b3ab9b');
-  b.floor(X - 30, Z + 13, X + 30, Z + HD - 1, 0.025, 0xffffff, 'dirt'); mp(X - 30, Z + 13, X + 30, Z + HD - 1, '#7a6a52');
-  for (const s of [-1, 1]) for (let i = 0; i < 9; i++) b.box(0.9, 0.04, 0.5, X + s * (24 + i * 1.6), 0.04, Z + 20 + Math.sin(i) * 0.6, 0x8a867c); // pedras do caminho
+  b.floor(X - 30, Z + 13, X + 30, Z + HD - 1, 0.06, 0xffffff, 'dirt'); mp(X - 30, Z + 13, X + 30, Z + HD - 1, '#7a6a52');
+  for (const s of [-1, 1]) for (let i = 0; i < 9; i++) b.box(0.9, 0.04, 0.5, X + s * (24 + i * 1.6), 0.07, Z + 20 + Math.sin(i) * 0.6, 0x8a867c); // pedras do caminho
 
   // ---------- muros à volta (não se sai): fachadas de Tóquio a norte e a sul, muros de templo a oeste e a este
   rect(X - HW - 1, Z - HD - 1, X + HW + 1, Z - HD, 's', 12); rect(X - HW - 1, Z + HD, X + HW + 1, Z + HD + 1, 's', 12);
@@ -131,7 +133,7 @@ export function buildArena(T) {
       const fx = Math.abs(Math.cos(a)) > Math.abs(Math.sin(a)), sx = Math.sign(X - x), sz = Math.sign(Z - z);
       for (let y = 4; y < h - 2; y += 3.4) { if (fx) b.box(0.05, 1.1, d * 0.8, x + sx * (w / 2 + 0.03), y, z, (k + y) % 3 ? 0x2a3644 : new THREE.Color(1.3, 1.1, 0.7), { mat: (k + y) % 3 ? 'm' : 'lit' }); else b.box(w * 0.8, 1.1, 0.05, x, y, z + sz * (d / 2 + 0.03), (k + y) % 3 ? 0x2a3644 : new THREE.Color(1.3, 1.1, 0.7), { mat: (k + y) % 3 ? 'm' : 'lit' }); }
       if (k % 4 === 0) { b.box(0.4, 3, 0.4, x, h + 1.5, z, 0x5a5e62); b.box(0.5, 0.5, 0.5, x, h + 3.2, z, new THREE.Color(2.2, 0.3, 0.2), { mat: 'lit' }); } } }
-  b.floor(X - 130, Z - 110, X + 130, Z + 110, 0.0, 0x6e6a64, 'conc'); // asfalto da cidade à volta (em vez de relva)
+  for (const [x0, z0, x1, z1] of [[X - 130, Z - 110, X + 130, Z + 13], [X - 130, Z + HD - 1, X + 130, Z + 110], [X - 130, Z + 13, X - 30, Z + HD - 1], [X + 30, Z + 13, X + 130, Z + HD - 1]]) b.floor(x0, z0, x1, z1, 0.0, 0x6e6a64, 'conc'); // asfalto da cidade à volta (em vez de relva); sem nada por baixo da terra do parque
   // noren e lanternas vermelhas penduradas ao longo da viela norte; cerejeira grande ao centro do parque
   for (let u = -24; u <= 24; u += 6) lantern(X + u, 3.4, Z - 24);
   // detalhes de Tóquio: postes com fios por cima da viela, bicicletas, bandeiras nobori, cortinas noren, passadeiras pintadas
