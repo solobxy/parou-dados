@@ -34,9 +34,22 @@ export function buildWorld(scene, mats, A, opt = {}) {
   const koOf = lv => { const out = []; for (const st of W.stairs) { const C = st.b, ax = st.ax, d = st.dir; for (const [at, l, sgn] of [[st.bot, st.lv, -d], [st.top, st.lv + 1, d]]) { if (l !== lv) continue; const a0 = Math.min(at, at + sgn * 1.25), a1 = Math.max(at, at + sgn * 1.25); let c0 = ax ? st.z0 : st.x0, c1 = ax ? st.z1 : st.x1; const o2 = st.open; if (o2 === (ax ? 's' : 'e')) c1 += 1.3; else if (o2 === (ax ? 'n' : 'w')) c0 -= 1.3; else { c0 -= 0.6; c1 += 0.6; } let r = ax ? { x0: a0, x1: a1, z0: c0, z1: c1 } : { x0: c0, x1: c1, z0: a0, z1: a1 }; if (C) r = { x0: Math.max(r.x0, C.ix0), x1: Math.min(r.x1, C.ix1), z0: Math.max(r.z0, C.iz0), z1: Math.min(r.z1, C.iz1) }; out.push(r); } } return out; };
   // peças de um móvel: as que ficam junto do sítio do loot (sem paredes nem chão grandes)
   const near = (R, c) => R.filter(r => { const q = r.bb; if (!q || r.mat === 'decal' || r.mat === 'lit' || r.mat === 'sign') return false; const dx = q[3] - q[0], dz = q[5] - q[2]; if (dx > 4.5 || dz > 4.5 || q[4] - q[1] > 2.8) return false; return Math.hypot(Math.max(q[0] - c.x, 0, c.x - q[3]), Math.max(q[2] - c.z, 0, c.z - q[5])) < 0.9; });
+  // onde as portas abrem: o quadrado que a folha varre (do lado para onde abre), para não ficar lá mobília
+  const doorKO = lv => { const out = []; for (const D of W.doors) { if ((D.lv || 0) !== lv || !D.leaves || !D.leaves.length) continue; const L0 = D.leaves[0], dep = L0.w + 0.12, f = D.horiz ? L0.hz : L0.hx, a = Math.min(f, f + D.inward * dep), b2 = Math.max(f, f + D.inward * dep);
+    out.push(D.horiz ? { x0: D.x - D.w / 2, x1: D.x + D.w / 2, z0: a, z1: b2, door: D } : { x0: a, x1: b2, z0: D.z - D.w / 2, z1: D.z + D.w / 2, door: D }); } return out; };
+  const segHitsWall = (ax, az, bx, bz, lv, r0) => { for (let i = 0; i < r0; i++) { const r = W.rects[i]; if (r.k !== 's' || (r.lv || 0) !== lv || r.door || r.h < 1.5) continue; let t0 = 0, t1 = 1, ok = true; for (const [o, d, lo, hi] of [[ax, bx - ax, r.x0, r.x1], [az, bz - az, r.z0, r.z1]]) { if (Math.abs(d) < 1e-9) { if (o < lo || o > hi) { ok = false; break; } } else { let ta = (lo - o) / d, tb = (hi - o) / d; if (ta > tb) [ta, tb] = [tb, ta]; t0 = Math.max(t0, ta); t1 = Math.min(t1, tb); if (t0 > t1) { ok = false; break; } } } if (ok) return true; } return false; };
   const guard = fn => (...a) => {
     const m = b.mark(), r0 = W.rects.length, c0 = W.containers.length, k0 = W.circles.length, res = fn(...a);
+    for (let i = r0; i < W.rects.length; i++) W.rects[i].prop = 1;
     if (W.containers.length > c0 && !b.dry) { const M = recBox(olRecs(b.recsSince(m))); if (M.n && M.n < 80000 && M.x1 - M.x0 < 6 && M.z1 - M.z0 < 6) for (let i = c0; i < W.containers.length; i++) if (!W.containers[i].recs) W.containers[i].recs = M.recs; b.lastModel = M.n ? M : b.lastModel; } // móvel feito à mão (prateleira, armário): o contorno usa as peças todas dele
+    const DK = doorKO(CUR), dHit = () => { for (let i = r0; i < W.rects.length; i++) { const r = W.rects[i]; if ((r.lv || 0) === CUR && DK.some(k => r.x0 < k.x1 - 0.05 && r.x1 > k.x0 + 0.05 && r.z0 < k.z1 - 0.05 && r.z1 > k.z0 + 0.05)) return true; } return false; };
+    // a mobília no sítio onde uma porta abre: arrasta-se um pouco para o lado (sem entrar noutra coisa nem passar uma parede); se não houver sítio, não se põe
+    if (DK.length && W.rects.length > r0 && dHit() && typeof a[0] === 'number' && typeof a[1] === 'number' && !b.dry) { let placed = false;
+      const free = () => { for (let i = r0; i < W.rects.length; i++) { const r = W.rects[i]; for (let j = 0; j < r0; j++) { const q = W.rects[j]; if ((q.lv || 0) !== (r.lv || 0) || q.k === 'g' || q.leaf || q.stairRail) continue; if (r.x0 < q.x1 - 0.02 && r.x1 > q.x0 + 0.02 && r.z0 < q.z1 - 0.02 && r.z1 > q.z0 + 0.02) return false; } } return true; };
+      for (const d of [0.3, 0.6, 0.9, 1.2, 1.6, 2.0]) { for (const [ux, uz] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { b.rollback(m); W.rects.length = r0; W.containers.length = c0; W.circles.length = k0; const nx = a[0] + ux * d, nz = a[1] + uz * d;
+          if (segHitsWall(a[0], a[1], nx, nz, CUR, r0)) continue; fn(nx, nz, ...a.slice(2)); for (let i = r0; i < W.rects.length; i++) W.rects[i].prop = 1; if (!dHit() && free()) { placed = true; break; } } if (placed) break; }
+      if (!placed) { b.rollback(m); W.rects.length = r0; W.containers.length = c0; W.circles.length = k0; W.doorSkipped = (W.doorSkipped || 0) + 1; return null; }
+      W.doorMoved = (W.doorMoved || 0) + 1; }
     const KO = koOf(CUR); if (!KO.length) return res;
     const hit = (x0, z0, x1, z1) => KO.some(k => x0 < k.x1 && x1 > k.x0 && z0 < k.z1 && z1 > k.z0);
     let bad = false;
@@ -178,13 +191,9 @@ export function buildWorld(scene, mats, A, opt = {}) {
   };
 
   // portas a sério: fechadas travam e tapam; abertas ficam encostadas para dentro (uma ou duas folhas)
-  const door = (horiz, fixed, inward, s0, s1, t, L, C, cut, col) => {
-    const n = s1 - s0 >= 1.75 ? 2 : 1, lw = (s1 - s0 - 0.03) / n, face = fixed + inward * (t / 2 - 0.03);
-    const th = (dx, dz) => Math.atan2(-dz, dx);
-    const D = { x: horiz ? (s0 + s1) / 2 : fixed, z: horiz ? fixed : (s0 + s1) / 2, horiz, inward, lv: L, C, cut, col, w: s1 - s0, leaves: [], ro: [], t: 0, auto: false };
-    D.t = D.target = rnd() < 0.2 ? 1 : 0;
-    D.rc = { x0: horiz ? s0 : fixed - t / 2, z0: horiz ? fixed - t / 2 : s0, x1: horiz ? s1 : fixed + t / 2, z1: horiz ? fixed + t / 2 : s1, k: 's', h: 2.3, lv: L, door: D };
-    W.rects.push(D.rc);
+  // folhas da porta (e o espaço que ocupam abertas) para o lado D.inward; dá para virar a porta depois
+  const doorLeaves = D => { const { horiz, inward, s0, s1, fixed, th: t, lv: L } = D, n = s1 - s0 >= 1.75 ? 2 : 1, lw = (s1 - s0 - 0.03) / n, face = fixed + inward * (t / 2 - 0.03), th = (dx, dz) => Math.atan2(-dz, dx);
+    for (const r of D.ro) { const k = W.rects.indexOf(r); if (k >= 0) W.rects.splice(k, 1); } D.leaves = []; D.ro = [];
     for (let i = 0; i < n; i++) {
       const sg = i === 0 ? 1 : -1, hs = i === 0 ? s0 + 0.012 : s1 - 0.012;
       const hx = horiz ? hs : face, hz = horiz ? face : hs;
@@ -195,6 +204,15 @@ export function buildWorld(scene, mats, A, opt = {}) {
       const r = { x0: Math.min(hx, ex) - (horiz ? e : 0), z0: Math.min(hz, ez) - (horiz ? 0 : e), x1: Math.max(hx, ex) + (horiz ? e : 0), z1: Math.max(hz, ez) + (horiz ? 0 : e), k: 'l', h: 2.2, lv: L, door: D, leaf: true };
       W.rects.push(r); D.ro.push(r);
     }
+  };
+  const door = (horiz, fixed, inward, s0, s1, t, L, C, cut, col) => {
+    const n = s1 - s0 >= 1.75 ? 2 : 1, lw = (s1 - s0 - 0.03) / n, face = fixed + inward * (t / 2 - 0.03);
+    const th = (dx, dz) => Math.atan2(-dz, dx);
+    const D = { x: horiz ? (s0 + s1) / 2 : fixed, z: horiz ? fixed : (s0 + s1) / 2, horiz, inward, lv: L, C, cut, col, w: s1 - s0, leaves: [], ro: [], t: 0, auto: false, s0, s1, fixed, th: t };
+    D.t = D.target = rnd() < 0.2 ? 1 : 0;
+    D.rc = { x0: horiz ? s0 : fixed - t / 2, z0: horiz ? fixed - t / 2 : s0, x1: horiz ? s1 : fixed + t / 2, z1: horiz ? fixed + t / 2 : s1, k: 's', h: 2.3, lv: L, door: D };
+    W.rects.push(D.rc);
+    doorLeaves(D);
     W.doors.push(D);
   };
   // edifício onde se entra: paredes com portas e janelas, telhado e parte de cima das paredes da frente somem
@@ -554,6 +572,11 @@ export function buildWorld(scene, mats, A, opt = {}) {
   for (const [x, z] of [[-68, 27.5], [64, -62.5], [-58.5, -71], [-250, -110], [250, 70], [-90, 250], [95, -240], [-40, -150], [90, 95], [-262, 262], [262, -262], [-405, 245], [395, 260], [-300, -425], [120, -400], [215, 405], [-410, -250], [40, 410], [400, -110]]) cabin(x, z);
   const camp = (x, z) => { b.add(new THREE.ConeGeometry(1.8, 2.0, 4), 0x6a7a4a, 'v', mat4(x, 1.0, z, Math.PI / 4)); rect(x - 1.3, z - 1.3, x + 1.3, z + 1.3, 's', 2); for (let i = 0; i < 7; i++) { const a = i / 7 * Math.PI * 2; b.ico(0.2, x + 3 + Math.cos(a) * 0.6, 0.12, z + 1 + Math.sin(a) * 0.6, 0x6a6a66); } b.box(0.9, 0.08, 0.1, x + 3, 0.2, z + 1, 0x3a2a1a, { ry: 0.5 }); crate(x - 2.4, z + 1.6, 0.4, 'Revistar mochila abandonada', 'cabana', 0x5a4a2e); blood(x + 1.5, z + 2.5, 0.8); };
   camp(62, 58); camp(-200, -232); camp(232, -60); camp(-120, 120); camp(400, -160); camp(-420, 90); camp(-250, 400); camp(250, -400);
+  // portas feitas depois da mobília: se a folha bate num móvel, a porta passa a abrir para o outro lado (se lá estiver livre)
+  W.fixDoors = () => { const propsAt = (k, lv) => W.rects.some(r => r.prop && (r.lv || 0) === lv && r.x0 < k.x1 - 0.05 && r.x1 > k.x0 + 0.05 && r.z0 < k.z1 - 0.05 && r.z1 > k.z0 + 0.05);
+    for (const D of W.doors) { if (!D.leaves || !D.leaves.length || D.s0 == null) continue; const lv = D.lv || 0, zone = () => doorKO(lv).find(k => k.door === D);
+      if (!propsAt(zone(), lv)) continue; D.inward = -D.inward; doorLeaves(D); if (propsAt(zone(), lv)) { D.inward = -D.inward; doorLeaves(D); W.doorStuck = (W.doorStuck || 0) + 1; } else W.doorFlip = (W.doorFlip || 0) + 1; } };
+  W.doorCheck = () => { const bad = []; for (let lv = 0; lv < 4; lv++) { const KO = doorKO(lv); for (const r of W.rects) if (r.prop && (r.lv || 0) === lv && KO.some(k => r.x0 < k.x1 - 0.05 && r.x1 > k.x0 + 0.05 && r.z0 < k.z1 - 0.05 && r.z1 > k.z0 + 0.05)) bad.push([lv, +r.x0.toFixed(2), +r.z0.toFixed(2), +r.x1.toFixed(2), +r.z1.toFixed(2), r.k]); } return bad; };
   W.koCheck = () => { const bad = []; for (let lv = 0; lv < 4; lv++) { const KO = koOf(lv); for (const r of W.rects) if (!r.stairRail && (r.lv || 0) === lv && r.k !== 'g' && KO.some(k => r.x0 < k.x1 - 0.02 && r.x1 > k.x0 + 0.02 && r.z0 < k.z1 - 0.02 && r.z1 > k.z0 + 0.02)) bad.push([lv, +r.x0.toFixed(2), +r.z0.toFixed(2), +r.x1.toFixed(2), +r.z1.toFixed(2), r.k, r.h]); } return bad; };
   // zonas longe do centro: no arranque só se registam colisões, portas e loot (a seco); a geometria só se faz quando chegas perto e sai quando te afastas.
   // Ao construir, repete-se exatamente o mesmo sorteio, por isso as paredes caem onde as colisões já estão

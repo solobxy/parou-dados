@@ -123,6 +123,8 @@ async function boot() {
   };
   // texturas realistas do chão (ficheiros ao lado da página; até chegarem, ficam as desenhadas aqui) e duas amostras misturadas
   // com uma mancha larga, para não se ver a repetição dos quadrados
+  // chãos sobrepostos (asfalto por baixo da loja, passeio sobre a estrada, terra sobre a erva): cada camada fica um pouco atrás da de cima na profundidade, para não piscarem nos telemóveis com pouca precisão
+  for (const [k, o] of [['grass', 8], ['dirt', 6], ['asph', 4], ['conc', 2]]) Object.assign(mats[k], { polygonOffset: true, polygonOffsetFactor: o / 2, polygonOffsetUnits: o });
   { const AT = new Set(['grass', 'dirt', 'asph']), BR = new Set(['grass', 'dirt', 'asph', 'conc', 'tile']);
     for (const k of BR) { const m = mats[k]; m.onBeforeCompile = sh => { if (k === 'grass') { sh.uniforms.uDet = { value: DET }; sh.uniforms.uDirt = { get value() { return mats.dirt.map; } }; sh.fragmentShader = 'uniform sampler2D uDet, uDirt;\n' + sh.fragmentShader;
         // relevo: a altura vem da grelha do terreno (a mesma que o jogo usa para andar); a normal sai da inclinação
@@ -189,7 +191,7 @@ float terH(vec2 p) { if (uTerP.w < 0.5) return 0.0; vec2 f = clamp((p + uTerP.x)
   const ARENA_ON = (() => { try { return sessionStorage.getItem('kgArena') === '1' || /[?&]arena\b/.test(location.search); } catch (e) { return false; } })(); // modo arena: só PvP no mapa de Tóquio
   await loadProps(); // adereços do Blender (ficheiro ao lado); se falhar, o mapa usa as caixas simples
   await LP(12, 'a construir a cidade');
-  const tW0 = performance.now(); const W = buildWorld(scene, wmats, A, { arena: ARENA_ON, flat: !!window.__flat }); W.buildMs = Math.round(performance.now() - tW0);
+  const tW0 = performance.now(); const W = buildWorld(scene, wmats, A, { arena: ARENA_ON, flat: !!window.__flat }); if (W.fixDoors) W.fixDoors(); W.buildMs = Math.round(performance.now() - tW0);
   // ---------- relevo: colinas no campo (as cidades, estradas, água e construções ficam planas). Igual ao do servidor (mapa.json)
   const tT0 = performance.now(), r1 = v => Math.round(v * 10) / 10;
   const TER = ARENA_ON || window.__flat ? { at: () => 0, blocks: () => 0, H: null, sum: 0 } : makeTerrain(terrainInput(W.zones.map(z => [r1(z.x), r1(z.z), z.r, z.kind]), W.roads.map(r => [r1(r.x0), r1(r.z0), r1(r.x1), r1(r.z1)]),
@@ -569,6 +571,7 @@ float terH(vec2 p) { if (uTerP.w < 0.5) return 0.0; vec2 f = clamp((p + uTerP.x)
     p: null, inv: new Inv(), sel: 0, zs: [], bags: [], box: null, prompt: null,
     cam, renderer, scene, camT, YAW,
   };
+  G.dbgDrive = () => ({ xray: !!(G0.xray && G0.xray.visible), visK: VU.uVisK.value }); /* testes */
   G.dbgW = W; G.dbgScene = scene; G.dbgSky = SKY; G.dbgFlame = (x, y, z, sz = 1) => { const F = makeFire(sz); F.g.position.set(x, y, z); scene.add(F.g); if (F.set) F.set(true); return F; }; G.dbgNewBody = L => mkRemote(L); G.dbgRay = ray; G.dbgCanvas = renderer.domElement; G.dbgMuz = (o, d) => { const F = MZP.find(f => !f.keep) || MZP[0]; F.s.position.set(o[0] + d[0] * 0.05, o[1] + d[1] * 0.05, o[2] + d[2] * 0.05); F.s.material.rotation = Math.random() * 6.28; F.s.scale.setScalar(0.75); F.s.visible = true; F.keep = true; F.t = 1; return F; }; G.dbgOl = () => ({ n: OL.objs.length, key: !!OL.key, lbl: G.prompt && G.prompt.label }); G.olRefresh = () => { OL.wm = null; for (const c of W.containers) c._olg = undefined; OL.key = null; };
   G.dbgNav = { nav, walkLine: (a, b, c, d, lv) => walkLine(a, b, c, d, lv || 0), find: (a, b, c, d, lv) => nav.find(a, b, c, d, lv || 0) };
   // bases construídas pelo jogador
@@ -1916,7 +1919,7 @@ float terH(vec2 p) { if (uTerP.w < 0.5) return 0.0; vec2 f = clamp((p + uTerP.x)
       if (best && best.table === 'bomba' && held() && held().k === 'galaoV') best = { label: 'Encher o galão', pumpFill: true, x: best.x, z: best.z };
       if (G.car) best = { label: (G.car.alt || 0) > 0.8 ? 'Aterra para sair' : VT[G.car.k].two ? 'Descer' : 'Sair', carExit: true, x: p.x, z: p.z };
       if (G.car && G.carSeat === 0 && VT[G.car.k].tank && Math.abs(G.car.v) < 0.5 && G.car.fuel < VT[G.car.k].tank - 1 && W.containers.some(c => c.table === 'bomba' && Math.hypot(c.x - G.car.x, c.z - G.car.z) < 6)) best = { label: 'Abastecer na bomba', carPump: true, x: p.x, z: p.z };
-      else if (!G.car && p.alive && !p.climb && !p.lv) { const c = G.cars.nearest(p); if (c) { const cd = Math.hypot(c.x - p.x, c.z - p.z) - 1.2, h = held();
+      else if (!G.car && p.alive && !p.climb && !p.lv) { const c = G.cars.nearest(p); if (c && los(p.x, p.z, c.x, c.z, [c.x, c.z], 's', 0, 0.9)) { /* com uma parede pelo meio não se entra */ const cd = Math.hypot(c.x - p.x, c.z - p.z) - 1.2, h = held();
           const T = VT[c.k], nm = T.n.toLowerCase();
           if (!best || cd < bd) best = h && h.k === 'gasolina' && T.tank ? { label: 'Pôr gasolina (' + Math.round(c.fuel) + ' de ' + T.tank + ' L)', car: c, fuel: true, x: c.x, z: c.z } : G.cars.seatFree(c) < 0 ? { label: 'Não há lugar', car: c, full: true, x: c.x, z: c.z } : { label: c.seats[0] ? (T.two ? 'Ir à pendura' : 'Entrar (passageiro)') : c.k === 'bike' ? 'Pedalar' : c.k === 'moto' ? 'Conduzir a mota' : 'Conduzir · ' + nm, car: c, x: c.x, z: c.z }; } }
       // comerciante a menos de 2,6 m
@@ -2030,7 +2033,7 @@ float terH(vec2 p) { if (uTerP.w < 0.5) return 0.0; vec2 f = clamp((p + uTerP.x)
       // a luneta mostra sempre o mesmo ângulo, em qualquer ecrã; o centro fica no meio da zona livre. Sem apontar (vista livre): campo largo, centro no meio do ecrã
       const a = FPF.on ? AIM.adsT * AIM.adsT * (3 - 2 * AIM.adsT) : 1, scI = scopeItem(), fa = a * (scI && scI.mag >= 2 ? 1 : 0); FPF.fa = FPF.on ? fa : 1;
       const S = G.ui.scopeR(), SC = G.ui.scopeC(), sf = THREE.MathUtils.degToRad(scopeFov()), fS = THREE.MathUtils.radToDeg(2 * Math.atan(Math.tan(sf / 2) * innerHeight / (2 * S))), fF = fpFov();
-      cam.near = FPF.on ? 0.05 + 0.25 * a : 0.3; cam.far = FPF.on ? 142 + 758 * fa : 900; cam.aspect = innerWidth / innerHeight; cam.fov = FPF.on ? fF + ((scI && scI.rd ? Math.min(fS, fF / Math.max(1, scI.mag)) : fS) - fF) * a : fS; /* mira de ferro e ponto vermelho na vista livre: apontar nunca abre o campo (ao alto a fórmula da luneta dava mais do que a vista normal) */ cam.updateProjectionMatrix();
+      cam.near = FPF.on ? 0.1 + 0.2 * a : 0.3; cam.far = FPF.on ? 142 + 758 * fa : 900; cam.aspect = innerWidth / innerHeight; cam.fov = FPF.on ? fF + ((scI && scI.rd ? Math.min(fS, fF / Math.max(1, scI.mag)) : fS) - fF) * a : fS; /* mira de ferro e ponto vermelho na vista livre: apontar nunca abre o campo (ao alto a fórmula da luneta dava mais do que a vista normal) */ cam.updateProjectionMatrix();
       { const e = cam.projectionMatrix.elements, af = a * (scI && scI.mag >= 2 ? 1 : 0); e[8] = -(SC.x / innerWidth * 2 - 1) * af; e[9] = -(1 - SC.y / innerHeight * 2) * af; /* só as lunetas vão para o meio da zona livre; mira de ferro e ponto vermelho ficam no meio do ecrã, onde estava a cruz */ cam.projectionMatrixInverse.copy(cam.projectionMatrix).invert(); } PROJ.mode = 'fp';
       // braços e o que tens na mão: na vista livre sempre (punhos de mãos vazias); a apontar só com mira de ferro ou ponto vermelho (a luneta tapa o ecrã)
       { const it = held(), at = (it && it.att) || {}, k = it ? it.k : '', att = { ...(!at.scope && ironOk(it) ? { ...at, scope: 'iron' } : at), skin: it ? it.sk | 0 : 0 }, optic = !!(at.scope && at.scope !== 'reddot');
@@ -2054,9 +2057,9 @@ float terH(vec2 p) { if (uTerP.w < 0.5) return 0.0; vec2 f = clamp((p + uTerP.x)
       sun.target.position.set(tx, ty, tz); sun.position.set(tx, ty, tz).addScaledVector(SUNDIR, 70); sun.target.updateMatrixWorld(); }
     // círculo de visão
     // máscara da linha de vista (refeita quando te mexes ou uma porta muda)
-    if (p && G.playing && p.alive && !G.fp) { VU.uVisK.value = 0.06 + 0.03 * (G.day ?? 1); VIS.t -= dt; const dk = W.doors.reduce((a, D) => a + (D.rc.off ? 1 : 0), 0) + ':' + p.lv + ':' + Math.round((AIM.lean || 0) * 4); VIS.cd = (VIS.cd || 0) - dt; const lo = (AIM.lean || 0) * LEAN, vcx = p.x + Math.cos(p.yaw) * lo, vcz = p.z - Math.sin(p.yaw) * lo; if (Math.hypot(vcx - VIS.x, vcz - VIS.z) > 0.002 || dk !== VIS.key || VIS.t <= 0) { VIS.x = vcx; VIS.z = vcz; VIS.key = dk; VIS.t = 0.5; drawVis(vcx, vcz, p.lv, p.bld && p.lv > 0 ? p.bld : null); } }
-    else { VU.uVisK.value = 1; VU.uVisO.value.set(1e7, 1e7); VIS.key = ''; } // 1.ª pessoa: sem a sombra de "fora da vista" (só faz sentido vista de cima)
-    if (G0.xray) G0.xray.visible = !G.fp && !FPF.on && !onRoof(G.p); // em 1.ª pessoa não há contornos; em cima de um telhado, os contornos das portas lá de baixo atravessavam-no
+    if (p && G.playing && p.alive && !G.fp && !G.car) { VU.uVisK.value = 0.06 + 0.03 * (G.day ?? 1); VIS.t -= dt; const dk = W.doors.reduce((a, D) => a + (D.rc.off ? 1 : 0), 0) + ':' + p.lv + ':' + Math.round((AIM.lean || 0) * 4); VIS.cd = (VIS.cd || 0) - dt; const lo = (AIM.lean || 0) * LEAN, vcx = p.x + Math.cos(p.yaw) * lo, vcz = p.z - Math.sin(p.yaw) * lo; if (Math.hypot(vcx - VIS.x, vcz - VIS.z) > 0.002 || dk !== VIS.key || VIS.t <= 0) { VIS.x = vcx; VIS.z = vcz; VIS.key = dk; VIS.t = 0.5; drawVis(vcx, vcz, p.lv, p.bld && p.lv > 0 ? p.bld : null); } }
+    else { VU.uVisK.value = 1; VU.uVisO.value.set(1e7, 1e7); VIS.key = ''; } // 1.ª pessoa e a conduzir: sem a sombra de "fora da vista" (só faz sentido vista de cima)
+    if (G0.xray) G0.xray.visible = !G.fp && !FPF.on && !G.car && !onRoof(G.p) && !!(G.p && G.p.alive); /* a conduzir também não */ // em 1.ª pessoa não há contornos; em cima de um telhado, os contornos das portas lá de baixo atravessavam-no
     body.root.visible = !!(p && G.playing && p.alive && (!G.fp || G.dbgShowBody) && (!G.car || G.leanOut));
     // onde fica o círculo no ecrã (para os sons à volta e a mira)
     if (p && G.playing && !G.fp) { const c0 = toScreen(_c.set(vc.x, p.y + 0.9, vc.z)), S = G.ui.safe(); G.view = { cx: c0.x, cy: c0.y, rx: Math.max(60, Math.min(c0.x - S.x0, S.x1 - c0.x) - 34), ry: Math.max(60, Math.min(c0.y - S.y0, S.y1 - c0.y) - 34), fp: false }; }
