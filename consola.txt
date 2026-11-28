@@ -1,0 +1,51 @@
+Dia de teste: 2026-11-30 (monday)
+Referência: 80379 paragens, 76997 viagens ativas, 2324090 ligações (10012 ms)
+[SQLite DB] 3 linhas sem nome ficaram com o trajeto como nome.
+
+Região e hora          viagens  falhas  sem opções  atraso (min) das falhas
+Lisboa 08:00                20       2           0  mediana 17, máx 17
+Lisboa 17:30                20       1           0  mediana 7, máx 7
+Porto 08:00                 20       1           0  mediana 8, máx 8
+Porto 17:30                 20       0           0  -
+Coimbra 08:00               20       1           0  mediana 9, máx 9
+Coimbra 17:30               20       0           0  -
+Braga 08:00                 20       1           0  mediana 6, máx 6
+Braga 17:30                 20       0           0  -
+Funchal 08:00               20       0           0  -
+Funchal 17:30               20       2           0  mediana 10, máx 10
+Faro 08:00                  20       0           0  -
+Faro 17:30                  20       0           0  -
+
+TOTAL: 240 viagens, 8 falhas — o planeador dá o melhor percurso (dentro das regras dele) em 96.7%
+
+FALHA Lisboa 08:00 5.4 km 38.79269,-9.11236 → 38.81179,-9.16956: planeador 09:15, permitido 08:58 (+17 min)
+   referência: cmh cmh:2735 R Trigueiros Martel 15 (Sacavém) 08:04 → Praça República (Jardim) 08:08 | a pé Praça República (Jardim) → Estrada Nacional 10 (Supermercado) | cmh cmh:2725 Estrada Nacional 10 (Supermercado) 08:11 → Ponte Frielas (X) R David José Chitas 08:35 | a pé Ponte Frielas (X) R David José Chitas → Avenida Infante Dom Pedro Frente 3 | cmh cmh:2028 Avenida Infante Dom Pedro Frente 3 08:40 → Av João Branco Núncio 08:41 | a pé Av João Branco Núncio → Av Marquês Marialva (Correios) | cmh cmh:2715 Av Marquês Marialva (Correios) 08:45 → Escola Básica de Santo António dos Cavaleiros 08:50
+   planeador:  08:12→09:15 Autocarro 2713 Azinhaga Cabeço 9 (Sacavém) 08:21 + Autocarro 2715 Campo Grande (Metro) P1 08:55 || 08:27→09:21 Autocarro 2733 Estr Militar (Rotunda) (Sacavém) 08:45
+
+FALHA Lisboa 08:00 11 km 38.76041,-9.11203 → 38.72476,-9.23046: planeador 08:58, permitido 08:56 (+2 min)
+   referência: metro_lisboa Vm Olivais 08:03 → Saldanha 08:11 | a pé Saldanha → Saldanha | metro_lisboa Am Saldanha 08:16 → Marquês de Pombal 08:19 | a pé Marquês de Pombal → Marquês de Pombal (Metro) P4 | cmh cmh:1723 Marquês de Pombal (Metro) P4 08:25 → Av Forte (Posto Combust) 08:44
+   planeador:  08:01→08:58 Metro Vm Olivais 08:03 + Metro Am Saldanha 08:16 + Autocarro 1726 R Joaquim António Aguiar 08:32 || 08:06→09:18 Autocarro 750 Cabo Ruivo - Av. Mar. Gomes Costa 08:10 + Autocarro 714 Pq. Campismo 09:05 || 08:03→09:23 Autocarro 708 R. Cidade Bissau (Metro) 08:04 + Comboio CP Roma - Areeiro 08:25 + Autocarro 1502 Amadora (Estação) P5 Entrada Sul 08:50
+
+FALHA Lisboa 17:30 7.8 km 38.74309,-9.1112 → 38.70032,-9.1826: planeador 18:29, permitido 18:22 (+7 min)
+   referência: cp Linha da Azambuja Marvila 17:47 → Campolide 17:57 | a pé Campolide → Av. Calouste Gulbenkian | carris 756 Av. Calouste Gulbenkian 18:04 → R. Junqueira (Centro Congressos) 18:18
+   planeador:  17:33→18:29 Autocarro 793 Av. Paulo VI (Igreja) 17:35 + Autocarro 756 Casal Vistoso 17:54 || 17:39→18:29 Autocarro 759 Av. Paulo VI (Igreja) 17:41 + Metro Vm Chelas 17:55 + Autocarro 756 Pç. Espanha (Pq. Urbano) 18:12
+
+FALHA Porto 08:00 12.9 km 41.24876,-8.67341 → 41.16192,-8.57091: planeador 09:17, permitido 09:08 (+8 min)
+   referência: unirh unirh:6009 Crz. Tv. da Aldeia 08:05 → Estação Pedras Rubras 08:12 | a pé Estação Pedras Rubras → Pedras Rubras | metro_porto B Pedras Rubras 08:19 → Estádio do Dragão 08:53 | a pé Estádio do Dragão → Corujeira | unirh unirh:8025 Corujeira 08:58 → Cartes 09:00
+   planeador:  08:02→09:17 Autocarro 5020 Manuel Fonseca e Castro 08:03 + Metro E Aeroporto 08:29 + Autocarro 700 CAMPO 24 DE AGOSTO 09:02 || 08:05→09:27 Autocarro 602 R.RIBEIRO 08:15 + Autocarro 5017 Central do Seixo (Norte) 08:53
+
+FALHA Coimbra 08:00 2.7 km 40.21668,-8.40931 → 40.22596,-8.4392: planeador 08:39, permitido 08:29 (+9 min)
+   referência: sit_coimbra 224 Olivais (Junta de Freguesia) 08:14 → Estação Coimbra B 08:24
+   planeador:  08:10→08:39 Autocarro 16G B.C.G. 08:14 + Autocarro S1 Portagem 08:31 || 08:02→08:39 Autocarro 37 Olivais (Escola) 08:06 + Autocarro S1 Solum 08:22 || 08:22→08:53 Autocarro 27 HUC - Pr. M. Pinto 08:35
+
+FALHA Braga 08:00 2.9 km 41.57702,-8.45719 → 41.5588,-8.43301: planeador 08:48, permitido 08:41 (+6 min)
+   referência: mov_cavado 213 Merelim São Pedro (Capela) 08:17 → Braga (São Frutuoso) 08:23
+   planeador:  08:29→08:50 Autocarro 98 Joaquim Carneiro 08:30 || 08:15→08:46 Autocarro 2 Pateira III 08:22 || 08:10→08:44 Autocarro 213 Merelim São Pedro (Pateira) 08:18
+
+FALHA Funchal 17:30 2.1 km 32.64739,-16.92426 → 32.66474,-16.93299: planeador 17:53, permitido 17:48 (+4 min)
+   referência: horarios_funchal 181 Centro  Freitas e Neto (73) 17:35 → CAM STO A  BC ESCL  S (693) 17:40
+   planeador:  17:30→17:51 Autocarro 181 Centro  Freitas e Neto (73) 17:35 || 17:30→17:57 Autocarro 500 Hotel Savoy (00010) 17:38 + Autocarro 701 Rua Dr João Brito Câmara (00893) 17:45 || 17:37→18:08 Autocarro 014 Centro  Freitas e Neto (73) 17:42
+
+FALHA Funchal 17:30 6.1 km 32.63884,-16.93357 → 32.66861,-16.87929: planeador 18:41, permitido 18:31 (+10 min)
+   referência: cam_madeira 500 Porto Bay (01340) 17:35 → Rua Oudinot (00831) 17:44 | cam_madeira 602 Rua Oudinot (00831) 17:47 → ESTR Boa Nova (00407) 18:04
+   planeador:  17:32→18:28 Autocarro 500 Porto Bay (01340) 17:35 + Autocarro 602 Rua Oudinot (00831) 17:47 || 17:32→18:49 Autocarro 500 Porto Bay (01340) 17:35 + Autocarro 047 Pinga (19) 18:20 || 17:52→18:40 Autocarro 305 Porto Bay (01340) 17:55 + Autocarro 036 Campo da Barca (371) 18:11
