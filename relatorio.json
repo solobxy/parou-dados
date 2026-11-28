@@ -1,0 +1,24 @@
+{
+ "quando": "2026-11-28T17:30:06.390838+00:00",
+ "falhas": [
+  "Açores: já há 19 paragens perto de Ponta Delgada. Confirmar no ecrã que as horas aparecem na hora dos Açores (UTC-1) e tirar o aviso «Ainda não temos os autocarros dos Açores»"
+ ],
+ "avisos": [],
+ "ok": [
+  "Horários do Funchal: horários publicados até 31/08/2027 (276 dias)",
+  "Base da PAROU construída há 5 h",
+  "Funchal: 1743 paragens iguais às oficiais (id, nome e posição)",
+  "Funchal: 60 linhas (164 variantes) iguais às oficiais",
+  "Funchal: viagens iguais às oficiais nos próximos 14 dias (28/11: 1556, 29/11: 1332, 30/11: 2441, 01/12: 1332, 02/12: 2441, 03/12: 2441, 04/12: 2441 …)",
+  "SIGA: 108 linhas na lista oficial da Madeira e do Porto Santo",
+  "SIGA: as 60 linhas dos Horários do Funchal na PAROU são as da lista oficial",
+  "Linhas da SIGA sem horários abertos (CAM, SIGA Rodoeste, Porto Santo): 48",
+  "App: centro do Funchal com 53 paragens, 8 com partidas",
+  "App: Machico com 15 paragens",
+  "Avisos: Funchal → Funchal (MCS), previsão de 3 dias",
+  "Avisos: Santana → Funchal (MCS), previsão de 3 dias",
+  "Avisos: Porto Santo → Porto Santo (MPS), previsão de 3 dias",
+  "Avisos: Ponta Delgada → Ponta Delgada (AOR), previsão de 3 dias",
+  "Fontes novas das ilhas no catálogo: nenhuma (CAM, SIGA Rodoeste e Açores ainda não publicam)"
+ ]
+}
