@@ -191,7 +191,7 @@ float terH(vec2 p) { if (uTerP.w < 0.5) return 0.0; vec2 f = clamp((p + uTerP.x)
   const ARENA_ON = (() => { try { return sessionStorage.getItem('kgArena') === '1' || /[?&]arena\b/.test(location.search); } catch (e) { return false; } })(); // modo arena: só PvP no mapa de Tóquio
   await loadProps(); // adereços do Blender (ficheiro ao lado); se falhar, o mapa usa as caixas simples
   await LP(12, 'a construir a cidade');
-  const tW0 = performance.now(); const W = buildWorld(scene, wmats, A, { arena: ARENA_ON, flat: !!window.__flat }); if (W.fixDoors) W.fixDoors(); W.buildMs = Math.round(performance.now() - tW0);
+  const tW0 = performance.now(); const W = buildWorld(scene, wmats, A, { arena: ARENA_ON, flat: !!window.__flat }); if (W.fixDoors) W.fixDoors(); { const FL = new Set(['grass', 'dirt', 'asph', 'conc', 'tile'].map(k => mats[k])); scene.traverse(o => { if (o.isMesh && FL.has(o.material)) o.castShadow = false; }); } /* os chãos não fazem sombra: um chão grande a fazer sombra escurecia tudo por igual e as sombras deixavam de se ver (era o que acontecia na arena) */ W.buildMs = Math.round(performance.now() - tW0);
   // ---------- relevo: colinas no campo (as cidades, estradas, água e construções ficam planas). Igual ao do servidor (mapa.json)
   const tT0 = performance.now(), r1 = v => Math.round(v * 10) / 10;
   const TER = ARENA_ON || window.__flat ? { at: () => 0, blocks: () => 0, H: null, sum: 0 } : makeTerrain(terrainInput(W.zones.map(z => [r1(z.x), r1(z.z), z.r, z.kind]), W.roads.map(r => [r1(r.x0), r1(r.z0), r1(r.x1), r1(r.z1)]),
@@ -221,6 +221,8 @@ float terH(vec2 p) { if (uTerP.w < 0.5) return 0.0; vec2 f = clamp((p + uTerP.x)
     // zonas que se constroem quando chegas perto: as mesmas cópias de sombra (e saem quando a zona sai)
     W.onLazy = (L, on) => { if (on) { SH = L.sh = []; L.cuts.forEach(addC); SH = null; } else { for (const m of L.sh || []) scene.remove(m); L.sh = null; } };
     sun.shadow.camera.layers.enable(1); }
+  // arena: os prédios da cidade à volta (cenário) não fazem sombra; antes tapavam o sol à praça toda e não se via sombra nenhuma
+  if (ARENA_ON) { const A0 = ARENA, m = 6; scene.traverse(o => { if (!o.isMesh || !o.castShadow) return; if (!o.geometry.boundingBox) o.geometry.computeBoundingBox(); o.updateWorldMatrix(true, false); const bb = o.geometry.boundingBox.clone().applyMatrix4(o.matrixWorld); if (bb.max.x < A0.x - A0.hw - m || bb.min.x > A0.x + A0.hw + m || bb.max.z < A0.z - A0.hd - m || bb.min.z > A0.z + A0.hd + m) o.castShadow = false; }); }
 
   // colisões: grelha espacial
   const CS = 8, grid = new Map(); let stamp = 1;
@@ -573,7 +575,7 @@ float terH(vec2 p) { if (uTerP.w < 0.5) return 0.0; vec2 f = clamp((p + uTerP.x)
   };
   G.dbgView = () => ({ xray: !!(G0.xray && G0.xray.visible), visK: VU.uVisK.value }); /* testes */
   G.dbgCamPos = () => [cam.position.x, cam.position.y, cam.position.z]; /* testes */
-  G.dbgW = W; G.dbgScene = scene; G.dbgSky = SKY; G.dbgFlame = (x, y, z, sz = 1) => { const F = makeFire(sz); F.g.position.set(x, y, z); scene.add(F.g); if (F.set) F.set(true); return F; }; G.dbgNewBody = L => mkRemote(L); G.dbgRay = ray; G.dbgCanvas = renderer.domElement; G.dbgMuz = (o, d) => { const F = MZP.find(f => !f.keep) || MZP[0]; F.s.position.set(o[0] + d[0] * 0.05, o[1] + d[1] * 0.05, o[2] + d[2] * 0.05); F.s.material.rotation = Math.random() * 6.28; F.s.scale.setScalar(0.75); F.s.visible = true; F.keep = true; F.t = 1; return F; }; G.dbgOl = () => ({ n: OL.objs.length, key: !!OL.key, lbl: G.prompt && G.prompt.label }); G.olRefresh = () => { OL.wm = null; for (const c of W.containers) c._olg = undefined; OL.key = null; };
+  G.dbgR = renderer; G.dbgW = W; G.dbgScene = scene; G.dbgSky = SKY; G.dbgFlame = (x, y, z, sz = 1) => { const F = makeFire(sz); F.g.position.set(x, y, z); scene.add(F.g); if (F.set) F.set(true); return F; }; G.dbgNewBody = L => mkRemote(L); G.dbgRay = ray; G.dbgCanvas = renderer.domElement; G.dbgMuz = (o, d) => { const F = MZP.find(f => !f.keep) || MZP[0]; F.s.position.set(o[0] + d[0] * 0.05, o[1] + d[1] * 0.05, o[2] + d[2] * 0.05); F.s.material.rotation = Math.random() * 6.28; F.s.scale.setScalar(0.75); F.s.visible = true; F.keep = true; F.t = 1; return F; }; G.dbgOl = () => ({ n: OL.objs.length, key: !!OL.key, lbl: G.prompt && G.prompt.label }); G.olRefresh = () => { OL.wm = null; for (const c of W.containers) c._olg = undefined; OL.key = null; };
   G.dbgNav = { nav, walkLine: (a, b, c, d, lv) => walkLine(a, b, c, d, lv || 0), find: (a, b, c, d, lv) => nav.find(a, b, c, d, lv || 0) };
   // bases construídas pelo jogador
   // mancha de luz no chão por baixo de cada candeeiro (barata: dá para todos os do mapa ao mesmo tempo)
@@ -834,9 +836,10 @@ float terH(vec2 p) { if (uTerP.w < 0.5) return 0.0; vec2 f = clamp((p + uTerP.x)
   const fire = (it, g) => {
     const p = G.p; if (p.reload > 0 || p.cd > 0) return false;
     const AM = ammoOf(g); if (!it.ak || !AM.includes(it.ak)) it.ak = AM[0];
+    const infA = !!(G.admF && G.admF.ammo && G.net && G.net.role === 'admin'); if (infA && it.ammo <= 0) { it.ammo = 1; if (g.clip && !it.mg) it.mg = g.clip; } /* admin: balas infinitas */
     if (it.ammo <= 0) { audio.play('vazio'); p.cd = 0.3; startReload(true); return false; }
     const B = ITEMS[it.ak].bal, sup = !!(it.att && it.att.sup), v0 = B.v * (g.vk || 1), n = B.pel || 1;
-    it.ammo--; p.cd = g.cd; p.recoil = 1; G.combatT = G.t; p.fireT = G.t; p.sprint = false; // a disparar não se corre (volta a dar logo que paras)
+    if (!infA) it.ammo--; p.cd = g.cd; p.recoil = 1; G.combatT = G.t; p.fireT = G.t; p.sprint = false; // a disparar não se corre (volta a dar logo que paras)
     const AIM = G.aimS, fp = G.fp, hipF = fp && G.fpv.on && AIM.adsT < 0.5; // 1.ª pessoa sem apontar: tiro à anca (espalha como na vista de cima)
     const lo = (AIM.lean || 0) * LEAN, O = fp ? AIM.eye.clone() : new THREE.Vector3(p.x + Math.sin(p.yaw) * 0.15 + Math.cos(p.yaw) * lo, p.y + 1.35, p.z + Math.cos(p.yaw) * 0.15 - Math.sin(p.yaw) * lo);
     const dir = fp ? AIM.dir.clone() : AIM.Aw.clone().sub(O).normalize();
@@ -2034,7 +2037,7 @@ float terH(vec2 p) { if (uTerP.w < 0.5) return 0.0; vec2 f = clamp((p + uTerP.x)
       // a luneta mostra sempre o mesmo ângulo, em qualquer ecrã; o centro fica no meio da zona livre. Sem apontar (vista livre): campo largo, centro no meio do ecrã
       const a = FPF.on ? AIM.adsT * AIM.adsT * (3 - 2 * AIM.adsT) : 1, scI = scopeItem(), fa = a * (scI && scI.mag >= 2 ? 1 : 0); FPF.fa = FPF.on ? fa : 1;
       const S = G.ui.scopeR(), SC = G.ui.scopeC(), sf = THREE.MathUtils.degToRad(scopeFov()), fS = THREE.MathUtils.radToDeg(2 * Math.atan(Math.tan(sf / 2) * innerHeight / (2 * S))), fF = fpFov();
-      cam.near = FPF.on ? 0.1 + 0.2 * a : 0.3; cam.far = FPF.on ? 142 + 758 * fa : 900; cam.aspect = innerWidth / innerHeight; cam.fov = FPF.on ? fF + ((scI && scI.rd ? Math.min(fS, fF / Math.max(1, scI.mag)) : fS) - fF) * a : fS; /* mira de ferro e ponto vermelho na vista livre: apontar nunca abre o campo (ao alto a fórmula da luneta dava mais do que a vista normal) */ cam.updateProjectionMatrix();
+      cam.near = FPF.on ? 0.1 + 0.2 * a : 0.3; cam.far = FPF.on ? (G.ARENA ? Math.max(600, 142 + 758 * fa) : 142 + 758 * fa) : 900; cam.aspect = innerWidth / innerHeight; cam.fov = FPF.on ? fF + ((scI && scI.rd ? Math.min(fS, fF / Math.max(1, scI.mag)) : fS) - fF) * a : fS; /* mira de ferro e ponto vermelho na vista livre: apontar nunca abre o campo (ao alto a fórmula da luneta dava mais do que a vista normal) */ cam.updateProjectionMatrix();
       { const e = cam.projectionMatrix.elements, af = a * (scI && scI.mag >= 2 ? 1 : 0); e[8] = -(SC.x / innerWidth * 2 - 1) * af; e[9] = -(1 - SC.y / innerHeight * 2) * af; /* só as lunetas vão para o meio da zona livre; mira de ferro e ponto vermelho ficam no meio do ecrã, onde estava a cruz */ cam.projectionMatrixInverse.copy(cam.projectionMatrix).invert(); } PROJ.mode = 'fp';
       // braços e o que tens na mão: na vista livre sempre (punhos de mãos vazias); a apontar só com mira de ferro ou ponto vermelho (a luneta tapa o ecrã)
       { const it = held(), at = (it && it.att) || {}, k = it ? it.k : '', att = { ...(!at.scope && ironOk(it) ? { ...at, scope: 'iron' } : at), skin: it ? it.sk | 0 : 0 }, optic = !!(at.scope && at.scope !== 'reddot');
@@ -2053,7 +2056,7 @@ float terH(vec2 p) { if (uTerP.w < 0.5) return 0.0; vec2 f = clamp((p + uTerP.x)
     // troca de vista: da câmara de antes para a de agora, em ~0,34 s (posição, rotação e projeção)
     if (FPF.t < 1 && p && PROJ.mode !== 'chase') { const e = FPF.t * FPF.t * (3 - 2 * FPF.t); cam.position.lerpVectors(FPF.P, cam.position, e); _qF.copy(cam.quaternion); cam.quaternion.copy(FPF.Q).slerp(_qF, e); const A0 = FPF.M.elements, B0 = cam.projectionMatrix.elements; for (let i = 0; i < 16; i++) B0[i] = A0[i] + (B0[i] - A0[i]) * e; cam.projectionMatrixInverse.copy(cam.projectionMatrix).invert(); PROJ.dirty = true; }
     cam.updateMatrixWorld();
-    { const fa = G.fp ? FPF.fa ?? 1 : 0; scene.fog.near = G.fp ? 40 + 260 * fa : 62; scene.fog.far = G.fp ? 138 + 712 * fa : 150; } // vista livre: neblina aos ~140 m (poupa o telemóvel: o que está para lá não se desenha)
+    { const fa = G.fp ? FPF.fa ?? 1 : 0; scene.fog.near = G.ARENA ? 600 : G.fp ? 40 + 260 * fa : 62; scene.fog.far = G.ARENA ? 1200 : G.fp ? 138 + 712 * fa : 150; } // a arena é pequena: sem neblina // vista livre: neblina aos ~140 m (poupa o telemóvel: o que está para lá não se desenha)
     { const sc0 = G.fp ? _c.copy(AIM.eye).addScaledVector(AIM.dir, Math.min(AIM.dist || 30, 60)) : camT; const tx = Math.round(sc0.x / 0.5) * 0.5, tz = Math.round(sc0.z / 0.5) * 0.5, ty = G.fp ? 0 : camT.y;
       sun.target.position.set(tx, ty, tz); sun.position.set(tx, ty, tz).addScaledVector(SUNDIR, 70); sun.target.updateMatrixWorld(); }
     // círculo de visão

@@ -36,6 +36,13 @@ server.listen(0, async () => {
     await B.ev(() => clearInterval(window.__mv));
     if (!s0 || !s1) { ok(false, 'a Ana vê o Bruno'); } else { const dist = Math.hypot(s1[1] - s0[1], s1[2] - s0[2]), rad = Math.abs(s1[0] - s0[0]); const pm = rad / Math.max(0.01, dist);
       console.log('andou ' + dist.toFixed(2) + ' m, pernas ' + rad.toFixed(1) + ' rad, ' + pm.toFixed(2) + ' rad/m (o jogador local faz 2,7)'); ok(dist > 0.3 && pm < 4.5, 'as pernas dos outros não disparam (ritmo preso à distância andada)'); }
+    // ESP da equipa do jogo: caixa e nome do outro jogador, mesmo sem o ver
+    await A.ev(() => { G.net.role = 'admin'; G.admF = { r: 'admin', esp: 1 }; }); await W(2500);
+    console.log('dbg esp', await A.ev(() => JSON.stringify({ n: document.querySelectorAll('.esp').length, role: G.net.role, R: [...G.net.R.values()].map(r => [r.name, !!r.s1, r.x]) })));
+    const esp = await A.ev(() => [...document.querySelectorAll('.esp')].filter(e => e.style.display !== 'none').map(e => e.textContent));
+    await A.page.screenshot({ path: path.join(outDir, 'net-esp.png') });
+    ok(esp.some(t => /Bruno/.test(t) && / m/.test(t)), 'ESP: aparece o Bruno com distância (' + esp.join(' | ') + ')');
+    await A.ev(() => { G.admF.esp = 0; }); await W(1500); const off = await A.ev(() => [...document.querySelectorAll('.esp')].filter(e => e.style.display !== 'none').length); ok(off === 0, 'ESP desligado: some');
     await browser.close(); server.close(); gs.kill(); process.exit(fails ? 1 : 0);
   } catch (e) { console.log('ERRO', e); process.exit(1); }
 });

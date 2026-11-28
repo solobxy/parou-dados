@@ -55,7 +55,7 @@ export function makeNet({ G, scene, mkRemote, audio, Conta, enc, dec, hurt, die,
       case 'akf': G.ui.arenaFeed && G.ui.arenaFeed(m); return;
       case 'asc': N.arena = m; G.ui.arenaScore && G.ui.arenaScore(m); return;
       case 'adm': G.ui.admList && G.ui.admList(m.list); return;
-      case 'admf': N.role = m.r; G.admF = { r: m.r, inv: m.inv, god: m.god, spec: m.spec, esp: m.esp }; G.ui.admRole && G.ui.admRole(m.r, true); return;
+      case 'admf': N.role = m.r; G.admF = { r: m.r, inv: m.inv, god: m.god, spec: m.spec, esp: m.esp, ammo: m.ammo }; G.ui.admRole && G.ui.admRole(m.r, true); return;
       case 'admno': G.ui.toast(m.e || 'Não deu'); G.ui.admErr && G.ui.admErr(m.e); return;
       case 'admmsg': G.ui.toast(m.e); return;
       case 'frz': G.frozen = !!m.on; G.ui.toast(m.on ? 'Foste congelado por um administrador' : 'Já te podes mexer'); return;
@@ -225,6 +225,7 @@ export function makeNet({ G, scene, mkRemote, audio, Conta, enc, dec, hurt, die,
     const hp = Math.max(8, qa.y - qb.y), w = Math.max(6, hp * 0.42); e.style.display = ''; e.style.transform = `translate(${(qa.x - w / 2).toFixed(0)}px,${qb.y.toFixed(0)}px)`; const bx = e.firstChild; bx.style.width = w.toFixed(0) + 'px'; bx.style.height = hp.toFixed(0) + 'px'; if (e._t !== txt) { e._t = txt; e.lastChild.textContent = txt; } };
   const espFrame = me => { const on = !!(G.admF && G.admF.esp && N.role) && !!me;
     for (const r of R.values()) { const b = r.s1; if (!on || !b || r.x == null) { if (r.espE) r.espE.style.display = 'none'; continue; }
+      if (r.el) r.el.style.display = 'none'; /* o nome normal fica por baixo do do ESP */
       const e = espEl(r, mate(r.clan) ? 'mate' : 'foe'), al = !!b[10], d = Math.hypot(r.x - me.x, r.z - me.z), lv = b[4] || 0; e.classList.toggle('dead', !al);
       espPut(e, r.x, r.y || 0, r.z, lv ? 1.8 : 1.85 - 0.5 * Math.min(1, r.sc || 0), r.name + ' · ' + Math.round(d) + ' m' + (al ? ' · ' + (b[9] | 0) + ' ♥' : ' · morto') + (lv !== (me.lv || 0) ? ' · piso ' + lv : ''), me); }
     for (const s of sleepers.values()) { if (!on) { if (s.espE) s.espE.style.display = 'none'; continue; } const e = espEl(s, 'zz'), d = Math.hypot(s.x - me.x, s.z - me.z); espPut(e, s.x, (s.gy || 0) + 0.05, s.z, 0.5, s.name + ' · a dormir · ' + Math.round(d) + ' m', me); } };
