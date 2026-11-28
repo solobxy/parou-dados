@@ -1,0 +1,95 @@
+== 2026-11-28T16:18:03Z acao=comando
+IP: 2.31.13.85
+== Saída no servidor
+be0b1ff5 Kurogane 1.01: chão do parque da arena sem camadas a piscar, som de headshot
+OK      [dados] a base tem desenhos (coluna shape_id e tabela shapes) 
+NOTA    cmh                  viagens  49897  com desenho  49897  (100%)
+NOTA    carris               viagens  30896  com desenho  30896  (100%)
+NOTA    unirh                viagens  15784  com desenho  15784  (100%)
+NOTA    stcp                 viagens  12678  com desenho  12678  (100%)
+NOTA    horarios_funchal     viagens   5329  com desenho   5329  (100%)
+NOTA    smtuc                viagens   4490  com desenho   4490  (100%)
+NOTA    tub_braga            viagens   3794  com desenho   3718  (98%)
+NOTA    mdb-1272             viagens   3782  com desenho   3782  (100%)
+NOTA    metro_porto          viagens   2941  com desenho   2941  (100%)
+NOTA    mobiave              viagens   2690  com desenho   2690  (100%)
+NOTA    metro_lisboa         viagens   2553  com desenho   2553  (100%)
+NOTA    guimabus             viagens   2012  com desenho   2012  (100%)
+NOTA    ave_mobilidade       viagens   1779  com desenho   1779  (100%)
+NOTA    cp                   viagens   1651  com desenho   1651  (100%)
+NOTA    sit_coimbra          viagens   1641  com desenho   1641  (100%)
+NOTA    tamega_sousa         viagens   1615  com desenho   1615  (100%)
+NOTA    tcb_barreiro         viagens   1601  com desenho   1601  (100%)
+NOTA    cam_madeira          viagens   1514  com desenho   1514  (100%)
+NOTA    mts                  viagens   1492  com desenho   1492  (100%)
+NOTA    vamus                viagens   1048  com desenho   1048  (100%)
+NOTA    flixbus_pt           viagens   1013  com desenho      0  (0%)
+NOTA    metro_mondego        viagens    979  com desenho    979  (100%)
+NOTA    busway_aveiro        viagens    963  com desenho    963  (100%)
+NOTA    transtejo_soflusa    viagens    937  com desenho    937  (100%)
+NOTA    azoresbus            viagens    815  com desenho    815  (100%)
+NOTA    siga_rodoeste        viagens    791  com desenho    791  (100%)
+NOTA    rodoviaria_lis       viagens    750  com desenho    750  (100%)
+NOTA    tuba_barcelos        viagens    715  com desenho    296  (41%)
+NOTA    transdev_cavado      viagens    608  com desenho    608  (100%)
+NOTA    proximo_faro         viagens    593  com desenho    593  (100%)
+NOTA    tld-4317             viagens    552  com desenho    552  (100%)
+NOTA    giro                 viagens    541  com desenho    541  (100%)
+NOTA    mov_cavado           viagens    479  com desenho    479  (100%)
+NOTA    flaviamobil          viagens    381  com desenho    381  (100%)
+NOTA    cim_ttm              viagens    380  com desenho    380  (100%)
+NOTA    tld-4316             viagens    347  com desenho    347  (100%)
+NOTA    fertagus             viagens    260  com desenho    260  (100%)
+NOTA    mobilis_leiria       viagens    251  com desenho    251  (100%)
+NOTA    tld-4318             viagens    139  com desenho    139  (100%)
+NOTA    tld-4319             viagens    129  com desenho    129  (100%)
+NOTA    barraqueiro_oeste    viagens    119  com desenho    119  (100%)
+NOTA    pombus               viagens    109  com desenho    109  (100%)
+NOTA    sobe_desce_tavira    viagens     27  com desenho     27  (100%)
+NOTA    tld-4257             viagens     16  com desenho     16  (100%)
+OK      [cobertura] stcp: pelo menos 95% das viagens têm desenho 100%
+OK      [cobertura] carris: pelo menos 95% das viagens têm desenho 100%
+OK      [cobertura] cmh: pelo menos 95% das viagens têm desenho 100%
+OK      [cobertura] tub_braga: pelo menos 95% das viagens têm desenho 98%
+OK      [cobertura] metro_porto: pelo menos 95% das viagens têm desenho 100%
+OK      [cobertura] metro_lisboa: pelo menos 95% das viagens têm desenho 100%
+OK      [mapa] cp: pelo menos 85% das viagens têm o desenho feito pelo mapa de estradas/carris 1651/1651 (100%)
+OK      [mapa] metro_porto: pelo menos 90% das viagens têm o desenho feito pelo mapa de estradas/carris 2941/2941 (100%)
+OK      [mapa] metro_lisboa: pelo menos 90% das viagens têm o desenho feito pelo mapa de estradas/carris 2553/2553 (100%)
+OK      [mapa] UNIR: pelo menos 85% das linhas (por sentido) têm desenho 788/818 (96%)
+OK      [percurso] stcp: 4/4 viagens desenhadas pela estrada, junto das paragens e sem saltos 
+OK      [percurso] carris: 4/4 viagens desenhadas pela estrada, junto das paragens e sem saltos 
+OK      [percurso] cmh: 4/4 viagens desenhadas pela estrada, junto das paragens e sem saltos 
+OK      [percurso] tub_braga: 4/4 viagens desenhadas pela estrada, junto das paragens e sem saltos 
+OK      [percurso] metro_porto: 4/4 viagens desenhadas pela estrada, junto das paragens e sem saltos 
+OK      [percurso] metro_lisboa: 4/4 viagens desenhadas pela estrada, junto das paragens e sem saltos 
+OK      [percurso] mts: 4/4 viagens desenhadas pela estrada, junto das paragens e sem saltos 
+OK      [percurso] smtuc: 4/4 viagens desenhadas pela estrada, junto das paragens e sem saltos 
+OK      [percurso] guimabus: 4/4 viagens desenhadas pela estrada, junto das paragens e sem saltos 
+OK      [percurso] mobiave: 4/4 viagens desenhadas pela estrada, junto das paragens e sem saltos 
+OK      [percurso] horarios_funchal: 4/4 viagens desenhadas pela estrada, junto das paragens e sem saltos 
+OK      [percurso] vamus: 4/4 viagens desenhadas pela estrada, junto das paragens e sem saltos 
+OK      [percurso] giro: 4/4 viagens desenhadas pela estrada, junto das paragens e sem saltos 
+OK      [percurso] tcb_barreiro: 4/4 viagens desenhadas pela estrada, junto das paragens e sem saltos 
+OK      [percurso] proximo_faro: 4/4 viagens desenhadas pela estrada, junto das paragens e sem saltos 
+OK      [percurso] mdb-1272: 4/4 viagens desenhadas pela estrada, junto das paragens e sem saltos 
+OK      [percurso] tuba_barcelos: 4/4 viagens desenhadas pela estrada, junto das paragens e sem saltos 
+OK      [percurso] fertagus: 4/4 viagens desenhadas pela estrada, junto das paragens e sem saltos 
+OK      [percurso] transtejo_soflusa: 4/4 viagens desenhadas pela estrada, junto das paragens e sem saltos 
+OK      [percurso] testou-se pelo menos 40 viagens 76
+OK      [planeador] Noeda → Freixo (Porto): 3 troços de transporte, todos com o caminho pela estrada 
+OK      [planeador] Trindade → Hospital S. João (Porto): 2 troços de transporte, todos com o caminho pela estrada 
+OK      [planeador] Oriente → Praça do Comércio (Lisboa): 7 troços de transporte, todos com o caminho pela estrada 
+OK      [planeador] Cais do Sodré → Cacilhas (barco): 5 troços de transporte, todos com o caminho pela estrada 
+OK      [planeador] Braga centro → Gualtar: 3 troços de transporte, todos com o caminho pela estrada 
+OK      [planeador] Campanhã → Foz (Porto): 5 troços de transporte, todos com o caminho pela estrada 
+OK      [planeador] todas as viagens de teste têm transporte num dia útil (2026-11-30T10:30) 6/6
+NOTA    troços de transporte com caminho: 25/25
+OK      [UNIR] percurso: 5/5 linhas desenhadas pela estrada, junto das paragens e sem saltos 
+NOTA    troços da UNIR testados (2026-11-30T10:30): 7; sem caminho: 0
+OK      [UNIR] planeador: há opções com a UNIR e todas trazem o caminho pela estrada 
+
+As linhas e as viagens desenham-se pela estrada.
+== Teste de fora
+https://2-31-13-85.sslip.io/health 200 0.522881s
+https://2-31-13-85.sslip.io/api/transit/loading-status 200 0.428857s
